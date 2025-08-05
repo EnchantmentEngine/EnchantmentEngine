@@ -9,14 +9,14 @@ import { Entity, getComponent, removeComponent, S, setComponent } from '@ir-engi
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { MaterialStateComponent, TextureSchema } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { MaterialComponent, TextureSchema } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { DepthCanvasTexture } from '@ir-engine/spatial/src/xr/DepthCanvasTexture'
 import { DepthDataTexture } from '@ir-engine/spatial/src/xr/DepthDataTexture'
 import { ReferenceSpace, XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { XRSystem } from '@ir-engine/spatial/src/xr/XRSystem'
 import { XRCPUDepthInformation } from '@ir-engine/spatial/src/xr/XRTypes'
-import { defineMaterialPlugin } from '../renderer/materials/defineMaterialPlugin'
+import { defineMaterialPlugin } from '../materials/defineMaterialPlugin'
 
 export const DepthOcclusionPluginComponent = defineMaterialPlugin({
   name: 'DepthOcclusionPluginComponent',
@@ -31,7 +31,7 @@ export const DepthOcclusionPluginComponent = defineMaterialPlugin({
     uRawValueToMeters: S.Number({ default: 0.0 })
   }),
 
-  onApply(shader) {
+  onApply(entity, shader, renderer) {
     // Fragment variables
     shader.fragmentShader =
       `
@@ -161,12 +161,11 @@ function updateUniforms(depthInfo: XRCPUDepthInformation) {
   const width = Math.floor(window.devicePixelRatio * window.innerWidth)
   const height = Math.floor(window.devicePixelRatio * window.innerHeight)
   for (const entity of materialPlugins()) {
-    const material = getComponent(entity, MaterialStateComponent).material
-    if (!(material.userData.DepthOcclusionPlugin && material.shader)) continue
-    material.shader.uniforms.uResolution.value.set(width, height)
+    const uniforms = getComponent(entity, DepthOcclusionPluginComponent)
+    uniforms.uResolution.set(width, height)
     /** invert matrix as physics looks down +z, and webxr looks down -z */
-    material.shader.uniforms.uUvTransform.value.fromArray(normTextureFromNormViewMatrix).invert()
-    material.shader.uniforms.uRawValueToMeters.value = rawValueToMeters
+    uniforms.uUvTransform.fromArray(normTextureFromNormViewMatrix).invert()
+    uniforms.uRawValueToMeters = rawValueToMeters
   }
 }
 
@@ -230,7 +229,7 @@ const reactor = () => {
   const depthDataTexture = useHookstate(getMutableState(XRState).depthDataTexture).value
   if (!depthDataTexture || !depthSupported) return null
 
-  return <QueryReactor ChildEntityReactor={DepthOcclusionReactor} Components={[MaterialStateComponent]} />
+  return <QueryReactor ChildEntityReactor={DepthOcclusionReactor} Components={[MaterialComponent]} />
 }
 
 export const XRDepthOcclusionSystem = defineSystem({

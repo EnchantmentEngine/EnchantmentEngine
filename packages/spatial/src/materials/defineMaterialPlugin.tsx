@@ -11,7 +11,7 @@ import {
 import { State } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { Shader, Texture, WebGLRenderer } from 'three'
-import { MaterialPluginComponents, MaterialStateComponent, UniformRecord, useUniforms } from './MaterialComponent'
+import { MaterialComponent, MaterialPluginComponents, UniformRecord, useUniforms } from './MaterialComponent'
 import { removePlugin, setPlugin } from './materialFunctions'
 
 /**
@@ -27,7 +27,7 @@ import { removePlugin, setPlugin } from './materialFunctions'
  *     enabled: true
  *   },
  *
- *   onApply: (shader, renderer, uniforms) => {
+ *   onApply: (entity, shader, renderer) => {
  *     shader.fragmentShader = shader.fragmentShader.replace(
  *       'void main() {',
  *       `
@@ -37,8 +37,6 @@ import { removePlugin, setPlugin } from './materialFunctions'
  *         void main() {
  *       `
  *     )
- *       shader.uniforms.time.value = uniforms.time
- *       shader.uniforms.boolean.value = uniforms.boolean
  *   },
  *
  *   update: (deltaSeconds, uniforms) => {
@@ -56,9 +54,9 @@ export const defineMaterialPlugin = <T extends Schema>({
   reactor: Reactor
 }: {
   name: string
-  jsonID: string
+  jsonID?: string
   uniforms: T
-  onApply: (shader: Shader, renderer: WebGLRenderer) => void
+  onApply: (entity: Entity, shader: Shader, renderer: WebGLRenderer) => void
   update?: (component: Static<T>, deltaSeconds: number) => void
   reactor?: (props: { entity: Entity; textureState: State<Record<string, Texture | null>> }) => any
 }) => {
@@ -70,9 +68,6 @@ export const defineMaterialPlugin = <T extends Schema>({
     schema: uniformSchema,
 
     reactor: ({ entity }) => {
-      /** Suspend context until material exists */
-      const material = useComponent(entity, MaterialStateComponent).material
-
       const pluginState = useComponent(entity, PluginComponent) as UniformRecord
 
       const { textureState, uniforms } = useUniforms(
@@ -88,13 +83,16 @@ export const defineMaterialPlugin = <T extends Schema>({
             shader.uniforms[key] = uniforms[key]
           }
 
-          onApply(shader, renderer)
+          onApply(entity, shader, renderer)
         }
+
+        /** Suspend context until material exists */
+        const material = MaterialComponent.get(entity)!
         setPlugin(material, callback)
         return () => {
           removePlugin(material, callback)
         }
-      }, [material])
+      }, [])
 
       return Reactor ? <Reactor entity={entity} textureState={textureState} /> : null
     }

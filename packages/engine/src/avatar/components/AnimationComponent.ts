@@ -10,14 +10,11 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NO_PROXY, State, useHookstate } from '@ir-engine/hyperflux'
+import { MaterialComponent, MaterialInstanceComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
-import {
-  MaterialInstanceComponent,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { AssetState } from '../../gltf/GLTFState'
@@ -71,7 +68,7 @@ export const useLoadAnimationFromGLTF = (url: string, keepEntity = false) => {
       iterateEntityNode(assetEntity.value, (entity) => {
         removeComponent(entity, MeshComponent)
         removeComponent(entity, SkinnedMeshComponent)
-        removeComponent(entity, MaterialStateComponent)
+        removeComponent(entity, MaterialComponent)
         removeComponent(entity, MaterialInstanceComponent)
       })
     } else {

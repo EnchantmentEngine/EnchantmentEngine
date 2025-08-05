@@ -9,12 +9,12 @@ import {
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import {
   MaterialInstanceComponent,
   MaterialStateComponent,
   SerializedTexture
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+} from '@ir-engine/spatial/src/materials/MaterialComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { MeshStandardMaterial } from 'three'
 import { commitProperties } from '../components/properties/Util'
 import { LightmapBakeComponent } from './LightmapBakeComponent'

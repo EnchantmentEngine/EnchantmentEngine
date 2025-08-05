@@ -8,18 +8,13 @@ import {
   useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
+import { NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { MaterialComponent, MaterialPluginComponents } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
-import { generateDefaults } from '@ir-engine/spatial/src/renderer/materials/constants/DefaultArgs'
-import {
-  MaterialPluginComponents,
-  MaterialPrototypeDefinitions,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { Button, Tooltip } from '@ir-engine/ui'
 import InputGroup from '@ir-engine/ui/src/components/editor/input/Group'
 import SelectInput from '@ir-engine/ui/src/components/editor/input/Select'
@@ -164,8 +159,8 @@ export function MaterialEditor(props: { entity: Entity }) {
       <ParameterInput
         path={UUIDComponent.get(entity)}
         values={materialComponent.parameters.get(NO_PROXY)}
-        onChange={(key) => commitProperty(MaterialStateComponent, ('parameters.' + key) as any)}
-        defaults={getState(MaterialPrototypeDefinitions)[material.type].arguments}
+        onChange={(key) => commitProperty(MaterialComponent, ('parameters.' + key) as any)}
+        // defaults={getState(MaterialPrototypeDefinitions)[material.type].arguments}
         thumbnails={toBlobs(thumbnails.value)}
       />
       <br />

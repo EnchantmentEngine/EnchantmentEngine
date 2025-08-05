@@ -3,13 +3,8 @@ import { AudioLoader, Texture } from 'three'
 
 import { Entity, UndefinedEntity } from '@ir-engine/ecs'
 import { NO_PROXY, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
-import {
-  Resource,
-  ResourceAssetType,
-  ResourceState,
-  ResourceType
-} from '@ir-engine/spatial/src/resources/ResourceState'
 
+import { Resource, ResourceAssetType, ResourceState, ResourceType } from './ResourceState'
 import { FileLoader } from './loaders/base/FileLoader'
 import { Loader } from './loaders/base/Loader'
 import { parseStorageProviderURLs } from './parseSceneJSON'

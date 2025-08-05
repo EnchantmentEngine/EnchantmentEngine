@@ -10,7 +10,6 @@ import {
   hasComponent,
   removeComponent,
   setComponent,
-  useComponent,
   useOptionalComponent,
   useQueryBySource
 } from '@ir-engine/ecs'
@@ -20,13 +19,13 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import React, { useEffect } from 'react'
+import { MaterialComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import {
   DitherCalculationType,
   TransparencyDitheringPluginComponent,
   TransparencyDitheringRootComponent
-} from '../../material/plugins/TransparencyDitheringComponent'
+} from '@ir-engine/spatial/src/materials/plugins/TransparencyDitheringComponent'
+import React, { useEffect } from 'react'
 import { AvatarComponent } from '../components/AvatarComponent'
 
 const headDithering = 0
@@ -78,7 +77,7 @@ export const AvatarTransparencySystem = defineSystem({
 
 const AvatarReactor = (props: { entity: Entity }) => {
   const entity = props.entity
-  const materialChildren = useQueryBySource(entity, [MaterialStateComponent])
+  const materialChildren = useQueryBySource(entity, [MaterialComponent])
   const rootDitheringComponent = useOptionalComponent(entity, TransparencyDitheringRootComponent)
   if (!rootDitheringComponent) return null
 
@@ -93,7 +92,6 @@ const AvatarReactor = (props: { entity: Entity }) => {
 
 const DitherChildReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const entity = props.entity
-  const material = useComponent(entity, MaterialStateComponent)
 
   useEffect(() => {
     getComponent(props.rootEntity, TransparencyDitheringRootComponent).materials.push(props.entity)
@@ -106,7 +104,7 @@ const DitherChildReactor = (props: { entity: Entity; rootEntity: Entity }) => {
       }
       removeComponent(entity, TransparencyDitheringPluginComponent)
     }
-  }, [material])
+  }, [])
 
   return null
 }

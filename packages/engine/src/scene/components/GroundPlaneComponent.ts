@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Mesh, MeshLambertMaterial, MeshStandardMaterial, PlaneGeometry, ShadowMaterial } from 'three'
+import { Mesh, PlaneGeometry } from 'three'
 
 import { useHookstate } from '@hookstate/core'
 import {
@@ -17,10 +17,11 @@ import {
   removeEntity,
   setComponent,
   useComponent,
-  useOptionalComponent
+  useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { MaterialComponent, MaterialInstanceComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
@@ -28,10 +29,6 @@ import { BodyTypes, Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsT
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import {
-  MaterialInstanceComponent,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
 export const GroundPlaneComponent = defineComponent({
@@ -72,18 +69,17 @@ export const GroundPlaneComponent = defineComponent({
       const materialEntity = createEntity()
       setComponent(materialEntity, NameComponent, 'GroundPlaneMaterial')
 
-      const materialObject = new MeshStandardMaterial()
-      materialObject.polygonOffset = true
-      materialObject.polygonOffsetFactor = -0.01
-      materialObject.polygonOffsetUnits = 1
+      /** @todo add back polygon offset */
+      // const materialObject = new MeshStandardMaterial()
+      // materialObject.polygonOffset = true
+      // materialObject.polygonOffsetFactor = -0.01
+      // materialObject.polygonOffsetUnits = 1
       setComponent(materialEntity, UUIDComponent, {
         entitySourceID: source,
         entityID: materialID
       })
       setComponent(materialEntity, EntityTreeComponent, { parentEntity: entity })
-      setComponent(materialEntity, MaterialStateComponent, {
-        material: materialObject
-      })
+      setComponent(materialEntity, MaterialComponent, { diffuse: component.color })
 
       const mesh = new Mesh(new PlaneGeometry(10000, 10000))
       mesh.geometry.rotateX(-Math.PI / 2)
@@ -103,15 +99,11 @@ export const GroundPlaneComponent = defineComponent({
       }
     }, [])
 
-    const meshComponent = useOptionalComponent(entity, MeshComponent) as Mesh<any, MeshLambertMaterial | ShadowMaterial>
-
-    const material = useOptionalComponent(materialEntityState.value, MaterialStateComponent)?.material
+    const material = useHasComponent(materialEntityState.value, MaterialComponent)
 
     useEffect(() => {
-      if (!meshComponent || !material) return
-      const color = component.color
-      if (meshComponent.material.color == color) return
-      meshComponent.material.color.set(component.color)
+      if (!material) return
+      setComponent(materialEntityState.value, MaterialComponent, { diffuse: component.color })
     }, [component.color, material])
 
     return null

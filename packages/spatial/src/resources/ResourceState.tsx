@@ -14,20 +14,16 @@ import {
 } from 'three'
 
 import {
-  Engine,
   Entity,
   QueryReactor,
-  UUIDComponent,
   getAncestorWithComponents,
   getAuthoringCounterpart,
   getComponent,
-  getOptionalComponent,
-  hasComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
 
-import { NO_PROXY, State, defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
+import { NO_PROXY, State, defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 
 import React, { useEffect } from 'react'
@@ -35,9 +31,7 @@ import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Geometry } from '../common/constants/Geometry'
 import iterateObject3D from '../common/functions/iterateObject3D'
 import { ColliderComponent } from '../physics/components/ColliderComponent'
-import { PerformanceState } from '../renderer/PerformanceState'
 import { RendererComponent } from '../renderer/components/RendererComponent'
-import { VisibleComponent } from '../renderer/components/VisibleComponent'
 
 // offloadTextureData implemented in engine package, but needs to be called and typed here
 
@@ -94,22 +88,22 @@ export type ResourceAssetType =
   | ArrayBuffer
   | Line
 
-type BaseMetadata = {
+export type BaseMetadata = {
   size?: number
   discarded?: boolean
   onGPU?: boolean
 }
 
-type GLTFMetadata = {
+export type GLTFMetadata = {
   vertexCount: number
   textureWidths: number[]
 } & BaseMetadata
 
-type TextureMetadata = {
+export type TextureMetadata = {
   textureWidth: number
 } & BaseMetadata
 
-type Metadata = GLTFMetadata | TextureMetadata | BaseMetadata
+export type Metadata = GLTFMetadata | TextureMetadata | BaseMetadata
 
 export type Resource = {
   id: string
@@ -120,101 +114,6 @@ export type Resource = {
   metadata: Metadata
 }
 
-//#region budget checking functions
-const getTotalSizeOfResources = () => {
-  let size = 0
-  const resources = getState(ResourceState).resources
-  for (const key in resources) {
-    const resource = resources[key]
-    if (resource.metadata.size) size += resource.metadata.size
-  }
-
-  return size
-}
-
-const getTotalBufferSize = () => {
-  let size = 0
-  const resources = getState(ResourceState).resources
-  for (const key in resources) {
-    const resource = resources[key]
-    if (resource.type == ResourceType.Texture && resource.metadata.size) size += resource.metadata.size
-  }
-
-  return size
-}
-
-const getTotalVertexCount = () => {
-  let verts = 0
-  const resources = getState(ResourceState).resources
-  for (const key in resources) {
-    const resource = resources[key]
-    if (resource.type == ResourceType.Geometry && (resource.metadata as GLTFMetadata).vertexCount)
-      verts += (resource.metadata as GLTFMetadata).vertexCount
-  }
-
-  return verts
-}
-
-const useTotalVertexCount = () => {
-  let verts = 0
-  const resources = useMutableState(ResourceState).resources.value as Record<string, Resource>
-  for (const key in resources) {
-    const resource = resources[key]
-    if (resource.type == ResourceType.Geometry && (resource.metadata as GLTFMetadata).vertexCount)
-      verts += (resource.metadata as GLTFMetadata).vertexCount
-  }
-
-  return verts
-}
-
-const useVisibleVertexCount = () => {
-  let verts = 0
-  const resources = useMutableState(ResourceState).resources.value as Record<string, Resource>
-  for (const key in resources) {
-    const resource = resources[key]
-    if (
-      resource.type == ResourceType.Geometry &&
-      (resource.metadata as GLTFMetadata).vertexCount &&
-      hasComponent(resource.entity, VisibleComponent) &&
-      // Ignore helpers and gizmos
-      hasComponent(resource.entity, UUIDComponent)
-    )
-      verts += (resource.metadata as GLTFMetadata).vertexCount
-  }
-
-  return verts
-}
-
-const getRendererInfo = () => {
-  const viewer = Engine?.instance?.viewerEntity as Entity | undefined
-  if (!viewer) return {}
-  const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer
-  if (!renderer) return {}
-  return {
-    memory: renderer.info.memory,
-    programCount: renderer.info.programs?.length
-  }
-}
-
-const checkBudgets = () => {
-  const resourceState = getState(ResourceState)
-  const performanceState = getState(PerformanceState)
-  const maxVerts = performanceState.maxVerticies
-  const maxBuffer = performanceState.maxBufferSize
-  const currVerts = resourceState.totalVertexCount
-  const currBuff = resourceState.totalBufferCount
-  if (currVerts > maxVerts)
-    ResourceState.debugWarn(
-      'ResourceState:GLTF:onLoad Exceeded vertex budget, budget: ' + maxVerts + ', loaded: ' + currVerts
-    )
-  if (currBuff > maxBuffer)
-    ResourceState.debugWarn(
-      'ResourceState:GLTF:onLoad Exceeded buffer budget, budget: ' + maxBuffer + ', loaded: ' + currBuff
-    )
-}
-//#endregion
-
-//#region resource loading callbacks
 const resourceCallbacks = {
   /** @todo add this GLTF tracking stuff back to the resources themselves */
   // [ResourceType.GLTF]: {
@@ -715,14 +614,6 @@ export const ResourceState = defineState({
   addEntityResource,
   removeEntityResource,
   getResourceID,
-  checkBudgets,
-  budgets: {
-    getTotalSizeOfResources,
-    getTotalBufferSize,
-    getTotalVertexCount,
-    useTotalVertexCount,
-    useVisibleVertexCount
-  },
   /** Removes a resource even if it is still being referenced, needed for updating assets in the studio */
   __unsafeRemoveResource: removeResource,
 

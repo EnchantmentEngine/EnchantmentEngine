@@ -2,6 +2,7 @@ import './threejsPatches'
 
 export * from './camera/CameraModule'
 export * from './input/InputModule'
+export * from './materials/MaterialModule'
 export * from './physics/PhysicsModule'
 export * from './ReferenceSpaceState'
 export * from './renderer/RendererModule'

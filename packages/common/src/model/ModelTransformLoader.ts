@@ -35,10 +35,7 @@ import { VRMExtension } from '@ir-engine/engine/src/assets/compression/extension
 import { MOZLightmapExtension } from '@ir-engine/engine/src/assets/compression/extensions/MOZ_LightmapTransformer'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import {
-  MaterialPluginComponents,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { MaterialPluginComponents, MaterialStateComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import draco3d from 'draco3dgltf'
 import { MeshoptDecoder, MeshoptEncoder } from 'meshoptimizer'
 import { FileLoader } from 'three'

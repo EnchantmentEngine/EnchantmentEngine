@@ -1,6 +1,6 @@
 import { Entity, hasComponent, LayerID, Layers, useQuery, UUIDComponent } from '@ir-engine/ecs'
 import { ErrorBoundary, getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { Button, Input } from '@ir-engine/ui'
 import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/editor/layout/Panel'
 import { TabData } from 'rc-dock'

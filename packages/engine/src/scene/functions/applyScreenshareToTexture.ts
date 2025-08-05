@@ -28,7 +28,7 @@ export const ScreenshareShaderPluginComponent = defineMaterialPlugin({
     clipColor: T.Vec4(new Vector4(0, 0, 0, 1))
   }),
 
-  onApply(shader) {
+  onApply(entity, shader, renderer) {
     shader.fragmentShader = shader.fragmentShader.replace('void main() {', `uniform vec4 clipColor;\nvoid main() {\n`)
 
     const mapFragment = `#ifdef USE_MAP

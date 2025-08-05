@@ -64,11 +64,11 @@ import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { MaterialComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
 import { CSMPluginComponent } from '@ir-engine/spatial/src/renderer/csm/CSMPluginComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
@@ -180,7 +180,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
 
   return (
     <QueryReactor
-      Components={[MaterialStateComponent]}
+      Components={[MaterialComponent]}
       ChildEntityReactor={ShadowSystemReactors.EntityChildCSMReactor}
       props={{ rendererEntity: rendererEntity }}
     />
@@ -189,13 +189,12 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
 
 const EntityChildCSMReactor = (props: { rendererEntity: Entity; entity: Entity }) => {
   const { rendererEntity, entity } = props
-  const material = useComponent(entity, MaterialStateComponent).material
   const csm = useComponent(rendererEntity, CSMComponent)
   useEffect(() => {
     if (!csm) return
     setComponent(entity, CSMPluginComponent)
     return () => removeComponent(entity, CSMPluginComponent)
-  }, [csm, material])
+  }, [csm])
 
   return null
 }

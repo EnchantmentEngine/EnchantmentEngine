@@ -8,9 +8,14 @@ import {
   ComponentType,
   defineSystem,
   ECSState,
+  Engine,
+  Entity,
   getComponent,
+  getOptionalComponent,
+  hasComponent,
   PresentationSystemGroup,
-  useOptionalComponent
+  useOptionalComponent,
+  UUIDComponent
 } from '@ir-engine/ecs'
 import { profile } from '@ir-engine/ecs/src/Timer'
 import { defineState, getMutableState, getState, State, useMutableState } from '@ir-engine/hyperflux'
@@ -18,8 +23,10 @@ import { RenderSettingsState } from '@ir-engine/spatial/src/renderer/WebGLRender
 
 import { EngineState } from '@ir-engine/ecs'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
+import { GLTFMetadata, Resource, ResourceState, ResourceType } from '../resources/ResourceState'
 import { RendererState } from './RendererState'
 import { RendererComponent } from './components/RendererComponent'
+import { VisibleComponent } from './components/VisibleComponent'
 
 type PerformanceTier = 0 | 1 | 2 | 3 | 4 | 5
 type TargetFPS = 30 | 60
@@ -454,11 +461,112 @@ const buildPerformanceState = async (
   })
 }
 
+//#region budget checking functions
+const getTotalSizeOfResources = () => {
+  let size = 0
+  const resources = getState(ResourceState).resources
+  for (const key in resources) {
+    const resource = resources[key]
+    if (resource.metadata.size) size += resource.metadata.size
+  }
+
+  return size
+}
+
+const getTotalBufferSize = () => {
+  let size = 0
+  const resources = getState(ResourceState).resources
+  for (const key in resources) {
+    const resource = resources[key]
+    if (resource.type == ResourceType.Texture && resource.metadata.size) size += resource.metadata.size
+  }
+
+  return size
+}
+
+const getTotalVertexCount = () => {
+  let verts = 0
+  const resources = getState(ResourceState).resources
+  for (const key in resources) {
+    const resource = resources[key]
+    if (resource.type == ResourceType.Geometry && (resource.metadata as GLTFMetadata).vertexCount)
+      verts += (resource.metadata as GLTFMetadata).vertexCount
+  }
+
+  return verts
+}
+
+const useTotalVertexCount = () => {
+  let verts = 0
+  const resources = useMutableState(ResourceState).resources.value as Record<string, Resource>
+  for (const key in resources) {
+    const resource = resources[key]
+    if (resource.type == ResourceType.Geometry && (resource.metadata as GLTFMetadata).vertexCount)
+      verts += (resource.metadata as GLTFMetadata).vertexCount
+  }
+
+  return verts
+}
+
+const useVisibleVertexCount = () => {
+  let verts = 0
+  const resources = useMutableState(ResourceState).resources.value as Record<string, Resource>
+  for (const key in resources) {
+    const resource = resources[key]
+    if (
+      resource.type == ResourceType.Geometry &&
+      (resource.metadata as GLTFMetadata).vertexCount &&
+      hasComponent(resource.entity, VisibleComponent) &&
+      // Ignore helpers and gizmos
+      hasComponent(resource.entity, UUIDComponent)
+    )
+      verts += (resource.metadata as GLTFMetadata).vertexCount
+  }
+
+  return verts
+}
+
+const getRendererInfo = () => {
+  const viewer = Engine?.instance?.viewerEntity as Entity | undefined
+  if (!viewer) return {}
+  const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer
+  if (!renderer) return {}
+  return {
+    memory: renderer.info.memory,
+    programCount: renderer.info.programs?.length
+  }
+}
+
+const checkBudgets = () => {
+  const resourceState = getState(ResourceState)
+  const performanceState = getState(PerformanceState)
+  const maxVerts = performanceState.maxVerticies
+  const maxBuffer = performanceState.maxBufferSize
+  const currVerts = resourceState.totalVertexCount
+  const currBuff = resourceState.totalBufferCount
+  if (currVerts > maxVerts)
+    ResourceState.debugWarn(
+      'ResourceState:GLTF:onLoad Exceeded vertex budget, budget: ' + maxVerts + ', loaded: ' + currVerts
+    )
+  if (currBuff > maxBuffer)
+    ResourceState.debugWarn(
+      'ResourceState:GLTF:onLoad Exceeded buffer budget, budget: ' + maxBuffer + ', loaded: ' + currBuff
+    )
+}
+
 export const PerformanceManager = {
   buildPerformanceState,
   profileGPURender,
   incrementGPUPerformance,
   decrementGPUPerformance,
   incrementCPUPerformance,
-  decrementCPUPerformance
+  decrementCPUPerformance,
+  timeRender,
+  getTotalSizeOfResources,
+  getTotalBufferSize,
+  getTotalVertexCount,
+  useTotalVertexCount,
+  useVisibleVertexCount,
+  getRendererInfo,
+  checkBudgets
 }

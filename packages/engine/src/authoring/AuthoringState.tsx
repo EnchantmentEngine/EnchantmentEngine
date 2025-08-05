@@ -42,16 +42,9 @@ import {
   Validator
 } from '@ir-engine/hyperflux'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import {
-  MaterialPrototypeDefinitions,
-  MaterialStateComponent,
-  SerializedTexture
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
-import { Color, SRGBColorSpace, Vector2, Vector3 } from 'three'
 import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
@@ -426,60 +419,6 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
           continue
         }
         deserializeComponent(entity, Component, componentData)
-        // annoying necessity to ensure ops from scene deltas get applied
-        /** @todo this will be removed once material plugins handle all materials */
-        if (Component === MaterialStateComponent) {
-          const materialComponent = getComponent(entity, MaterialStateComponent)
-          const { material, parameters } = materialComponent
-          const args = getState(MaterialPrototypeDefinitions)[material.type].arguments
-          let asyncUpdateCount = 0
-          for (const [key, val] of Object.entries(parameters)) {
-            if (typeof val === 'undefined' || typeof material[key] === 'undefined') continue
-            // set property on material too, since it does't get serialized but also doesn't get update from parameters
-            if (args[key].type === 'texture') {
-              if (!val || (material[key]?.isTexture && val === material[key].userData?.url)) continue
-              asyncUpdateCount += 1
-              const textureData = val as SerializedTexture
-              getTextureAsync(textureData.source).then(([texture]) => {
-                asyncUpdateCount -= 1
-                if (texture?.isTexture) {
-                  texture.channel = textureData.channel
-                  if (textureData.repeat) texture.repeat.copy(textureData.repeat)
-                  if (textureData.offset) texture.offset.copy(textureData.offset)
-                  texture.flipY = false
-                  texture.needsUpdate = true
-                  if (key !== 'normalMap') texture.colorSpace = SRGBColorSpace
-                  materialComponent.material[key] = texture ?? null
-                }
-                if (!asyncUpdateCount) materialComponent.material.needsUpdate = true
-              })
-            } else if (args[key].type === 'color') {
-              materialComponent.material[key] = val.isColor ? val : new Color(val)
-            } else if (args[key].type === 'vec2') {
-              materialComponent.material[key] = val.isVector2 ? val : new Vector2().fromArray(val)
-            } else if (args[key].type === 'vec3') {
-              materialComponent.material[key] = val.isVector3 ? val : new Vector3().fromArray(val)
-            } else {
-              materialComponent.material[key] = val
-            }
-          }
-          for (const [key, val] of Object.entries(args)) {
-            if (typeof val === 'undefined' || typeof material[key] === 'undefined') continue
-            if (key in parameters) continue
-            const _default = args[key].default
-            if (args[key].type === 'color') {
-              materialComponent.material[key] = _default.isColor ? _default : new Color(_default)
-            } else if (args[key].type === 'vec2') {
-              materialComponent.material[key] = _default.isVector2 ? _default : new Vector2().fromArray(_default)
-            } else if (args[key].type === 'vec3') {
-              materialComponent.material[key] = _default.isVector3 ? _default : new Vector3().fromArray(_default)
-            } else {
-              materialComponent.material[key] = _default
-            }
-          }
-          setComponent(entity, MaterialStateComponent)
-          if (!asyncUpdateCount) materialComponent.material.needsUpdate = true
-        }
       }
       if (currentState[nodeID]) {
         for (const componentJsonID of Object.keys(currentState[nodeID])) {

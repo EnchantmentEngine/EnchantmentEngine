@@ -58,11 +58,11 @@ import {
   setCameraFocusOnBox,
   setCameraFocusOnBoxFromAngle
 } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { BackgroundComponent, SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { createHash } from 'crypto'
 import mime from 'mime-types'

@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { Engine, useQuery } from '@ir-engine/ecs'
 
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
+import { PerformanceManager } from '@ir-engine/spatial/src/renderer/PerformanceState'
 import { RenderInfoState } from '@ir-engine/spatial/src/renderer/RenderInfoSystem'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { LightTagComponent } from '@ir-engine/spatial/src/renderer/components/lights/LightTagComponent'
-import { ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
 import { Button, Tooltip } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import Stats from './stats'
@@ -53,7 +53,7 @@ export const StatsPanel = (props: { show: boolean }) => {
   const renderInfoState = useMutableState(RenderInfoState)
   const info = renderInfoState.visible.value && renderInfoState.info.value
   const lightQuery = useQuery([LightTagComponent, VisibleComponent])
-  const sceneTriangles = Math.floor(ResourceState.budgets.useVisibleVertexCount() / 3)
+  const sceneTriangles = Math.floor(PerformanceManager.useVisibleVertexCount() / 3)
 
   const toggleStats = () => {
     renderInfoState.visible.set(!renderInfoState.visible.value)
