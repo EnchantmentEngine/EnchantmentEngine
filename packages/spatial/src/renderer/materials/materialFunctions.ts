@@ -1,36 +1,9 @@
-import { Color, Material, Mesh, Shader, Texture } from 'three'
+import { Color, Material, Mesh, Shader } from 'three'
 
 import { Entity, getComponent, hasComponent, setComponent } from '@ir-engine/ecs'
 
-import { getState } from '@ir-engine/hyperflux'
 import { MeshComponent } from '../components/MeshComponent'
-import {
-  MaterialInstanceComponent,
-  MaterialPrototypeDefinitions,
-  MaterialStateComponent,
-  PrototypeArgument,
-  SerializedTexture
-} from './MaterialComponent'
-
-export const formatMaterialArgs = (args: any, defaultArgs?: PrototypeArgument) => {
-  if (!args) return args
-  return Object.fromEntries(
-    Object.entries(args)
-      .map(([k, v]: [string, any]) => {
-        if (!!defaultArgs && defaultArgs[k]) {
-          switch (defaultArgs[k].type) {
-            case 'color':
-              return [k, v ? ((v as Color).isColor ? v : new Color(v)) : undefined]
-          }
-        }
-        const tex = v as Texture
-        if (tex?.isTexture) return [k, tex.source.data !== undefined ? v : undefined]
-        if (v === '') return [k, undefined]
-        return [k, v]
-      })
-      .filter(([_, v]) => v !== undefined)
-  )
-}
+import { MaterialStateComponent, SerializedTexture } from './MaterialComponent'
 
 export const setMeshMaterial = (groupEntity: Entity, newMaterialEntities: Entity[]) => {
   if (!groupEntity) return
@@ -68,14 +41,6 @@ export const removePlugin = (material: Material, callback: MaterialCallback) => 
   if (pluginIndex !== undefined && pluginIndex >= 0) material.plugins?.splice(pluginIndex, 1)
 }
 
-export const getMaterialIndices = (entity: Entity, materialEntity: Entity): number[] => {
-  if (!hasComponent(entity, MaterialInstanceComponent)) return [] as number[]
-  const materialEntities = getComponent(entity, MaterialInstanceComponent).entities
-  return materialEntities
-    .map((currentEntity, index) => (currentEntity === materialEntity ? index : undefined))
-    .filter((x) => x !== undefined) as number[]
-}
-
 export const setupMaterialParameters = (entity: Entity, type: string, properties: { [_: string]: any }) => {
   const params = {} as Record<string, any>
   Object.entries(properties).map(([k, v]) => {
@@ -97,15 +62,4 @@ export const setupMaterialParameters = (entity: Entity, type: string, properties
     parameters: { ...getComponent(entity, MaterialStateComponent).parameters, ...params }
   })
   return params
-}
-
-export const getMaterialParameterDefaults = (type: string) => {
-  const prototype = getState(MaterialPrototypeDefinitions)[type]
-  return Object.fromEntries(Object.entries(prototype.arguments).map(([k, v]) => [k, v.default]))
-}
-
-export const getMaterialParameterKeys = (type: string) => {
-  const prototype = getState(MaterialPrototypeDefinitions)[type]
-  if (!prototype) return []
-  return Object.keys(prototype.arguments)
 }

@@ -16,7 +16,7 @@ import {
   SerializedTexture
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { MeshStandardMaterial } from 'three'
-import { commitProperty } from '../components/properties/Util'
+import { commitProperties } from '../components/properties/Util'
 import { LightmapBakeComponent } from './LightmapBakeComponent'
 import { Lightmapper } from './LightmapperFunctions'
 
@@ -54,12 +54,14 @@ const execute = () => {
               materials.push(...materialEntities)
             }
             for (const materialEntity of materials) {
-              commitProperty(MaterialStateComponent, 'parameters.aoMap' as any, [
-                LayerFunctions.getAuthoringCounterpart(materialEntity)
-              ])({ source: uploadedUrl, channel } as SerializedTexture)
-              commitProperty(MaterialStateComponent, 'parameters.aoMapIntensity' as any, [
-                LayerFunctions.getAuthoringCounterpart(materialEntity)
-              ])(1)
+              commitProperties(
+                MaterialStateComponent,
+                {
+                  ['parameters.aoMap' as string]: { source: uploadedUrl, channel } as SerializedTexture,
+                  ['parameters.aoMapIntensity' as string]: 1
+                },
+                [LayerFunctions.getAuthoringCounterpart(materialEntity)]
+              )
             }
           }
         })
