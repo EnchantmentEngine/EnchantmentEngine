@@ -1,4 +1,4 @@
-import { FrontSide, IUniform, Material, MeshStandardMaterial as MeshStandardMaterial0, Shader, Vector2 } from 'three'
+import { FrontSide, IUniform, Material, MeshStandardMaterial as MeshStandardMaterial0, Vector2 } from 'three'
 
 import {
   ComponentType,
@@ -13,7 +13,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs'
 import { Entity, EntityUUID, EntityUUIDPair } from '@ir-engine/ecs/src/Entity'
-import { PluginType } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 
 import { EntitySchema } from '@ir-engine/ecs'
 import { Schema, defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
@@ -29,6 +28,12 @@ import MeshPhysicalMaterial from './prototypes/MeshPhysicalMaterial.mat'
 import MeshStandardMaterial from './prototypes/MeshStandardMaterial.mat'
 import MeshToonMaterial from './prototypes/MeshToonMaterial.mat'
 import { ShadowMaterial } from './prototypes/ShadowMaterial.mat'
+
+/**
+ * Material System
+ * - automatically synchronizes material changes to the mesh, including fallback for unassigned materials
+ * - extensible via material plugins
+ */
 
 export type MaterialPrototypeConstructor = new (...args: any) => any
 export type MaterialPrototypeDefinition = {
@@ -95,6 +100,9 @@ export const MaterialStateComponent = defineComponent({
     )
     if (!fallbackMaterialEntity) {
       fallbackMaterialEntity = createEntity()
+      /**
+       * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#default-material
+       */
       const fallbackMaterial = new MeshStandardMaterial0({
         name: 'Fallback Material',
         color: 0xffffff,
@@ -149,7 +157,7 @@ export const MaterialStateComponent = defineComponent({
   }
 })
 
-export const MaterialReferenceState = defineState({
+const MaterialReferenceState = defineState({
   name: 'MaterialReferenceState',
   // map of MaterialStateComponent entity to MaterialInstanceComponent entities
   initial: () => ({}) as Record<Entity, Entity[]>
@@ -231,15 +239,6 @@ const MaterialInstanceSubReactor = (props: {
   }, [materialStateComponent?.material, meshComponent])
 
   return null
-}
-
-declare module 'three/src/materials/Material.js' {
-  export interface Material {
-    shader: Shader
-    plugins?: PluginType[]
-    _onBeforeCompile: typeof Material.prototype.onBeforeCompile
-    needsUpdate: boolean
-  }
 }
 
 declare module 'three/src/renderers/shaders/ShaderLib.js' {

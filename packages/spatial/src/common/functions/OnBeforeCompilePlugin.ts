@@ -14,6 +14,7 @@ import {
   MeshToonMaterial,
   PointsMaterial,
   RawShaderMaterial,
+  Shader,
   ShaderMaterial,
   ShadowMaterial,
   SpriteMaterial
@@ -23,11 +24,19 @@ import {
 // Only implemented the OnBeforeCompile part because OnBeforeRender is not working well with the postprocessing.
 
 export type PluginObjectType = {
-  id: string
   compile
 }
 
 export type PluginType = PluginObjectType | typeof Material.prototype.onBeforeCompile
+
+declare module 'three/src/materials/Material.js' {
+  export interface Material {
+    shader: Shader
+    plugins?: PluginType[]
+    _onBeforeCompile: typeof Material.prototype.onBeforeCompile
+    needsUpdate: boolean
+  }
+}
 
 const onBeforeCompile = {
   get: function (this: Material) {
