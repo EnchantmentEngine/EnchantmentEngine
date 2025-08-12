@@ -17,7 +17,7 @@ import {
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { useEffect } from 'react'
-import { Color, Material, Texture, Vector2, Vector3, Vector4 } from 'three'
+import { Color, Texture, Vector2, Vector3, Vector4 } from 'three'
 import { code, texture, uniform } from 'three/tsl'
 import { NodeMaterial } from 'three/webgpu'
 
@@ -65,7 +65,7 @@ export const defineNodeMaterialPlugin = <T extends Schema>({
   PluginComponent.reactor = () => {
     const entity = useEntityContext()
     const materialComponent = useComponent(entity, MaterialStateComponent)
-    const material = materialComponent.material as Material
+    const material = materialComponent.material
 
     if (!(material instanceof NodeMaterial)) {
       console.warn(`${name}: Plugin can only be applied to NodeMaterial instances`)
