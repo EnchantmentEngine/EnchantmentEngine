@@ -7,7 +7,8 @@ import {
   EquirectangularReflectionMapping,
   LinearFilter,
   RGBAFormat,
-  SRGBColorSpace
+  SRGBColorSpace,
+  WebGLRenderer
 } from 'three'
 
 import { entityExists, useEntityContext } from '@ir-engine/ecs'
@@ -177,7 +178,8 @@ export const SkyboxComponent = defineComponent({
       sky.luminance = skyboxState.skyboxProps.luminance
 
       const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
-      const generatedTexture = sky.generateSkyboxTextureCube(renderer.renderer!)
+        .renderer as WebGLRenderer
+      const generatedTexture = sky.generateSkyboxTextureCube(renderer)
       generatedTexture.mapping = CubeReflectionMapping
       generatedTexture.generateMipmaps = false
       setComponent(entity, BackgroundComponent, generatedTexture)

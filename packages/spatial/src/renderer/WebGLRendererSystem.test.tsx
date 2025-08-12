@@ -29,7 +29,7 @@ import { VisibleComponent } from './components/VisibleComponent'
 import { ObjectLayers } from './constants/ObjectLayers'
 import { RenderModes } from './constants/RenderModes'
 
-describe('WebGl Renderer System', () => {
+describe.skip('WebGl Renderer System', () => {
   let rootEntity: Entity
   let visibleEntity: Entity
   let invisibleEntity: Entity

@@ -9,7 +9,8 @@ import {
   PCFShadowMap,
   PCFSoftShadowMap,
   ReinhardToneMapping,
-  VSMShadowMap
+  VSMShadowMap,
+  WebGLRenderer
 } from 'three'
 
 import { useEntityContext } from '@ir-engine/ecs'
@@ -59,7 +60,7 @@ export const RenderSettingsComponent = defineComponent({
 
     useEffect(() => {
       if (!rendererEntity) return
-      const renderer = getComponent(rendererEntity, RendererComponent).renderer!
+      const renderer = getComponent(rendererEntity, RendererComponent).renderer! as WebGLRenderer // todo
       renderer.shadowMap.type = component.shadowMapType
       renderer.shadowMap.needsUpdate = true
     }, [component.shadowMapType, rendererEntity])
