@@ -22,7 +22,7 @@ export {
   AvatarUISystem,
   LinkErrorSystem,
   LinkRedirectSystem,
-  // LoadingUISystem,
+  LoadingUISystem,
   MediaControlSystem,
   OverlaySystem,
   PoiUiSystem,
