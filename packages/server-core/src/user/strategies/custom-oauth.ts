@@ -1,7 +1,7 @@
 import { OAuthStrategy } from '@feathersjs/authentication-oauth'
 import { Params } from '@feathersjs/feathers'
 
-import { AuthenticationRequest, AuthenticationResult } from '@feathersjs/authentication'
+import { AuthenticationParams, AuthenticationRequest, AuthenticationResult } from '@feathersjs/authentication'
 import multiLogger from '@ir-engine/common/src/logger'
 import { IdentityProviderType, identityProviderPath } from '@ir-engine/common/src/schema.type.module'
 import { userLoginPath } from '@ir-engine/common/src/schemas/user/user-login.schema'
@@ -12,7 +12,7 @@ import { RedirectConfig } from '../../types/OauthStrategies'
 // import { OAuthProfile } from '@feathersjs/authentication-oauth/src/strategy'
 const logger = multiLogger.child({ component: 'engine:ecs:CustomOAuthParams' })
 
-export interface CustomOAuthParams extends Params {
+export interface CustomOAuthParams extends AuthenticationParams {
   redirect?: string
   access_token?: string
   refresh_token?: string
