@@ -19,8 +19,8 @@ const createWorker = () => {
     // module workers currently don't work in safari and firefox
     return new Worker('/workers/generateBVHAsync.worker.js')
   } else {
-    const path = require('path')
-    const workerPath = path.resolve(__dirname, './generateBVHAsync.register.js')
+    const workerPath = __dirname + '/generateBVHAsync.worker.js'
+    console.log('Creating worker from path:', workerPath)
     return new Worker(workerPath, { type: 'module' })
   }
 }
