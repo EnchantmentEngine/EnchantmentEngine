@@ -11,7 +11,13 @@ import {
 } from 'three'
 
 import { createEntity, defineQuery, EntityTreeComponent, removeEntity, UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  getComponent,
+  getOptionalComponent,
+  hasComponent,
+  removeComponent,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
@@ -111,7 +117,7 @@ function createLight(i: number, rendererEntity: Entity, sourceLight?: Directiona
   light.shadow.camera.updateProjectionMatrix()
 
   //if using webgpu
-  if (rendererEntity && getComponent(rendererEntity, RendererComponent).renderer instanceof WebGPUBackend) {
+  if (rendererEntity && getOptionalComponent(rendererEntity, RendererComponent)?.renderer instanceof WebGPUBackend) {
     const shadowNode = sourceLight?.shadow.shadowNode as CSMShadowNode
     shadowNode.lights.push(light)
   }
