@@ -4,6 +4,7 @@ import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 
 import { useEffect } from 'react'
+import { WebGLRenderer } from 'three'
 import { ResourceState, ResourceType } from '../resources/ResourceState'
 import { RendererComponent } from './components/RendererComponent'
 import { WebGLRendererSystem } from './WebGLRendererSystem'
@@ -61,7 +62,7 @@ export function getShaderComplexity(resources: Record<string, any>): number {
 }
 
 const execute = () => {
-  const renderer = getOptionalComponent(Engine.instance.viewerEntity, RendererComponent)?.renderer
+  const renderer = getOptionalComponent(Engine.instance.viewerEntity, RendererComponent)?.renderer as WebGLRenderer
 
   if (!renderer) return
 

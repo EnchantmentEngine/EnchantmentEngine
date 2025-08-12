@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "module": "CommonJS",
+    "module": "esnext",
     "lib": [
       "ESNext",
       "DOM",
@@ -33,6 +33,9 @@
     ],
     "erasableSyntaxOnly": true
   },
+  "exclude": [
+    "**/node_modules/**"
+  ],
   "include": [
     "../../__global.d.ts",
     "../server-core/src",

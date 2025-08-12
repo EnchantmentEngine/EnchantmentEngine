@@ -34,8 +34,7 @@
     "erasableSyntaxOnly": true
   },
   "exclude": [
-    "**/node_modules/**", 
-    "./src/**/*.test.tsx"
+    "**/node_modules/**"
   ],
   "include": [
     "../../__global.d.ts",

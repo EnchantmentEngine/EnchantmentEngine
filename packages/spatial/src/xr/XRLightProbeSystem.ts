@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Color, CubeTexture, LightProbe, Vector3, WebGLCubeRenderTarget } from 'three'
+import { Color, CubeTexture, LightProbe, Vector3, WebGLCubeRenderTarget, WebGLRenderer } from 'three'
 
 import { Engine, createEntity } from '@ir-engine/ecs'
 import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -58,9 +58,8 @@ const updateReflection = () => {
 
   if (!xrLightProbeState.environment || !xrLightProbeState.xrWebGLBinding || !xrLightProbeState.probe) return
 
-  const textureProperties = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.properties.get(
-    xrLightProbeState.environment
-  ) as any
+  const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer! as WebGLRenderer
+  const textureProperties = renderer.properties.get(xrLightProbeState.environment) as any
 
   if (textureProperties) {
     const cubeMap = xrLightProbeState.xrWebGLBinding!.getReflectionCubeMap?.(xrLightProbeState.probe)
@@ -190,7 +189,9 @@ const reactor = () => {
       const cubeRenderTarget = new WebGLCubeRenderTarget(16)
       xrLightProbeState.environment.set(cubeRenderTarget.texture)
 
-      const gl = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!.getContext()
+      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+        .renderer as WebGLRenderer
+      const gl = renderer.getContext()
 
       // Ensure that we have any extensions needed to use the preferred cube map format.
       switch (session.preferredReflectionFormat) {

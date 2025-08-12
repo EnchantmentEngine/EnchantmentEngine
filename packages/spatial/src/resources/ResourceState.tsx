@@ -10,7 +10,8 @@ import {
   Mesh,
   Object3D,
   SkinnedMesh,
-  Texture
+  Texture,
+  WebGLRenderer
 } from 'three'
 
 import {
@@ -186,11 +187,11 @@ const useVisibleVertexCount = () => {
 const getRendererInfo = () => {
   const viewer = Engine?.instance?.viewerEntity as Entity | undefined
   if (!viewer) return {}
-  const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer
+  const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer as WebGLRenderer | undefined
   if (!renderer) return {}
   return {
     memory: renderer.info.memory,
-    programCount: renderer.info.calls
+    programCount: renderer.info.render.calls
   }
 }
 
