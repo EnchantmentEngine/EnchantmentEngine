@@ -24,15 +24,15 @@ fi
 cd "$ROOT_PROJECT_DIR"
 
 # Determine the correct executable extension for Windows
-if [ -f "./node_modules/.bin/ts-node.cmd" ]; then
-    # Windows
-    TS_NODE="./node_modules/.bin/ts-node.cmd"
-    LINT_STAGED="./node_modules/.bin/lint-staged.cmd"
-else
-    # Mac/Linux
-    TS_NODE="./node_modules/.bin/ts-node"
-    LINT_STAGED="./node_modules/.bin/lint-staged"
-fi
+# if [ -f "./node_modules/.bin/ts-node.cmd" ]; then
+#     # Windows
+#     TS_NODE="./node_modules/.bin/ts-node.cmd"
+#     LINT_STAGED="./node_modules/.bin/lint-staged.cmd"
+# else
+# Mac/Linux
+TS_NODE="./node_modules/.bin/ts-node"
+LINT_STAGED="./node_modules/.bin/lint-staged"
+# fi
 
 # Run format-staged (lint-staged)
 echo "Running lint-staged..."

@@ -13,7 +13,6 @@ import {
   Side,
   SphereGeometry,
   Texture,
-  Uniform,
   Vector2,
   Vector3
 } from 'three'
@@ -31,7 +30,7 @@ import {
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY, State, useState } from '@ir-engine/hyperflux'
+import { useState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Vector2_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { AssetType, FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
@@ -124,9 +123,7 @@ export function ImageReactor() {
   const entity = useEntityContext()
   const image = useComponent(entity, ImageComponent)
   const transformComponent = useComponent(entity, TransformComponent)
-  const mesh = useOptionalComponent(entity, MeshComponent) as any as State<
-    Mesh<PlaneGeometry | SphereGeometry, ShaderMaterial>
-  >
+  const mesh = useOptionalComponent(entity, MeshComponent) as Mesh<PlaneGeometry | SphereGeometry, ShaderMaterial>
 
   const [texture, error] = useTexture(image.source, entity)
   const fitPlacementUvOffset = useState(new Vector2(0, 0))
@@ -224,8 +221,8 @@ export function ImageReactor() {
   useEffect(() => {
     if (!mesh) return
 
-    const uniforms = mesh.material.uniforms.get(NO_PROXY) as Record<string, Uniform>
-    const defines = mesh.material.defines.get(NO_PROXY) as Record<string, any>
+    const uniforms = mesh.material.uniforms
+    const defines = mesh.material.defines
 
     clearErrors(entity, ImageComponent)
 
@@ -236,37 +233,35 @@ export function ImageReactor() {
       delete defines.USE_MAP
       uniforms.map.value = null
     }
-    mesh.material.needsUpdate.set(true)
-    mesh.visible.set(true)
-  }, [!!mesh?.value, texture, image.source])
+    mesh.material.needsUpdate = true
+    mesh.visible = true
+  }, [!!mesh, texture, image.source])
 
   useEffect(() => {
     if (!mesh || !texture || !mesh.material.uniforms.map.value) return
 
-    const uniforms = mesh.material.uniforms.get(NO_PROXY) as Record<string, Uniform>
+    const uniforms = mesh.material.uniforms
     const flippedTexture = uniforms.map.value.flipY
     switch (image.projection) {
       case ImageProjection.Equirectangular360:
-        mesh.geometry.set(flippedTexture ? SPHERE_GEO() : SPHERE_GEO_FLIPPED())
-        mesh.scale.value.set(-1, 1, 1)
+        mesh.geometry = flippedTexture ? SPHERE_GEO() : SPHERE_GEO_FLIPPED()
+        mesh.scale.set(-1, 1, 1)
         break
       case ImageProjection.Flat:
       default:
-        mesh.geometry.set(flippedTexture ? PLANE_GEO() : PLANE_GEO_FLIPPED())
+        mesh.geometry = flippedTexture ? PLANE_GEO() : PLANE_GEO_FLIPPED()
     }
-  }, [!!mesh?.value, image.projection, !!texture])
+  }, [!!mesh, image.projection, !!texture])
 
   useEffect(() => {
     if (!mesh) return
-    mesh.material.transparent.set(image.alphaMode !== ImageAlphaMode.Opaque)
-    mesh.material.alphaTest.set(image.alphaMode === 'Mask' ? image.alphaCutoff : 0)
-    mesh.material.side.set(image.side)
-  }, [!!mesh?.value, image.alphaMode, image.alphaCutoff, image.side])
+    mesh.material.transparent = image.alphaMode !== ImageAlphaMode.Opaque
+    mesh.material.alphaTest = image.alphaMode === 'Mask' ? image.alphaCutoff : 0
+    mesh.material.side = image.side
+  }, [!!mesh, image.alphaMode, image.alphaCutoff, image.side])
 
   useEffect(() => {
     if (!mesh) return
-
-    const videoMesh = mesh.value as Mesh<PlaneGeometry | SphereGeometry, ShaderMaterial>
 
     const uvOffset = new Vector2(0, 0)
     const uvScale = new Vector2(1, 1)
@@ -276,7 +271,7 @@ export function ImageReactor() {
     const containerRatio = containerWidth / containerHeight
 
     if (texture) {
-      imageSize = getTextureSize(videoMesh.material.uniforms.map.value as Texture | CompressedTexture)
+      imageSize = getTextureSize(mesh.material.uniforms.map.value as Texture | CompressedTexture)
       if (image.fit !== 'stretch') {
         const imageRatio = imageSize.x / imageSize.y || 1
 
@@ -321,7 +316,7 @@ export function ImageReactor() {
 
   useEffect(() => {
     if (!mesh) return
-    const uniforms = mesh.material.uniforms.get(NO_PROXY) as Record<string, Uniform>
+    const uniforms = mesh.material.uniforms
     uniforms.uvOffset.value = new Vector2(
       image.uvOffset.x + fitPlacementUvOffset.x.value,
       image.uvOffset.y + fitPlacementUvOffset.y.value
@@ -330,7 +325,7 @@ export function ImageReactor() {
 
   useEffect(() => {
     if (!mesh) return
-    const uniforms = mesh.material.uniforms.get(NO_PROXY) as Record<string, Uniform>
+    const uniforms = mesh.material.uniforms
     uniforms.uvScale.value = new Vector2(
       image.uvScale.x * fitPlacementUvScale.x.value,
       image.uvScale.y * fitPlacementUvScale.y.value

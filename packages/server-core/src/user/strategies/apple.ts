@@ -162,6 +162,7 @@ export class AppleStrategy extends CustomOAuthStrategy {
     }
   }
 
+  // @ts-ignore
   async getRedirect(data: AuthenticationResult | Error, params: CustomOAuthParams): Promise<string> {
     let redirectConfig: RedirectConfig
     try {
@@ -200,6 +201,7 @@ export class AppleStrategy extends CustomOAuthStrategy {
     }
   }
 
+  // @ts-ignore
   async authenticate(authentication: AuthenticationRequest, originalParams: Params) {
     if (authentication.error) {
       if (authentication.error === 'user_cancelled_authorize')
