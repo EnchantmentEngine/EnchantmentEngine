@@ -2204,7 +2204,7 @@ export const uploadLocalProjectToProvider = async (
           },
           { ignoreResourcesJson: true }
         )
-        logger.info(`Uploaded static resource of class ${thisFileClass}: "${key}"`)
+        // logger.info(`Uploaded static resource of class ${thisFileClass}: "${key}"`)
       }
 
       results.push(storageProvider.getCachedURL(key, true))

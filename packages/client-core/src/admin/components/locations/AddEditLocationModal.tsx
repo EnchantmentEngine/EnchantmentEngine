@@ -125,9 +125,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
   const scene = useHookstate((location ? location.sceneId : props.sceneID) || '')
   const videoEnabled = useHookstate<boolean>(location?.locationSetting.videoEnabled || true)
   const audioEnabled = useHookstate<boolean>(location?.locationSetting.audioEnabled || true)
-  /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
-  // const jumpControlEnabled = useHookstate<boolean>(location?.locationSetting.jumpControlEnabled || true)
-  // const vrEnabled = useHookstate<boolean>(location?.locationSetting.vrEnabled || true)
   const screenSharingEnabled = useHookstate<boolean>(location?.locationSetting.screenSharingEnabled || true)
   const locationType = useHookstate(location?.locationSetting.locationType || 'public')
   const progressState = useHookstate(getMutableState(ProgressState))
@@ -144,9 +141,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
       audioEnabled.set(location.locationSetting.audioEnabled)
       screenSharingEnabled.set(location.locationSetting.screenSharingEnabled)
       locationType.set(location.locationSetting.locationType)
-      /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
-      // jumpControlEnabled.set(location.locationSetting.jumpControlEnabled)
-      // vrEnabled.set(location.locationSetting.vrEnabled)
 
       if (!props.sceneID) scene.set(location.sceneId)
     }
@@ -404,9 +398,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
         screenSharingEnabled: Boolean(screenSharingEnabled.value),
         faceStreamingEnabled: false,
         videoEnabled: Boolean(videoEnabled.value)
-        /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
-        // jumpControlEnabled: Boolean(jumpControlEnabled.value),
-        // vrEnabled: Boolean(vrEnabled.value)
       },
       isLobby: false,
       isFeatured: false

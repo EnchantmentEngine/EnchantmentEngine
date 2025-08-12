@@ -212,7 +212,7 @@ export default defineConfig(async () => {
         'Origin-Agent-Cluster': '?1'
       },
       watch: {
-        ignored: ['**/server/upload/**']
+        ignored: ['**/server/upload/**', '**/scripts/**']
       },
       ...(isDevOrLocal
         ? {
@@ -227,6 +227,7 @@ export default defineConfig(async () => {
     optimizeDeps: {
       entries: ['./src/main.tsx'],
       include: ['@reactflow/core', '@reactflow/minimap', '@reactflow/controls', '@reactflow/background'],
+      exclude: ['knex'],
 
       esbuildOptions: {
         target: 'es2020',

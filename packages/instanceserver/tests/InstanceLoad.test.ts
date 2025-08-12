@@ -3,7 +3,7 @@ import '../../server-core/src/patchEngineNode'
 import getLocalServerIp from '@ir-engine/server-core/src/util/get-local-server-ip'
 import appRootPath from 'app-root-path'
 import assert from 'assert'
-import { ChildProcess } from 'child_process'
+import childProcess from 'child_process'
 import { v4 as uuidv4 } from 'uuid'
 import { afterAll, beforeAll, describe, it } from 'vitest'
 
@@ -43,7 +43,7 @@ describe('InstanceLoad', () => {
   beforeAll(async () => {
     config['instance-server'].p2pEnabled = false
 
-    const child: ChildProcess = require('child_process').spawn('npm', ['run', 'dev-agones'], {
+    const child = childProcess.spawn('npm', ['run', 'dev-agones'], {
       cwd: appRootPath.path,
       stdio: 'inherit',
       detached: true
