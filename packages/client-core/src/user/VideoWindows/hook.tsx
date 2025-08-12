@@ -39,7 +39,7 @@ export interface WindowType {
   type: 'screen' | 'cam'
 }
 
-import _ from 'lodash'
+import _ from 'lodash-es'
 
 function addItem<T>(array: readonly T[], i: number, value: T): T[] {
   const newArray = [...array]

@@ -1,5 +1,5 @@
 import { AlertCircleLg, CheckCircleLg, InfoCircleLg, Warning } from '@ir-engine/ui/src/icons'
-import { isEmpty } from 'lodash'
+import { isEmpty } from 'lodash-es'
 import React, { forwardRef, ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'
 

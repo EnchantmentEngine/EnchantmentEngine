@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash'
+import { cloneDeep } from 'lodash-es'
 import { Spark } from 'primus'
 
 import { API } from '@ir-engine/common'

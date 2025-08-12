@@ -1,5 +1,5 @@
 import { Knex } from 'knex'
-import _ from 'lodash'
+import _ from 'lodash-es'
 
 import {
   instanceAttendancePath,

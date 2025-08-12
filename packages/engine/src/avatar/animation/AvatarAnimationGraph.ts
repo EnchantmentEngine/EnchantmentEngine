@@ -1,4 +1,4 @@
-import { clamp } from 'lodash'
+import { clamp } from 'lodash-es'
 import { AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'three'
 
 import { UUIDComponent } from '@ir-engine/ecs'

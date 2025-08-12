@@ -1,4 +1,4 @@
-import { omit } from 'lodash'
+import { omit } from 'lodash-es'
 import { useCallback, useEffect, useState } from 'react'
 import { useEdgesState, useNodesState } from 'reactflow'
 

@@ -16,7 +16,7 @@ import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import { getState } from '@ir-engine/hyperflux'
 import https from 'https'
 import { Knex } from 'knex'
-import _ from 'lodash'
+import _ from 'lodash-es'
 import fetch from 'node-fetch'
 
 import { instanceAttendancePath, InstanceAttendanceType } from '@ir-engine/common/src/schema.type.module'

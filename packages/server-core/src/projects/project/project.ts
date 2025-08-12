@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from 'lodash-es'
 
 import logger from '@ir-engine/common/src/logger'
 import { projectPermissionPath } from '@ir-engine/common/src/schemas/projects/project-permission.schema'

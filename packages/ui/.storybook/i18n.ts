@@ -2,7 +2,7 @@ import getClientCoreI18nConfigs from '@ir-engine/client-core/src/i18n'
 import { getI18nConfigs } from '@ir-engine/client-core/src/i18nImporter'
 import i18n from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
-import { merge } from 'lodash'
+import { merge } from 'lodash-es'
 import { initReactI18next } from 'react-i18next'
 
 // @ts-ignore

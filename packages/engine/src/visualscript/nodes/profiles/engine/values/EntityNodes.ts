@@ -1,4 +1,4 @@
-import { cloneDeep, isEqual, uniqueId } from 'lodash'
+import { cloneDeep, isEqual, uniqueId } from 'lodash-es'
 
 import { UUIDComponent, removeEntity } from '@ir-engine/ecs'
 import { ComponentMap, Layers, getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'

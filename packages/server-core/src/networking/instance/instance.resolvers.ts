@@ -18,7 +18,7 @@ import { locationPath } from '@ir-engine/common/src/schemas/social/location.sche
 import { fromDateTimeSql, getDateTimeSql, toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import type { HookContext } from '@ir-engine/server-core/declarations'
 import appConfig from '@ir-engine/server-core/src/appconfig'
-import _ from 'lodash'
+import _ from 'lodash-es'
 import { InstanceAttendanceParams } from '../instance-attendance/instance-attendance.class'
 
 export const instanceResolver = resolve<InstanceType, HookContext>({

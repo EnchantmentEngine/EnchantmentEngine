@@ -1,7 +1,7 @@
 import { TouchGamepad } from '@ir-engine/client-core/src/common/components/TouchGamepad'
 import { EngineState } from '@ir-engine/ecs'
 import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import _ from 'lodash'
+import _ from 'lodash-es'
 import React, { useEffect, useLayoutEffect, useRef } from 'react'
 import { LoadingSystemState } from '../../systems/state/LoadingState'
 import { ARPlacement } from '../ARPlacement'
