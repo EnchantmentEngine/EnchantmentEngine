@@ -1,4 +1,4 @@
 
 
-require('ts-node').register()
+require('tsx').register()
 require('./generateBVHAsync.worker')
