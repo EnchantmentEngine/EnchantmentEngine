@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { GLTF } from '@gltf-transform/core/dist/types/gltf'
+import { GLTF } from '@gltf-transform/core'
 import {
   createEntity,
   Entity,
