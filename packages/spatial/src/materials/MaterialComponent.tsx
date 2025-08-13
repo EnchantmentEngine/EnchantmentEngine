@@ -149,38 +149,46 @@ export const MaterialMapState = defineState({
 
 export const MaterialPluginComponents = {} as Record<string, ComponentType<any>>
 
+const getMaterialPrototype = (entity: Entity): typeof Material => {
+  return (
+    Object.values(MaterialPluginComponents)
+      .find((component) => component.getPrototype && hasComponent(entity, component))
+      ?.getPrototype() ?? MeshStandardMaterial
+  )
+}
+
 const MaterialUniformSchemaProperties = {
   /**
    * These schema properties map directly to threejs' internal uniforms.
    */
   opacity: S.Number({ default: 1, minimum: 0, maximum: 1 }),
   diffuse: T.Color(), // Material.color
-  emissive: T.Color(),
-  emissiveIntensity: S.Number({ default: 1, minimum: 0, maximum: 1 }),
   envMap: TextureSchema(),
   envMapIntensity: S.Number({ default: 1, minimum: 0, maximum: 1 }),
   map: TextureSchema(),
   alphaMap: TextureSchema(),
-  bumpMap: TextureSchema(),
-  bumpScale: S.Number({ default: 1, minimum: 0 }),
-  normalMap: TextureSchema(),
-  displacementMap: TextureSchema(),
   emissiveMap: TextureSchema(),
   specularMap: TextureSchema(),
   alphaTest: S.Number({ default: 0, minimum: 0, maximum: 1 })
 }
 
-// advanced material properties
+const PBRMaterialUniformSchemaProperties = {
+  bumpMap: TextureSchema(),
+  bumpScale: S.Number({ default: 1, minimum: 0 }),
+  displacementMap: TextureSchema(),
+  emissive: T.Color(),
+  emissiveIntensity: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  normalMap: TextureSchema(),
+  metalness: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  metalnessMap: TextureSchema(),
+  roughness: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  roughnessMap: TextureSchema()
+}
 
-// metallic: number
-// roughness: number
-// occlusionMap: texture
-// occlusionStrength: number
-
-// lightMap: texture
-// aoMap: texture
-
-const MaterialUniformSchema = S.Object(MaterialUniformSchemaProperties)
+const MaterialUniformSchema = S.Object({
+  ...MaterialUniformSchemaProperties,
+  ...PBRMaterialUniformSchemaProperties
+})
 
 export const MaterialComponent = defineComponent({
   name: 'MaterialComponent',
@@ -189,6 +197,7 @@ export const MaterialComponent = defineComponent({
 
   schema: S.Object({
     ...MaterialUniformSchemaProperties,
+    ...PBRMaterialUniformSchemaProperties,
     alphaMode: S.LiteralUnion(['OPAQUE', 'MASK', 'BLEND'], { default: 'OPAQUE' }),
     alphaCutoff: S.Number({ default: 0.5, minimum: 0, maximum: 1 }),
     side: S.LiteralUnion([FrontSide, BackSide, DoubleSide], { default: FrontSide }),
@@ -226,7 +235,8 @@ export const MaterialInstanceComponent = defineComponent({
 const lazilyCreateMaterial = (entity: Entity) => {
   const state = getState(MaterialMapState)
   const materialComponent = getComponent(entity, MaterialComponent)
-  const material = new MeshStandardMaterial()
+  const prototype = getMaterialPrototype(entity)
+  const material = new prototype()
 
   Object.assign(material, {
     get uuid() {

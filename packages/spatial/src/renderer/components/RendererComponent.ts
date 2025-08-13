@@ -182,7 +182,7 @@ export const RendererComponent = defineComponent({
       rendererComponent.renderPass = renderPass
 
       // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
-      renderer.debug.checkShaderErrors = false //isDev
+      // renderer.debug.checkShaderErrors = false //isDev
 
       const xrManager = createWebXRManager(renderer)
       renderer.xr = xrManager as any

@@ -1,2 +1,3 @@
 export { defineMaterialPlugin } from './defineMaterialPlugin'
-export { TextureSchema } from './MaterialComponent'
+export { MaterialComponent, TextureSchema } from './MaterialComponent'
+export { BasicMaterialComponent } from './Materials'

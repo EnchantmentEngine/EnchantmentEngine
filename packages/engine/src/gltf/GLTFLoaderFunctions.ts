@@ -65,7 +65,6 @@ import {
   MathUtils,
   Matrix4,
   Mesh,
-  MeshStandardMaterial,
   NumberKeyframeTrack,
   Object3D,
   Quaternion,
@@ -712,10 +711,8 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   const promises = [] as Promise<void>[]
   const materialExtensions = materialDef.extensions || {}
 
-  let materialConstructor = MeshStandardMaterial
   if (materialExtensions['KHR_materials_unlit']) {
     const kmuExtension = KHRUnlitExtensionComponent
-    materialConstructor = kmuExtension.getMaterialType() as any
     promises.push(kmuExtension.extendMaterialParams(options, materialConstructorParameters, materialDef))
   } else {
     materialConstructorParameters.color = new Color(1.0, 1.0, 1.0)
@@ -868,11 +865,6 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
     const Component = ComponentJSONIDMap.get(extensionName) as ComponentExt
     if (!Component) continue
     deserializeComponent(materialEntity, Component, extension)
-    if (typeof Component.getMaterialType === 'function') {
-      const ext = Component.getMaterialType(materialDef)
-      if (ext) materialConstructor = ext
-      else console.warn('GLTFLoaderFunctions: Material type not found.')
-    }
     if (typeof Component.extendMaterialParams === 'function') {
       extensionPromises.push(
         Component.extendMaterialParams(options, materialConstructorParameters, materialDef, materialIndex)
@@ -888,22 +880,27 @@ const loadMaterial = async (options: GLTFParserOptions, materialIndex: number) =
   setComponent(materialEntity, MaterialComponent, {
     diffuse: materialConstructorParameters.color,
     opacity: materialConstructorParameters.opacity,
-    emissive: materialConstructorParameters.emissive,
-    emissiveIntensity: materialConstructorParameters.emissiveIntensity,
     envMap: materialConstructorParameters.envMap,
     envMapIntensity: materialConstructorParameters.envMapIntensity,
     map: materialConstructorParameters.map,
     alphaMap: materialConstructorParameters.alphaMap,
-    bumpMap: materialConstructorParameters.bumpMap,
-    bumpScale: materialConstructorParameters.bumpScale,
-    normalMap: materialConstructorParameters.normalMap,
-    displacementMap: materialConstructorParameters.displacementMap,
     emissiveMap: materialConstructorParameters.emissiveMap,
     specularMap: materialConstructorParameters.specularMap,
     alphaTest: materialConstructorParameters.alphaTest,
     alphaMode: materialDef.alphaMode ?? ALPHA_MODES.OPAQUE,
     alphaCutoff: materialConstructorParameters.alphaCutoff,
-    side: materialConstructorParameters.side
+    side: materialConstructorParameters.side,
+    // pbr
+    bumpMap: materialConstructorParameters.bumpMap,
+    bumpScale: materialConstructorParameters.bumpScale,
+    normalMap: materialConstructorParameters.normalMap,
+    displacementMap: materialConstructorParameters.displacementMap,
+    emissive: materialConstructorParameters.emissive,
+    emissiveIntensity: materialConstructorParameters.emissiveIntensity,
+    metalness: materialConstructorParameters.metalness,
+    roughness: materialConstructorParameters.roughness,
+    metalnessMap: materialConstructorParameters.metalnessMap,
+    roughnessMap: materialConstructorParameters.roughnessMap
   })
 
   // setupMaterialParameters(materialEntity, material.type, materialConstructorParameters)

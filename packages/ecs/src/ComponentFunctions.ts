@@ -119,7 +119,7 @@ export interface ComponentPartial<
    */
   onSet?: (entity: Entity, component: ComponentType, json?: SetJSON) => void
   /** @todo Explain ComponentPartial.onRemove(...) */
-  onRemove?: (entity: Entity, component: ComponentType) => void | Promise<void>
+  onRemove?: (entity: Entity, component: ComponentType) => void
   /**
    * @summary Defines the {@link React.FC} async logic of the {@link Component} type.
    * @notes Any side-effects that depend on the component's data should be defined here.
@@ -269,8 +269,11 @@ export const defineComponent = <
     StorageType & { setTransition: typeof setTransition }
   Component.isComponent = true
 
+  Component.errors = []
+  Object.assign(Component, def)
+
   // move all branching out of hot path and into definition
-  if (def.schema) {
+  if (def.schema && !def.onSet) {
     if (IsSingleValueSchema(def.schema)) {
       if (HasRequiredSchema(def.schema)) {
         Component.onSet = (entity, component, json) => {
@@ -312,7 +315,7 @@ export const defineComponent = <
         }
       }
     }
-  } else {
+  } else if (!def.onSet) {
     Component.onSet = () => {}
   }
 
@@ -321,9 +324,6 @@ export const defineComponent = <
     if (!def.schema) return (component || {}) as JSON
     return SerializeSchema(def.schema, component) as any as JSON
   }
-
-  Component.errors = []
-  Object.assign(Component, def)
 
   if (def.storage) {
     Object.assign(Component, def.storage)
