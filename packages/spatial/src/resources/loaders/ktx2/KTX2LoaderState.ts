@@ -19,6 +19,16 @@ export const KTX2LoaderState = defineState({
         ktx2Loader.detectWebGLSupport(webglRenderer)
         webglRenderer.dispose()
       }
+    } else {
+      // @ts-ignore - make nodejs happy
+      ktx2Loader.workerConfig = {
+        astcSupported: false,
+        etc1Supported: false,
+        etc2Supported: false,
+        dxtSupported: false,
+        bptcSupported: false,
+        pvrtcSupported: false
+      }
     }
 
     return ktx2Loader
