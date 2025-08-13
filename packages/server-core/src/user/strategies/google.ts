@@ -161,7 +161,6 @@ export class Googlestrategy extends CustomOAuthStrategy {
     }
   }
 
-  // @ts-ignore
   async getRedirect(data: AuthenticationResult | Error, params: CustomOAuthParams): Promise<string> {
     let redirectConfig: RedirectConfig
     try {
@@ -200,7 +199,6 @@ export class Googlestrategy extends CustomOAuthStrategy {
     }
   }
 
-  // @ts-ignore
   async authenticate(authentication: AuthenticationRequest, originalParams: Params) {
     if (authentication.error)
       throw new Error(

@@ -53,6 +53,7 @@
     "@aws-sdk/s3-presigned-post": "3.726.1",
     "@feathersjs/adapter-commons": "5.0.5",
     "@feathersjs/authentication": "5.0.5",
+    "@feathersjs/authentication-local": "5.0.5",
     "@feathersjs/authentication-oauth": "5.0.5",
     "@feathersjs/feathers": "5.0.5",
     "@feathersjs/knex": "5.0.5",
