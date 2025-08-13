@@ -1,5 +1,6 @@
-import { Intersection, Mesh, Object3D, Ray, Raycaster, Vector3 } from 'three'
+import { Mesh, Object3D, Ray, Raycaster, Vector3 } from 'three'
 
+import { Intersection } from 'three/src/core/Raycaster'
 import { Bounds, downloadBlob, getBounds, toDOM, traverseChildElements } from '../dom-utils'
 import { WebLayerOptions, WebRenderer } from '../WebRenderer'
 import { ON_BEFORE_UPDATE, WebLayer3D } from './WebLayer3D'
