@@ -179,6 +179,7 @@
   "overrides": {
     "@feathersjs/authentication": "5.0.5",
     "@feathersjs/express": "5.0.5",
+    "@feathersjs/transport-commons": "5.0.5",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   }

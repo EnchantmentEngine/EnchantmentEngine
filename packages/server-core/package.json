@@ -154,7 +154,8 @@
   },
   "overrides": {
     "@feathersjs/authentication": "5.0.5",
-    "@feathersjs/express": "5.0.5"
+    "@feathersjs/express": "5.0.5",
+    "@feathersjs/transport-commons": "5.0.5"
   },
   "gitHead": "2313453697ca7c6b8d36b3b166b5a6445fe1c851"
 }
