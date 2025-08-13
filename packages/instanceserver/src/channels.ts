@@ -23,7 +23,7 @@ import {
   userPath,
   UserType
 } from '@ir-engine/common/src/schema.type.module'
-import { EntityUUID, getComponent, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
@@ -213,12 +213,14 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
     const sceneUpdatedListener = async () => {
       const scene = await app.service(staticResourcePath).get(sceneId, { headers })
       if (unload) unload()
-      unload = SceneState.loadScene(scene.url, scene.id as EntityUUID)
-      const entity = UUIDComponent.getEntityByUUID(('root' + scene.id) as EntityUUID)
+      unload = SceneState.loadScene(scene.url, scene.id)
+      const entity = UUIDComponent.getEntityByUUID(
+        UUIDComponent.join({ entityID: scene.id as EntityID, entitySourceID: 'root' as SourceID })
+      )
       /** @todo - quick hack to wait until scene has loaded */
       await new Promise<void>((resolve) => {
         const interval = setInterval(() => {
-          if (getComponent(entity, GLTFComponent).progress === 100) {
+          if (GLTFComponent.isSceneLoaded(entity)) {
             clearInterval(interval)
             resolve()
           }
