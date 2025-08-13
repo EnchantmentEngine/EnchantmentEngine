@@ -20,7 +20,6 @@ const createWorker = () => {
     return new Worker('/workers/generateBVHAsync.worker.js')
   } else {
     const workerPath = __dirname + '/generateBVHAsync.worker.js'
-    console.log('Creating worker from path:', workerPath)
     return new Worker(workerPath, { type: 'module' })
   }
 }

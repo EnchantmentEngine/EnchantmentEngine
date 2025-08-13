@@ -29,9 +29,9 @@ cd "$ROOT_PROJECT_DIR"
 #     TS_NODE="./node_modules/.bin/ts-node.cmd"
 #     LINT_STAGED="./node_modules/.bin/lint-staged.cmd"
 # else
-# Mac/Linux
-TS_NODE="./node_modules/.bin/ts-node"
-LINT_STAGED="./node_modules/.bin/lint-staged"
+#     # Mac/Linux
+#     TS_NODE="./node_modules/.bin/ts-node"
+#     LINT_STAGED="./node_modules/.bin/lint-staged"
 # fi
 
 # Run format-staged (lint-staged)

@@ -2022,7 +2022,7 @@ describe('Physics : Rapier->ECS API', () => {
 
       it('should encapsulate mesh with sphere when set to match mesh', () => {
         const line = new BufferGeometry()
-        line.setAttribute('position', new Float32BufferAttribute([0, 0, 2, 0, 0, 6], 3)) //line of length 4
+        line.setAttribute('position', new Float32BufferAttribute([0, 0, 2, 0, 0, 6], 3))
         setComponent(testEntity, MeshComponent, new Mesh(line))
         setComponent(testEntity, ColliderComponent, { shape: Shapes.Sphere, matchMesh: true })
         const result = Physics.createColliderDesc(physicsWorld, testEntity, rootEntity)
