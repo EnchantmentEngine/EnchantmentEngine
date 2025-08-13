@@ -218,7 +218,7 @@ setup_cloud_provider() {
 setup_database() {
   log_info "Setting up database environment"
 
-  npx ts-node --swc scripts/check-db-exists.ts || {
+  npx tsx scripts/check-db-exists.ts || {
     log_error "Database check failed"
     return 1
   }
@@ -239,7 +239,7 @@ setup_database() {
 install_projects() {
   log_info "Installing projects"
 
-  npx ts-node --swc scripts/install-projects.js >project-install-build-logs.txt 2>project-install-build-error.txt ||
+  npx tsx scripts/install-projects.js >project-install-build-logs.txt 2>project-install-build-error.txt ||
     npm run record-build-error -- --service=project-install
 
   if [[ -s project-install-build-error.txt ]]; then
@@ -254,7 +254,7 @@ setup_package_environment() {
   log_info "Setting up package environment"
 
   # Create root package.json
-  npx ts-node --swc scripts/create-root-package-json.ts || {
+  npx tsx scripts/create-root-package-json.ts || {
     log_error "Failed to create root package.json"
     return 1
   }
@@ -307,7 +307,7 @@ setup_package_environment() {
   fi
 
   # Create production environment
-  npx ts-node --swc packages/client/scripts/create-env-production.ts >buildenv-build-logs.txt 2>buildenv-build-error.txt ||
+  npx tsx packages/client/scripts/create-env-production.ts >buildenv-build-logs.txt 2>buildenv-build-error.txt ||
     npm run record-build-error -- --service=buildenv
 
   if [[ -s buildenv-build-error.txt ]]; then
@@ -318,7 +318,7 @@ setup_package_environment() {
   # Set up TWA link if needed
   if [[ -n "${TWA_LINK:-}" ]]; then
     log_info "Setting up TWA Link: $TWA_LINK"
-    npx ts-node --swc packages/client/scripts/populate-assetlinks.ts >populate-assetlinks-build-logs.txt 2>populate-assetlinks-build-error.txt ||
+    npx tsx packages/client/scripts/populate-assetlinks.ts >populate-assetlinks-build-logs.txt 2>populate-assetlinks-build-error.txt ||
       npm run record-build-error -- --service=populate-assetlinks
 
     if [[ -s populate-assetlinks-build-error.txt ]]; then
@@ -385,7 +385,7 @@ prune_aws_images() {
 
   log_info "Pruning AWS ECR images for service: $service (region: $region, public: ${public_flag:-false})"
 
-  local cmd=("npx" "ts-node" "--swc" "./scripts/prune_ecr_images.ts"
+  local cmd=("npx" "tsx" "./scripts/prune_ecr_images.ts"
              "--repoName" "$DESTINATION_REPO_NAME_STEM-$service"
              "--region" "$region"
              "--service" "$service"
@@ -405,7 +405,7 @@ prune_gcp_images() {
 
   log_info "Pruning GCP Artifact Registry images for service: $service (suffix: $suffix)"
 
-  npx ts-node --swc ./scripts/prune_gcp_ar_images.ts \
+  npx tsx ./scripts/prune_gcp_ar_images.ts \
     --repoUrl "$DESTINATION_REPO_URL" \
     --repoName "$DESTINATION_REPO_NAME_STEM-$service-$suffix" \
     --packageName "$DESTINATION_PACKAGE_NAME_STEM-$service" \
@@ -450,7 +450,7 @@ build_with_storage_provider() {
   log_info "Building services (serving client from storage provider)"
 
   # Generate deletable client files list
-  npx ts-node --swc scripts/get-deletable-client-files.ts || {
+  npx tsx scripts/get-deletable-client-files.ts || {
     log_warning "Failed to get deletable client files"
   }
 
@@ -566,7 +566,7 @@ deploy_to_kubernetes() {
   }
 
   log_info "Updating cronjob image"
-  npx ts-node --swc scripts/update-cronjob-image.ts \
+  npx tsx scripts/update-cronjob-image.ts \
     --repoName="${DESTINATION_REPO_NAME_STEM}" \
     --tag="${TAG}" \
     --repoUrl="${DESTINATION_REPO_URL}" \
@@ -579,19 +579,19 @@ cleanup_old_files() {
   log_info "Performing cleanup operations"
 
   log_info "Clearing needsRebuild on projects"
-  npx ts-node --swc scripts/clear-projects-rebuild.ts || {
+  npx tsx scripts/clear-projects-rebuild.ts || {
     log_warning "Failed to clear projects rebuild"
   }
 
   # Delete old S3 files if using S3 for client storage
   if [[ "${SERVE_CLIENT_FROM_STORAGE_PROVIDER:-false}" == "true" ]]; then
     log_info "Deleting old client files from storage provider"
-    npx ts-node --swc scripts/delete-old-storage-provider-files.ts || {
+    npx tsx scripts/delete-old-storage-provider-files.ts || {
       log_warning "Failed to delete old client files from storage provider"
     }
   fi
 
-  npx ts-node --swc scripts/prune-kaniko-context.ts >prune-kaniko-context-build-logs.txt 2>prune-kaniko-context-build-error.txt ||
+  npx tsx scripts/prune-kaniko-context.ts >prune-kaniko-context-build-logs.txt 2>prune-kaniko-context-build-error.txt ||
      npm run record-build-error -- --service=prune-kaniko-context
 }
 
@@ -617,7 +617,7 @@ handle_job_completion() {
 
 push_context() {
   tar -C /app -zcf /builder-context-$START_TIME.tar.gz *
-  npx ts-node --swc scripts/push-kaniko-context.ts --startTime="${START_TIME}" >push-kaniko-context-build-logs.txt 2>push-kaniko-context-build-error.txt ||
+  npx tsx scripts/push-kaniko-context.ts --startTime="${START_TIME}" >push-kaniko-context-build-logs.txt 2>push-kaniko-context-build-error.txt ||
     npm run record-build-error -- --service=push-kaniko-context
 }
 
