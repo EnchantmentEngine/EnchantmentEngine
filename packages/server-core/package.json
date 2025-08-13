@@ -152,5 +152,9 @@
     "@types/pug": "2.0.6",
     "nock": "^13.4.0"
   },
+  "overrides": {
+    "@feathersjs/authentication": "5.0.5",
+    "@feathersjs/express": "5.0.5"
+  },
   "gitHead": "2313453697ca7c6b8d36b3b166b5a6445fe1c851"
 }
