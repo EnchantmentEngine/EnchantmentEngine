@@ -40,7 +40,16 @@ export const setInitialState = (def: StateDefinition<any, any, any, any>) => {
     HyperFlux.store.stateMap[def.name].set(initial)
     HyperFlux.store.valueMap[def.name] = initial
   } else {
-    HyperFlux.store.stateMap[def.name] = hookstate(initial, extend(identifiable(def.name), def.extension))
+    HyperFlux.store.stateMap[def.name] = hookstate(
+      initial,
+      extend(
+        identifiable(def.name),
+        () => ({
+          onSet: () => (HyperFlux.store.valueMap[def.name] = HyperFlux.store.stateMap[def.name]?.get(NO_PROXY))
+        }),
+        def.extension
+      )
+    )
     HyperFlux.store.valueMap[def.name] = initial
     if (def.reactor) {
       const reactor = startReactor(def.reactor, `State - ${def.name}`)

@@ -253,8 +253,8 @@ describe('InstanceChat component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render a button with data-testid "close-chat-button"', () => {

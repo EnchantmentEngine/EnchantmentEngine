@@ -1,6 +1,6 @@
 # Enchantment Engine
 
-A fork of ([Napster Engine](https://github.com/ir-engine)) (previously Infinite Reality Engine, Ethereal Engine)
+A fork of ([Ethereal / IR-Engine](https://github.com/ir-engine))
 
 [Napster Engine sizzle.webm](https://github.com/user-attachments/assets/b09dc3c3-7fa2-4e01-b1b9-2c9eef4c317b)
 
@@ -79,14 +79,15 @@ We are always hiring talented people who want to be leaders in what is to come. 
 
 ![msf-member-badge-small](https://user-images.githubusercontent.com/5104160/181168132-57a91f8b-16c9-45f0-a0ee-c89f8f018a80.png)
 
-### [Join our Discord](https://discord.gg/CvpwRgnF5s) [![Discord Chat](https://img.shields.io/discord/692672143053422678.svg)](https://discord.gg/xrf)
+### [Join our Discord](https://discord.gg/enchantment) [![Discord Chat](https://img.shields.io/discord/692672143053422678.svg)](https://discord.gg/enchantment)
 
 ## License
 
 
-[CPAL](LICENSE) - Copyright (c) 2021-2025 Infinite Reality. iR Engine, formerly known as Ethereal Engine and XREngine
+[Inherits the - iR Engine CPAL](LICENSE)
 
-
-If you wish to use Napster Engine under the open-source CPAL license, attribution is required. Please see attribution guidelines in the [LICENSE](LICENSE) file. Other licensing options are available, please contact us for more information.
+If you wish to use Enchantment Engine under the open-source CPAL license, attribution is required. Please see attribution guidelines in the [LICENSE](LICENSE) file. Other licensing options are available, please contact us for more information.
 
 [Release History and Author Archive](/HISTORY.md)
+
+

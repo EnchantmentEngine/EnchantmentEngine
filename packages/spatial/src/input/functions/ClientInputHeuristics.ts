@@ -59,11 +59,11 @@ const sortOrder = (a, b) => b.order - a.order
 
 export const InputHeuristicState = defineState({
   name: 'ir.spatial.input.InputHeuristicState',
-  initial: [] as Array<{ order: HeuristicOrder; heuristic: HeuristicFunctions }>,
+  initial: { heuristics: [] as Array<{ order: HeuristicOrder; heuristic: HeuristicFunctions }> },
 
   addHeuristic: (order: HeuristicOrder, heuristic: HeuristicFunctions) => {
     const state = getMutableState(InputHeuristicState)
-    state.set((arr) =>
+    state.heuristics.set((arr) =>
       [
         ...arr,
         {
@@ -204,7 +204,7 @@ export function findRaycastedInput(sourceEid: Entity, intersectionData: Set<Inte
 
   TransformComponent.getWorldPosition(sourceEid, position).addScaledVector(direction, -0.01)
 
-  const heuristics = getState(InputHeuristicState)
+  const { heuristics } = getState(InputHeuristicState)
 
   const viewerEntity = getComponent(sourceEid, InputSourceComponent).sourceEntity
   if (!viewerEntity) return

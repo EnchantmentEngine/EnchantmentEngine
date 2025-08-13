@@ -53,6 +53,7 @@
     "@aws-sdk/s3-presigned-post": "3.726.1",
     "@feathersjs/adapter-commons": "5.0.5",
     "@feathersjs/authentication": "5.0.5",
+    "@feathersjs/authentication-local": "5.0.5",
     "@feathersjs/authentication-oauth": "5.0.5",
     "@feathersjs/feathers": "5.0.5",
     "@feathersjs/knex": "5.0.5",
@@ -150,6 +151,11 @@
     "@types/pg": "^8.15.4",
     "@types/pug": "2.0.6",
     "nock": "^13.4.0"
+  },
+  "overrides": {
+    "@feathersjs/authentication": "5.0.5",
+    "@feathersjs/express": "5.0.5",
+    "@feathersjs/transport-commons": "5.0.5"
   },
   "gitHead": "2313453697ca7c6b8d36b3b166b5a6445fe1c851"
 }

@@ -1,7 +1,15 @@
-import { useEffect, useLayoutEffect } from 'react'
+import { useEffect } from 'react'
 import { Mesh, MeshLambertMaterial, MeshStandardMaterial, PlaneGeometry, ShadowMaterial } from 'three'
 
-import { EntityID, EntityTreeComponent, EntityUUID, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
+import { useHookstate } from '@hookstate/core'
+import {
+  EntityID,
+  EntityTreeComponent,
+  SourceID,
+  UndefinedEntity,
+  useEntityContext,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import {
   createEntity,
   defineComponent,
@@ -40,10 +48,11 @@ export const GroundPlaneComponent = defineComponent({
 
     const component = useComponent(entity, GroundPlaneComponent)
 
-    const source = UUIDComponent.getAsSourceID(entity)
+    const uuid = useComponent(entity, UUIDComponent)
+    const source = (uuid || 'ground-plane-source') as unknown as SourceID
     const materialID = 'ground-plane-material' as EntityID
 
-    useLayoutEffect(() => {
+    useEffect(() => {
       setComponent(entity, ObjectLayerMaskComponent, ObjectLayerMasks.Scene)
       setComponent(entity, RigidBodyComponent, { type: BodyTypes.Fixed })
       setComponent(entity, ColliderComponent, {
@@ -56,6 +65,8 @@ export const GroundPlaneComponent = defineComponent({
         removeComponent(entity, ColliderComponent)
       }
     }, [])
+
+    const materialEntityState = useHookstate(UndefinedEntity)
 
     useEffect(() => {
       const materialEntity = createEntity()
@@ -83,20 +94,20 @@ export const GroundPlaneComponent = defineComponent({
         entities: [materialEntity]
       })
 
+      materialEntityState.set(materialEntity)
+
       return () => {
+        materialEntityState.set(UndefinedEntity)
         removeComponent(entity, MeshComponent)
         removeEntity(materialEntity)
       }
-    }, [component.visible])
+    }, [])
 
     const meshComponent = useOptionalComponent(entity, MeshComponent) as Mesh<any, MeshLambertMaterial | ShadowMaterial>
 
-    const material = useOptionalComponent(
-      UUIDComponent.useEntityByUUID((source + materialID) as EntityUUID),
-      MaterialStateComponent
-    )?.material
+    const material = useOptionalComponent(materialEntityState.value, MaterialStateComponent)?.material
 
-    useLayoutEffect(() => {
+    useEffect(() => {
       if (!meshComponent || !material) return
       const color = component.color
       if (meshComponent.material.color == color) return
