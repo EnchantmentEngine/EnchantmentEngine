@@ -5,11 +5,11 @@ import { bodyParser, errorHandler, koa, rest } from '@feathersjs/koa'
 import { AppsV1Api, BatchV1Api, CoreV1Api, CustomObjectsApi, KubeConfig } from '@kubernetes/client-node'
 import { EventEmitter } from 'events'
 // Do not delete, this is used even if some IDEs show it as unused
+import cors from '@koa/cors'
 import swagger from 'feathers-swagger'
 import sync from 'feathers-sync'
 import { parse, stringify } from 'flatted'
 import compress from 'koa-compress'
-import cors from 'koa-cors'
 import helmet from 'koa-helmet'
 import healthcheck from 'koa-simple-healthcheck'
 

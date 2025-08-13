@@ -7,7 +7,7 @@ import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarC
 import { SpawnEffectComponent } from '@ir-engine/engine/src/avatar/components/SpawnEffectComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { debounce } from 'lodash'
+import { debounce } from 'lodash-es'
 import React, { forwardRef, Fragment, useEffect, useImperativeHandle, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 

@@ -76,9 +76,7 @@ export const locationDataResolver = resolve<LocationType, HookContext>({
       ...location.locationSetting,
       id: uuidv4(),
       locationType: location.locationSetting.locationType || 'public',
-      locationId: '' as LocationID,
-      createdAt: await getDateTimeSql(),
-      updatedAt: await getDateTimeSql()
+      locationId: '' as LocationID
     }
   },
   locationAdmin: async (value, location) => {

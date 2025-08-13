@@ -38,7 +38,7 @@ const installedProjects = fs.existsSync(path.resolve(__dirname, '../../projects/
           projects.map(async (projectName) => {
             try {
               const configPath = `../../projects/projects/${projectName}/xrengine.config.ts`
-              let config: ProjectConfigInterface = (await import(configPath)).default
+              const config: ProjectConfigInterface = (await import(configPath)).default
               if (!config.services) return null
               return path.join(projectName, config.services as string)
             } catch (e) {

@@ -1,6 +1,7 @@
 import { koa } from '@feathersjs/koa'
 import packageRoot from 'app-root-path'
 import fs from 'fs'
+import http from 'http'
 import https from 'https'
 import favicon from 'koa-favicon'
 import sendFile from 'koa-send'
@@ -125,7 +126,6 @@ export const start = async (): Promise<void> => {
       if (HTTPS) {
         server = https.createServer(certOptions as any, this.callback())
       } else {
-        const http = require('http')
         server = http.createServer(this.callback())
       }
       // eslint-disable-next-line prefer-spread, prefer-rest-params

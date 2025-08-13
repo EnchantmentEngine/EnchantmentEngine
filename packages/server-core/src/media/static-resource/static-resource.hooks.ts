@@ -6,7 +6,7 @@ import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/sc
 import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import { AssetType, FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
 import { discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
-import { isEmpty } from 'lodash'
+import { isEmpty } from 'lodash-es'
 import { HookContext } from '../../../declarations'
 import logger from '../../ServerLogger'
 import { default as appConfig } from '../../appconfig'

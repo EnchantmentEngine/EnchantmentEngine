@@ -1,7 +1,7 @@
 import { useHookstate } from '@hookstate/core'
 import Divider from '@ir-engine/ui/src/components/viewer/Divider'
 import { PlusCircleMd } from '@ir-engine/ui/src/icons'
-import { capitalize } from 'lodash'
+import { capitalize } from 'lodash-es'
 import React from 'react'
 import { FaApple, FaGithub, FaGoogle, FaMinusCircle } from 'react-icons/fa'
 import { useAuthSettings, useOAuthState } from '../../hooks/useAuthSetting'

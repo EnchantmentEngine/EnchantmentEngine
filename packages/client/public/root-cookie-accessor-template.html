@@ -3,7 +3,7 @@
     <title>Local Storage Accessor</title>
     <link rel="stylesheet" href="cookie-accessor.css" />
     <script>
-      const COOKIE_MAX_AGE=7 //7 days
+      const COOKIE_MAX_AGE = 7 //7 days
       let origin
 
       function getCookies() {
@@ -27,7 +27,9 @@
             if (payload?.data) {
               const date = new Date()
               date.setDate(date.getDate() + COOKIE_MAX_AGE)
-              document.cookie = `${payload.key}=${JSON.stringify(payload.data)}; SameSite=None; Secure; expires=${date.toUTCString()}`
+              document.cookie = `${payload.key}=${JSON.stringify(
+                payload.data
+              )}; SameSite=None; Secure; expires=${date.toUTCString()}`
               message.data.cookieWasSet = payload.key
               parent.postMessage(message, e.origin)
             }
@@ -94,16 +96,22 @@
         }
         if (allowedDomains?.indexOf(e.origin) > -1) await processMessage(e)
         else {
-          const response = await fetch(`<API_URL>/allowed-domains?domainToCheck=${e.origin}`)
-          if (response.status === 200) {
-            const body = await response.json()
-            if (body) {
-              allowedDomains.push(e.origin)
-              document.cookie = `allowedDomains=${JSON.stringify(allowedDomains)}; SameSite=None; Secure`
-              cookiesMapObj = getCookies()
-              await processMessage(e)
+          try {
+            const response = await fetch(`<API_URL>/allowed-domains?domainToCheck=${e.origin}`)
+            if (response.status === 200) {
+              const body = await response.json()
+              if (body) {
+                allowedDomains.push(e.origin)
+                document.cookie = `allowedDomains=${JSON.stringify(allowedDomains)}; SameSite=None; Secure`
+                cookiesMapObj = getCookies()
+                await processMessage(e)
+              }
+            } else {
+              const message = { id: e?.data?.id, success: false, data: { invalidDomain: true } }
+              parent.postMessage(message, e.origin)
             }
-          } else {
+          } catch (error) {
+            console.error('Error fetching allowed domains:', error)
             const message = { id: e?.data?.id, success: false, data: { invalidDomain: true } }
             parent.postMessage(message, e.origin)
           }
@@ -120,7 +128,7 @@
             // the user confirmed that they want to share, and then (strangely) didn't give permission
             // This will esentially result in the user being asked again, until they
             // explicitly confirm and follow through with giving permission to the site,
-            // or they or hit the deny button. 
+            // or they or hit the deny button.
           }
         }
 
@@ -154,9 +162,9 @@
   </head>
   <body>
     <h2 id="mainText">
-      This site runs on Napster Engine. To automatically use your login across all Napster Engine-powered sites, please confirm
-      below. If you decline, then each Napster Engine-powered site will log in separately, and you will receive this prompt
-      on each site.
+      This site runs on Napster Engine. To automatically use your login across all Napster Engine-powered sites, please
+      confirm below. If you decline, then each Napster Engine-powered site will log in separately, and you will receive
+      this prompt on each site.
     </h2>
     <div class="button-container">
       <button id="confirmButton">Share my login across sites</button>

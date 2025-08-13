@@ -1,7 +1,7 @@
 import { MethodNotAllowed } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import { disallow, discardQuery, iff, isProvider } from 'feathers-hooks-common'
-import { random } from 'lodash'
+import { random } from 'lodash-es'
 
 import { scopePath, ScopeType } from '@ir-engine/common/src/schemas/scope/scope.schema'
 import { identityProviderPath, IdentityProviderType } from '@ir-engine/common/src/schemas/user/identity-provider.schema'

@@ -2,7 +2,7 @@ import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 import packageRoot from 'app-root-path'
 import dotenv from 'dotenv'
 import fs, { readFileSync, writeFileSync } from 'fs'
-import { mergeWith } from 'lodash'
+import { mergeWith } from 'lodash-es'
 import path from 'path'
 import { UserConfig, defineConfig } from 'vite'
 import viteCompression from 'vite-plugin-compression2'
@@ -212,7 +212,7 @@ export default defineConfig(async () => {
         'Origin-Agent-Cluster': '?1'
       },
       watch: {
-        ignored: ['**/server/upload/**']
+        ignored: ['**/server/upload/**', '**/scripts/**']
       },
       ...(isDevOrLocal
         ? {
@@ -227,6 +227,7 @@ export default defineConfig(async () => {
     optimizeDeps: {
       entries: ['./src/main.tsx'],
       include: ['@reactflow/core', '@reactflow/minimap', '@reactflow/controls', '@reactflow/background'],
+      exclude: ['knex'],
 
       esbuildOptions: {
         target: 'es2020',

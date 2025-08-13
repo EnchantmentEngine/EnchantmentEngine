@@ -32,7 +32,14 @@ export default {
     get: [],
     create: [
       disallow('external'),
-      schemaHooks.validateData(locationSettingDataValidator),
+      (...args) => {
+        try {
+          console.trace('Validating data in location-setting hooks:', args[0], args[1])
+          return schemaHooks.validateData(locationSettingDataValidator)(args[0], args[1])
+        } catch (error) {
+          console.error('Error validating data in location-setting hooks:', error, ...args)
+        }
+      },
       schemaHooks.resolveData(locationSettingDataResolver)
     ],
     update: [disallow('external')],

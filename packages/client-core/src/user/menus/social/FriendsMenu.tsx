@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash'
+import { cloneDeep } from 'lodash-es'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
