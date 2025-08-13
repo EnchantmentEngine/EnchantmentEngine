@@ -1,1 +1,1 @@
-APP_ENV=development FORCE_DB_REFRESH=true tsx ../
+APP_ENV=development FORCE_DB_REFRESH=true ts-node --swc ../

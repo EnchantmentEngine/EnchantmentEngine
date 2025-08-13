@@ -20,7 +20,7 @@ export async function getGithubRepoAccessRefreshJobBody(
   jobId: string,
   userId: UserID
 ): Promise<V1Job> {
-  const command = ['npx', 'tsx', 'scripts/refresh-gh-repo-access.ts', '--userId', userId, '--jobId', jobId]
+  const command = ['npx', 'ts-node', '--swc', 'scripts/refresh-gh-repo-access.ts', '--userId', userId, '--jobId', jobId]
 
   const labels = {
     'ir-engine/ghRepoAccessRefresh': 'true',

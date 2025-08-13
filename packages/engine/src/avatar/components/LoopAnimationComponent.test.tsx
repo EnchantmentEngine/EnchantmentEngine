@@ -123,8 +123,7 @@ describe('LoopAnimationComponent', () => {
       })
     })
 
-    /** @todo fails in CI/CD for some reason... */
-    it.skip('Should stop animation when the component is removed', async () => {
+    it('Should stop animation when the component is removed', async () => {
       const entity = createTestGLTFEntity()
 
       setComponent(entity, UUIDComponent, {
