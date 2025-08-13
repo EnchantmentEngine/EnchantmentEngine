@@ -217,6 +217,7 @@ export class GithubStrategy extends CustomOAuthStrategy {
     }
   }
 
+  // @ts-ignore
   async getRedirect(data: AuthenticationResult | Error, params: CustomOAuthParams): Promise<string> {
     let redirectConfig: RedirectConfig
     try {
@@ -255,6 +256,7 @@ export class GithubStrategy extends CustomOAuthStrategy {
     }
   }
 
+  // @ts-ignore
   async authenticate(authentication: AuthenticationRequest, originalParams: CustomOAuthParams) {
     if (authentication.error) {
       if (authentication.error.message === 'Bad credentials')

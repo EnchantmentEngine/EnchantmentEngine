@@ -161,6 +161,7 @@ export class DiscordStrategy extends CustomOAuthStrategy {
     }
   }
 
+  // @ts-ignore
   async getRedirect(data: AuthenticationResult | Error, params: CustomOAuthParams): Promise<string> {
     let redirectConfig: RedirectConfig
     try {
@@ -200,6 +201,7 @@ export class DiscordStrategy extends CustomOAuthStrategy {
     }
   }
 
+  // @ts-ignore
   async authenticate(authentication: AuthenticationRequest, originalParams: Params) {
     if (authentication.error) {
       if (authentication.error === 'access_denied') throw new Error('You canceled the Discord OAuth login flow')
