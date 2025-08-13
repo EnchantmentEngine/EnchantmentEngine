@@ -144,6 +144,7 @@ const execute = () => {
 
   /** Render immersive media bubbles */
   for (const [userEntity, videoMeshEntity] of AvatarUI.entries()) {
+    if (!hasComponent(userEntity, AvatarComponent)) continue
     const transition = AvatarUITransitions.get(userEntity)!
     const { avatarHeight } = getComponent(userEntity, AvatarComponent)
 

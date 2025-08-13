@@ -473,7 +473,7 @@ const useGLTFDocument = (entity: Entity) => {
     const signal = abortController.signal
 
     const onError = (error: ErrorEvent) => {
-      addError(entity, GLTFComponent, 'LOADING_ERROR', 'Error loading model ' + url)
+      addError(entity, GLTFComponent, 'LOADING_ERROR', 'Error loading model ' + url + ': ' + error.message)
     }
 
     removeError(entity, GLTFComponent, 'LOADING_ERROR')

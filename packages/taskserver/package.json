@@ -33,8 +33,8 @@
   },
   "scripts": {
     "check-errors": "tsc --noemit && npx cycle-import-check src || true",
-    "start": "cross-env APP_ENV=production ts-node --swc src/index.ts",
-    "dev": "cross-env APP_ENV=development NODE_OPTIONS='--inspect' ts-node --swc src/index.ts",
+    "start": "cross-env APP_ENV=production tsx src/index.ts",
+    "dev": "cross-env APP_ENV=development NODE_OPTIONS='--inspect' tsx src/index.ts",
     "test": "exit 0",
     "validate": "npm run build && npm run test"
   },
