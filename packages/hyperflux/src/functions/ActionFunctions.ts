@@ -10,13 +10,10 @@ import { setInitialState, StateDefinitions } from './StateFunctions'
 import { HyperFlux } from './StoreFunctions'
 
 /**
- * NOTE: ts-matches has been fully removed.
- * All action definitions now rely on JSON Schema definitions (see ecs JSONSchemaUtils).
+ * Actions now use the compiled ECS Schema system (see ecs JSONSchemas / JSONSchemaTypes).
  */
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore (cross package path may be adjusted later)
-import type { JSONSchema } from '../../ecs/src/schemas/JSONSchemaUtils'
+import type { Schema, Static } from '../../../ecs/src/schemas/JSONSchemaTypes'
+import { Kind } from '../../../ecs/src/schemas/JSONSchemaTypes'
 
 export type Topic = OpaqueType<'Topic'> & string
 
@@ -46,8 +43,6 @@ export type ActionOptions = {
 /** Generic action (flat payload + meta) */
 export type AnyAction = { type: string | string[] } & ActionOptions & Record<string, any>
 
-// Backwards compatibility alias (legacy code may still reference ResolvedActionType)
-// After migration, replace those references directly with AnyAction.
 export type ResolvedActionType<Shape = any> = AnyAction
 
 /** Utility: deep equality (used in caching logic) */
@@ -65,70 +60,133 @@ export function deepEqual(x: any, y: any): boolean {
   return false
 }
 
-// ---------------------------------------------------------------------------
-// JSON Schema Validation / Defaults (lightweight; no external libs)
-// ---------------------------------------------------------------------------
-const validateJSONSchemaValue = (schema: JSONSchema | undefined, value: any, path: string, errors: string[]) => {
-  if (!schema) return
-  const type = (schema as any).type
-  const currentPath = path || '(root)'
-  if ((schema as any).oneOf && (schema as any).oneOf.length) {
-    const variants: JSONSchema[] = (schema as any).oneOf
-    const snapshots: string[][] = []
-    for (const variant of variants) {
-      const sub: string[] = []
-      validateJSONSchemaValue(variant, value, currentPath, sub)
-      if (!sub.length) return
-      snapshots.push(sub)
+// -------------------------------------------------------------
+// Compiled Schema Helpers (defaults + validation)
+// -------------------------------------------------------------
+const baseDefaults: Record<string, any> = {
+  Number: 0,
+  Bool: false,
+  String: '',
+  Array: () => [],
+  Tuple: () => [],
+  Record: () => ({}),
+  Object: () => ({}),
+  Union: undefined,
+  Literal: undefined,
+  Null: null,
+  Undefined: undefined,
+  Any: undefined
+}
+
+const clone = <T>(v: T): T =>
+  Array.isArray(v) ? (v.slice() as any) : v && typeof v === 'object' ? { ...(v as any) } : v
+
+const applyDefaultsFromCompiledSchema = (schema: Schema, target: any): any => {
+  const kind = (schema as any)[Kind] as string
+  const opt = (schema as any).options || {}
+  let value = target
+  if (value === undefined) {
+    if (opt.default !== undefined) {
+      try {
+        value = typeof opt.default === 'function' && opt.default.length === 0 ? (opt.default as any)() : opt.default
+      } catch {
+        value = opt.default
+      }
+    } else if (baseDefaults[kind]) {
+      const base = baseDefaults[kind]
+      value = typeof base === 'function' ? base() : clone(base)
     }
-    errors.push(`Value at ${currentPath} failed all oneOf variants. First errors: ${snapshots[0]?.join('; ')}`)
-    return
   }
-  if ((schema as any).enum) {
-    if (!(schema as any).enum.includes(value))
-      errors.push(`Value at ${currentPath} not in enum ${(schema as any).enum.join(',')}`)
-    return
+  switch (kind) {
+    case 'Object': {
+      const props = (schema as any).properties || {}
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) value = {}
+      for (const [k, propSchema] of Object.entries<any>(props)) {
+        value[k] = applyDefaultsFromCompiledSchema(propSchema, value[k])
+      }
+      break
+    }
+    case 'Array': {
+      if (!Array.isArray(value)) value = []
+      break
+    }
+    case 'Tuple': {
+      if (!Array.isArray(value)) value = []
+      const items: Schema[] = (schema as any).properties || []
+      for (let i = 0; i < items.length; i++) value[i] = applyDefaultsFromCompiledSchema(items[i], value[i])
+      break
+    }
+    case 'Record': {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) value = {}
+      break
+    }
+    case 'Union': {
+      // select first schema default if union has schemas
+      const variants: Schema[] = (schema as any).properties || []
+      if (value === undefined && variants.length) value = applyDefaultsFromCompiledSchema(variants[0], undefined)
+      break
+    }
+    default:
+      break
   }
-  if ((schema as any).const !== undefined) {
-    if (value !== (schema as any).const) errors.push(`Value at ${currentPath} !== const ${(schema as any).const}`)
-    return
+  return value
+}
+
+const validateCompiledSchemaValue = (schema: Schema, value: any, path: string, errors: string[]): void => {
+  const kind = (schema as any)[Kind] as string
+  const current = path || '(root)'
+  const opt = (schema as any).options || {}
+  if (opt.validate) {
+    try {
+      if (!(opt.validate as any)(value, undefined, undefined)) errors.push(`Custom validate failed at ${current}`)
+    } catch (e) {
+      errors.push(`Custom validator threw at ${current}: ${(e as Error).message}`)
+    }
   }
-  switch (type) {
-    case 'string':
-      if (typeof value !== 'string') errors.push(`Expected string at ${currentPath}`)
+  switch (kind) {
+    case 'Number':
+      if (typeof value !== 'number') errors.push(`Expected number at ${current}`)
       break
-    case 'number':
-      if (typeof value !== 'number') errors.push(`Expected number at ${currentPath}`)
+    case 'Bool':
+      if (typeof value !== 'boolean') errors.push(`Expected boolean at ${current}`)
       break
-    case 'boolean':
-      if (typeof value !== 'boolean') errors.push(`Expected boolean at ${currentPath}`)
+    case 'String':
+      if (typeof value !== 'string') errors.push(`Expected string at ${current}`)
       break
-    case 'object': {
+    case 'Literal': {
+      const lit = (schema as any).properties
+      if (value !== lit) errors.push(`Expected literal ${lit} at ${current}`)
+      break
+    }
+    case 'Object': {
       if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-        errors.push(`Expected object at ${currentPath}`)
+        errors.push(`Expected object at ${current}`)
         return
       }
-      const req: string[] | undefined = (schema as any).required
-      if (req)
-        for (const r of req)
-          if (!(r in value)) errors.push(`Missing required ${currentPath === '(root)' ? r : currentPath + '.' + r}`)
-      if (schema.properties) {
-        for (const [k, sub] of Object.entries(schema.properties)) {
-          if (value[k] !== undefined)
-            validateJSONSchemaValue(sub, value[k], currentPath === '(root)' ? k : currentPath + '.' + k, errors)
-        }
-      }
+      const props = (schema as any).properties || {}
+      for (const [k, propSchema] of Object.entries<any>(props))
+        validateCompiledSchemaValue(propSchema, (value as any)[k], current === '(root)' ? k : current + '.' + k, errors)
       break
     }
-    case 'array': {
+    case 'Array':
+    case 'Tuple': {
       if (!Array.isArray(value)) {
-        errors.push(`Expected array at ${currentPath}`)
+        errors.push(`Expected array/tuple at ${current}`)
         return
       }
-      if (schema.items) {
-        for (let i = 0; i < value.length; i++)
-          validateJSONSchemaValue(schema.items, value[i], `${currentPath}[${i}]`, errors)
-      }
+      break
+    }
+    case 'Union': {
+      const variants: Schema[] = (schema as any).properties || []
+      if (
+        variants.length &&
+        !variants.some((v) => {
+          const errs: string[] = []
+          validateCompiledSchemaValue(v, value, current, errs)
+          return !errs.length
+        })
+      )
+        errors.push(`Value at ${current} failed union variants`)
       break
     }
     default:
@@ -136,41 +194,18 @@ const validateJSONSchemaValue = (schema: JSONSchema | undefined, value: any, pat
   }
 }
 
-const applyDefaultsFromSchema = (schema: JSONSchema | undefined, target: any): any => {
-  if (!schema) return target
-  if ((schema as any).default !== undefined && target === undefined) return (schema as any).default
-  switch (schema.type) {
-    case 'object': {
-      if (!target || typeof target !== 'object' || Array.isArray(target)) target = {}
-      if (schema.properties) {
-        for (const [k, sub] of Object.entries(schema.properties)) {
-          const applied = applyDefaultsFromSchema(sub, target[k])
-          target[k] = applied === undefined ? target[k] : applied
-        }
-      }
-      break
-    }
-    case 'array':
-      if (!Array.isArray(target)) target = []
-      break
-    default:
-      if ((schema as any).default !== undefined && target === undefined) return (schema as any).default
-  }
-  return target
-}
-
-// ---------------------------------------------------------------------------
-// Action Definition API
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------
+// Action Definition API (compiled schemas)
+// -------------------------------------------------------------
 export type ActionCreator<P extends Record<string, any>, TType extends string> = {
   (partial?: Partial<P> & ActionOptions): AnyAction & P & { type: TType | string[] }
   type: TType
-  schema: JSONSchema
+  schema: Schema
   defaults: () => Partial<P>
   validate: (payload: unknown) => payload is P
-  extend: <CT extends string, CP extends Record<string, any>>(def: {
+  extend: <CT extends string, CS extends Schema, CP extends Record<string, any>>(def: {
     type: CT
-    schema: JSONSchema
+    schema: CS
     defaults?: Partial<CP> | (() => Partial<CP>)
   }) => ActionCreator<CP, CT>
   receive: (fn: (action: AnyAction & P & { type: TType | string[] }) => void) => ActionReceptor<P, TType>
@@ -192,12 +227,13 @@ export function isActionReceptor(f: any): f is ActionReceptor<any, any> {
 
 export const ActionDefinitions: Record<string, ActionCreator<any, string>> = {}
 
-export function defineAction<TType extends string, S extends JSONSchema, P extends Record<string, any>>(def: {
+export function defineAction<TType extends string, S extends Schema & { [Kind]: 'Object' }>(def: {
   type: TType | [TType, ...string[]]
   schema: S
-  defaults?: Partial<P> | (() => Partial<P>)
+  defaults?: Partial<Static<S>> | (() => Partial<Static<S>>)
   meta?: Partial<ActionOptions>
-}): ActionCreator<P, TType> {
+}): ActionCreator<Static<S> & Record<string, any>, TType> {
+  type P = Static<S> & Record<string, any>
   const typeChain = Array.isArray(def.type) ? def.type : [def.type]
   const primaryType = typeChain[0] as TType
   const getDefaults = (): Partial<P> =>
@@ -205,20 +241,19 @@ export function defineAction<TType extends string, S extends JSONSchema, P exten
 
   const validate = (payload: unknown): payload is P => {
     const errors: string[] = []
-    validateJSONSchemaValue(def.schema, payload, '', errors)
+    validateCompiledSchemaValue(def.schema, payload, '', errors)
     return !errors.length
   }
 
   const creator = ((partial?: Partial<P> & ActionOptions) => {
-    const payload: any = {}
-    for (const [k, sub] of Object.entries(def.schema.properties || {}))
-      payload[k] = applyDefaultsFromSchema(sub, undefined)
+    const payload: any = applyDefaultsFromCompiledSchema(def.schema, {})
     Object.assign(payload, getDefaults())
     if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
 
     const errors: string[] = []
-    validateJSONSchemaValue(def.schema, payload, '', errors)
-    if (errors.length) throw new Error(`Schema validation failed for action ${primaryType}:\n${errors.join('\n')}`)
+    validateCompiledSchemaValue(def.schema, payload, '', errors)
+    if (errors.length)
+      throw new Error(`Schema validation failed for action ${primaryType} (compiled):\n${errors.join('\n')}`)
 
     const action: AnyAction = {
       ...payload,
@@ -238,15 +273,17 @@ export function defineAction<TType extends string, S extends JSONSchema, P exten
   creator.extend = (ext) =>
     defineAction({
       type: [ext.type, ...typeChain],
-      schema: ext.schema,
-      defaults: ext.defaults
+      schema: ext.schema as any,
+      defaults: ext.defaults as any
     }) as any
   creator.matches = (a: AnyAction): a is AnyAction & P & { type: TType | string[] } => {
     if (!a || !a.type) return false
     const types = Array.isArray(a.type) ? a.type : [a.type]
     if (!types.includes(primaryType)) return false
     const subset: any = {}
-    for (const key of Object.keys(def.schema.properties || {})) subset[key] = (a as any)[key]
+    if ((def.schema as any)[Kind] === 'Object') {
+      for (const key of Object.keys((def.schema as any).properties || {})) subset[key] = (a as any)[key]
+    }
     return validate(subset)
   }
   creator.matchesAction = { test: (a: AnyAction) => creator.matches(a) }
@@ -264,9 +301,9 @@ export function defineAction<TType extends string, S extends JSONSchema, P exten
   return creator
 }
 
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------
 // Dispatch & Processing Pipeline (unchanged semantics)
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------
 export const dispatchAction = <A extends AnyAction>(_action: A) => {
   const action = JSON.parse(JSON.stringify(_action)) as AnyAction
 
@@ -290,12 +327,11 @@ export const dispatchAction = <A extends AnyAction>(_action: A) => {
     action.$stack = stack
   }
 
-  // Cast to a stricter internal representation where required meta are non-optional
   const internal = action as Required<Pick<ActionOptions, '$uuid' | '$time' | '$topic' | '$to' | '$peer' | '$user'>> &
     AnyAction
 
   HyperFlux.store.actions.incoming.push(internal as any)
-  addOutgoingTopicIfNecessary(topic)
+  addOutgoingTopicIfNecessary(topic as Topic)
   return Object.freeze(action) as A
 }
 
@@ -345,7 +381,7 @@ const _updateCachedActions = (incomingAction: AnyAction) => {
 
 const applyIncomingActionsToAllQueues = (action: AnyAction) => {
   for (const [queueHandle, queue] of HyperFlux.store.actions.queues) {
-    if (queueHandle.test(action)) {
+    if ((queueHandle as any).test(action)) {
       if (queue.actions.length > 0) {
         const last = queue.actions.at(-1) as AnyAction
         if (last && last.$time !== undefined && action.$time !== undefined && last.$time > action.$time)
@@ -412,7 +448,6 @@ const _applyIncomingAction = (action: AnyAction) => {
   _updateCachedActions(action)
   createEventSourceQueues(action)
   applyIncomingActionsToAllQueues(action)
-  // receptor execution errors handled downstream; leaving placeholder for future logging hook
   const messageStackError = (e: any) => {
     const message = (e as Error).message
     const stack = (e as Error).stack?.split('\n') || []
@@ -421,7 +456,7 @@ const _applyIncomingAction = (action: AnyAction) => {
     HyperFlux.store.logger('hyperflux:action').error(e)
   }
   try {
-    /* no-op */
+    /* receptor execution handled separately */
   } catch (e) {
     messageStackError(e)
   } finally {
@@ -438,8 +473,7 @@ const _forwardIfNecessary = (action: AnyAction) => {
   if (HyperFlux.store.peerID === action.$peer || HyperFlux.store.forwardingTopics.has(action.$topic as Topic)) {
     const outgoingActions = HyperFlux.store.actions.outgoing[action.$topic as Topic]
     if (!outgoingActions) return
-    if (action.$uuid && outgoingActions.forwardedUUIDs.has(action.$uuid))
-      return // Relax typing: queue can store partial meta actions
+    if (action.$uuid && outgoingActions.forwardedUUIDs.has(action.$uuid)) return
     ;(outgoingActions.queue as AnyAction[]).push(action)
     if (action.$uuid) outgoingActions.forwardedUUIDs.add(action.$uuid)
   }
@@ -471,9 +505,9 @@ export const clearOutgoingActions = (topic: Topic) => {
   queue.length = 0
 }
 
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------
 // Action Queues
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------
 export type ActionMatcher = { test: (a: AnyAction) => boolean }
 
 export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
@@ -528,7 +562,7 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
   return actionQueueGetter as any
 }
 
-export const createActionQueue = defineActionQueue // deprecated alias
+export const createActionQueue = defineActionQueue
 
 export type ActionQueueHandle = ReturnType<typeof defineActionQueue>
 export type ActionQueueInstance = {
@@ -542,8 +576,7 @@ export const removeActionQueue = (queueHandle: ActionQueueHandle) => {
   HyperFlux.store.actions.queues.delete(queueHandle)
 }
 
-// Convenience helper for schema-based creators
-export const dispatchSchemaAction = <T extends string, P extends Record<string, any>>(
-  creator: ActionCreator<P, T>,
-  partial?: Partial<P> & ActionOptions
-) => dispatchAction(creator(partial))
+export const dispatchSchemaAction = <T extends string, S extends Schema & { [Kind]: 'Object' }>(
+  creator: ActionCreator<Static<S> & Record<string, any>, T>,
+  partial?: Partial<Static<S>> & ActionOptions
+) => dispatchAction(creator(partial as any))

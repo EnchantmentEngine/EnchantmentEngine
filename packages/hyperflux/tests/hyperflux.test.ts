@@ -15,21 +15,41 @@ import {
   removeActionQueue
 } from '..'
 
+// Since defineAction now expects a compiled Schema (Kind:'Object'), we provide minimal object schemas.
+const emptyObjectSchema: any = { [Symbol.for('Kind')]: 'Object', properties: {}, options: {} }
+const stringGreetingSchema: any = {
+  [Symbol.for('Kind')]: 'Object',
+  properties: { greeting: { [Symbol.for('Kind')]: 'String', options: {} } },
+  options: {}
+}
+const patternSchema: any = {
+  [Symbol.for('Kind')]: 'Object',
+  properties: {
+    payload: { [Symbol.for('Kind')]: 'String', options: {} },
+    optionalThing: { [Symbol.for('Kind')]: 'Number', options: {} }
+  },
+  options: {}
+}
+const defaultValuesSchema: any = {
+  [Symbol.for('Kind')]: 'Object',
+  properties: {
+    count: { [Symbol.for('Kind')]: 'Number', options: {} },
+    greeting: { [Symbol.for('Kind')]: 'String', options: {} }
+  },
+  options: {}
+}
+
 // Helper to build a basic greeting action with default greeting
 const makeGreetingAction = (type: string, defaultGreeting: string) =>
   defineAction({
     type,
-    schema: {
-      type: 'object',
-      properties: { greeting: { type: 'string' } },
-      required: ['greeting']
-    },
+    schema: stringGreetingSchema,
     defaults: () => ({ greeting: defaultGreeting })
   })
 
-describe('Hyperflux Unit Tests (JSON Schema Actions)', () => {
+describe('Hyperflux Unit Tests (Compiled Schema Actions)', () => {
   it('should define and create a simple action', () => {
-    const test = defineAction({ type: 'TEST_ACTION', schema: { type: 'object', properties: {} } })
+    const test = defineAction({ type: 'TEST_ACTION', schema: emptyObjectSchema })
     const action = test({})
     assert.equal(action.type, 'TEST_ACTION')
     assert(test.matchesAction.test(action))
@@ -40,11 +60,7 @@ describe('Hyperflux Unit Tests (JSON Schema Actions)', () => {
   it('should define and create actions with required + optional fields', () => {
     const test = defineAction({
       type: 'TEST_PATTERN',
-      schema: {
-        type: 'object',
-        properties: { payload: { type: 'string' }, optionalThing: { type: 'number' } },
-        required: ['payload']
-      }
+      schema: patternSchema
     })
     assert.throws(() => test({ payload: 100 } as any), /Schema validation failed/)
     const action = test({ payload: 'abcd', $cache: false })
@@ -58,11 +74,7 @@ describe('Hyperflux Unit Tests (JSON Schema Actions)', () => {
     let count = 0
     const test = defineAction({
       type: 'TEST_DEFAULT_VALUES',
-      schema: {
-        type: 'object',
-        properties: { count: { type: 'number' }, greeting: { type: 'string' } },
-        required: ['count', 'greeting']
-      },
+      schema: defaultValuesSchema,
       defaults: () => ({ count: count++, greeting: 'hi' })
     })
     assert.equal(test({}).count, 0)
@@ -216,7 +228,7 @@ describe('Hyperflux Unit Tests (JSON Schema Actions)', () => {
     assert.equal(queue1().length, 2)
     assert.equal(queue2().length, 2)
     removeActionQueue(queue1 as any)
-    assert.equal(queue2().length, 0) // consumption
+    assert.equal(queue2().length, 0)
   })
 
   it('should reset queue on out-of-order follow-up actions', () => {
