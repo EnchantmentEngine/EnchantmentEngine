@@ -1,56 +1,45 @@
 import { defineAction, getState, NetworkTopics } from '@ir-engine/hyperflux'
 import { EngineState } from '../EngineState'
 import { S } from '../schemas/JSONSchemas'
-import { GenerateJSONSchema } from '../schemas/JSONSchemaUtils'
-
-const J = (schema: any) => GenerateJSONSchema(schema)! // helper to assert generation
 
 export class WorldNetworkAction {
   static spawnEntity = defineAction({
     type: 'ee.network.SPAWN_ENTITY',
-    schema: J(
-      S.Object({
-        entityID: S.EntityID({ required: true }),
-        entitySourceID: S.String({ required: true }), // no SourceID helper yet
-        parentUUID: S.EntityUUID({ required: true }),
-        ownerID: S.UserID({ required: true }),
-        authorityPeerId: S.Optional(S.PeerID())
-      })
-    ),
+    schema: S.Object({
+      entityID: S.EntityID({ required: true }),
+      entitySourceID: S.String({ required: true }), // no SourceID helper yet
+      parentUUID: S.EntityUUID({ required: true }),
+      ownerID: S.UserID({ required: true }),
+      authorityPeerId: S.Optional(S.PeerID())
+    }),
     defaults: () => ({ ownerID: getState(EngineState).userID }),
     meta: { $cache: true, $topic: NetworkTopics.world }
   })
 
   static destroyEntity = defineAction({
     type: 'ee.network.DESTROY_ENTITY',
-    schema: J(
-      S.Object({
-        entityUUID: S.EntityUUID({ required: true })
-      })
-    ),
+    schema: S.Object({
+      entityUUID: S.EntityUUID({ required: true })
+    }),
     meta: { $cache: true, $topic: NetworkTopics.world }
   })
 
   static requestAuthorityOverObject = defineAction({
     type: 'ee.engine.world.REQUEST_AUTHORITY_OVER_ENTITY',
-    schema: J(
-      S.Object({
-        entityUUID: S.EntityUUID({ required: true }),
-        newAuthority: S.PeerID({ required: true })
-      })
-    ),
+    schema: S.Object({
+      entityUUID: S.EntityUUID({ required: true }),
+      newAuthority: S.PeerID({ required: true })
+    }),
     meta: { $topic: NetworkTopics.world }
   })
 
   static transferAuthorityOfObject = defineAction({
     type: 'ee.engine.world.TRANSFER_AUTHORITY_OF_ENTITY',
-    schema: J(
-      S.Object({
-        ownerID: S.UserID({ required: true }),
-        entityUUID: S.EntityUUID({ required: true }),
-        newAuthority: S.PeerID({ required: true })
-      })
-    ),
+    schema: S.Object({
+      ownerID: S.UserID({ required: true }),
+      entityUUID: S.EntityUUID({ required: true }),
+      newAuthority: S.PeerID({ required: true })
+    }),
     meta: { $topic: NetworkTopics.world, $cache: true }
   })
 }

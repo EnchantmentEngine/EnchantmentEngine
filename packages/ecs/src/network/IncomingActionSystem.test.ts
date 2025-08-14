@@ -14,7 +14,8 @@ import {
 
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
-const TestAction = defineAction({ type: 'test', schema: { type: 'object', properties: {} } })
+const emptyObjectCompiledSchema: any = { [Symbol.for('Kind')]: 'Object', properties: {}, options: {} }
+const TestAction = defineAction({ type: 'test', schema: emptyObjectCompiledSchema })
 
 describe('IncomingActionSystem Unit Tests', async () => {
   beforeEach(() => {
