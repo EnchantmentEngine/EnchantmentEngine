@@ -14,7 +14,7 @@ import {
 
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
-const TestAction = defineAction({ type: 'test' })
+const TestAction = defineAction({ type: 'test', schema: { type: 'object', properties: {} } })
 
 describe('IncomingActionSystem Unit Tests', async () => {
   beforeEach(() => {
@@ -43,8 +43,9 @@ describe('IncomingActionSystem Unit Tests', async () => {
         $to: '0' as ActionRecipients
       })
       action.$topic = NetworkTopics.world
-
-      Engine.instance.store.actions.incoming.push(action)
+      // normalize meta so typing matches internal queue expectations
+      action.$uuid = action.$uuid || 'test-future-uuid'
+      Engine.instance.store.actions.incoming.push(action as any)
 
       /* run */
       applyIncomingActions()
@@ -68,8 +69,8 @@ describe('IncomingActionSystem Unit Tests', async () => {
         $to: '0' as ActionRecipients
       })
       action.$topic = NetworkTopics.world
-
-      Engine.instance.store.actions.incoming.push(action)
+      action.$uuid = action.$uuid || 'test-past-uuid'
+      Engine.instance.store.actions.incoming.push(action as any)
 
       /* run */
       applyIncomingActions()
@@ -89,15 +90,15 @@ describe('IncomingActionSystem Unit Tests', async () => {
         $cache: true
       })
       action.$topic = NetworkTopics.world
-
-      Engine.instance.store.actions.incoming.push(action)
+      action.$uuid = action.$uuid || 'test-cache-uuid'
+      Engine.instance.store.actions.incoming.push(action as any)
 
       /* run */
       applyIncomingActions()
 
       /* assert */
       strictEqual(Engine.instance.store.actions.history.length, 1)
-      assert(Engine.instance.store.actions.cached.indexOf(action) !== -1)
+      assert(Engine.instance.store.actions.cached.indexOf(action as any) !== -1)
     })
   })
 })
