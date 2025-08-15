@@ -2,7 +2,7 @@ import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
 
 import { isIPhone } from '../common/functions/isMobile'
-import { RenderModes, RenderModesType } from './constants/RenderModes'
+import { RenderBackends, RenderBackendsType, RenderModes, RenderModesType } from './constants/RenderModes'
 
 export const RendererState = defineState({
   name: 'RendererState',
@@ -24,7 +24,16 @@ export const RendererState = defineState({
     gridHeight: 0,
     forceBasicMaterials: false,
     shadowMapResolution: isIPhone ? 256 : 1024,
-    infiniteGridHelperEntity: null as Entity | null
+    infiniteGridHelperEntity: null as Entity | null,
+    backend: RenderBackends.WEBGL as RenderBackendsType,
+    features: {
+      astcSupported: false,
+      etc1Supported: false,
+      etc2Supported: false,
+      dxtSupported: false,
+      bptcSupported: false,
+      pvrtcSupported: false
+    } as Record<string, boolean | void>
   }),
   extension: syncStateWithLocalStorage([
     'qualityLevel',

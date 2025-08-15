@@ -63,7 +63,8 @@ import {
   Raycaster,
   Texture,
   Vector2,
-  Vector3
+  Vector3,
+  WebGLRenderer
 } from 'three'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
@@ -1559,7 +1560,8 @@ describe('RendererShadowReactor', async () => {
       await flushAll()
 
       expect(root.reflection().hasSuspendedOrTimeoutInTree).toBeFalsy()
-      const result = getComponent(testEntity, RendererComponent).renderer?.shadowMap.autoUpdate
+      const renderer = getComponent(testEntity, RendererComponent).renderer as WebGLRenderer
+      const result = renderer?.shadowMap.autoUpdate
       expect(result).not.toBe(Initial)
       expect(result).toBe(Expected)
     })

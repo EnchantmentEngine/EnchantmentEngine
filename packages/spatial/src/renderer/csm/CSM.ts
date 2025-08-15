@@ -11,20 +11,30 @@ import {
 } from 'three'
 
 import { createEntity, defineQuery, EntityTreeComponent, removeEntity, UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  getComponent,
+  getOptionalComponent,
+  hasComponent,
+  removeComponent,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
+import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
+import WebGPUBackend from 'three/src/renderers/webgpu/WebGPUBackend.js'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { NameComponent } from '../../common/NameComponent'
 import { Vector3_Zero } from '../../common/constants/MathConstants'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
+import { RendererComponent } from '../components/RendererComponent'
+import { getMaxShadowCascades, supportsShaderChunkInjection } from '../functions/RendererBackendUtils'
 import { MaterialStateComponent } from '../materials/MaterialComponent'
 import { CSMComponent } from './CSMComponent'
 import { CSMPluginComponent } from './CSMPluginComponent'
 import Frustum from './Frustum'
-import Shader from './Shader'
+import CSMShader from './Shader'
 
 const originalLightsFragmentBegin = ShaderChunk.lights_fragment_begin
 const originalLightsParsBegin = ShaderChunk.lights_pars_begin
@@ -61,13 +71,13 @@ export type CSMParams = {
   lightFar?: number
   lightMargin?: number
   fade?: boolean
+  csmShadowNode?: any
 }
 
 function uniformSplit(amount: number, near: number, far: number, target: number[]): void {
   for (let i = 1; i < amount; i++) {
     target.push((near + ((far - near) * i) / amount) / far)
   }
-
   target.push(1)
 }
 
@@ -92,7 +102,7 @@ function practicalSplit(amount: number, near: number, far: number, lambda: numbe
   target.push(1)
 }
 
-function createLight(i: number, rendererEntity: Entity): void {
+function createLight(i: number, rendererEntity: Entity, sourceLight?: DirectionalLight): void {
   const csm = getComponent(rendererEntity, CSMComponent)
 
   const light = new DirectionalLight(csm.lightColor, csm.lightIntensity)
@@ -104,6 +114,13 @@ function createLight(i: number, rendererEntity: Entity): void {
 
   light.shadow.camera.near = 0
   light.shadow.camera.far = 1
+  light.shadow.camera.updateProjectionMatrix()
+
+  //if using webgpu
+  if (rendererEntity && getOptionalComponent(rendererEntity, RendererComponent)?.renderer instanceof WebGPUBackend) {
+    const shadowNode = sourceLight?.shadow.shadowNode as CSMShadowNode
+    shadowNode.lights.push(light)
+  }
 
   const lightEntity = createEntity()
   setComponent(lightEntity, UUIDComponent, {
@@ -138,7 +155,7 @@ function createLights(sourceLight?: DirectionalLight, rendererEntity?: Entity): 
     csm.lightColor = sourceLight.color.clone()
 
     for (let i = 0; i < csm.cascades; i++) {
-      createLight(i, entity)
+      createLight(i, entity, sourceLight)
     }
     return
   }
@@ -158,6 +175,11 @@ function initCascades(rendererEntity?: Entity): void {
   const mainFrustum = new Frustum()
   mainFrustum.setFromProjectionMatrix(camera.projectionMatrix, csm.maxFar)
 
+  // const csmShadowNode = (csm as any).csmShadowNode?.value
+  // if (csmShadowNode) {
+  //   csmShadowNode.mainFrustum.camera = camera.cameras[0]
+  // }
+
   const frustums: Frustum[] = []
 
   mainFrustum.split(csm.breaks as number[], frustums)
@@ -170,11 +192,22 @@ function updateShadowBounds(rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
   const csm = getComponent(entity, CSMComponent)
   const frustums = csm.frustums
+  const c = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const csmShadowNode = (csm as any).csmShadowNode
+  // try {
+  //   if (csmShadowNode) {
+  //     csmShadowNode.camera = c.cameras[0]
+  //     csmShadowNode.updateFrustums()
+  //     return
+  //   }
+  //   return
+  // } catch (e) {
+  //   console.log('no csm shadow node', e)
+  // }
 
-  for (let i = 0; i < frustums.length; i++) {
+  for (let i = 0; i < csm.frustums.length; i++) {
     const light = csm.lights[i]
     if (!light) continue
-
     const shadowCam = light.shadow.camera
     const frustum = csm.frustums[i]
 
@@ -260,14 +293,16 @@ function updateCSM(rendererEntity: Entity): void {
   }
 
   if (csm.needsUpdate) {
-    injectInclude()
+    injectInclude(entity)
     updateFrustums(entity)
+
     for (const light of csm.lights) {
       light.shadow.map?.dispose()
       light.shadow.map = null as any
       light.shadow.camera.updateProjectionMatrix()
       light.shadow.needsUpdate = true
     }
+
     mutableCsm.needsUpdate = false
   }
 
@@ -314,14 +349,29 @@ function updateCSM(rendererEntity: Entity): void {
   }
 }
 
-function injectInclude(): void {
-  ShaderChunk.lights_fragment_begin = Shader.lights_fragment_begin
-  ShaderChunk.lights_pars_begin = Shader.lights_pars_begin
+function injectInclude(rendererEntity?: Entity): void {
+  const entity = rendererEntity || Engine.instance.viewerEntity
+
+  // if (entity) {
+  //   console.warn('CSM: Current renderer does not support Cascaded Shadow Maps')
+  //   return
+  // }
+
+  if (supportsShaderChunkInjection(entity)) {
+    const csmShader = CSMShader
+    ShaderChunk.lights_fragment_begin = csmShader.lights_fragment_begin
+    ShaderChunk.lights_pars_begin = csmShader.lights_pars_begin
+    console.log('CSM: Injected GLSL shader chunks for WebGL renderer')
+  }
 }
 
-function removeInclude(): void {
-  ShaderChunk.lights_fragment_begin = originalLightsFragmentBegin
-  ShaderChunk.lights_pars_begin = originalLightsParsBegin
+function removeInclude(rendererEntity?: Entity): void {
+  const entity = rendererEntity || Engine.instance.viewerEntity
+
+  if (supportsShaderChunkInjection(entity)) {
+    ShaderChunk.lights_fragment_begin = originalLightsFragmentBegin
+    ShaderChunk.lights_pars_begin = originalLightsParsBegin
+  }
 }
 
 function updateUniforms(rendererEntity?: Entity): void {
@@ -331,7 +381,6 @@ function updateUniforms(rendererEntity?: Entity): void {
   const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
   const far = Math.min(camera.far, csm.maxFar)
 
-  // Create a new shaders object to update
   const updatedShaders = { ...csm.shaders }
 
   for (const materialUuid in updatedShaders) {
@@ -419,6 +468,7 @@ function disposeCSM(rendererEntity: Entity): void {
     }
   }
   if (hasComponent(rendererEntity, CSMComponent)) removeCSMLights(rendererEntity)
+  removeInclude(rendererEntity)
   removeComponent(rendererEntity, CSMComponent)
 }
 
@@ -441,42 +491,70 @@ const CSMDefaults = Object.freeze({
   lights: [],
   lightEntities: [],
   shaders: {},
+  csmShadowNode: undefined,
+  webgpuEnhanced: false,
+  shadowSoftness: 1.0,
+  ambientShadowColor: [0.1, 0.1, 0.2],
+  shadowColorTint: [0.8, 0.8, 1.0],
   needsUpdate: true
 })
+
+function validateCSMParams(params: CSMParams, rendererEntity?: Entity): CSMParams {
+  const entity = rendererEntity || Engine.instance.viewerEntity
+  const validatedParams = { ...params }
+
+  if (validatedParams.cascades) {
+    const maxCascades = getMaxShadowCascades(entity)
+    if (validatedParams.cascades > maxCascades) {
+      console.warn(
+        `CSM: Requested ${validatedParams.cascades} cascades, but renderer only supports ${maxCascades}. Clamping to ${maxCascades}.`
+      )
+      validatedParams.cascades = maxCascades
+    }
+  }
+
+  return validatedParams
+}
 
 function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
   const entity = rendererEntity || Engine.instance.viewerEntity
 
-  // Ensure the entity has a CSMComponent
+  const validatedParams = validateCSMParams(params, entity)
+
   if (!hasComponent(entity, CSMComponent)) {
     setComponent(entity, CSMComponent)
   }
 
   const csm = getComponent(entity, CSMComponent)
 
-  csm.cascades = params.cascades ?? CSMDefaults.cascades
-  csm.maxFar = params.maxFar ?? CSMDefaults.maxFar
-  csm.mode = params.mode ?? CSMDefaults.mode
-  csm.shadowMapSize = params.shadowMapSize ?? CSMDefaults.shadowMapSize
-  csm.shadowBias = params.shadowBias ?? CSMDefaults.shadowBias
-  csm.shadowNormalBias = CSMDefaults.shadowNormalBias
-  csm.lightDirection = params.lightDirection ?? CSMDefaults.lightDirection
-  csm.lightDirectionUp = params.lightDirectionUp ?? CSMDefaults.lightDirectionUp
-  csm.lightColor = params.lightColor ?? CSMDefaults.lightColor
-  csm.lightIntensity = params.lightIntensity ?? CSMDefaults.lightIntensity
-  csm.lightMargin = params.lightMargin ?? CSMDefaults.lightMargin
-  csm.fade = params.fade ?? CSMDefaults.fade
-  csm.mainFrustum = CSMDefaults.mainFrustum
-  csm.frustums = CSMDefaults.frustums
-  csm.breaks = CSMDefaults.breaks
-  csm.lights = CSMDefaults.lights
-  csm.lightEntities = CSMDefaults.lightEntities
-  csm.shaders = CSMDefaults.shaders
-  csm.needsUpdate = CSMDefaults.needsUpdate
+  ;(csm.cascades = validatedParams.cascades ?? CSMDefaults.cascades),
+    (csm.mode = validatedParams.mode ?? CSMDefaults.mode),
+    (csm.maxFar = validatedParams.maxFar ?? CSMDefaults.maxFar),
+    (csm.shadowMapSize = validatedParams.shadowMapSize ?? CSMDefaults.shadowMapSize),
+    (csm.shadowBias = validatedParams.shadowBias ?? CSMDefaults.shadowBias),
+    (csm.shadowNormalBias = CSMDefaults.shadowNormalBias),
+    (csm.lightDirection = validatedParams.lightDirection ?? CSMDefaults.lightDirection),
+    (csm.lightDirectionUp = validatedParams.lightDirectionUp ?? CSMDefaults.lightDirectionUp),
+    (csm.lightColor = validatedParams.lightColor ?? CSMDefaults.lightColor),
+    (csm.lightIntensity = validatedParams.lightIntensity ?? CSMDefaults.lightIntensity),
+    (csm.lightMargin = validatedParams.lightMargin ?? CSMDefaults.lightMargin),
+    (csm.fade = validatedParams.fade ?? CSMDefaults.fade),
+    (csm.mainFrustum = CSMDefaults.mainFrustum),
+    (csm.frustums = CSMDefaults.frustums),
+    (csm.breaks = CSMDefaults.breaks),
+    (csm.lights = CSMDefaults.lights),
+    (csm.lightEntities = CSMDefaults.lightEntities),
+    (csm.shaders = CSMDefaults.shaders),
+    (csm.csmShadowNode = (validatedParams as any).csmShadowNode ?? CSMDefaults.csmShadowNode),
+    (csm.webgpuEnhanced = CSMDefaults.webgpuEnhanced),
+    (csm.shadowSoftness = CSMDefaults.shadowSoftness),
+    (csm.ambientShadowColor = CSMDefaults.ambientShadowColor),
+    (csm.shadowColorTint = CSMDefaults.shadowColorTint),
+    (csm.needsUpdate = CSMDefaults.needsUpdate)
 
-  createLights(params.light, entity)
+  createLights(validatedParams.light, entity)
   updateFrustums(entity)
-  injectInclude()
+  injectInclude(entity)
 }
 
 function updateProperty(key: string, value: any, rendererEntity?: Entity): void {

@@ -28,14 +28,10 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "types": [
-      "@types/node"
-    ],
+    "types": ["@types/node"],
     "erasableSyntaxOnly": true
   },
-  "exclude": [
-    "./src/**/*.test.tsx"
-  ],
+  "exclude": ["./src/**/*.test.tsx"],
   "include": [
     "../../__global.d.ts",
     "../server-core/src",

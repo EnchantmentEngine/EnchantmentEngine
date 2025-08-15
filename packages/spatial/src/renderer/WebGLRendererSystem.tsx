@@ -20,6 +20,7 @@ import { defineState, getMutableState, getState, useMutableState } from '@ir-eng
 
 import { getNestedChildren } from '@ir-engine/ecs'
 import { EffectPass, OutlineEffect } from 'postprocessing'
+import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { XRState } from '../xr/XRState'
 import { ObjectComponent } from './components/ObjectComponent'
@@ -34,6 +35,34 @@ import { CSMComponent } from './csm/CSMComponent'
 import { changeRenderMode } from './functions/changeRenderMode'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
+
+function renderWebGPUPostProcessing(
+  scene: Scene,
+  camera: ArrayCamera,
+  renderer: ComponentType<typeof RendererComponent>
+): boolean {
+  const webgpuPipeline = renderer.webgpuPostProcessingPipeline
+  if (webgpuPipeline) {
+    try {
+      webgpuPipeline.render()
+      return true
+    } catch (error) {
+      console.warn('WebGPU post processing pipeline render failed:', error)
+    }
+  }
+
+  const postProcessing = renderer.postProcessing
+  if (postProcessing) {
+    try {
+      postProcessing.render()
+      return true
+    } catch (error) {
+      console.warn('WebGPU PostProcessing render failed:', error)
+    }
+  }
+
+  return false
+}
 
 declare module 'postprocessing' {
   interface EffectComposer {
@@ -55,7 +84,8 @@ export const render = (
   camera: ArrayCamera,
   delta: number,
   effectComposer = true,
-  csm?: ComponentType<typeof CSMComponent> | undefined
+  csm?: ComponentType<typeof CSMComponent> | undefined,
+  entity?: Entity
 ) => {
   if (!renderer.renderer) return
 
@@ -79,7 +109,6 @@ export const render = (
       camera.aspect = width / height
       camera.updateProjectionMatrix()
     }
-
     if (state.useShadows && csm) {
       // Call the CSM updateFrustums function
       CSM.updateFrustums()
@@ -94,12 +123,20 @@ export const render = (
     renderer.needsResize = false
   }
 
+  renderer.renderer.shadowMap.enabled = true
+
   ObjectComponent.activeRender = true
 
-  /** Postprocessing does not support multipass yet, so just use basic renderer when in VR */
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
-  if (xrFrame || !effectComposer || !renderer.effectComposer) {
+  if (renderer.renderer instanceof WebGPURenderer) {
+    const webgpuRendered = renderWebGPUPostProcessing(scene, camera, renderer)
+
+    if (!webgpuRendered) {
+      renderer.renderer.clear()
+      renderer.renderer.render(scene, camera)
+    }
+  } else if (xrFrame || !effectComposer || !renderer.effectComposer) {
     renderer.renderer.clear()
     renderer.renderer.render(scene, camera)
   } else {
@@ -215,10 +252,10 @@ const cameraReactor = () => {
   const camera = useComponent(entity, CameraComponent)
   const engineRendererSettings = useMutableState(RendererState)
 
-  useEffect(() => {
-    if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
-    else camera.layers.disable(ObjectLayers.PhysicsHelper)
-  }, [engineRendererSettings.physicsDebug])
+  // useEffect(() => {
+  //   if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
+  //   else camera.layers.disable(ObjectLayers.PhysicsHelper)
+  // }, [engineRendererSettings.physicsDebug])
 
   useEffect(() => {
     if (engineRendererSettings.avatarDebug.value) camera.layers.enable(ObjectLayers.AvatarHelper)

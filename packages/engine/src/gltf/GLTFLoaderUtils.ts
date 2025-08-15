@@ -1,5 +1,6 @@
 import {
   Box3,
+  BufferAttribute,
   ColorManagement,
   FrontSide,
   Interpolant,
@@ -41,7 +42,8 @@ export function toTrianglesDrawMode(geometry, drawMode) {
           indices.push(i)
         }
 
-        geometry.setIndex(indices)
+        const indexArray = position.count > 65535 ? new Uint32Array(indices) : new Uint16Array(indices)
+        geometry.setIndex(new BufferAttribute(indexArray, 1))
         index = geometry.getIndex()
       } else {
         console.error(
@@ -87,7 +89,8 @@ export function toTrianglesDrawMode(geometry, drawMode) {
     // build final geometry
 
     const newGeometry = geometry.clone()
-    newGeometry.setIndex(newIndices)
+    const newIndexArray = newIndices.length > 65535 ? new Uint32Array(newIndices) : new Uint16Array(newIndices)
+    newGeometry.setIndex(new BufferAttribute(newIndexArray, 1))
     newGeometry.clearGroups()
 
     return newGeometry
