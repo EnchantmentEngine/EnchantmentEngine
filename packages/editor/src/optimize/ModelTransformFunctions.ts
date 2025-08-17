@@ -32,7 +32,7 @@ import {
   ResourceTransforms
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { baseName, dropRoot, pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
-import { getMutableState, NO_PROXY } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
 import { createHash } from 'crypto'
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
@@ -40,19 +40,15 @@ import { getPixels } from 'ndarray-pixels'
 import { LoaderUtils } from 'three'
 import { v4 as uuidv4 } from 'uuid'
 
+import { MATCH_ASSET_PROJECT_FILENAME_REGEX, VALID_FILENAME_REGEX } from '@ir-engine/common/src/regex'
 import {
   EEResourceID,
   EEResourceIDExtension
 } from '@ir-engine/engine/src/assets/compression/extensions/EE_ResourceIDTransformer'
-import { UploadRequestState } from '@ir-engine/engine/src/assets/state/UploadRequestState'
-import { MATCH_ASSET_PROJECT_FILENAME_REGEX, VALID_FILENAME_REGEX } from '../regex'
+import { uploadProjectFiles } from '../functions/assetFunctions'
+import { EditorState } from '../services/EditorServices'
+import { ImportSettingsState } from '../services/ImportSettingsState'
 import ModelTransformLoader from './ModelTransformLoader'
-/**
- * https://ir.world/projects/enchantmentengine/default-project/assets/collisioncube-LOD0.glb
- * Match 1: projects/enchantmentengine/default-project/assets/collisioncube-LOD0.glb
- * Group 1: enchantmentengine/default-project
- * Group 2: collisioncube-LOD0.glb
- */
 
 /**
  *
@@ -341,17 +337,16 @@ const doUpload = async (
   publishing = false
 ) => {
   const file = new File([buffer], fileName)
-  const uploadRequestState = getMutableState(UploadRequestState)
-  const queue = uploadRequestState.queue.get(NO_PROXY)
-  let resolveFunc!: () => void
-  const promise = new Promise<void>((resolve) => {
-    resolveFunc = () => resolve()
-  })
-  uploadRequestState.queue.set([...queue, { file, projectName, callback: resolveFunc, path: path }])
+
+  const publishSceneName = getState(EditorState).sceneName?.split('.').shift()
+  const publishFolder = '/public/publish/' + publishSceneName + '/'
+  const importSettings = getState(ImportSettingsState)
+
+  let uploadFolderPath = `projects/${projectName}${path ?? importSettings.importFolder}`
   if (fileName.includes('compressed-published') || publishing) {
-    uploadRequestState.isOnPublishing.set(true)
+    uploadFolderPath = `projects/${projectName}${publishFolder}`
   }
-  await promise
+  await Promise.all(uploadProjectFiles(projectName, [file], [uploadFolderPath]).promises).then()
 }
 
 const toProjectAndFileName = (fUploadPath: string, srcBaseURL: string): [string, string] => {
