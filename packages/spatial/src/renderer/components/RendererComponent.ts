@@ -17,7 +17,7 @@ import { PostProcessing, WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { createWebXRManager, WebXRManager } from '../../xr/WebXRManager'
 import { ObjectLayers } from '../constants/ObjectLayers'
-import { WebGPUPostProcessingPipeline } from '../webgpu/WebGPUPostProcessingPipeline'
+import { updateWebGPUPostProcessing } from '../webgpu/WebGPUPostProcessingPipeline'
 
 import { RenderBackends } from '../constants/RenderModes'
 import CSMHelper from '../csm/CSMHelper'
@@ -51,7 +51,7 @@ export const RendererComponent = defineComponent({
       renderer: S.Type<WebGPURenderer | WebGLRenderer | null>(),
       effectComposer: S.Type<EffectComposer | null>(),
       postProcessing: S.Type<PostProcessing | null>(),
-      webgpuPostProcessingPipeline: S.Type<WebGPUPostProcessingPipeline | null>(),
+      webgpuPostProcessingPipeline: S.Type<PostProcessing | null>(),
 
       scenes: S.Array(S.Entity()),
       scene: S.Class(() => new Scene()),
@@ -204,10 +204,8 @@ export const RendererComponent = defineComponent({
             renderer.debug.checkShaderErrors = isDev
             renderer.autoClear = true
 
-            const scene = rendererComponent.scene as Scene
-            const webgpuPipeline = new WebGPUPostProcessingPipeline(renderer, scene, camera)
-            rendererComponent.webgpuPostProcessingPipeline = webgpuPipeline
-            rendererComponent.postProcessing = webgpuPipeline.getPostProcessing()
+            const postProcessing = new PostProcessing(renderer)
+            rendererComponent.postProcessing = postProcessing
 
             getState(RendererState).backend = RenderBackends.WEBGPU
 
@@ -395,17 +393,18 @@ export const RendererComponent = defineComponent({
     ])
 
     useEffect(() => {
-      const webgpuPipeline = rendererComponent.webgpuPostProcessingPipeline
-      if (!webgpuPipeline) return
+      const postProcessing = rendererComponent.webgpuPostProcessingPipeline
+      if (!postProcessing) return
 
       const enabled = renderSettings.usePostProcessing.value
       const effectsVal = rendererComponent.effects
 
-      if (enabled && effectsVal) {
-        webgpuPipeline.updateEffects(effectsVal)
-      } else {
-        webgpuPipeline.updateEffects({})
-      }
+      updateWebGPUPostProcessing(
+        postProcessing,
+        rendererComponent.scene,
+        camera,
+        enabled && effectsVal ? effectsVal : {}
+      )
     }, [
       rendererComponent.effects,
       rendererComponent.webgpuPostProcessingPipeline,

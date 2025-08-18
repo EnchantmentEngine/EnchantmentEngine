@@ -102,12 +102,7 @@ const PoiUiView = (props: PoiUiProps) => {
     if (!rendererComponent.canvas) return
     setCanvasWidth(rendererComponent.canvas.clientWidth)
     setCanvasHeight(rendererComponent.canvas.clientHeight)
-  }, [
-    rendererComponent.canvas,
-    rendererComponent.needsResize,
-    rendererComponent.canvas?.clientWidth,
-    rendererComponent.canvas?.clientHeight
-  ])
+  }, [rendererComponent.canvas, rendererComponent.canvas?.clientWidth, rendererComponent.canvas?.clientHeight])
 
   const previousClicked = () => {
     const transitionType = cameraSettingsState.poiScrollTransitionType.value

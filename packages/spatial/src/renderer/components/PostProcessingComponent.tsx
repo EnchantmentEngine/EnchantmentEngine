@@ -2,12 +2,14 @@ import { Entity, defineComponent, useComponent, useEntityContext } from '@ir-eng
 import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { ErrorBoundary, getState, useMutableState } from '@ir-engine/hyperflux'
 import { EffectComposer } from 'postprocessing'
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { Scene } from 'three'
 import { PostProcessingEffectState } from '../effects/EffectRegistry'
 import { isWebGPURenderer } from '../functions/RendererBackendUtils'
 import { useRendererEntity } from '../functions/useRendererEntity'
+import { updateWebGPUPostProcessing } from '../webgpu/WebGPUPostProcessingPipeline'
 
+import { CameraComponent } from '../../camera/components/CameraComponent'
 import { RendererState } from '../RendererState'
 import { EffectSchema, RendererComponent } from './RendererComponent'
 
@@ -86,14 +88,26 @@ const WebGPUPostProcessingReactor = (props: { entity: Entity; rendererEntity: En
   const { entity, rendererEntity } = props
   const postProcessingComponent = useComponent(entity, PostProcessingComponent)
   const renderer = useComponent(rendererEntity, RendererComponent)
-  React.useEffect(() => {
-    const webgpuPipeline = renderer.webgpuPostProcessingPipeline
-    if (!webgpuPipeline) return
+  const camera = useComponent(rendererEntity, CameraComponent) as any
+  const renderSettings = useMutableState(RendererState)
 
-    webgpuPipeline.updateEffects(postProcessingComponent.effects)
+  useEffect(() => {
+    const postProcessing = renderer.postProcessing
+    if (!postProcessing) return
 
-    console.log('WebGPU post processing pipeline updated')
-  }, [postProcessingComponent.effects, postProcessingComponent.enabled, renderer.webgpuPostProcessingPipeline])
+    const enabled = renderSettings.usePostProcessing.value
+    const effects = enabled ? postProcessingComponent.effects : {}
+    if (renderer.renderer && renderer.scene && camera) {
+      updateWebGPUPostProcessing(postProcessing, renderer.scene, camera, effects)
+    }
+  }, [
+    postProcessingComponent.effects,
+    postProcessingComponent.enabled,
+    renderer.postProcessing,
+    renderer.renderer,
+    renderer.scene,
+    renderSettings.usePostProcessing.value
+  ])
 
   return null
 }
