@@ -12,8 +12,8 @@ import { HyperFlux } from './StoreFunctions'
 /**
  * Actions now use the compiled ECS Schema system (see ecs JSONSchemas / JSONSchemaTypes).
  */
-import type { Schema, Static } from '../../../ecs/src/schemas/JSONSchemaTypes'
-import { Kind } from '../../../ecs/src/schemas/JSONSchemaTypes'
+import type { SchemaDefinition, Static } from '../schemas/JSONSchemaTypes'
+import { Kind } from '../schemas/JSONSchemaTypes'
 
 export type Topic = OpaqueType<'Topic'> & string
 
@@ -81,7 +81,7 @@ const baseDefaults: Record<string, any> = {
 const clone = <T>(v: T): T =>
   Array.isArray(v) ? (v.slice() as any) : v && typeof v === 'object' ? { ...(v as any) } : v
 
-const applyDefaultsFromCompiledSchema = (schema: Schema, target: any): any => {
+const applyDefaultsFromCompiledSchema = (schema: SchemaDefinition, target: any): any => {
   const kind = (schema as any)[Kind] as string
   const opt = (schema as any).options || {}
   let value = target
@@ -112,7 +112,7 @@ const applyDefaultsFromCompiledSchema = (schema: Schema, target: any): any => {
     }
     case 'Tuple': {
       if (!Array.isArray(value)) value = []
-      const items: Schema[] = (schema as any).properties || []
+      const items: SchemaDefinition[] = (schema as any).properties || []
       for (let i = 0; i < items.length; i++) value[i] = applyDefaultsFromCompiledSchema(items[i], value[i])
       break
     }
@@ -122,7 +122,7 @@ const applyDefaultsFromCompiledSchema = (schema: Schema, target: any): any => {
     }
     case 'Union': {
       // select first schema default if union has schemas
-      const variants: Schema[] = (schema as any).properties || []
+      const variants: SchemaDefinition[] = (schema as any).properties || []
       if (value === undefined && variants.length) value = applyDefaultsFromCompiledSchema(variants[0], undefined)
       break
     }
@@ -132,7 +132,7 @@ const applyDefaultsFromCompiledSchema = (schema: Schema, target: any): any => {
   return value
 }
 
-const validateCompiledSchemaValue = (schema: Schema, value: any, path: string, errors: string[]): void => {
+const validateCompiledSchemaValue = (schema: SchemaDefinition, value: any, path: string, errors: string[]): void => {
   const kind = (schema as any)[Kind] as string
   const current = path || '(root)'
   const opt = (schema as any).options || {}
@@ -177,7 +177,7 @@ const validateCompiledSchemaValue = (schema: Schema, value: any, path: string, e
       break
     }
     case 'Union': {
-      const variants: Schema[] = (schema as any).properties || []
+      const variants: SchemaDefinition[] = (schema as any).properties || []
       if (
         variants.length &&
         !variants.some((v) => {
@@ -200,10 +200,10 @@ const validateCompiledSchemaValue = (schema: Schema, value: any, path: string, e
 export type ActionCreator<P extends Record<string, any>, TType extends string> = {
   (partial?: Partial<P> & ActionOptions): AnyAction & P & { type: TType | string[] }
   type: TType
-  schema: Schema
+  schema: SchemaDefinition
   defaults: () => Partial<P>
   validate: (payload: unknown) => payload is P
-  extend: <CT extends string, CS extends Schema, CP extends Record<string, any>>(def: {
+  extend: <CT extends string, CS extends SchemaDefinition, CP extends Record<string, any>>(def: {
     type: CT
     schema: CS
     defaults?: Partial<CP> | (() => Partial<CP>)
@@ -227,7 +227,7 @@ export function isActionReceptor(f: any): f is ActionReceptor<any, any> {
 
 export const ActionDefinitions: Record<string, ActionCreator<any, string>> = {}
 
-export function defineAction<TType extends string, S extends Schema & { [Kind]: 'Object' }>(def: {
+export function defineAction<TType extends string, S extends SchemaDefinition & { [Kind]: 'Object' }>(def: {
   type: TType | [TType, ...string[]]
   schema: S
   defaults?: Partial<Static<S>> | (() => Partial<Static<S>>)
@@ -576,7 +576,7 @@ export const removeActionQueue = (queueHandle: ActionQueueHandle) => {
   HyperFlux.store.actions.queues.delete(queueHandle)
 }
 
-export const dispatchSchemaAction = <T extends string, S extends Schema & { [Kind]: 'Object' }>(
+export const dispatchSchemaAction = <T extends string, S extends SchemaDefinition & { [Kind]: 'Object' }>(
   creator: ActionCreator<Static<S> & Record<string, any>, T>,
   partial?: Partial<Static<S>> & ActionOptions
 ) => dispatchAction(creator(partial as any))
