@@ -19,7 +19,6 @@ import {
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { getNestedChildren } from '@ir-engine/ecs'
-import { EffectPass, OutlineEffect } from 'postprocessing'
 import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { XRState } from '../xr/XRState'
@@ -36,41 +35,15 @@ import { changeRenderMode } from './functions/changeRenderMode'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
 
-function renderWebGPUPostProcessing(
-  scene: Scene,
-  camera: ArrayCamera,
-  renderer: ComponentType<typeof RendererComponent>
-): boolean {
-  const webgpuPipeline = renderer.webgpuPostProcessingPipeline
-  if (webgpuPipeline) {
-    try {
-      webgpuPipeline.render()
-      return true
-    } catch (error) {
-      console.warn('WebGPU post processing pipeline render failed:', error)
-    }
-  }
-
+function renderWebGPUPostProcessing(renderer: ComponentType<typeof RendererComponent>): boolean {
   const postProcessing = renderer.postProcessing
-  if (postProcessing) {
-    try {
-      postProcessing.render()
-      return true
-    } catch (error) {
-      console.warn('WebGPU PostProcessing render failed:', error)
-    }
-  }
-
-  return false
-}
-
-declare module 'postprocessing' {
-  interface EffectComposer {
-    EffectPass: EffectPass
-    OutlineEffect: OutlineEffect
-  }
-  interface Effect {
-    isActive: boolean
+  if (!postProcessing) return false
+  try {
+    postProcessing.render()
+    return true
+  } catch (error) {
+    console.warn('WebGPU PostProcessing render failed:', error)
+    return false
   }
 }
 
@@ -84,8 +57,7 @@ export const render = (
   camera: ArrayCamera,
   delta: number,
   effectComposer = true,
-  csm?: ComponentType<typeof CSMComponent> | undefined,
-  entity?: Entity
+  csm?: ComponentType<typeof CSMComponent> | undefined
 ) => {
   if (!renderer.renderer) return
 
@@ -130,7 +102,7 @@ export const render = (
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
   if (renderer.renderer instanceof WebGPURenderer) {
-    const webgpuRendered = renderWebGPUPostProcessing(scene, camera, renderer)
+    const webgpuRendered = renderWebGPUPostProcessing(renderer)
 
     if (!webgpuRendered) {
       renderer.renderer.clear()
