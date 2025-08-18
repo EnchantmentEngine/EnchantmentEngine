@@ -1,10 +1,10 @@
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const NameComponent = defineComponent({
   name: 'NameComponent',
 
   jsonID: 'IR_name',
 
-  schema: S.String({ default: '', required: true, serialized: true })
+  schema: Schema.String({ default: '', required: true, serialized: true })
 })

@@ -23,7 +23,7 @@ import {
 } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -95,30 +95,30 @@ const createTransformGizmoPivotEntity = (originEntity) => {
 export const TransformGizmoControlComponent = defineComponent({
   name: 'TransformGizmoControlComponent',
 
-  schema: S.Object({
-    controlledEntities: S.Array(S.Entity()),
-    visualEntity: S.Entity(),
-    planeEntity: S.Entity(),
-    pivotEntity: S.Entity(),
-    dragging: S.Bool({ default: false }),
-    axis: S.Union([S.Null(), S.LiteralUnion(Object.values(TransformAxis))]),
-    space: S.LiteralUnion(Object.values(TransformSpace), { default: TransformSpace.world }),
-    mode: S.LiteralUnion(Object.values(TransformMode), { default: TransformMode.translate }),
-    transformPivot: S.LiteralUnion(Object.values(TransformPivot), { default: TransformPivot.FirstSelected }),
-    translationSnap: S.Union([S.Null(), S.Number()]),
-    rotationSnap: S.Union([S.Null(), S.Number()]),
-    scaleSnap: S.Union([S.Null(), S.Number()]),
-    size: S.Number({ default: 1 }),
-    showX: S.Bool({ default: true }),
-    showY: S.Bool({ default: true }),
-    showZ: S.Bool({ default: true }),
+  schema: Schema.Object({
+    controlledEntities: Schema.Array(EntitySchema.Entity()),
+    visualEntity: EntitySchema.Entity(),
+    planeEntity: EntitySchema.Entity(),
+    pivotEntity: EntitySchema.Entity(),
+    dragging: Schema.Bool({ default: false }),
+    axis: Schema.Union([Schema.Null(), Schema.LiteralUnion(Object.values(TransformAxis))]),
+    space: Schema.LiteralUnion(Object.values(TransformSpace), { default: TransformSpace.world }),
+    mode: Schema.LiteralUnion(Object.values(TransformMode), { default: TransformMode.translate }),
+    transformPivot: Schema.LiteralUnion(Object.values(TransformPivot), { default: TransformPivot.FirstSelected }),
+    translationSnap: Schema.Union([Schema.Null(), Schema.Number()]),
+    rotationSnap: Schema.Union([Schema.Null(), Schema.Number()]),
+    scaleSnap: Schema.Union([Schema.Null(), Schema.Number()]),
+    size: Schema.Number({ default: 1 }),
+    showX: Schema.Bool({ default: true }),
+    showY: Schema.Bool({ default: true }),
+    showZ: Schema.Bool({ default: true }),
     pivotBounds: T.Box3(),
     pivotStartPosition: T.Vec3(),
     pivotStartRotation: T.Quaternion(),
     pointerPlaneStartPosition: T.Vec3(),
     pointerPlaneEndPosition: T.Vec3(),
     rotationAxis: T.Vec3(),
-    rotationAngle: S.Number({ default: 0 }),
+    rotationAngle: Schema.Number({ default: 0 }),
     eye: T.Vec3()
   }),
 

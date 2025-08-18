@@ -20,7 +20,8 @@ import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
@@ -33,17 +34,17 @@ export const eyeOffset = 0.25
 export const AvatarControllerComponent = defineComponent({
   name: 'AvatarControllerComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** The camera entity that should be updated by this controller */
-    cameraEntity: S.Entity(),
-    movementCaptured: S.Array(S.Entity()),
-    isJumping: S.Bool(),
-    isWalking: S.Bool(),
-    isInAir: S.Bool(),
+    cameraEntity: EntitySchema.Entity(),
+    movementCaptured: Schema.Array(EntitySchema.Entity()),
+    isJumping: Schema.Bool(),
+    isWalking: Schema.Bool(),
+    isInAir: Schema.Bool(),
     /** velocity along the Y axis */
-    verticalVelocity: S.Number(),
+    verticalVelocity: Schema.Number(),
     /** Is the gamepad-driven jump active */
-    gamepadJumpActive: S.Bool(),
+    gamepadJumpActive: Schema.Bool(),
     /** gamepad-driven input, in the local XZ plane */
     gamepadLocalInput: T.Vec3(),
     /** gamepad-driven movement, in the world XZ plane */
@@ -135,7 +136,7 @@ export const AvatarControllerComponent = defineComponent({
 
 export const AvatarColliderComponent = defineComponent({
   name: 'AvatarColliderComponent',
-  schema: S.Object({ colliderEntity: S.Entity() }),
+  schema: Schema.Object({ colliderEntity: EntitySchema.Entity() }),
 
   reactor({ entity }) {
     useEffect(() => {

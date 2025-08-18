@@ -9,8 +9,7 @@ import {
   setComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { Schema, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
@@ -28,10 +27,10 @@ import { EditorHelperState } from '../../../services/EditorHelperState'
 export const TransformGizmoVisualComponent = defineComponent({
   name: 'TransformGizmoVisualComponent',
 
-  schema: S.Object({
-    gizmo: S.Entity(),
-    picker: S.Entity(),
-    helper: S.Entity()
+  schema: Schema.Object({
+    gizmo: EntitySchema.Entity(),
+    picker: EntitySchema.Entity(),
+    helper: EntitySchema.Entity()
   }),
 
   reactor: function () {

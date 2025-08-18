@@ -11,8 +11,7 @@ import {
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
+import { Schema, getState, useImmediateEffect } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraGizmoTagComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { TransformAxis } from '@ir-engine/spatial/src/common/constants/TransformConstants'
@@ -31,15 +30,15 @@ import { CameraGizmoVisualComponent } from './CameraGizmoVisualComponent'
 export const CameraGizmoComponent = defineComponent({
   name: 'CameraGizmo',
 
-  schema: S.Object({
-    sceneEntity: S.Entity(),
-    cameraEntity: S.Entity(),
-    visualEntity: S.Entity(),
-    enabled: S.Bool({ default: true }),
-    axis: S.Union([S.Null(), S.LiteralUnion(Object.values(TransformAxis))]),
-    showX: S.Bool({ default: true }),
-    showY: S.Bool({ default: true }),
-    showZ: S.Bool({ default: true })
+  schema: Schema.Object({
+    sceneEntity: EntitySchema.Entity(),
+    cameraEntity: EntitySchema.Entity(),
+    visualEntity: EntitySchema.Entity(),
+    enabled: Schema.Bool({ default: true }),
+    axis: Schema.Union([Schema.Null(), Schema.LiteralUnion(Object.values(TransformAxis))]),
+    showX: Schema.Bool({ default: true }),
+    showY: Schema.Bool({ default: true }),
+    showZ: Schema.Bool({ default: true })
   }),
 
   reactor: function (props) {

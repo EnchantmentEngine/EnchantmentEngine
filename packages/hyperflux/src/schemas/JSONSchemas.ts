@@ -114,7 +114,7 @@ export const Schema = {
 
   /**
    * Schema that infers as an object type of the properties provided, defaults to an empty object ({})
-   * Schemas.Object({ test: Schemas.Number() }) -> { test: number }
+   * SchemaSchema.Object({ test: Schemas.Number() }) -> { test: number }
    */
   Object: <T extends TProperties>(properties: T, options?: TObjectSchema<T>['options']) =>
     ({

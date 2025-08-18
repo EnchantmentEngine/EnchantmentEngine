@@ -8,13 +8,13 @@ import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NetworkTopics } from '@ir-engine/hyperflux'
+import { EntitySchema } from '@ir-engine/ecs'
+import { NetworkTopics, Schema } from '@ir-engine/hyperflux'
 import { AvatarComponent } from '../avatar/components/AvatarComponent'
 import { InteractableComponent, XRUIVisibilityOverride } from '../interaction/components/InteractableComponent'
 
 // @todo move this to spatial package schema definitions
-export const XRHandedness = S.LiteralUnion(['none', 'left', 'right'])
+export const XRHandedness = Schema.LiteralUnion(['none', 'left', 'right'])
 
 /**
  * GrabbableComponent
@@ -113,9 +113,9 @@ const grabCallback = (grabbableEntity: Entity) => {
 export const GrabbedComponent = defineComponent({
   name: 'GrabbedComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     attachmentPoint: XRHandedness,
-    grabberEntity: S.Entity()
+    grabberEntity: EntitySchema.Entity()
   })
 })
 
@@ -126,9 +126,9 @@ export const GrabbedComponent = defineComponent({
 export const GrabberComponent = defineComponent({
   name: 'GrabberComponent',
 
-  schema: S.Object({
-    left: S.Entity(),
-    right: S.Entity()
+  schema: Schema.Object({
+    left: EntitySchema.Entity(),
+    right: EntitySchema.Entity()
   })
 })
 

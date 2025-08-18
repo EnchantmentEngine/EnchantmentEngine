@@ -231,8 +231,8 @@ export type ComponentPropertyFromPath<T, Path extends string> = IsDirectProperty
  * ```ts
  * export const MyComponent = defineComponent({
  *   name: 'MyComponent',
- *   schema: S.Object({
- *     prop: S.String('default')
+ *   schema: Schema.Object({
+ *     prop: Schema.String('default')
  *   }),
  *   onSet: (entity, component, json) => {
  *     // side effects

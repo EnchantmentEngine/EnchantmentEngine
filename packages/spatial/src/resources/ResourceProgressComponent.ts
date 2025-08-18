@@ -8,15 +8,15 @@ import {
   useOptionalComponent,
   useQuery
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const ResourceProgressComponent = defineComponent({
   name: 'ResourceProgressComponent',
 
-  schema: S.Record(
-    S.String(),
-    S.Object({
-      progress: S.Number()
+  schema: Schema.Record(
+    Schema.String(),
+    Schema.Object({
+      progress: Schema.Number()
     })
   ),
 

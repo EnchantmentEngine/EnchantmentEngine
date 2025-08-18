@@ -4,7 +4,7 @@ import { BufferGeometry, Color, LineBasicMaterial, LineSegments, Material, Norma
 import { defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
 import { useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '../../common/NameComponent'
 import { T } from '../../schema/schemaFunctions'
 import { ObjectLayerMask, ObjectLayerMasks } from '../constants/ObjectLayers'
@@ -16,13 +16,13 @@ export const LineSegmentComponent = defineComponent({
   name: 'LineSegmentComponent',
   jsonID: 'EE_line_segment',
 
-  schema: S.Object({
-    name: S.String({ default: 'line-segment' }),
-    geometry: S.Type<BufferGeometry>({ required: true }),
-    material: S.Class(() => new LineBasicMaterial() as Material),
-    color: S.Optional(T.Color()),
-    opacity: S.Optional(S.Number({ default: 1 })),
-    layerMask: S.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper })
+  schema: Schema.Object({
+    name: Schema.String({ default: 'line-segment' }),
+    geometry: Schema.Type<BufferGeometry>({ required: true }),
+    material: Schema.Class(() => new LineBasicMaterial() as Material),
+    color: Schema.Optional(T.Color()),
+    opacity: Schema.Optional(Schema.Number({ default: 1 })),
+    layerMask: Schema.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper })
   }),
 
   reactor: function () {

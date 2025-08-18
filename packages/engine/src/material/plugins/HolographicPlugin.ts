@@ -1,4 +1,4 @@
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
@@ -7,15 +7,15 @@ export const HolographicPluginComponent = defineMaterialPlugin({
 
   jsonID: 'IR_material_holographic',
 
-  uniforms: S.Object({
-    speed: S.Number({ default: 0.1 }),
-    time: S.Number({ default: 0 }),
-    useBlink: S.Bool({ default: false }),
-    mix_intensity: S.Number({ default: 1.0 }),
+  uniforms: Schema.Object({
+    speed: Schema.Number({ default: 0.1 }),
+    time: Schema.Number({ default: 0 }),
+    useBlink: Schema.Bool({ default: false }),
+    mix_intensity: Schema.Number({ default: 1.0 }),
     hologramColor: T.Color(),
-    hologramBrightness: S.Number({ default: 0.5 }),
-    scanlineSize: S.Number({ default: 15.0 }),
-    hologramOpacity: S.Number({ default: 0.5 })
+    hologramBrightness: Schema.Number({ default: 0.5 }),
+    scanlineSize: Schema.Number({ default: 15.0 }),
+    hologramOpacity: Schema.Number({ default: 0.5 })
   }),
 
   onApply: (shader) => {

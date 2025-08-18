@@ -14,7 +14,7 @@ import {
 } from '@ir-engine/ecs'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { removeCallback, setCallback } from '../../common/CallbackComponent'
 import { NameComponent } from '../../common/NameComponent'
 import { proxifyQuaternionWithDirty, proxifyVector3WithDirty } from '../../common/proxies/createThreejsProxy'
@@ -25,7 +25,7 @@ import { VisibleComponent } from './VisibleComponent'
 export const ObjectComponent = defineComponent({
   name: 'ObjectComponent',
 
-  schema: S.Type<Object3D>({ required: true }),
+  schema: Schema.Type<Object3D>({ required: true }),
 
   onSet(entity, component, obj: Object3D) {
     if (!obj?.isObject3D) throw new Error('ObjectComponent requires an Object3D')

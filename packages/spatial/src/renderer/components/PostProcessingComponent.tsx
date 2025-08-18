@@ -1,6 +1,5 @@
 import { Entity, defineComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { ErrorBoundary, getState, useMutableState } from '@ir-engine/hyperflux'
+import { ErrorBoundary, Schema, getState, useMutableState } from '@ir-engine/hyperflux'
 import { EffectComposer } from 'postprocessing'
 import React, { Suspense, useEffect } from 'react'
 import { Scene } from 'three'
@@ -17,9 +16,9 @@ export const PostProcessingComponent = defineComponent({
   name: 'PostProcessingComponent',
   jsonID: 'EE_postprocessing',
 
-  schema: S.Object({
-    enabled: S.Bool(),
-    effects: S.Record(S.String(), EffectSchema)
+  schema: Schema.Object({
+    enabled: Schema.Bool(),
+    effects: Schema.Record(Schema.String(), EffectSchema)
   }),
 
   onInit: () => {

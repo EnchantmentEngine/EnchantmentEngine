@@ -59,8 +59,8 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
  * const MyPrefabComponent = definePrefab({
  *   name: 'MyPrefab',
  *   jsonID: 'my-prefab',
- *   schema: S.Object({
- *     name: S.String()
+ *   schema: Schema.Object({
+ *     name: Schema.String()
  *   }),
  *   reactor: ({ entity, prefab }) => {
  *     useEffect(() => {

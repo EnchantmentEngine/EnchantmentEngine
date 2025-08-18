@@ -646,12 +646,6 @@ describe('EntityCSMReactor', async () => {
     it('should not do anything (return early) if `@param props.entity`.DirectionalLightComponent.light is falsy', async () => {
       const Initial = false
 
-      const rendererEntity = createEntity()
-      setComponent(rendererEntity, RendererComponent)
-      setComponent(rendererEntity, UUIDComponent, {
-        entitySourceID: 'source' as SourceID,
-        entityID: 'renderer' as EntityID
-      })
       CSM.initCSM({}, rendererEntity)
       setComponent(rendererEntity, CSMComponent, { needsUpdate: Initial })
       const renderSettingsEntity = createEntity()
@@ -1015,7 +1009,6 @@ describe('EntityCSMReactor', async () => {
 
   describe('on change [csm, renderSettingsComponent.cascades]', async () => {
     it('should not do anything (return early) and not crash if `@param props.rendererEntity`.RendererComponent.csm is falsy', async () => {
-      const rendererEntity = createEntity()
       setComponent(rendererEntity, RendererComponent)
       const renderSettingsEntity = createEntity()
       setComponent(renderSettingsEntity, RenderSettingsComponent)

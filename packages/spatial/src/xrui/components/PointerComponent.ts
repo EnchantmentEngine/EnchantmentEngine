@@ -11,18 +11,17 @@ import {
 } from 'three'
 
 import {
-  Entity,
-  EntityTreeComponent,
-  S,
   createEntity,
   defineComponent,
+  Entity,
+  EntityTreeComponent,
   getComponent,
   removeEntity,
   setComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 import { WebContainer3D } from '@ir-engine/xrui'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
@@ -38,12 +37,12 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 export const PointerComponent = defineComponent({
   name: 'PointerComponent',
 
-  schema: S.Object({
-    inputSource: S.Type<XRInputSource>(),
-    lastHit: S.Type<ReturnType<typeof WebContainer3D.prototype.hitTest> | null>(),
+  schema: Schema.Object({
+    inputSource: Schema.Type<XRInputSource>(),
+    lastHit: Schema.Type<ReturnType<typeof WebContainer3D.prototype.hitTest> | null>(),
     // internal
-    pointer: S.Type<PointerObject>(),
-    cursor: S.Type<Mesh<BufferGeometry, MeshBasicMaterial> | null>()
+    pointer: Schema.Type<PointerObject>(),
+    cursor: Schema.Type<Mesh<BufferGeometry, MeshBasicMaterial> | null>()
   }),
 
   reactor: () => {

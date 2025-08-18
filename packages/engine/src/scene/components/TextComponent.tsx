@@ -17,8 +17,7 @@ import { Text as TroikaText } from 'troika-three-text'
 
 import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { isClient } from '@ir-engine/hyperflux'
+import { isClient, Schema } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
@@ -36,7 +35,7 @@ type TroikaColor = string | number | Color
  * @notes troika.Text direction type, as declared by `troika-three-text` in its Text.direction `@member` property.
  */
 export type TroikaTextDirection = 'auto' | 'ltr' | 'rtl'
-const TroikaTextDirectionSchema = S.LiteralUnion(['auto', 'ltr', 'rtl'])
+const TroikaTextDirectionSchema = Schema.LiteralUnion(['auto', 'ltr', 'rtl'])
 
 /**
  * @description
@@ -44,7 +43,7 @@ const TroikaTextDirectionSchema = S.LiteralUnion(['auto', 'ltr', 'rtl'])
  * @notes troika.Text alignment type, as declared by `troika-three-text` in its Text.textAlign `@member` property.
  */
 export type TroikaTextAlignment = 'left' | 'center' | 'right' | 'justify'
-const TroikaTextAlignmentSchema = S.LiteralUnion(['left', 'center', 'right', 'justify'], { default: 'justify' })
+const TroikaTextAlignmentSchema = Schema.LiteralUnion(['left', 'center', 'right', 'justify'], { default: 'justify' })
 
 /**
  * @description
@@ -54,7 +53,7 @@ const TroikaTextAlignmentSchema = S.LiteralUnion(['left', 'center', 'right', 'ju
  * @notes troika.Text wrap, as declared by `troika-three-text` in its Text.whiteSpace `@member` property.
  */
 export type TroikaTextWrap = 'normal' | 'nowrap'
-const TroikaTextWrapSchema = S.LiteralUnion(['normal', 'nowrap'])
+const TroikaTextWrapSchema = Schema.LiteralUnion(['normal', 'nowrap'])
 
 /**
  * @description
@@ -64,7 +63,7 @@ const TroikaTextWrapSchema = S.LiteralUnion(['normal', 'nowrap'])
  * @notes troika.Text wrapping kind, as declared by `troika-three-text` in its Text.overflowWrap `@member` property.
  */
 export type TroikaTextWrapKind = 'normal' | 'break-word'
-const TroikaTextWrapKindSchema = S.LiteralUnion(['normal', 'break-word'])
+const TroikaTextWrapKindSchema = Schema.LiteralUnion(['normal', 'break-word'])
 
 /**
  * @description
@@ -73,7 +72,7 @@ const TroikaTextWrapKindSchema = S.LiteralUnion(['normal', 'break-word'])
  * @notes troika.Text line height format, as declared by `troika-three-text`in its Text.lineHeight `@member` property.
  */
 export type TroikaTextLineHeight = number | 'normal'
-const TroikaTextLineHeightSchema = S.Union([S.Number(), S.Literal('normal')], { default: 1.2 })
+const TroikaTextLineHeightSchema = Schema.Union([Schema.Number(), Schema.Literal('normal')], { default: 1.2 })
 
 /**
  * @summary
@@ -173,49 +172,49 @@ export const TextComponent = defineComponent({
   name: 'TextComponent',
   jsonID: 'EE_text_spatial',
 
-  schema: S.Object({
+  schema: Schema.Object({
     // Text contents to render
-    text: S.String({ default: DefaultText }),
-    textOpacity: S.Number({ default: 100, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
-    textWidth: S.Number({ default: Infinity }),
-    textIndent: S.Number({ default: 0 }),
+    text: Schema.String({ default: DefaultText }),
+    textOpacity: Schema.Number({ default: 100, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
+    textWidth: Schema.Number({ default: Infinity }),
+    textIndent: Schema.Number({ default: 0 }),
     textAlign: TroikaTextAlignmentSchema,
-    textWrap: S.Bool({ default: true }), // Maps to: troika.Text.whiteSpace as TroikaTextWrap
+    textWrap: Schema.Bool({ default: true }), // Maps to: troika.Text.whiteSpace as TroikaTextWrap
     textWrapKind: TroikaTextWrapKindSchema, // Maps to troika.Text.overflowWrap
     textAnchor: T.Vec2(), // range[0..100+], sent to troika as [0..100]% :string
-    textDepthOffset: S.Number({ default: 0 }), // For Z-fighting adjustments. Similar to anchor.Z
-    textCurveRadius: S.Number({ default: 0 }),
-    letterSpacing: S.Number({ default: 0 }),
+    textDepthOffset: Schema.Number({ default: 0 }), // For Z-fighting adjustments. Similar to anchor.Z
+    textCurveRadius: Schema.Number({ default: 0 }),
+    letterSpacing: Schema.Number({ default: 0 }),
     lineHeight: TroikaTextLineHeightSchema,
     textDirection: TroikaTextDirectionSchema,
 
     // Font Properties
-    font: S.String({ default: '' }), // font: string|null
-    fontSize: S.Number({ default: 0.2 }),
+    font: Schema.String({ default: '' }), // font: string|null
+    fontSize: Schema.Number({ default: 0.2 }),
     fontColor: T.Color(0xffffff),
-    fontMaterial: S.Enum(FontMaterialKind, {
+    fontMaterial: Schema.Enum(FontMaterialKind, {
       $comment: "A number enum, where: 0 represents 'Basic', 1 represents 'Standard'",
       default: FontMaterialKind.Basic
     }), // Default to whatever value is marked at id=0 in FontMaterialKind
     // Font Outline Properties
-    outlineOpacity: S.Number({ default: 100, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
-    outlineWidth: S.Number({ default: 3, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
-    outlineBlur: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
+    outlineOpacity: Schema.Number({ default: 100, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
+    outlineWidth: Schema.Number({ default: 3, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
+    outlineBlur: Schema.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
     outlineOffset: T.Vec2(new Vector2(0, 0)), // range[0..100+], sent to troika as [0..100]% :string
     outlineColor: T.Color(0xffffff),
     // Font Stroke Properties
-    strokeOpacity: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
-    strokeWidth: S.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
+    strokeOpacity: Schema.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100], sent to troika as [0..1] :number
+    strokeWidth: Schema.Number({ default: 0, minimum: 0, maximum: 100 }), // range[0..100+], sent to troika as [0..100]% :string
     strokeColor: T.Color(0x444444),
 
     // Advanced Configuration
-    textOrientation: S.String({ default: '+x+y' }),
-    clipActive: S.Bool({ default: false }), // sends []: Array<number> to Text.clipRect when true
+    textOrientation: Schema.String({ default: '+x+y' }),
+    clipActive: Schema.Bool({ default: false }), // sends []: Array<number> to Text.clipRect when true
     clipRectMin: T.Vec2(new Vector2(-1024, -1024)), // pixels. Sent to troika as [minX, minY, maxX, maxY] :Array<number>
     clipRectMax: T.Vec2(new Vector2(1024, 1024)), // pixels. Sent to troika as [minX, minY, maxX, maxY] :Array<number>
-    gpuAccelerated: S.Bool({ default: true }),
-    glyphResolution: S.Number({ default: 6 }), // Maps to troika.Text.sdfGlyphSize. Sent to troika as 2^N :number
-    glyphDetail: S.Number({ default: 1 }) // Maps to troika.Text.glyphGeometryDetail
+    gpuAccelerated: Schema.Bool({ default: true }),
+    glyphResolution: Schema.Number({ default: 6 }), // Maps to troika.Text.sdfGlyphSize. Sent to troika as 2^N :number
+    glyphDetail: Schema.Number({ default: 1 }) // Maps to troika.Text.glyphGeometryDetail
   }),
 
   reactor: function () {

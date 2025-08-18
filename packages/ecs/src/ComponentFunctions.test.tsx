@@ -282,14 +282,14 @@ describe('ComponentFunctions', async () => {
     //   const ObjComponent = defineComponent({
     //     name: 'ObjComponent',
     //     schema: Schema.Object({
-    //       light: S.Required(S.Class(() => new DirectionalLight())),
+    //       light: S.Required(Schema.Class(() => new DirectionalLight())),
     //       other: Schema.Number(0)
     //     })
     //   })
 
     //   const TopLevelComponent = defineComponent({
     //     name: 'ObjComponent',
-    //     schema: S.Required(S.Class(() => new DirectionalLight()))
+    //     schema: S.Required(Schema.Class(() => new DirectionalLight()))
     //   })
 
     //   const entity = createEntity()

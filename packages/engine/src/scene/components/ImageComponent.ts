@@ -29,8 +29,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useState } from '@ir-engine/hyperflux'
+import { Schema, useState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Vector2_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { AssetType, FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
@@ -46,20 +45,20 @@ export const SPHERE_GEO = () => new SphereGeometry(1, 64, 32)
 export const PLANE_GEO_FLIPPED = () => flipNormals(new PlaneGeometry(1, 1, 1, 1))
 export const SPHERE_GEO_FLIPPED = () => flipNormals(new SphereGeometry(1, 64, 32))
 
-export const SideSchema = (init: Side) => S.LiteralUnion([FrontSide, BackSide, DoubleSide], { default: init })
+export const SideSchema = (init: Side) => Schema.LiteralUnion([FrontSide, BackSide, DoubleSide], { default: init })
 
 export const ImageComponent = defineComponent({
   name: 'EE_image',
   jsonID: 'EE_image',
 
-  schema: S.Object({
-    source: S.String({ default: '' }),
-    alphaMode: S.Enum(ImageAlphaMode, {
+  schema: Schema.Object({
+    source: Schema.String({ default: '' }),
+    alphaMode: Schema.Enum(ImageAlphaMode, {
       $comment: "A string enum, ie. one of the following values: 'Opaque', 'Blend', 'Mask'",
       default: ImageAlphaMode.Opaque
     }),
-    alphaCutoff: S.Number({ default: 0.5 }),
-    projection: S.Enum(ImageProjection, {
+    alphaCutoff: Schema.Number({ default: 0.5 }),
+    projection: Schema.Enum(ImageProjection, {
       $comment: "A string enum, ie. one of the following values: 'Flat', 'Equirectangular360'",
       default: ImageProjection.Flat
     }),

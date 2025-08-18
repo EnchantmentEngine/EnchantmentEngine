@@ -11,7 +11,6 @@ import {
   NetworkObjectComponent,
   removeComponent,
   removeEntity,
-  S,
   setComponent,
   UndefinedEntity,
   useComponent,
@@ -45,9 +44,9 @@ function getSelfAvatarHeadPosition(selfAvatarEntity: Entity, vec3: Vector3): voi
 
 export const XruiNameplateComponent = defineComponent({
   name: 'XruiNameplateComponent',
-  schema: S.Object({
-    uiEntity: S.Entity(),
-    nameLabel: S.String()
+  schema: Schema.Object({
+    uiEntity: EntitySchema.Entity(),
+    nameLabel: Schema.String()
   }),
 
   Transitions: new Map<Entity, ReturnType<typeof createTransitionState>>(),

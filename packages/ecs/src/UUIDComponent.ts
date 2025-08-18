@@ -101,13 +101,12 @@ export const UUIDComponent = defineComponent({
     const uuid = UUIDComponent.join(idPair)
 
     const layer = LayerComponent.get(entity)
-    const sourceStore = getEntitiesBySourceStore(layer)
-    const currentState = sourceStore.value
+    const uuidStore = getEntitiesByUUIDStore(layer)
 
     // throw error if uuid is already in use
-    const currentEntity = currentState[uuid]
+    const currentEntity = uuidStore.value[uuid]
     if (currentEntity && currentEntity !== entity) {
-      throw new Error(`UUID ${uuid} is already in use by ${currentEntity}`)
+      throw new Error(`UUID ${uuid} is already in use by ${currentEntity} ${entity}`)
     }
 
     const prev = component.entityID && component.entitySourceID ? UUIDComponent.join(component) : undefined
@@ -117,9 +116,9 @@ export const UUIDComponent = defineComponent({
     }
 
     // set new uuid
-
+    const sourceStore = getEntitiesBySourceStore(layer)
+    const currentState = sourceStore.value
     UUIDComponentFunctions._getUUIDState(uuid, layer)
-    const uuidStore = getEntitiesByUUIDStore(layer)
     uuidStore.value[uuid] = entity
     uuidStore.set(uuidStore.value)
 

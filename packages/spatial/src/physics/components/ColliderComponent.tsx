@@ -9,7 +9,7 @@ import {
 } from '@ir-engine/ecs'
 
 import { useAncestorWithComponents } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { useEffect, useLayoutEffect } from 'react'
 import { removeCallback, setCallback } from '../../common/CallbackComponent'
 import { Vector3_One } from '../../common/constants/MathConstants'
@@ -24,25 +24,25 @@ export const ColliderComponent = defineComponent({
   name: 'ColliderComponent',
   jsonID: 'EE_collider',
 
-  schema: S.Object({
+  schema: Schema.Object({
     shape: ShapeSchema('box'),
-    mass: S.Number({ default: 1 }),
+    mass: Schema.Number({ default: 1 }),
     massCenter: T.Vec3(),
-    friction: S.Number({ default: 0.5 }),
-    restitution: S.Number({ default: 0.5 }),
-    collisionLayer: S.Enum(CollisionGroups, {
+    friction: Schema.Number({ default: 0.5 }),
+    restitution: Schema.Number({ default: 0.5 }),
+    collisionLayer: Schema.Enum(CollisionGroups, {
       $comment:
         "A bitmask, ie. an integer whose binary digits, in order of least to most significance, represent the following values: 'Default', 'Avatars', 'Ground', 'Trigger'",
       default: CollisionGroups.Default
     }),
-    collisionMask: S.Number({ default: DefaultCollisionMask }),
-    hasCollider: S.Bool({ default: false, serialized: false }),
+    collisionMask: Schema.Number({ default: DefaultCollisionMask }),
+    hasCollider: Schema.Bool({ default: false, serialized: false }),
     //shape specific parameters
-    matchMesh: S.Bool({ default: true }),
+    matchMesh: Schema.Bool({ default: true }),
     centerOffset: T.Vec3(),
     boxSize: T.Vec3(Vector3_One),
-    radius: S.Number({ default: 1 }),
-    height: S.Number({ default: 2 })
+    radius: Schema.Number({ default: 1 }),
+    height: Schema.Number({ default: 2 })
   }),
 
   reactor: ({ entity }) => {
