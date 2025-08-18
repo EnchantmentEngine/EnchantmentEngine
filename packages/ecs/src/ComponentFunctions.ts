@@ -36,7 +36,7 @@ import { ECSState } from './ECSState'
 import { Easing, EasingFunction } from './EasingFunctions'
 import { Entity, UndefinedEntity } from './Entity'
 import { QueryReactor, defineQuery, removeQuery } from './QueryFunctions'
-import { ECSSchema } from './Schemas'
+import { EntitySchema } from './Schemas'
 import { defineSystem } from './SystemFunctions'
 import { PresentationSystemGroup } from './SystemGroups'
 import { Transitionable, TransitionableTypes, getTransitionableKeyForType } from './Transitionable'
@@ -1128,7 +1128,7 @@ export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
           $comment:
             "A numeric enum, ie. the value of one of the following key-value pairs: 'Simulation': 0, 'Authoring': 1"
         }),
-        ECSSchema.Entity()
+        EntitySchema.Entity()
       )
     }),
 

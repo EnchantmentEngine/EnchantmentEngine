@@ -1,7 +1,7 @@
 import { Schema, TTypedSchema } from '@ir-engine/hyperflux'
 import { Entity, EntityID, EntityUUID, SourceID } from './Entity'
 
-export const ECSSchema = {
+export const EntitySchema = {
   /** Entity type schema helper, Entities will not be serialized, defaults to UndefinedEntity */
   Entity: (options?: TTypedSchema<Entity>['options']) =>
     Schema.Number({ serialized: true, id: 'Entity', ...options }) as unknown as TTypedSchema<Entity>,

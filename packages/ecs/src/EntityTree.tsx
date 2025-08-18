@@ -19,7 +19,7 @@ import {
 } from './ComponentFunctions'
 import { Entity, UndefinedEntity } from './Entity'
 import { QueryReactor, useQuery } from './QueryFunctions'
-import { ECSSchema } from './Schemas'
+import { EntitySchema } from './Schemas'
 import { UUIDComponent } from './UUIDComponent'
 
 type EntityTreeSetType = {
@@ -42,11 +42,11 @@ export const EntityTreeComponent = defineComponent({
   jsonID: 'IR_hierarchy',
 
   schema: Schema.Object({
-    parentEntity: ECSSchema.Entity({}),
+    parentEntity: EntitySchema.Entity({}),
     // automatically updated if parent exists
     childIndex: Schema.Optional(Schema.Number()),
     // automatically updated if parent exists
-    children: Schema.Array(ECSSchema.Entity(), { serialized: false })
+    children: Schema.Array(EntitySchema.Entity(), { serialized: false })
   }),
 
   onSet: (entity, component, json?: Readonly<EntityTreeSetType>) => {

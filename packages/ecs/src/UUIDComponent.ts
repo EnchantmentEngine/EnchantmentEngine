@@ -13,7 +13,7 @@ import {
   useOptionalComponent
 } from './ComponentFunctions'
 import { Entity, EntityID, EntityUUID, EntityUUIDPair, SourceID, UndefinedEntity } from './Entity'
-import { ECSSchema } from './Schemas'
+import { EntitySchema } from './Schemas'
 
 /**
  * SimpleStore instances for each layer - EntitiesBySource
@@ -83,7 +83,7 @@ export const UUIDComponent = defineComponent({
   schema: Schema.Object(
     {
       entitySourceID: Schema.String(),
-      entityID: ECSSchema.EntityID()
+      entityID: EntitySchema.EntityID()
     },
     {
       required: true
