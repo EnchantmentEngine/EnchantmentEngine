@@ -1,18 +1,16 @@
-import { OpaqueType, PeerID, UserID } from '@ir-engine/hyperflux'
+import { OpaqueType, PeerID, Schema, TTypedSchema, UserID } from '@ir-engine/hyperflux'
 import { createResizableTypeArray } from '../bitecsLegacy'
 import { Component, defineComponent, getComponent, hasComponent } from '../ComponentFunctions'
 import { Entity, UndefinedEntity } from '../Entity'
+import { proxySoAStore } from '../proxySoAStore'
 import { defineQuery } from '../QueryFunctions'
-import { S } from '../schemas/JSONSchemas'
-import { TTypedSchema } from '../schemas/JSONSchemaTypes'
-import { proxySoAStore } from '../schemas/proxySoAStore'
 
 export type NetworkId = OpaqueType<'networkId'> & number
 
 export const NetworkSchema = {
   /** NetworkID type schema helper, defaults to 0 */
   NetworkID: (options?: TTypedSchema<NetworkId>['options']) =>
-    S.Number({ ...options, id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
+    Schema.Number({ ...options, id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
 }
 
 const proxyNetworkId = proxySoAStore(() => NetworkObjectComponent.networkId)
@@ -20,14 +18,14 @@ const proxyNetworkId = proxySoAStore(() => NetworkObjectComponent.networkId)
 export const NetworkObjectComponent = defineComponent({
   name: 'NetworkObjectComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** The user who is authority over this object. */
-    ownerId: S.UserID(),
-    ownerPeer: S.PeerID(),
+    ownerId: Schema.UserID(),
+    ownerPeer: Schema.PeerID(),
     /** The peer who is authority over this object. */
-    authorityPeerID: S.PeerID(),
+    authorityPeerID: Schema.PeerID(),
     /** The network id for this object (this id is only unique per owner) */
-    networkId: S.Proxy(NetworkSchema.NetworkID())
+    networkId: Schema.Proxy(NetworkSchema.NetworkID())
   }),
 
   storage: {

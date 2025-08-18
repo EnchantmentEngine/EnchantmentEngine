@@ -2,16 +2,7 @@ import { act, render } from '@testing-library/react'
 import React, { useEffect } from 'react'
 import { afterEach, assert, beforeEach, describe, it } from 'vitest'
 
-import {
-  createEntity,
-  entityExists,
-  EntityUUID,
-  hasComponents,
-  Not,
-  removeEntity,
-  S,
-  UUIDComponent
-} from '@ir-engine/ecs'
+import { createEntity, entityExists, EntityUUID, hasComponents, Not, removeEntity, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -22,6 +13,7 @@ import {
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, EntityUUIDPair, SourceID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
+import { Schema } from '@ir-engine/hyperflux'
 import {
   EntityTreeComponent,
   findIndexOfEntityNode,
@@ -722,10 +714,10 @@ describe('traverseEntityNodeParent', () => {
   })
 }) //:: traverseEntityNodeParent
 
-const ComponentA = defineComponent({ name: 'ComponentA', schema: S.String() })
-const ComponentB = defineComponent({ name: 'ComponentB', schema: S.String() })
-const ComponentC = defineComponent({ name: 'ComponentC', schema: S.String() })
-const ComponentD = defineComponent({ name: 'ComponentD', schema: S.String() })
+const ComponentA = defineComponent({ name: 'ComponentA', schema: Schema.String() })
+const ComponentB = defineComponent({ name: 'ComponentB', schema: Schema.String() })
+const ComponentC = defineComponent({ name: 'ComponentC', schema: Schema.String() })
+const ComponentD = defineComponent({ name: 'ComponentD', schema: Schema.String() })
 
 describe('getAncestorWithComponents', () => {
   beforeEach(() => {

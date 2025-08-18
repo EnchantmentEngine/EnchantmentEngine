@@ -4,13 +4,11 @@ import {
   Entity,
   getOptionalComponent,
   PresentationSystemGroup,
-  Schema,
-  Static,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
 import { SystemUUID, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, SchemaDefinition, Static, useHookstate } from '@ir-engine/hyperflux'
 import {
   MaterialPluginComponents,
   MaterialStateComponent
@@ -25,9 +23,9 @@ export type ValidNodeUniformTypes = boolean | number | string | Vector2 | Vector
 
 export type NodeUniformRecord = Record<string, ValidNodeUniformTypes>
 
-const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
+const isTextureUniform = (uniformSchema: SchemaDefinition) => !!uniformSchema.options?.metadata?.$isTexture
 
-export const defineNodeMaterialPlugin = <T extends Schema>({
+export const defineNodeMaterialPlugin = <T extends SchemaDefinition>({
   name,
   jsonID,
   uniforms: uniformSchema,

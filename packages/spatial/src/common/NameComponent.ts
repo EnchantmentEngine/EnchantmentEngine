@@ -6,9 +6,5 @@ export const NameComponent = defineComponent({
 
   jsonID: 'IR_name',
 
-  schema: S.String({
-    default: ''
-    /** @todo - previously this validation never ran because we had a custom onSet, so now it causes problems */
-    // validate: NonEmptyString('NameComponent expects a non-empty string')
-  })
+  schema: S.String({ default: '', required: true, serialized: true })
 })

@@ -10,15 +10,11 @@ import {
   matchesEntityID,
   matchesEntitySourceID,
   SourceID,
-  Static,
-  TObjectSchema,
-  TProperties,
   useComponent,
   useHasComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-
 import {
   defineAction,
   defineState,
@@ -29,6 +25,9 @@ import {
   NetworkTopics,
   NO_PROXY,
   none,
+  Static,
+  TObjectSchema,
+  TProperties,
   useHookstate,
   useImmediateEffect,
   useMutableState,
