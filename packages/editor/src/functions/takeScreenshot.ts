@@ -128,7 +128,7 @@ export async function takeScreenshot(
 export const downloadScreenshot = () => {
   const cameraEntity = getState(ReferenceSpaceState).viewerEntity
   const camera = getComponent(cameraEntity, CameraComponent)
-  takeScreenshot(camera, cameraEntity, 1920 * 4, 1080 * 4, 1, 'png', false).then((blob) => {
+  takeScreenshot(camera as PerspectiveCamera, cameraEntity, 1920 * 4, 1080 * 4, 1, 'png', false).then((blob) => {
     if (!blob) return
 
     const blobUrl = URL.createObjectURL(blob)

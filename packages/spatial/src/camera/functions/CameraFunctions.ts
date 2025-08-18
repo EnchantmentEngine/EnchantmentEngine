@@ -1,13 +1,30 @@
-import { ComponentType, getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  ComponentType,
+  getComponent,
+  getOptionalComponent,
+  hasComponent,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
 import { getState } from '@ir-engine/hyperflux'
-import { Box3, Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
+import {
+  ArrayCamera,
+  Box3,
+  Frustum,
+  Matrix4,
+  OrthographicCamera,
+  PerspectiveCamera,
+  Quaternion,
+  Sphere,
+  Vector3
+} from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { BoundingBoxComponent, updateBoundingBox } from '../../transform/components/BoundingBoxComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { getBoundingBoxVertices } from '../../transform/functions/BoundingBoxFunctions'
 import { CameraComponent } from '../components/CameraComponent'
+import { PerspectiveCameraComponent } from '../components/PerspectiveCameraComponent'
 import { TargetCameraRotationComponent } from '../components/TargetCameraRotationComponent'
 
 export const setTargetCameraRotation = (entity: Entity, phi: number, theta: number, time = 0.3) => {
@@ -100,7 +117,7 @@ export function setCameraFocusOnBoxFromAngle(
   const radius = boundingSphere.radius
 
   const camera = getComponent(cameraEntity, CameraComponent)
-  const fov = camera.fov * (Math.PI / 180) // convert vertical fov to radians
+  const fov = (camera as ArrayCamera).fov * (Math.PI / 180) // convert vertical fov to radians
 
   // Calculate the direction vector based on the view angle
   let direction = new Vector3()
@@ -160,7 +177,9 @@ export function setCameraFocusOnBoxFromAngle(
   camera.matrixWorldInverse.copy(camera.matrixWorld).invert()
 
   // Update the view camera matrices
-  const viewCamera = camera.cameras[0]
+  const viewCamera = hasComponent(cameraEntity, PerspectiveCameraComponent)
+    ? (camera as ArrayCamera).cameras[0]
+    : (camera as OrthographicCamera)
   viewCamera.matrixWorld.copy(camera.matrixWorld)
   viewCamera.matrixWorldInverse.copy(camera.matrixWorldInverse)
   viewCamera.projectionMatrix.copy(camera.projectionMatrix)

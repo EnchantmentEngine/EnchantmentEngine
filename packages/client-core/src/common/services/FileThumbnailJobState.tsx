@@ -12,6 +12,7 @@ import {
   UndefinedEntity,
   createEntity,
   getComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useOptionalComponent,
@@ -42,7 +43,7 @@ import {
   updateBoundingBox
 } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import React, { Suspense, useEffect, useRef } from 'react'
-import { Color, Euler, Material, Mesh, Quaternion, SphereGeometry } from 'three'
+import { ArrayCamera, Color, Euler, Material, Mesh, OrthographicCamera, Quaternion, SphereGeometry } from 'three'
 
 import { useFind } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
@@ -53,6 +54,7 @@ import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { ShadowComponent } from '@ir-engine/engine/src/scene/components/ShadowComponent'
 import { SkyboxComponent } from '@ir-engine/engine/src/scene/components/SkyboxComponent'
+import { PerspectiveCameraComponent } from '@ir-engine/spatial/src/camera/components/PerspectiveCameraComponent'
 import {
   CameraViewAngle,
   setCameraFocusOnBox,
@@ -484,7 +486,7 @@ const useRenderEntities = (src: string): [Entity, Entity, Entity, Entity] => {
     thumbnailCanvas.height = 256
     canvasContainer.appendChild(thumbnailCanvas)
 
-    setComponent(cameraEntity, CameraComponent)
+    setComponent(cameraEntity, PerspectiveCameraComponent)
     setComponent(cameraEntity, RendererComponent, { canvas: thumbnailCanvas })
     setComponent(cameraEntity, VisibleComponent, true)
 
@@ -529,7 +531,9 @@ const renderThumbnailFromAngle = (
       const camera = getComponent(cameraEntity, CameraComponent)
       camera.layers.set(ObjectLayers.Scene)
 
-      const viewCamera = camera.cameras[0]
+      const viewCamera = hasComponent(cameraEntity, PerspectiveCameraComponent)
+        ? (camera as ArrayCamera).cameras[0]
+        : (camera as OrthographicCamera)
 
       viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
       setComponent(cameraEntity, RendererComponent, { scenes: [entity, lightEntity, skyboxEntity] })
@@ -540,7 +544,7 @@ const renderThumbnailFromAngle = (
       const { background, children } = getSceneParameters(entitiesToRender, cameraEntity)
       scene.children = children
       scene.background = background
-      render(renderer, renderer.scene, getComponent(cameraEntity, CameraComponent), 0, false)
+      render(renderer, renderer.scene, camera as ArrayCamera, 0, false)
 
       canvas!.toBlob((blob: Blob) => {
         if (blob) {
@@ -686,7 +690,9 @@ const renderThumbnail = (
     const camera = getComponent(cameraEntity, CameraComponent)
     camera.layers.set(ObjectLayers.Scene)
 
-    const viewCamera = camera.cameras[0]
+    const viewCamera = hasComponent(cameraEntity, PerspectiveCameraComponent)
+      ? (camera as ArrayCamera).cameras[0]
+      : (camera as OrthographicCamera)
 
     viewCamera.layers.mask = ObjectLayerMaskComponent.mask[cameraEntity]
 
@@ -698,7 +704,7 @@ const renderThumbnail = (
     const { background, children } = getSceneParameters(entitiesToRender, cameraEntity)
     scene.children = children
     scene.background = background
-    render(renderer, renderer.scene, getComponent(cameraEntity, CameraComponent), 0, false)
+    render(renderer, renderer.scene, getComponent(cameraEntity, CameraComponent) as ArrayCamera, 0, false)
 
     canvas!.toBlob((blob: Blob) => {
       uploadThumbnail(src, project, blob)

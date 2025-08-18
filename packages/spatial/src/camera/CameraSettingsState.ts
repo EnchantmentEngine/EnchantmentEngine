@@ -19,7 +19,7 @@ export const CameraSettingsState = defineState({
     fov: 60,
     cameraNearClip: 0.1,
     cameraFarClip: 1000,
-    projectionType: ProjectionType.Perspective,
+    projectionType: ProjectionType.Perspective as ProjectionType,
     minPhi: -70,
     maxPhi: 85,
     cameraMode: CameraMode.FOLLOW as CameraModeType,

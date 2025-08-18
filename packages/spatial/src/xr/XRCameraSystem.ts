@@ -101,7 +101,7 @@ function updateProjectionFromCameraArrayUnion(camera: ArrayCamera) {
 }
 
 function updateCameraFromXRViewerPose() {
-  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent) as ArrayCamera
   const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
   const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!
@@ -202,7 +202,7 @@ export function updateXRCamera() {
 
   if (!renderer) return
 
-  const camera = getComponent(viewerEntity, CameraComponent)
+  const camera = getComponent(viewerEntity, CameraComponent) as ArrayCamera // will always be Array Camera
   const xrState = getState(XRState)
   const session = xrState.session
 

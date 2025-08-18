@@ -893,8 +893,8 @@ function castRayFromCamera(
   const worldEntity = world.id
   const worldTransform = getComponent(worldEntity, TransformComponent)
 
-  if ((camera as PerspectiveCamera).isPerspectiveCamera) {
-    _perspectiveCamera.copy(camera as PerspectiveCamera)
+  if ((camera as any).isPerspectiveCamera) {
+    _perspectiveCamera.copy(camera)
     _perspectiveCamera.updateProjectionMatrix()
     _perspectiveCamera.matrixWorld.copy(worldTransform.matrixWorld).invert().multiply(camera.matrixWorld)
     raycastQuery.origin.setFromMatrixPosition(_perspectiveCamera.matrixWorld)
@@ -903,8 +903,8 @@ function castRayFromCamera(
       .unproject(_perspectiveCamera)
       .sub(raycastQuery.origin)
       .normalize()
-  } else if ((camera as OrthographicCamera).isOrthographicCamera) {
-    _orthographicCamera.copy(camera as OrthographicCamera)
+  } else if ((camera as any).isOrthographicCamera) {
+    _orthographicCamera.copy(camera)
     _orthographicCamera.updateProjectionMatrix()
     _orthographicCamera.matrixWorld.copy(worldTransform.matrixWorld).invert().multiply(camera.matrixWorld)
     raycastQuery.origin

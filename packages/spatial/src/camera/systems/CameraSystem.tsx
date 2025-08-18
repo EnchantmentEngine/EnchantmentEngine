@@ -1,32 +1,41 @@
 import React, { useEffect } from 'react'
-import { PerspectiveCamera } from 'three'
 
 import {
   AnimationSystemGroup,
   defineSystem,
   Engine,
+  Entity,
   EntityUUID,
   getComponent,
   getOptionalComponent,
+  hasComponent,
   NetworkObjectOwnedTag,
   NetworkObjectSendPeriodicUpdatesTag,
+  query,
   QueryReactor,
   removeComponent,
   setComponent,
   useEntityContext,
+  useOptionalComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, none, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
 
+import { DEG2RAD } from 'three/src/math/MathUtils'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
+import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSettingsState'
 import { CameraActions } from '../CameraState'
 import { CameraComponent } from '../components/CameraComponent'
+import { CameraOrbitComponent } from '../components/CameraOrbitComponent'
 import { FollowCameraComponent } from '../components/FollowCameraComponent'
+import { OrthographicCameraComponent } from '../components/OrthographicCameraComponent'
+import { PerspectiveCameraComponent } from '../components/PerspectiveCameraComponent'
 import { FollowCameraMode } from '../types/FollowCameraMode'
+import { ProjectionType } from '../types/ProjectionType'
 
 export const CameraEntityState = defineState({
   name: 'CameraEntityState',
@@ -60,7 +69,7 @@ const CameraEntity = (props: { entityUUID: EntityUUID }) => {
 
   useEffect(() => {
     if (!entity) return
-    setComponent(entity, CameraComponent)
+    setComponent(entity, PerspectiveCameraComponent)
   }, [entity])
 
   return null
@@ -68,17 +77,25 @@ const CameraEntity = (props: { entityUUID: EntityUUID }) => {
 
 function CameraReactor() {
   const cameraSettings = useMutableState(CameraSettingsState)
+  const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
+  const camera = useOptionalComponent(viewerEntity, CameraComponent)
 
+  /*TODO: figure out a means to prevent the slight camera distortion that happens when you switch between orthographic and perspective*/
   useEffect(() => {
-    if (!cameraSettings?.cameraNearClip) return
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent) as PerspectiveCamera
-    if (camera?.isPerspectiveCamera) {
-      camera.fov = cameraSettings.fov.value
-      camera.near = cameraSettings.cameraNearClip.value
-      camera.far = cameraSettings.cameraFarClip.value
-      camera.updateProjectionMatrix()
+    if (!camera) return
+    if (cameraSettings.projectionType.value === ProjectionType.Orthographic) {
+      console.log(
+        'DEBUG',
+        getComponent(viewerEntity, RendererComponent).canvas!.parentElement?.clientWidth,
+        getComponent(viewerEntity, RendererComponent).canvas!.parentElement?.clientHeight
+      )
+      removeComponent(viewerEntity, PerspectiveCameraComponent)
+      setComponent(viewerEntity, OrthographicCameraComponent) // happens because oninit camera is created fist
+    } else {
+      removeComponent(viewerEntity, OrthographicCameraComponent)
+      setComponent(viewerEntity, PerspectiveCameraComponent)
     }
-  }, [cameraSettings.fov, cameraSettings.cameraNearClip, cameraSettings.cameraFarClip])
+  }, [cameraSettings.projectionType])
 
   // TODO: this is messy and not properly reactive; we need a better way to handle camera settings
   useEffect(() => {
@@ -134,9 +151,51 @@ const OwnedCameraReactor = () => {
   return null
 }
 
+const updateOrthographicCamera = (cameraEid: Entity, distance: number, aspect: number, fov: number) => {
+  const heightVisible = 2 * Math.tan((DEG2RAD * fov) / 2) * distance
+  const widthVisible = heightVisible * aspect
+  setComponent(cameraEid, OrthographicCameraComponent, {
+    width: widthVisible,
+    height: heightVisible
+  })
+}
+
+const updatePerspectiveCamera = (cameraEid: Entity, aspect: number) => {
+  setComponent(cameraEid, PerspectiveCameraComponent, {
+    aspect: aspect
+  })
+}
+
+const execute = () => {
+  for (const cameraEid of query([RendererComponent, CameraComponent, CameraOrbitComponent])) {
+    const transform = getComponent(cameraEid, TransformComponent)
+    const cameraOrbit = getComponent(cameraEid, CameraOrbitComponent)
+    const camera = getComponent(cameraEid, CameraComponent)
+    const renderer = getComponent(cameraEid, RendererComponent)
+
+    if (!renderer.canvas?.parentElement) {
+      continue
+    }
+
+    const canvasParent = renderer.canvas.parentElement
+    const aspect = canvasParent.clientWidth / canvasParent.clientHeight
+
+    if (hasComponent(cameraEid, OrthographicCameraComponent)) {
+      const fov = getState(CameraSettingsState).fov
+      const distance = transform.position.distanceTo(cameraOrbit.cameraOrbitCenter)
+      updateOrthographicCamera(cameraEid, distance, aspect, fov)
+    } else if (hasComponent(cameraEid, PerspectiveCameraComponent)) {
+      updatePerspectiveCamera(cameraEid, aspect)
+    }
+
+    camera.updateProjectionMatrix()
+  }
+}
+
 export const CameraSystem = defineSystem({
   uuid: 'ee.engine.CameraSystem',
   insert: { with: AnimationSystemGroup },
+  execute: execute,
   reactor: () => {
     if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
     return <CameraReactor />

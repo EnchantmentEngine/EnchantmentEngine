@@ -37,7 +37,7 @@ const execute = () => {
     const editorCameraCenter = cameraOrbit.cameraOrbitCenter
     const distance = transform.position.distanceTo(editorCameraCenter)
     const camera = getComponent(cameraEid, CameraComponent)
-    // distance <= cameraOrbit.maximumZoomDistance && distance >= cameraOrbit.minimumZoomDistance
+
     if (zoom) {
       delta.set(0, 0, zoom * distance * cameraOrbit.zoomSpeed)
       if (delta.length() < distance) {

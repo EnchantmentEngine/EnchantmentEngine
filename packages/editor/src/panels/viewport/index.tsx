@@ -35,6 +35,7 @@ import { getCursorPositionNormalized, getScreenSpacePosition } from '../../funct
 import { EditorState } from '../../services/EditorServices'
 import CameraGizmoTool from './tools/CameraGizmoTool'
 import RenderModeTool from './tools/RenderTool'
+import SceneCameraTool from './tools/SceneCameraTool'
 import SceneHelpersTool from './tools/SceneHelpersTool'
 import ScenePlaybackTool from './tools/ScenePlaybackTool'
 import SelectionBox from './tools/SelectionBoxTool'
@@ -356,6 +357,8 @@ export function ViewportContainer() {
         </div>
         {sceneName.value ? <SelectionBox viewportRef={ref} toolbarRef={toolbarRef} /> : null}
         {sceneName.value ? <TransformGizmoTool /> : null}
+        {sceneName.value ? <SceneCameraTool /> : null}
+
         {sceneName.value ? <CameraGizmoTool viewportRef={ref} toolbarRef={toolbarRef} /> : null}
         <div id="engine-renderer-canvas-container" ref={canvasReactRef} className="absolute z-10 h-full w-full" />
         {sceneName.value ? (

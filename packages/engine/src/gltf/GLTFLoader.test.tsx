@@ -37,7 +37,7 @@ import {
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { overrideFileLoaderLoad } from '@ir-engine/spatial/tests/util/overrideAssetLoaders'
-import { InstancedMesh, LoaderUtils, LoadingManager, MathUtils, MeshStandardMaterial } from 'three'
+import { ArrayCamera, InstancedMesh, LoaderUtils, LoadingManager, MathUtils, MeshStandardMaterial } from 'three'
 import { startEngineReactor } from '../../tests/startEngineReactor'
 import { AnimationComponent } from '../avatar/components/AnimationComponent'
 import { GLTFComponent } from './GLTFComponent'
@@ -445,9 +445,9 @@ describe('GLTF Loader', async () => {
     const cameraComponent = getComponent(cameraEntities[0], CameraComponent)
     const gltfCamera = cameras[0].perspective!
 
-    assert(cameraComponent.aspect === gltfCamera.aspectRatio)
+    assert((cameraComponent as ArrayCamera).aspect === gltfCamera.aspectRatio)
     assert(cameraComponent.far === gltfCamera.zfar)
-    assert(cameraComponent.fov === MathUtils.radToDeg(gltfCamera.yfov))
+    assert((cameraComponent as ArrayCamera).fov === MathUtils.radToDeg(gltfCamera.yfov))
     assert(cameraComponent.near === gltfCamera.znear)
   })
 

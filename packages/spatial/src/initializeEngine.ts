@@ -7,6 +7,7 @@ import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { EntityTreeComponent } from '@ir-engine/ecs'
 import { useEffect } from 'react'
 import { CameraComponent } from './camera/components/CameraComponent'
+import { PerspectiveCameraComponent } from './camera/components/PerspectiveCameraComponent'
 import { NameComponent } from './common/NameComponent'
 import { InputComponent } from './input/components/InputComponent'
 import { ReferenceSpaceState } from './ReferenceSpaceState'
@@ -28,7 +29,7 @@ export const initializeSpatialViewer = (canvas?: HTMLCanvasElement) => {
     entityID: 'viewer' as EntityID
   })
   setComponent(viewerEntity, TransformComponent)
-  setComponent(viewerEntity, CameraComponent)
+  setComponent(viewerEntity, PerspectiveCameraComponent)
   setComponent(viewerEntity, VisibleComponent, true)
   setComponent(viewerEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
   setComponent(viewerEntity, InputComponent)
@@ -36,12 +37,15 @@ export const initializeSpatialViewer = (canvas?: HTMLCanvasElement) => {
   camera.matrixAutoUpdate = false
   camera.matrixWorldAutoUpdate = false
   camera.layers.disableAll()
-  camera.layers.enable(ObjectLayers.Scene)
-  camera.layers.enable(ObjectLayers.Avatar)
-  camera.layers.enable(ObjectLayers.UI)
-  camera.layers.enable(ObjectLayers.TransformGizmo)
-  camera.layers.enable(ObjectLayers.Gizmos)
-  camera.layers.enable(ObjectLayers.UVOL)
+  const enableLayers = [
+    ObjectLayers.Scene,
+    ObjectLayers.Avatar,
+    ObjectLayers.UI,
+    ObjectLayers.TransformGizmo,
+    ObjectLayers.Gizmos,
+    ObjectLayers.UVOL
+  ]
+  enableLayers.forEach((layer) => camera.layers.enable(layer))
 
   if (canvas) {
     setComponent(viewerEntity, RendererComponent, { canvas, scenes: [viewerEntity] })

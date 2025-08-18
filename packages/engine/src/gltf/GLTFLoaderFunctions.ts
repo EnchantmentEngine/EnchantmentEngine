@@ -22,7 +22,7 @@ import {
   traverseEntityNode
 } from '@ir-engine/ecs'
 import { SceneUser, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
-import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { PerspectiveCameraComponent } from '@ir-engine/spatial/src/camera/components/PerspectiveCameraComponent'
 import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
@@ -1397,7 +1397,7 @@ const loadCamera = async (options: GLTFParserOptions, entity: Entity, nodeIndex:
 
   const perspectiveCamera = cameraDef.perspective
 
-  setComponent(entity, CameraComponent, {
+  setComponent(entity, PerspectiveCameraComponent, {
     fov: MathUtils.radToDeg(perspectiveCamera.yfov),
     aspect: perspectiveCamera.aspectRatio ?? 1,
     near: perspectiveCamera.znear ?? 1,

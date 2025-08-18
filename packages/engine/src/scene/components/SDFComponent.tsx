@@ -1,6 +1,7 @@
 import { DepthPass, ShaderPass } from 'postprocessing'
 import React, { useEffect } from 'react'
 import {
+  ArrayCamera,
   Camera,
   Color,
   DepthTexture,
@@ -66,8 +67,8 @@ export const SDFComponent = defineComponent({
       if (!SDFShader) SDFShader = createSDFShader()
 
       SDFShader.shader.uniforms.cameraMatrix.value = cameraTransform.matrix
-      SDFShader.shader.uniforms.fov.value = cameraComponent.fov
-      SDFShader.shader.uniforms.aspectRatio.value = cameraComponent.aspect
+      SDFShader.shader.uniforms.fov.value = (cameraComponent as ArrayCamera).fov
+      SDFShader.shader.uniforms.aspectRatio.value = (cameraComponent as ArrayCamera).aspect
       SDFShader.shader.uniforms.near.value = cameraComponent.near
       SDFShader.shader.uniforms.far.value = cameraComponent.far
       SDFShader.shader.uniforms.sdfMatrix.value = transformComponent.matrixWorld

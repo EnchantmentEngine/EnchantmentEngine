@@ -34,10 +34,10 @@ function createCameraFrustumGeometry(camera: PerspectiveCamera, maxDistance = 10
     const hw = width / 2,
       hh = height / 2
     return [
-      [-hw, hh, z],
-      [hw, hh, z],
-      [hw, -hh, z],
-      [-hw, -hh, z]
+      [-hw, hh, -z], // Flip Z
+      [hw, hh, -z],
+      [hw, -hh, -z],
+      [-hw, -hh, -z]
     ]
   }
 
@@ -69,6 +69,12 @@ function createCameraBodyGeometry(size = 0.2, lensConfig = { radius: 0.3, length
 
   const faces = [
     [
+      [-hs, hs, hs], // Flip Z
+      [hs, hs, hs],
+      [hs, -hs, hs],
+      [-hs, -hs, hs]
+    ],
+    [
       [-hs, hs, -hs],
       [hs, hs, -hs],
       [hs, -hs, -hs],
@@ -76,33 +82,27 @@ function createCameraBodyGeometry(size = 0.2, lensConfig = { radius: 0.3, length
     ],
     [
       [-hs, hs, hs],
-      [hs, hs, hs],
-      [hs, -hs, hs],
-      [-hs, -hs, hs]
-    ],
-    [
       [-hs, hs, -hs],
-      [-hs, hs, hs],
-      [-hs, -hs, hs],
-      [-hs, -hs, -hs]
-    ],
-    [
-      [hs, hs, -hs],
-      [hs, hs, hs],
-      [hs, -hs, hs],
-      [hs, -hs, -hs]
-    ],
-    [
-      [-hs, hs, -hs],
-      [hs, hs, -hs],
-      [hs, hs, hs],
-      [-hs, hs, hs]
-    ],
-    [
       [-hs, -hs, -hs],
-      [hs, -hs, -hs],
-      [hs, -hs, hs],
       [-hs, -hs, hs]
+    ],
+    [
+      [hs, hs, hs],
+      [hs, hs, -hs],
+      [hs, -hs, -hs],
+      [hs, -hs, hs]
+    ],
+    [
+      [-hs, hs, hs],
+      [hs, hs, hs],
+      [hs, hs, -hs],
+      [-hs, hs, -hs]
+    ],
+    [
+      [-hs, -hs, hs],
+      [hs, -hs, hs],
+      [hs, -hs, -hs],
+      [-hs, -hs, -hs]
     ]
   ]
 
@@ -115,7 +115,7 @@ function createCameraBodyGeometry(size = 0.2, lensConfig = { radius: 0.3, length
   const { radius, length, segments } = lensConfig
   const lensR = size * radius
   const lensL = size * length
-  const lensZ = -hs - lensL
+  const lensZ = hs + lensL // Flip Z
 
   Array.from({ length: segments }, (_, i) => {
     const a1 = (i / segments) * Math.PI * 2
@@ -124,7 +124,7 @@ function createCameraBodyGeometry(size = 0.2, lensConfig = { radius: 0.3, length
     const [x2, y2] = [Math.cos(a2) * lensR, Math.sin(a2) * lensR]
 
     positions.push(x1, y1, lensZ, x2, y2, lensZ)
-    if (i % 3 === 0) positions.push(x1, y1, -hs, x1, y1, lensZ)
+    if (i % 3 === 0) positions.push(x1, y1, hs, x1, y1, lensZ)
   })
 
   const geometry = new BufferGeometry()

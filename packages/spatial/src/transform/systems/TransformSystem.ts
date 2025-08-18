@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Frustum, Matrix4, Vector3 } from 'three'
+import { ArrayCamera, Frustum, Matrix4, OrthographicCamera, Vector3 } from 'three'
 
 import {
   AnimationSystemGroup,
@@ -16,6 +16,7 @@ import {
 } from '@ir-engine/ecs'
 import { getMutableState, getState, none } from '@ir-engine/hyperflux'
 import { CameraComponent } from '../../camera/components/CameraComponent'
+import { PerspectiveCameraComponent } from '../../camera/components/PerspectiveCameraComponent'
 import { insertionSort } from '../../common/functions/insertionSort'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
@@ -139,7 +140,9 @@ const execute = () => {
     if (xrFrame && entity === viewerEntity) continue
     const camera = getComponent(entity, CameraComponent)
     camera.matrixWorldInverse.copy(camera.matrixWorld).invert()
-    const viewCamera = camera.cameras[0]
+    const viewCamera = hasComponent(entity, PerspectiveCameraComponent)
+      ? (camera as ArrayCamera).cameras[0]
+      : (camera as OrthographicCamera)
     viewCamera.matrixWorld.copy(camera.matrixWorld)
     viewCamera.matrixWorldInverse.copy(camera.matrixWorldInverse)
     viewCamera.projectionMatrix.copy(camera.projectionMatrix)

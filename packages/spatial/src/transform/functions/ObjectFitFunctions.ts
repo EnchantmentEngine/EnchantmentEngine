@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector2, Vector3 } from 'three'
+import { ArrayCamera, Matrix4, Quaternion, Vector2, Vector3 } from 'three'
 
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -75,7 +75,7 @@ export const ObjectFitFunctions = {
     const bottomRadians = _vec.set(0, -1, -1).applyMatrix4(inverseProjection).angleTo(_forward)
     const vFOV = topRadians + bottomRadians
     const height = Math.tan(vFOV / 2) * Math.abs(distance) * 2
-    const width = height * camera.aspect
+    const width = height * (camera as ArrayCamera).aspect
     return _size.set(width, height)
   },
 

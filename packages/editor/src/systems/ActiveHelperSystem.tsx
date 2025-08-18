@@ -49,7 +49,7 @@ _raycaster.firstHitOnly = true
 const inputObjectsQuery = defineQuery([InputComponent, VisibleComponent, ObjectComponent])
 
 export const studioIconGizmoInputHeuristic = (
-  viewerEmtity: Entity = getState(ReferenceSpaceState).viewerEntity,
+  viewerEntity: Entity = getState(ReferenceSpaceState).viewerEntity,
   intersectionData: Set<IntersectionData>,
   position: Vector3,
   direction: Vector3
@@ -61,7 +61,7 @@ export const studioIconGizmoInputHeuristic = (
   if (!gizmoEnabled) return
 
   _raycaster.set(position, direction)
-  _raycaster.camera = getComponent(viewerEmtity, CameraComponent).cameras[0]
+  _raycaster.camera = getComponent(viewerEntity, CameraComponent)
 
   const objects = inputObjectsQuery().map((eid) => getComponent(eid, ObjectComponent))
 
