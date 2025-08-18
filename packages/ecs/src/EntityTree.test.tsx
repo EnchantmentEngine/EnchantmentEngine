@@ -292,7 +292,7 @@ describe('EntityTreeComponent', () => {
       })
 
       const entity = createEntity()
-      const testUUID = { entitySourceID: 'source' as SourceID, entityID: 'root' as EntityID } as EntityUUIDPair
+      const testUUID = { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID } as EntityUUIDPair
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
       setComponent(entity, UUIDComponent, testUUID)
 
@@ -379,7 +379,7 @@ describe('EntityTreeComponent', () => {
       })
 
       const entity = createEntity()
-      const uuid = { entitySourceID: 'source' as SourceID, entityID: 'root' as EntityID } as EntityUUIDPair
+      const uuid = { entitySourceID: 'source' as SourceID, entityID: 'test' as EntityID } as EntityUUIDPair
       setComponent(entity, EntityTreeComponent, { parentEntity: rootEntity })
       setComponent(entity, UUIDComponent, uuid)
 
