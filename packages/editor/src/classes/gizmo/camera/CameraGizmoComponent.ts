@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import { EntitySchema, EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,

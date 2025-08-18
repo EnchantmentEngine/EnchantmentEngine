@@ -306,7 +306,7 @@ const execute = () => {
 
   if (buttons.Undo?.down) onUndo()
   if (buttons.Redo?.down) onRedo()
-  if (buttonSchema.ObjectGridSnap?.down) onObjectGridSnap()
+  if (buttons.ObjectGridSnap?.down) onObjectGridSnap()
   if (buttons.TransformModeRotate?.down) onTransformModeRotate()
   if (buttons.TogglePlacementMode?.down) onTogglePlacementMode()
   if (buttons.TransformModeScale?.down) onTransformModeScale()

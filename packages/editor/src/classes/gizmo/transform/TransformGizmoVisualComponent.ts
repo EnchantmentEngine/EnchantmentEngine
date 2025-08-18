@@ -4,6 +4,7 @@ import {
   createEntity,
   defineComponent,
   Entity,
+  EntitySchema,
   EntityTreeComponent,
   removeEntityNodeRecursively,
   setComponent,

@@ -1,4 +1,5 @@
-import { defineComponent } from '@ir-engine/ecs'
+import { defineComponent, EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { Mesh, OrthographicCamera, WebGLRenderTarget } from 'three'
 import { LightmapperMaterial } from './LightmapperMaterial'
 

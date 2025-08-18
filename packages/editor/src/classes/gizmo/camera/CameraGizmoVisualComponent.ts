@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import {
+  EntitySchema,
   EntityTreeComponent,
   createEntity,
   defineComponent,

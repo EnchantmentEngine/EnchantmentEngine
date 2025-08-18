@@ -133,7 +133,7 @@ export class StaticResourceVectorService<
       embeddings.styleEmbedding = await this.generateEmbedding(data.style)
     }
     if (data.object_type) {
-      embeddingSchema.Object_typeEmbedding = await this.generateEmbedding(data.object_type)
+      embeddings.object_typeEmbedding = await this.generateEmbedding(data.object_type)
     }
     if (data.location) {
       embeddings.locationEmbedding = await this.generateEmbedding(data.location)
