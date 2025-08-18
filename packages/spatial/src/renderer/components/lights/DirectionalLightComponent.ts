@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { DirectionalLight } from 'three'
 
 import {
-  S,
   defineComponent,
   getComponent,
   removeComponent,
@@ -10,7 +9,7 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { Schema, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
 import { T } from '../../../schema/schemaFunctions'
 import { RendererState } from '../../RendererState'
@@ -21,14 +20,14 @@ export const DirectionalLightComponent = defineComponent({
   name: 'DirectionalLightComponent',
   jsonID: 'EE_directional_light',
 
-  schema: S.Object({
-    light: S.Type<DirectionalLight>({ serialized: false }),
+  schema: Schema.Object({
+    light: Schema.Type<DirectionalLight>({ serialized: false }),
     color: T.Color(),
-    intensity: S.Number({ default: 1 }),
-    castShadow: S.Bool({ default: false }),
-    shadowBias: S.Number({ default: -0.00001 }),
-    shadowRadius: S.Number({ default: 1 }),
-    cameraFar: S.Number({ default: 200 })
+    intensity: Schema.Number({ default: 1 }),
+    castShadow: Schema.Bool({ default: false }),
+    shadowBias: Schema.Number({ default: -0.00001 }),
+    shadowRadius: Schema.Number({ default: 1 }),
+    cameraFar: Schema.Number({ default: 200 })
   }),
 
   reactor: function () {

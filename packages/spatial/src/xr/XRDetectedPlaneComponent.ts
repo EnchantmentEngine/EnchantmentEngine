@@ -2,12 +2,11 @@ import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, ShadowMaterial } from 'three'
 
 import {
+  createEntity,
+  defineComponent,
   Engine,
   Entity,
   EntityTreeComponent,
-  S,
-  createEntity,
-  defineComponent,
   getComponent,
   removeEntity,
   setComponent,
@@ -15,7 +14,7 @@ import {
   useEntityContext
 } from '@ir-engine/ecs'
 
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 
 import { NameComponent } from '../common/NameComponent'
 import { MeshComponent } from '../renderer/components/MeshComponent'
@@ -44,12 +43,12 @@ export const XRDetectedPlaneComponentState = defineComponent({
 export const XRDetectedPlaneComponent = defineComponent({
   name: 'XRDetectedPlaneComponent',
 
-  schema: S.Object({
-    plane: S.Type<XRPlane>(),
+  schema: Schema.Object({
+    plane: Schema.Type<XRPlane>(),
     // internal
-    shadowMesh: S.Type<Mesh>({ serialized: false }),
-    geometry: S.Type<BufferGeometry>({ serialized: false }),
-    placementHelper: S.Type<Mesh>({ serialized: false })
+    shadowMesh: Schema.Type<Mesh>({ serialized: false }),
+    geometry: Schema.Type<BufferGeometry>({ serialized: false }),
+    placementHelper: Schema.Type<Mesh>({ serialized: false })
   }),
 
   reactor: function () {

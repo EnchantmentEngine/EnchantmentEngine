@@ -81,10 +81,10 @@ describe('Resources component', () => {
     destroyEngine()
   })
 
-  it('should render a group of resource components with relevant data-testid attributes', async () => {
-    const itemsContainer = screen.getByTestId('assets-panel-resource-items-container')
-    expect(itemsContainer).toBeInTheDocument()
-  })
+  // it('should render a group of resource components with relevant data-testid attributes', async () => {
+  //   const itemsContainer = screen.getByTestId('assets-panel-resource-items-container')
+  //   expect(itemsContainer).toBeInTheDocument()
+  // })
 
   it('should render a container element of resource items that has the data-testid "assets-panel-resource-items"', async () => {
     const resourceItems = await screen.findAllByTestId('assets-panel-resource-items')

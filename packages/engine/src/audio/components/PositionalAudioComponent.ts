@@ -14,7 +14,7 @@ import {
   MediaElementComponent
 } from '@ir-engine/engine/src/scene/components/MediaComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export interface PositionalAudioInterface {
   refDistance: number
@@ -26,21 +26,21 @@ export interface PositionalAudioInterface {
   coneOuterGain: number
 }
 
-const distanceModel = S.LiteralUnion(['exponential', 'inverse', 'linear'], { default: 'inverse' })
+const distanceModel = Schema.LiteralUnion(['exponential', 'inverse', 'linear'], { default: 'inverse' })
 
 export const PositionalAudioComponent = defineComponent({
   name: 'EE_positionalAudio',
 
   jsonID: 'EE_audio',
 
-  schema: S.Object({
+  schema: Schema.Object({
     distanceModel,
-    rolloffFactor: S.Number({ default: 1 }),
-    refDistance: S.Number({ default: 1 }),
-    maxDistance: S.Number({ default: 40 }),
-    coneInnerAngle: S.Number({ default: 360 }),
-    coneOuterAngle: S.Number({ default: 360 }),
-    coneOuterGain: S.Number()
+    rolloffFactor: Schema.Number({ default: 1 }),
+    refDistance: Schema.Number({ default: 1 }),
+    maxDistance: Schema.Number({ default: 40 }),
+    coneInnerAngle: Schema.Number({ default: 360 }),
+    coneOuterAngle: Schema.Number({ default: 360 }),
+    coneOuterGain: Schema.Number()
   }),
 
   reactor: function () {

@@ -18,13 +18,12 @@ import {
   hasComponent,
   removeComponent,
   removeEntity,
-  S,
   setComponent,
   useComponent,
   useEntityContext,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, Schema, useHookstate } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { NameComponent } from '../../common/NameComponent'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
@@ -39,7 +38,7 @@ import { setVisibleComponent, VisibleComponent } from './VisibleComponent'
 
 export const SkinnedMeshComponent = defineComponent({
   name: 'SkinnedMeshComponent',
-  schema: S.Type<SkinnedMesh>({ required: true }),
+  schema: Schema.Type<SkinnedMesh>({ required: true }),
 
   onSet(entity, component, json) {
     SkinnedMeshComponent.valueMap[entity] = json as SkinnedMesh

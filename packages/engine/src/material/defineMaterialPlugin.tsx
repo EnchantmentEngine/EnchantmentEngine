@@ -4,13 +4,10 @@ import {
   Entity,
   getOptionalComponent,
   PresentationSystemGroup,
-  S,
-  Schema,
-  Static,
   useComponent
 } from '@ir-engine/ecs'
 import { SystemUUID, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { getState, NO_PROXY, State, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, Schema, SchemaDefinition, State, Static, useHookstate } from '@ir-engine/hyperflux'
 import {
   MaterialPluginComponents,
   MaterialStateComponent
@@ -26,9 +23,12 @@ import { Color, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRender
  * - `null` for no texture
  */
 export const TextureSchema = () =>
-  S.Union([S.String(), S.Null(), S.Type<Texture>()], { default: null, metadata: { $isTexture: true } }) // @todo replace $isTexture with $id
+  Schema.Union([Schema.String(), Schema.Null(), Schema.Type<Texture>()], {
+    default: null,
+    metadata: { $isTexture: true }
+  }) // @todo replace $isTexture with $id
 
-export const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
+export const isTextureUniform = (uniformSchema: SchemaDefinition) => !!uniformSchema.options?.metadata?.$isTexture
 
 /**
  *
@@ -67,7 +67,7 @@ export type ValidUniformTypes = boolean | number | string | Vector2 | Vector3 | 
 
 export type UniformRecord = Record<string, ValidUniformTypes>
 
-export const defineMaterialPlugin = <T extends Schema>({
+export const defineMaterialPlugin = <T extends SchemaDefinition>({
   name,
   jsonID,
   uniforms: uniformSchema,

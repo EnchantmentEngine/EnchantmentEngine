@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { HemisphereLight } from 'three'
 
-import { S, defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { NO_PROXY, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import { defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { NO_PROXY, Schema, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 
 import { T } from '../../../schema/schemaFunctions'
 import { ObjectComponent } from '../ObjectComponent'
@@ -12,10 +12,10 @@ export const HemisphereLightComponent = defineComponent({
   name: 'HemisphereLightComponent',
   jsonID: 'EE_hemisphere_light',
 
-  schema: S.Object({
+  schema: Schema.Object({
     skyColor: T.Color(0xffffff),
     groundColor: T.Color(0xffffff),
-    intensity: S.Number({ default: 1 })
+    intensity: Schema.Number({ default: 1 })
   }),
 
   reactor: function () {

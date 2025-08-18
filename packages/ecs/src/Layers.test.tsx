@@ -7,6 +7,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { Kind, Schema, SchemaDefinition } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import {
   createEntity,
@@ -28,8 +29,6 @@ import {
 import { createEngine, destroyEngine } from './Engine'
 import { Entity, UndefinedEntity } from './Entity'
 import { defineQuery } from './QueryFunctions'
-import { S } from './schemas/JSONSchemas'
-import { Kind, Schema } from './schemas/JSONSchemaTypes'
 
 const TestComponent = defineComponent({ name: 'SomeTestComponent' })
 
@@ -275,7 +274,7 @@ describe('LayerFunctions', () => {
     it('should return the object resulting from calling CreatePropagationArgs.Inner, with all its undefined values removed', () => {
       const Initial = 'TestValue'
 
-      const component = defineComponent({ name: 'TestComponent', schema: S.String({ default: Initial }) })
+      const component = defineComponent({ name: 'TestComponent', schema: Schema.String({ default: Initial }) })
       setComponent(testEntity, component)
       const key = ''
       const data = Initial
@@ -317,7 +316,7 @@ describe('CreatePropagationArgs', () => {
     it("should return undefined when `@param key` is '', and typeof `@param data` is 'undefined'", () => {
       const Expected = undefined
 
-      const component = defineComponent({ name: 'TestComponent', schema: S.String({ default: 'TestValue' }) })
+      const component = defineComponent({ name: 'TestComponent', schema: Schema.String({ default: 'TestValue' }) })
       setComponent(testEntity, component)
       const key = ''
       const data = undefined
@@ -340,7 +339,7 @@ describe('CreatePropagationArgs', () => {
     it("should return undefined when `@param key` is not '', and typeof `@param data`[key] is 'undefined'", () => {
       const Expected = undefined
 
-      const component = defineComponent({ name: 'TestComponent', schema: S.String({ default: 'TestValue' }) })
+      const component = defineComponent({ name: 'TestComponent', schema: Schema.String({ default: 'TestValue' }) })
       setComponent(testEntity, component)
       const key = 'SomeKey'
       const data = {}
@@ -366,7 +365,7 @@ describe('CreatePropagationArgs', () => {
       it("should return `@param data` if `@param key` is '' and data is not undefined", () => {
         const Expected = { one: 1 }
 
-        const schema = { [Kind]: TestSchemaKind, properties: [], options: { serialized: true } } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: [], options: { serialized: true } } as SchemaDefinition
         const component = defineComponent({ name: 'TestComponent', schema: schema })
         setComponent(testEntity, component)
         const key = ''
@@ -391,7 +390,7 @@ describe('CreatePropagationArgs', () => {
       it("should return `@param data`[`@param key`] if `@param key` is not '' and data is not undefined", () => {
         const Expected = 42
 
-        const schema = { [Kind]: TestSchemaKind, properties: [], options: { serialized: true } } as Schema
+        const schema = { [Kind]: TestSchemaKind, properties: [], options: { serialized: true } } as SchemaDefinition
         const component = defineComponent({ name: 'TestComponent', schema: schema })
         setComponent(testEntity, component)
         const key = 'one'
@@ -426,7 +425,11 @@ describe('CreatePropagationArgs', () => {
     ])("should call CreatePropagationArgs.%s when `@param schema`[Kind] is '%s'", (fn, kind) => {
       const TestSchemaKind = kind
 
-      const schema = { [Kind]: TestSchemaKind, options: { default: 42, serialized: true }, properties: [] } as Schema
+      const schema = {
+        [Kind]: TestSchemaKind,
+        options: { default: 42, serialized: true },
+        properties: []
+      } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema })
       setComponent(testEntity, component)
       const key = 'one'
@@ -447,9 +450,9 @@ describe('CreatePropagationArgs', () => {
 
         const schema = {
           [Kind]: TestSchemaKind,
-          properties: { key: S.String(), value: S.Number() },
+          properties: { key: Schema.String(), value: Schema.Number() },
           options: { serialized: true }
-        } as Schema
+        } as SchemaDefinition
         const component = defineComponent({ name: 'TestComponent', schema: schema })
         setComponent(testEntity, component)
         const key = 'one'
@@ -470,12 +473,12 @@ describe('CreatePropagationArgs', () => {
     ])("should call CreatePropagationArgs.%s when `@param schema`[Kind] is '%s'", (fn, kind) => {
       const TestSchemaKind = kind
 
-      const properties = S.Number()
+      const properties = Schema.Number()
       const schema = {
         [Kind]: TestSchemaKind,
         options: { default: 42, serialized: true },
         properties: properties
-      } as Schema
+      } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -494,7 +497,7 @@ describe('CreatePropagationArgs', () => {
     it('should return `@param obj` if it is UndefinedEntity', () => {
       const Expected = UndefinedEntity
 
-      const schema = S.Number({ default: 42 })
+      const schema = Schema.Number({ default: 42 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -522,7 +525,7 @@ describe('CreatePropagationArgs', () => {
       it('should return `@param obj` if LayerComponent.get(obj) is `@param linkedLayer`', () => {
         const Expected = testEntity
 
-        const schema = S.Number({ id: id })
+        const schema = Schema.Number({ id: id })
         const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
         setComponent(testEntity, component)
         const obj = Expected
@@ -543,7 +546,7 @@ describe('CreatePropagationArgs', () => {
       })
 
       it('should return the result of getComponent(`@param obj`, LayerComponents[`@param layer`].relations[`@param linkedLayer`]', () => {
-        const schema = S.Number({ id: id })
+        const schema = Schema.Number({ id: id })
         const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
         setComponent(testEntity, component)
         const obj = testEntity
@@ -569,7 +572,7 @@ describe('CreatePropagationArgs', () => {
     it("should return `@param obj` if `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is not 'Entity'", () => {
       const Expected = 12345 as Entity
 
-      const schema = S.Number({ default: 42, id: 'NotEntity' })
+      const schema = Schema.Number({ default: 42, id: 'NotEntity' })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = 'Number'
@@ -593,7 +596,7 @@ describe('CreatePropagationArgs', () => {
     it("should return `@param obj` if `@param schema`[`@param key`] is not 'Number' and schema.options.['id'] is 'Entity'", () => {
       const Expected = 12345 as Entity
 
-      const schema = { [Kind]: 'String', options: { default: 42, id: 'Entity', serialized: true } } as Schema
+      const schema = { [Kind]: 'String', options: { default: 42, id: 'Entity', serialized: true } } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = 'OtherKey'
@@ -619,7 +622,7 @@ describe('CreatePropagationArgs', () => {
     it('should return undefined if `@param obj` is falsy', () => {
       const Expected = undefined
 
-      const schema = S.Number({ default: 42 })
+      const schema = Schema.Number({ default: 42 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -643,7 +646,7 @@ describe('CreatePropagationArgs', () => {
     it("should return the result of calling `@param obj`.clone if typeof obj is 'object' and obj contains a valid function at .clone", () => {
       const Expected = 42
 
-      const schema = S.Number({ default: 1234 })
+      const schema = Schema.Number({ default: 1234 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -667,7 +670,7 @@ describe('CreatePropagationArgs', () => {
     it('should return a new array containing all elements of `@param obj` if obj is an array', () => {
       const Expected = [40, 41, 42, 'TestValue']
 
-      const schema = S.Number({ default: 1234 })
+      const schema = Schema.Number({ default: 1234 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -692,7 +695,7 @@ describe('CreatePropagationArgs', () => {
     it('should return a deep clone of `@param obj` if it does not have a .clone function and it is not an array', () => {
       const Expected = { one: 41, two: 42 }
 
-      const schema = S.Number({ default: 1234 })
+      const schema = Schema.Number({ default: 1234 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -719,7 +722,7 @@ describe('CreatePropagationArgs', () => {
     it('should return undefined if `@param obj` is falsy', () => {
       const Expected = undefined
 
-      const schema = S.Number({ default: 42 })
+      const schema = Schema.Number({ default: 42 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -743,7 +746,7 @@ describe('CreatePropagationArgs', () => {
     it('should return the result of calling `@param obj`.clone if obj contains a valid function at .clone', () => {
       const Expected = 42
 
-      const schema = S.Number({ default: 21 })
+      const schema = Schema.Number({ default: 21 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -767,7 +770,7 @@ describe('CreatePropagationArgs', () => {
     it('should return a deep copy of `@param obj` when it is a clonable class', () => {
       const Expected = { one: 41, two: 'TWO' }
 
-      const schema = S.Number({ default: 21 })
+      const schema = Schema.Number({ default: 21 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -792,7 +795,7 @@ describe('CreatePropagationArgs', () => {
     it('should call console.warn and return `@param obj` when obj is not a clonable class', () => {
       const Expected = { one: 41, two: 'TWO', sym: Symbol('SomeSymbol') }
 
-      const schema = S.Number({ default: 21 })
+      const schema = Schema.Number({ default: 21 })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -819,7 +822,7 @@ describe('CreatePropagationArgs', () => {
     it('should return undefined if `@param obj` is falsy', () => {
       const Expected = undefined
 
-      const schema = S.Number()
+      const schema = Schema.Number()
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -844,10 +847,10 @@ describe('CreatePropagationArgs', () => {
       const Expected = { one: 41, two: 'TWO' }
 
       const properties = {
-        one: S.Number(),
-        two: S.String()
+        one: Schema.Number(),
+        two: Schema.String()
       }
-      const schema = { [Kind]: 'Number', properties: properties, options: { serialized: true } } as Schema
+      const schema = { [Kind]: 'Number', properties: properties, options: { serialized: true } } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -876,7 +879,7 @@ describe('CreatePropagationArgs', () => {
     it('should return undefined if `@param obj` is falsy', () => {
       const Expected = undefined
 
-      const schema = S.Number()
+      const schema = Schema.Number()
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -907,7 +910,7 @@ describe('CreatePropagationArgs', () => {
     it('should return undefined if `@param obj` is falsy', () => {
       const Expected = undefined
 
-      const schema = S.Number()
+      const schema = Schema.Number()
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -931,7 +934,7 @@ describe('CreatePropagationArgs', () => {
     it('should return a new array created by recursively calling CreatePropagationArgs.Inner for all the values of `@param obj`', () => {
       const Expected = [41, 42, 43]
 
-      const schema = { [Kind]: 'Array', properties: S.Number() } as Schema
+      const schema = { [Kind]: 'Array', properties: Schema.Number() } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -960,7 +963,7 @@ describe('CreatePropagationArgs', () => {
     it('should return undefined if `@param obj` is falsy', () => {
       const Expected = undefined
 
-      const schema = S.Number()
+      const schema = Schema.Number()
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -984,8 +987,8 @@ describe('CreatePropagationArgs', () => {
     it('should return a new tuple created by recursively calling CreatePropagationArgs.Inner for all the inner values of `@param obj', () => {
       const Expected = [41, 'TWO', 43]
 
-      const properties = [S.Number(), S.String(), S.Number()]
-      const schema = S.Tuple(properties)
+      const properties = [Schema.Number(), Schema.String(), Schema.Number()]
+      const schema = Schema.Tuple(properties)
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -1014,8 +1017,12 @@ describe('CreatePropagationArgs', () => {
     it('should return result of CreatePropagationArgs.Inner for the first value of `@param schema`.properties that does not return undefined for `@param obj`', () => {
       const Expected = { one: 42 }
 
-      const properties = [S.Number(), S.String(), { [Kind]: 'Object', properties: { one: S.Number() } } as Schema]
-      const schema = { [Kind]: 'Union', properties: properties } as Schema
+      const properties = [
+        Schema.Number(),
+        Schema.String(),
+        { [Kind]: 'Object', properties: { one: Schema.Number() } } as SchemaDefinition
+      ]
+      const schema = { [Kind]: 'Union', properties: properties } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -1042,7 +1049,7 @@ describe('CreatePropagationArgs', () => {
       const Expected = null
 
       const properties = [] // @warning The first entry of this array would hit no matter what
-      const schema = { [Kind]: 'Union', properties: properties } as Schema
+      const schema = { [Kind]: 'Union', properties: properties } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -1070,7 +1077,7 @@ describe('CreatePropagationArgs', () => {
     it("should return `@param obj` when its typeof is 'number' and `@param schema`.properties is falsy", () => {
       const Expected = 42
 
-      const schema = { [Kind]: 'Number', properties: false } as Schema
+      const schema = { [Kind]: 'Number', properties: false } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''
@@ -1096,8 +1103,8 @@ describe('CreatePropagationArgs', () => {
     it('should return the result of CreatePropagationArgs.Inner when `@param schema`.properties is truthy', () => {
       const Expected = { one: 41 }
 
-      const properties = { one: S.Number() }
-      const schema = S.Object(properties)
+      const properties = { one: Schema.Number() }
+      const schema = Schema.Object(properties)
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = ''

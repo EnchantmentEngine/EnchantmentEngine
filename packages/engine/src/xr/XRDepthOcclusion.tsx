@@ -5,10 +5,10 @@
 import React, { useEffect } from 'react'
 import { Matrix4, Shader, ShaderMaterial, Vector2 } from 'three'
 
-import { Entity, getComponent, removeComponent, S, setComponent } from '@ir-engine/ecs'
+import { Entity, getComponent, removeComponent, setComponent } from '@ir-engine/ecs'
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, Schema, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { DepthCanvasTexture } from '@ir-engine/spatial/src/xr/DepthCanvasTexture'
@@ -23,12 +23,12 @@ export const DepthOcclusionPluginComponent = defineMaterialPlugin({
 
   jsonID: 'IR_depth_occlusion',
 
-  uniforms: S.Object({
+  uniforms: Schema.Object({
     uDepthTexture: TextureSchema(),
     uResolution: T.Vec2(),
     uUvTransform: T.Mat4(),
-    uOcclusionEnabled: S.Bool({ default: true }),
-    uRawValueToMeters: S.Number({ default: 0.0 })
+    uOcclusionEnabled: Schema.Bool({ default: true }),
+    uRawValueToMeters: Schema.Number({ default: 0.0 })
   }),
 
   onApply(shader) {

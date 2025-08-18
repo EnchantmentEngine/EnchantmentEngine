@@ -28,15 +28,9 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "types": [
-      "@types/node"
-    ],
+    "types": ["@types/node"],
     "erasableSyntaxOnly": true
   },
-  "include": [
-    "../../__global.d.ts",
-    "../server-core/src",
-    "./src",
-    "./index.ts"
-  ]
+  "exclude": ["**/node_modules/**"],
+  "include": ["../../__global.d.ts", "../server-core/src", "./src", "./index.ts"]
 }

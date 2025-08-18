@@ -23,42 +23,42 @@ import {
 import { useHookstate } from '@ir-engine/hyperflux'
 import { StandardCallbacks, removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { retargetAnimationClips } from '../functions/retargetingFunctions'
 import { setupMixamoAnimation } from '../systems/AvatarAnimationSystem'
 import { AnimationComponent, useLoadAnimationFromGLTF } from './AnimationComponent'
 import { AvatarAnimationComponent, AvatarRigComponent } from './AvatarAnimationComponent'
 
-const AnimationBlendMode = S.LiteralUnion([NormalAnimationBlendMode, AdditiveAnimationBlendMode], {
+const AnimationBlendMode = Schema.LiteralUnion([NormalAnimationBlendMode, AdditiveAnimationBlendMode], {
   default: NormalAnimationBlendMode
 })
 
-const AnimationActionLoopStyles = S.LiteralUnion([LoopOnce, LoopRepeat, LoopPingPong], { default: LoopRepeat })
+const AnimationActionLoopStyles = Schema.LiteralUnion([LoopOnce, LoopRepeat, LoopPingPong], { default: LoopRepeat })
 
 export const LoopAnimationComponent = defineComponent({
   name: 'LoopAnimationComponent',
   jsonID: 'EE_loop_animation',
 
-  schema: S.Object({
-    activeClipIndex: S.Number({ default: -1 }),
-    animationPack: S.String({ default: '' }),
-    useVRM: S.Bool({ default: false }),
+  schema: Schema.Object({
+    activeClipIndex: Schema.Number({ default: -1 }),
+    animationPack: Schema.String({ default: '' }),
+    useVRM: Schema.Bool({ default: false }),
     // TODO: support blending multiple animation actions. Refactor into AnimationMixerComponent and AnimationActionComponent
-    enabled: S.Bool({ default: true }),
-    paused: S.Bool({ default: false }),
-    time: S.Number({ default: 0 }),
-    timeScale: S.Number({ default: 1 }),
+    enabled: Schema.Bool({ default: true }),
+    paused: Schema.Bool({ default: false }),
+    time: Schema.Number({ default: 0 }),
+    timeScale: Schema.Number({ default: 1 }),
     blendMode: AnimationBlendMode,
     loop: AnimationActionLoopStyles,
-    repetitions: S.Number({ default: Infinity, serialized: false }), //No longer serializable for now. We don't expose in editor anyway
-    clampWhenFinished: S.Bool({ default: false }),
-    zeroSlopeAtStart: S.Bool({ default: true }),
-    zeroSlopeAtEnd: S.Bool({ default: true }),
-    weight: S.Number({ default: 1 }),
+    repetitions: Schema.Number({ default: Infinity, serialized: false }), //No longer serializable for now. We don't expose in editor anyway
+    clampWhenFinished: Schema.Bool({ default: false }),
+    zeroSlopeAtStart: Schema.Bool({ default: true }),
+    zeroSlopeAtEnd: Schema.Bool({ default: true }),
+    weight: Schema.Number({ default: 1 }),
 
     // internal
-    _action: S.Type<AnimationAction | null>({ serialized: false, default: null })
+    _action: Schema.Type<AnimationAction | null>({ serialized: false, default: null })
   }),
 
   reactor: function () {

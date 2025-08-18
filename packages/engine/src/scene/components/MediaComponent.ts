@@ -1,4 +1,4 @@
-import { ComponentType, EngineState, entityExists, useEntityContext } from '@ir-engine/ecs'
+import { ComponentType, EngineState, entityExists, EntitySchema, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -10,9 +10,8 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState, isClient, useMutableState } from '@ir-engine/hyperflux'
-import { StandardCallbacks, removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
+import { getState, isClient, Schema, useMutableState } from '@ir-engine/hyperflux'
+import { removeCallback, setCallback, StandardCallbacks } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
@@ -55,10 +54,10 @@ export const createAudioNodeGroup = (
 export const MediaElementComponent = defineComponent({
   name: 'MediaElement',
 
-  schema: S.Object({
-    element: S.Type<HTMLMediaElement>(),
-    hls: S.Type<Hls | undefined>(),
-    abortController: S.Class(() => new AbortController())
+  schema: Schema.Object({
+    element: Schema.Type<HTMLMediaElement>(),
+    hls: Schema.Type<Hls | undefined>(),
+    abortController: Schema.Class(() => new AbortController())
   }),
 
   onSet: (entity, component, json) => {
@@ -101,33 +100,33 @@ export const MediaComponent = defineComponent({
   name: 'MediaComponent',
   jsonID: 'EE_media',
 
-  schema: S.Object({
-    controls: S.Bool({ default: false }),
-    synchronize: S.Bool({ default: true }),
-    autoplay: S.Bool({ default: false }), //false = personal preference, this is super annoying when it just starts playing once added to a scene while editing
-    muteEditor: S.Bool({ default: false }), //false
+  schema: Schema.Object({
+    controls: Schema.Bool({ default: false }),
+    synchronize: Schema.Bool({ default: true }),
+    autoplay: Schema.Bool({ default: false }), //false = personal preference, this is super annoying when it just starts playing once added to a scene while editing
+    muteEditor: Schema.Bool({ default: false }), //false
     uiOffset: T.Vec3(),
-    volume: S.Number({ default: 1 }),
-    resources: S.Array(S.String()),
-    playMode: S.Enum(PlayMode, {
+    volume: Schema.Number({ default: 1 }),
+    resources: Schema.Array(Schema.String()),
+    playMode: Schema.Enum(PlayMode, {
       $comment: "A string enum, ie. one of the following values: 'single', 'random', 'loop', 'singleloop'",
       default: PlayMode.loop
     }),
-    isMusic: S.Bool({ default: false }),
-    seekTime: S.Number({ default: 0, serialized: false }),
+    isMusic: Schema.Bool({ default: false }),
+    seekTime: Schema.Number({ default: 0, serialized: false }),
     /**@deprecated */
-    paths: S.Array(S.String()),
+    paths: Schema.Array(Schema.String()),
     // runtime props
-    xruiEntity: S.Entity({ serialized: false }),
-    paused: S.Bool({ default: true, serialized: false }),
-    muted: S.Bool({ default: false, serialized: false }),
-    ended: S.Bool({ default: true, serialized: false }),
-    waiting: S.Bool({ default: false, serialized: false }),
-    track: S.Number({ default: -1, serialized: false }),
-    currentTrackTime: S.Number({ default: 0, serialized: false }),
-    currentTrackDuration: S.Number({ default: 0, serialized: false }),
-    isCurrentTrackLoaded: S.Bool({ default: false, serialized: false }),
-    externalMediaNodeID: S.EntityID()
+    xruiEntity: EntitySchema.Entity({ serialized: false }),
+    paused: Schema.Bool({ default: true, serialized: false }),
+    muted: Schema.Bool({ default: false, serialized: false }),
+    ended: Schema.Bool({ default: true, serialized: false }),
+    waiting: Schema.Bool({ default: false, serialized: false }),
+    track: Schema.Number({ default: -1, serialized: false }),
+    currentTrackTime: Schema.Number({ default: 0, serialized: false }),
+    currentTrackDuration: Schema.Number({ default: 0, serialized: false }),
+    isCurrentTrackLoaded: Schema.Bool({ default: false, serialized: false }),
+    externalMediaNodeID: EntitySchema.EntityID()
     /**
      * TODO: refactor this into a ScheduleComponent for invoking callbacks at scheduled times
      * The auto start time for the playlist, in Unix/Epoch time (milliseconds).

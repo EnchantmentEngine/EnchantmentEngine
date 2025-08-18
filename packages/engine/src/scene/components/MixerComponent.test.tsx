@@ -23,13 +23,12 @@ import {
   getComponent,
   removeComponent,
   removeEntity,
-  S,
   serializeComponent,
   setComponent,
   SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { getMutableState, UserID } from '@ir-engine/hyperflux'
+import { getMutableState, Schema, UserID } from '@ir-engine/hyperflux'
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { Vector3 } from 'three'
@@ -52,26 +51,26 @@ const createEntityWithID = () => {
 const testComponent = defineComponent({
   name: 'TestComponent',
   jsonID: 'EE_test',
-  schema: S.Object({
+  schema: Schema.Object({
     // Simple number properties
-    x: S.Number(),
-    y: S.Number(),
-    z: S.Number(),
+    x: Schema.Number(),
+    y: Schema.Number(),
+    z: Schema.Number(),
 
     // Single property for simple tests
-    simple: S.Number(),
+    simple: Schema.Number(),
 
     // First-level nested object
-    nested: S.Object({
-      x: S.Number(),
-      y: S.Number()
+    nested: Schema.Object({
+      x: Schema.Number(),
+      y: Schema.Number()
     }),
 
     // Deeply nested object with vector and rotation
-    deepNested: S.Object({
+    deepNested: Schema.Object({
       position: T.Vec3(new Vector3(0, 0, 0)),
-      rotation: S.Object({
-        angle: S.Number()
+      rotation: Schema.Object({
+        angle: Schema.Number()
       })
     })
   })

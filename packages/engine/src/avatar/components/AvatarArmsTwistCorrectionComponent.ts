@@ -1,14 +1,14 @@
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
 export const AvatarArmsTwistCorrectionComponent = defineComponent({
   name: 'AvatarArmsTwistCorrectionComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     LeftHandBindRotationInv: T.Quaternion(),
-    LeftArmTwistAmount: S.Number(),
+    LeftArmTwistAmount: Schema.Number(),
     RightHandBindRotationInv: T.Quaternion(),
-    RightArmTwistAmount: S.Number()
+    RightArmTwistAmount: Schema.Number()
   })
 })

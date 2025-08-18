@@ -1,5 +1,5 @@
-import { ResizableArray } from '../bitecsLegacy'
-import { Entity } from '../Entity'
+import { ResizableArray } from './bitecsLegacy'
+import { Entity } from './Entity'
 
 export const proxySoAStore = (storeGet: () => ResizableArray) => (entity: Entity, property: string, obj: object) => {
   const store = storeGet() // Get the store when the proxy is created as the store only exists after the component is defined

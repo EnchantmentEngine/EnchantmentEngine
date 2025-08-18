@@ -28,13 +28,8 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "types": [
-      "@types/node"
-    ],
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "types": ["@types/node"]
   },
-  "include": [
-    "./src",
-    "./index.ts"
-  ]
+  "include": ["./src", "./index.ts"]
 }

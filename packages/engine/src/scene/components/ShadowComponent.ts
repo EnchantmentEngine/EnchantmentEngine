@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, useComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 
@@ -10,9 +10,9 @@ export const ShadowComponent = defineComponent({
   name: 'ShadowComponent',
   jsonID: 'EE_shadow',
 
-  schema: S.Object({
-    cast: S.Bool({ default: true }),
-    receive: S.Bool({ default: true })
+  schema: Schema.Object({
+    cast: Schema.Bool({ default: true }),
+    receive: Schema.Bool({ default: true })
   }),
 
   reactor: () => {

@@ -1,33 +1,16 @@
-import { useLayoutEffect } from 'react'
-
-import { OpaqueType, PeerID, UserID } from '@ir-engine/hyperflux'
+import { OpaqueType, PeerID, Schema, TTypedSchema, UserID } from '@ir-engine/hyperflux'
 import { createResizableTypeArray } from '../bitecsLegacy'
-import {
-  Component,
-  defineComponent,
-  getComponent,
-  hasComponent,
-  removeComponent,
-  setComponent,
-  useComponent,
-  useEntityContext
-} from '../ComponentFunctions'
-import { Engine } from '../Engine'
+import { Component, defineComponent, getComponent, hasComponent } from '../ComponentFunctions'
 import { Entity, UndefinedEntity } from '../Entity'
+import { proxySoAStore } from '../proxySoAStore'
 import { defineQuery } from '../QueryFunctions'
-import { S } from '../schemas/JSONSchemas'
-import { TTypedSchema } from '../schemas/JSONSchemaTypes'
-import { proxySoAStore } from '../schemas/proxySoAStore'
 
 export type NetworkId = OpaqueType<'networkId'> & number
-
-/** ID of last network created. */
-let availableNetworkId = 0 as NetworkId
 
 export const NetworkSchema = {
   /** NetworkID type schema helper, defaults to 0 */
   NetworkID: (options?: TTypedSchema<NetworkId>['options']) =>
-    S.Number({ ...options, id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
+    Schema.Number({ ...options, id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
 }
 
 const proxyNetworkId = proxySoAStore(() => NetworkObjectComponent.networkId)
@@ -35,14 +18,14 @@ const proxyNetworkId = proxySoAStore(() => NetworkObjectComponent.networkId)
 export const NetworkObjectComponent = defineComponent({
   name: 'NetworkObjectComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** The user who is authority over this object. */
-    ownerId: S.UserID(),
-    ownerPeer: S.PeerID(),
+    ownerId: Schema.UserID(),
+    ownerPeer: Schema.PeerID(),
     /** The peer who is authority over this object. */
-    authorityPeerID: S.PeerID(),
+    authorityPeerID: Schema.PeerID(),
     /** The network id for this object (this id is only unique per owner) */
-    networkId: S.Proxy(NetworkSchema.NetworkID())
+    networkId: Schema.Proxy(NetworkSchema.NetworkID())
   }),
 
   storage: {
@@ -52,24 +35,6 @@ export const NetworkObjectComponent = defineComponent({
   onInit(entity, initial) {
     proxyNetworkId(entity, 'networkId', initial)
     return initial
-  },
-
-  reactor: function () {
-    const entity = useEntityContext()
-    const networkObject = useComponent(entity, NetworkObjectComponent)
-
-    useLayoutEffect(() => {
-      if (networkObject.authorityPeerID === Engine.instance.store.peerID)
-        setComponent(entity, NetworkObjectAuthorityTag)
-      else removeComponent(entity, NetworkObjectAuthorityTag)
-    }, [networkObject.authorityPeerID])
-
-    useLayoutEffect(() => {
-      if (networkObject.ownerId === Engine.instance.userID) setComponent(entity, NetworkObjectOwnedTag)
-      else removeComponent(entity, NetworkObjectOwnedTag)
-    }, [networkObject.ownerId])
-
-    return null
   },
 
   /**
@@ -117,11 +82,6 @@ export const NetworkObjectComponent = defineComponent({
     return NetworkObjectComponent.getOwnedNetworkObjects(userId).filter((eid) => {
       return hasComponent(eid, component)
     })
-  },
-
-  /** Get next network id. */
-  createNetworkId(): NetworkId {
-    return ++availableNetworkId as NetworkId
   }
 })
 

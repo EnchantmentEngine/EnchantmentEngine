@@ -12,7 +12,7 @@ import { getState } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 
 import { hasComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { AudioState } from '../../audio/AudioState'
 import { PlayMode } from '../constants/PlayMode'
 import { AudioNodeGroups, createAudioNodeGroup, getNextTrack, MediaElementComponent } from './MediaComponent'
@@ -61,29 +61,29 @@ export const LegacyVolumetricComponent = defineComponent({
   name: 'Legacy Volumetric Component',
   jsonID: 'IR_volumetric_legacy',
 
-  schema: S.Object({
-    paths: S.Array(S.String()),
-    useLoadingEffect: S.Bool({ default: true }),
-    autoPauseWhenBuffering: S.Bool({ default: true }), // TODO: Implement this for UVOL1
-    autoplay: S.Bool({ default: true }),
-    paused: S.Bool({ default: true }),
-    initialBuffersLoaded: S.Bool({ default: false }),
-    hasAudio: S.Bool({ default: false }),
-    ended: S.Bool({ default: true }),
-    volume: S.Number({ default: 1 }),
-    playMode: S.Enum(PlayMode, {
+  schema: Schema.Object({
+    paths: Schema.Array(Schema.String()),
+    useLoadingEffect: Schema.Bool({ default: true }),
+    autoPauseWhenBuffering: Schema.Bool({ default: true }), // TODO: Implement this for UVOL1
+    autoplay: Schema.Bool({ default: true }),
+    paused: Schema.Bool({ default: true }),
+    initialBuffersLoaded: Schema.Bool({ default: false }),
+    hasAudio: Schema.Bool({ default: false }),
+    ended: Schema.Bool({ default: true }),
+    volume: Schema.Number({ default: 1 }),
+    playMode: Schema.Enum(PlayMode, {
       $comment: "A string enum, ie. one of the following values: 'single', 'random', 'loop', 'singleloop'",
       default: PlayMode.loop
     }),
-    track: S.Number({ default: -1 }),
-    forceChangeTrack: S.Bool({ default: false }),
-    currentTrackInfo: S.Object({
-      dontReset: S.Bool({ default: false }),
-      mediaStartTime: S.Number({ default: 0 }),
-      playbackStartDate: S.Number({ default: 0 }),
-      playbackRate: S.Number({ default: 1 }),
-      currentTime: S.Number({ default: 0 }),
-      duration: S.Number({ default: 0 })
+    track: Schema.Number({ default: -1 }),
+    forceChangeTrack: Schema.Bool({ default: false }),
+    currentTrackInfo: Schema.Object({
+      dontReset: Schema.Bool({ default: false }),
+      mediaStartTime: Schema.Number({ default: 0 }),
+      playbackStartDate: Schema.Number({ default: 0 }),
+      playbackRate: Schema.Number({ default: 1 }),
+      currentTime: Schema.Number({ default: 0 }),
+      duration: Schema.Number({ default: 0 })
     })
   }),
 

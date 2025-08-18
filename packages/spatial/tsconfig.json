@@ -28,20 +28,9 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "types": [
-      "@types/node"
-    ],
+    "types": ["@types/node"],
     "erasableSyntaxOnly": true
   },
-  "include": [
-    "../../__global.d.ts",
-    "./src",
-    "./tests",
-    "./index.ts"
-  ],
-  "exclude": [
-    "./tests/webxr/emulator/**",
-    "./tests/webxr/devtool/**",
-    "./tests/webxr/emulator.ts"
-  ]
+  "include": ["../../__global.d.ts", "./src", "./tests", "./index.ts"],
+  "exclude": ["./tests/webxr/emulator/**", "./tests/webxr/devtool/**", "./tests/webxr/emulator.ts"]
 }

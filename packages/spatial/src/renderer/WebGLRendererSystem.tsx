@@ -19,7 +19,7 @@ import {
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { getNestedChildren } from '@ir-engine/ecs'
-import { EffectPass, OutlineEffect } from 'postprocessing'
+import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { XRState } from '../xr/XRState'
 import { ObjectComponent } from './components/ObjectComponent'
@@ -35,13 +35,15 @@ import { changeRenderMode } from './functions/changeRenderMode'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
 
-declare module 'postprocessing' {
-  interface EffectComposer {
-    EffectPass: EffectPass
-    OutlineEffect: OutlineEffect
-  }
-  interface Effect {
-    isActive: boolean
+function renderWebGPUPostProcessing(renderer: ComponentType<typeof RendererComponent>): boolean {
+  const postProcessing = renderer.postProcessing
+  if (!postProcessing) return false
+  try {
+    postProcessing.render()
+    return true
+  } catch (error) {
+    console.warn('WebGPU PostProcessing render failed:', error)
+    return false
   }
 }
 
@@ -79,7 +81,6 @@ export const render = (
       camera.aspect = width / height
       camera.updateProjectionMatrix()
     }
-
     if (state.useShadows && csm) {
       // Call the CSM updateFrustums function
       CSM.updateFrustums()
@@ -94,12 +95,20 @@ export const render = (
     renderer.needsResize = false
   }
 
+  renderer.renderer.shadowMap.enabled = true
+
   ObjectComponent.activeRender = true
 
-  /** Postprocessing does not support multipass yet, so just use basic renderer when in VR */
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
-  if (xrFrame || !effectComposer || !renderer.effectComposer) {
+  if (renderer.renderer instanceof WebGPURenderer) {
+    const webgpuRendered = renderWebGPUPostProcessing(renderer)
+
+    if (!webgpuRendered) {
+      renderer.renderer.clear()
+      renderer.renderer.render(scene, camera)
+    }
+  } else if (xrFrame || !effectComposer || !renderer.effectComposer) {
     renderer.renderer.clear()
     renderer.renderer.render(scene, camera)
   } else {
@@ -215,10 +224,10 @@ const cameraReactor = () => {
   const camera = useComponent(entity, CameraComponent)
   const engineRendererSettings = useMutableState(RendererState)
 
-  useEffect(() => {
-    if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
-    else camera.layers.disable(ObjectLayers.PhysicsHelper)
-  }, [engineRendererSettings.physicsDebug])
+  // useEffect(() => {
+  //   if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
+  //   else camera.layers.disable(ObjectLayers.PhysicsHelper)
+  // }, [engineRendererSettings.physicsDebug])
 
   useEffect(() => {
     if (engineRendererSettings.avatarDebug.value) camera.layers.enable(ObjectLayers.AvatarHelper)

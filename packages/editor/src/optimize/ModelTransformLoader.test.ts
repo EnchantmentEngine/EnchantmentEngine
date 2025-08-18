@@ -1,6 +1,6 @@
 import { Document, ReaderContext, WriterContext } from '@gltf-transform/core'
 import { ComponentType, defineComponent, UUIDComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { MaterialPluginComponents } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
@@ -57,23 +57,23 @@ describe('ModelTransformLoader - Component Extensions', () => {
     mockNodeComponent = defineComponent({
       name: 'MockNodeComponent',
       jsonID: 'EE_mock_node',
-      schema: S.Object({
-        position: S.Object({
-          x: S.Number({ default: 0 }),
-          y: S.Number({ default: 0 }),
-          z: S.Number({ default: 0 })
+      schema: Schema.Object({
+        position: Schema.Object({
+          x: Schema.Number({ default: 0 }),
+          y: Schema.Number({ default: 0 }),
+          z: Schema.Number({ default: 0 })
         }),
-        enabled: S.Bool({ default: true }),
-        name: S.String({ default: 'test' })
+        enabled: Schema.Bool({ default: true }),
+        name: Schema.String({ default: 'test' })
       })
     })
 
     mockMaterialComponent = defineComponent({
       name: 'MockMaterialComponent',
       jsonID: 'EE_mock_material',
-      schema: S.Object({
-        color: S.String({ default: '#ffffff' }),
-        opacity: S.Number({ default: 1.0 })
+      schema: Schema.Object({
+        color: Schema.String({ default: '#ffffff' }),
+        opacity: Schema.Number({ default: 1.0 })
       })
     })
 
@@ -134,23 +134,23 @@ describe('ModelTransformLoader - Component Extensions', () => {
       const nestedComponent = defineComponent({
         name: 'NestedComponent',
         jsonID: 'EE_nested',
-        schema: S.Object({
-          transform: S.Object({
-            position: S.Object({
-              x: S.Number({ default: 0 }),
-              y: S.Number({ default: 0 }),
-              z: S.Number({ default: 0 })
+        schema: Schema.Object({
+          transform: Schema.Object({
+            position: Schema.Object({
+              x: Schema.Number({ default: 0 }),
+              y: Schema.Number({ default: 0 }),
+              z: Schema.Number({ default: 0 })
             }),
-            rotation: S.Object({
-              x: S.Number({ default: 0 }),
-              y: S.Number({ default: 0 }),
-              z: S.Number({ default: 0 }),
-              w: S.Number({ default: 1 })
+            rotation: Schema.Object({
+              x: Schema.Number({ default: 0 }),
+              y: Schema.Number({ default: 0 }),
+              z: Schema.Number({ default: 0 }),
+              w: Schema.Number({ default: 1 })
             })
           }),
-          metadata: S.Object({
-            name: S.String({ default: 'test' }),
-            tags: S.Array(S.String())
+          metadata: Schema.Object({
+            name: Schema.String({ default: 'test' }),
+            tags: Schema.Array(Schema.String())
           })
         })
       })
@@ -227,18 +227,18 @@ describe('ModelTransformLoader - Component Extensions', () => {
       const complexComponent = defineComponent({
         name: 'ComplexComponent',
         jsonID: 'EE_complex',
-        schema: S.Object({
-          settings: S.Object({
-            graphics: S.Object({
-              quality: S.String({ default: 'high' }),
-              shadows: S.Bool({ default: true })
+        schema: Schema.Object({
+          settings: Schema.Object({
+            graphics: Schema.Object({
+              quality: Schema.String({ default: 'high' }),
+              shadows: Schema.Bool({ default: true })
             }),
-            audio: S.Object({
-              volume: S.Number({ default: 1.0 }),
-              muted: S.Bool({ default: false })
+            audio: Schema.Object({
+              volume: Schema.Number({ default: 1.0 }),
+              muted: Schema.Bool({ default: false })
             })
           }),
-          metadata: S.Array(S.String())
+          metadata: Schema.Array(Schema.String())
         })
       })
 
@@ -595,7 +595,7 @@ describe('ModelTransformLoader - Component Extensions', () => {
       const primitiveComponent = defineComponent({
         name: 'PrimitiveComponent',
         jsonID: 'EE_primitive',
-        schema: S.String({ default: 'test' }) // Non-Object schema
+        schema: Schema.String({ default: 'test' }) // Non-Object schema
       })
 
       const Extension = createComponentExtension(primitiveComponent)
@@ -612,7 +612,7 @@ describe('ModelTransformLoader - Component Extensions', () => {
       const emptyComponent = defineComponent({
         name: 'EmptyComponent',
         jsonID: 'EE_empty',
-        schema: S.Object({}) // Empty object schema
+        schema: Schema.Object({}) // Empty object schema
       })
 
       const Extension = createComponentExtension(emptyComponent)
@@ -628,22 +628,22 @@ describe('ModelTransformLoader - Component Extensions', () => {
       const deeplyNestedComponent = defineComponent({
         name: 'DeeplyNestedComponent',
         jsonID: 'EE_deeply_nested',
-        schema: S.Object({
-          level1: S.Object({
-            level2: S.Object({
-              level3: S.Object({
-                value: S.String({ default: 'deep' }),
-                count: S.Number({ default: 42 })
+        schema: Schema.Object({
+          level1: Schema.Object({
+            level2: Schema.Object({
+              level3: Schema.Object({
+                value: Schema.String({ default: 'deep' }),
+                count: Schema.Number({ default: 42 })
               }),
-              array: S.Array(
-                S.Object({
-                  item: S.String({ default: 'item' })
+              array: Schema.Array(
+                Schema.Object({
+                  item: Schema.String({ default: 'item' })
                 })
               )
             }),
-            simple: S.Bool({ default: true })
+            simple: Schema.Bool({ default: true })
           }),
-          topLevel: S.String({ default: 'top' })
+          topLevel: Schema.String({ default: 'top' })
         })
       })
 

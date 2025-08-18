@@ -1,5 +1,5 @@
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { Vector3_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
@@ -10,19 +10,19 @@ export const EnvMapBakeComponent = defineComponent({
   name: 'EnvMapBakeComponent',
   jsonID: 'EE_envmapbake',
 
-  schema: S.Object({
+  schema: Schema.Object({
     bakePositionOffset: T.Vec3(),
     bakeScale: T.Vec3(Vector3_One),
-    bakeType: S.Enum(EnvMapBakeTypes, {
+    bakeType: Schema.Enum(EnvMapBakeTypes, {
       $comment: "A string enum, ie. one of the following values: 'Realtime', 'Baked'",
       default: EnvMapBakeTypes.Baked
     }),
-    resolution: S.Number({ default: 1024 }),
-    refreshMode: S.Enum(EnvMapBakeRefreshTypes, {
+    resolution: Schema.Number({ default: 1024 }),
+    refreshMode: Schema.Enum(EnvMapBakeRefreshTypes, {
       $comment: "A string enum, ie. one of the following values: 'OnAwake', 'EveryFrame'",
       default: EnvMapBakeRefreshTypes.OnAwake
     }),
-    envMapOrigin: S.String({ default: '' }),
-    boxProjection: S.Bool({ default: true })
+    envMapOrigin: Schema.String({ default: '' }),
+    boxProjection: Schema.Bool({ default: true })
   })
 })

@@ -22,17 +22,10 @@ import {
   KHRTextureBasisu,
   KHRTextureTransform
 } from '@gltf-transform/extensions'
-import {
-  ComponentJSONIDMap,
-  ComponentType,
-  CreateSchemaValue,
-  EntityTreeComponent,
-  GenerateJSONSchema,
-  JSONSchema,
-  UUIDComponent
-} from '@ir-engine/ecs'
+import { ComponentJSONIDMap, ComponentType, EntityTreeComponent, UUIDComponent } from '@ir-engine/ecs'
 import { VRMExtension } from '@ir-engine/engine/src/assets/compression/extensions/EE_VRMTransformer'
 import { MOZLightmapExtension } from '@ir-engine/engine/src/assets/compression/extensions/MOZ_LightmapTransformer'
+import { CreateSchemaValue, GenerateJSONSchema, JSONSchema } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import {

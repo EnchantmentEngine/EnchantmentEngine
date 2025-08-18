@@ -1,8 +1,7 @@
-import { Entity } from '../Entity'
 import {
   Kind,
   NonSerializable,
-  Schema,
+  SchemaDefinition,
   Static,
   TArraySchema,
   TFuncSchema,
@@ -36,7 +35,7 @@ const validValue = (value) => {
   return value !== undefined && value !== null
 }
 
-const IterateSchema = <T extends Schema>(schema: T, pred: (curr: T) => boolean): boolean => {
+const IterateSchema = <T extends SchemaDefinition>(schema: T, pred: (curr: T) => boolean): boolean => {
   if (pred(schema)) return true
 
   switch (schema[Kind]) {
@@ -54,7 +53,9 @@ const IterateSchema = <T extends Schema>(schema: T, pred: (curr: T) => boolean):
 
     case 'Partial':
     case 'Proxy': {
-      const props = schema.properties as TPartialSchema<Schema>['properties'] | TProxySchema<Schema>['properties']
+      const props = schema.properties as
+        | TPartialSchema<SchemaDefinition>['properties']
+        | TProxySchema<SchemaDefinition>['properties']
       return IterateSchema(props, pred)
     }
 
@@ -63,11 +64,15 @@ const IterateSchema = <T extends Schema>(schema: T, pred: (curr: T) => boolean):
   }
 }
 
-export const HasSchemaDeserializers = <T extends Schema>(schema: T): boolean => {
+export const HasSchemaDeserializers = <T extends SchemaDefinition>(schema: T): boolean => {
   return IterateSchema(schema, (curr) => !!curr.options?.deserialize)
 }
 
-export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: Val, value: Val): Val | undefined => {
+export const DeserializeSchemaValue = <T extends SchemaDefinition, Val>(
+  schema: T,
+  curr: Val,
+  value: Val
+): Val | undefined => {
   if (!isSerializable(schema)) return curr
   if (validValue(value) && schema.options?.deserialize) return schema.options.deserialize(curr, value) as Val
 
@@ -93,7 +98,7 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: V
     case 'Array': {
       if (!validValue(value)) return value
       if (!Array.isArray(value)) return undefined
-      const props = schema.properties as TArraySchema<Schema>['properties']
+      const props = schema.properties as TArraySchema<SchemaDefinition>['properties']
       if (!props?.options?.serialized) return curr
       const _curr = curr as Array<any>
       const currentLength = _curr.length
@@ -114,12 +119,12 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: V
     case 'Tuple': {
       if (!validValue(value)) return value
       if (!Array.isArray(value)) return undefined
-      const props = schema.properties as TTupleSchema<Schema[]>['properties']
+      const props = schema.properties as TTupleSchema<SchemaDefinition[]>['properties']
       return value.map((item, i) => DeserializeSchemaValue(props[i], curr[i], item) ?? curr[i]) as Val
     }
     case 'Union': {
       if (!validValue(value)) return value
-      const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      const props = schema.properties as TUnionSchema<SchemaDefinition[]>['properties']
       for (const prop of props) {
         const deserializedValue = DeserializeSchemaValue(prop, curr, value)
         if (validValue(deserializedValue)) return deserializedValue
@@ -163,7 +168,9 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: V
 
     case 'Proxy':
     case 'Partial': {
-      const props = schema.properties as TPartialSchema<Schema>['properties'] | TProxySchema<Schema>['properties']
+      const props = schema.properties as
+        | TPartialSchema<SchemaDefinition>['properties']
+        | TProxySchema<SchemaDefinition>['properties']
       return DeserializeSchemaValue(props, curr, value)
     }
 
@@ -174,11 +181,15 @@ export const DeserializeSchemaValue = <T extends Schema, Val>(schema: T, curr: V
   return value
 }
 
-export const HasRequiredSchema = <T extends Schema>(schema: T): boolean => {
+export const HasRequiredSchema = <T extends SchemaDefinition>(schema: T): boolean => {
   return IterateSchema(schema, (curr) => !!curr.options?.required)
 }
 
-export const HasRequiredSchemaValues = <T extends Schema>(schema: T, value, current = ''): [boolean, string] => {
+export const HasRequiredSchemaValues = <T extends SchemaDefinition>(
+  schema: T,
+  value,
+  current = ''
+): [boolean, string] => {
   if (schema.options?.required) return [validValue(value), current]
 
   switch (schema[Kind]) {
@@ -197,7 +208,9 @@ export const HasRequiredSchemaValues = <T extends Schema>(schema: T, value, curr
 
     case 'Proxy':
     case 'Partial': {
-      const props = schema.properties as TPartialSchema<Schema>['properties'] | TProxySchema<Schema>['properties']
+      const props = schema.properties as
+        | TPartialSchema<SchemaDefinition>['properties']
+        | TProxySchema<SchemaDefinition>['properties']
       return HasRequiredSchemaValues(props, value)
     }
 
@@ -206,19 +219,11 @@ export const HasRequiredSchemaValues = <T extends Schema>(schema: T, value, curr
   }
 }
 
-export const HasSchemaValidators = <T extends Schema>(schema: T): boolean => {
-  return IterateSchema(schema, (curr) => !!curr.options?.validate)
-}
-
-export const HasValidSchemaValues = <T extends Schema, Val>(
+export const HasValidSchemaValues = <T extends SchemaDefinition, Val>(
   schema: T,
   value: Val,
-  prev: Val,
-  entity: Entity,
-  current = ''
+  prev: Val
 ): [boolean, string] => {
-  if (schema.options?.validate && !schema.options.validate(value, prev, entity)) return [false, current]
-
   switch (schema[Kind]) {
     case 'Object':
     case 'Class': {
@@ -226,7 +231,7 @@ export const HasValidSchemaValues = <T extends Schema, Val>(
       const propKeys = Object.keys(props)
 
       for (const key of propKeys) {
-        const [valid, fromKey] = HasValidSchemaValues(props[key], value?.[key], prev?.[key], entity, key)
+        const [valid, fromKey] = HasValidSchemaValues(props[key], value?.[key], prev?.[key])
         if (!valid) return [valid, fromKey]
       }
 
@@ -235,8 +240,10 @@ export const HasValidSchemaValues = <T extends Schema, Val>(
 
     case 'Proxy':
     case 'Partial': {
-      const props = schema.properties as TPartialSchema<Schema>['properties'] | TProxySchema<Schema>['properties']
-      return HasValidSchemaValues(props, value, prev, entity)
+      const props = schema.properties as
+        | TPartialSchema<SchemaDefinition>['properties']
+        | TProxySchema<SchemaDefinition>['properties']
+      return HasValidSchemaValues(props, value, prev)
     }
 
     default:
@@ -244,11 +251,11 @@ export const HasValidSchemaValues = <T extends Schema, Val>(
   }
 }
 
-export const requiresDeserialization = <T extends Schema>(schema: T): boolean => {
+export const requiresDeserialization = <T extends SchemaDefinition>(schema: T): boolean => {
   return IterateSchema(schema, (curr) => !!curr.options?.deserialize)
 }
 
-export const IsSingleValueSchema = <T extends Schema>(schema?: T): boolean => {
+export const IsSingleValueSchema = <T extends SchemaDefinition>(schema?: T): boolean => {
   if (!schema || !schema[Kind]) return false
 
   switch (schema[Kind]) {
@@ -272,7 +279,7 @@ export const IsSingleValueSchema = <T extends Schema>(schema?: T): boolean => {
       return false
 
     case 'Union': {
-      const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      const props = schema.properties as TUnionSchema<SchemaDefinition[]>['properties']
       if (!props.length) return false
       for (const prop of props) {
         if (!IsSingleValueSchema(prop)) return false
@@ -281,7 +288,7 @@ export const IsSingleValueSchema = <T extends Schema>(schema?: T): boolean => {
     }
 
     case 'Proxy': {
-      const props = schema.properties as TProxySchema<Schema>['properties']
+      const props = schema.properties as TProxySchema<SchemaDefinition>['properties']
       return IsSingleValueSchema(props)
     }
     default:
@@ -289,7 +296,7 @@ export const IsSingleValueSchema = <T extends Schema>(schema?: T): boolean => {
   }
 }
 
-export const CreateSchemaValue = <T extends Schema>(schema: T): Static<T> => {
+export const CreateSchemaValue = <T extends SchemaDefinition>(schema: T): Static<T> => {
   if (schema.options && 'default' in schema.options) return CreateDefault(schema.options.default)
 
   switch (schema[Kind]) {
@@ -322,12 +329,12 @@ export const CreateSchemaValue = <T extends Schema>(schema: T): Static<T> => {
     case 'Tuple':
       return []
     case 'Union': {
-      const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      const props = schema.properties as TUnionSchema<SchemaDefinition[]>['properties']
       if (!props.length) return null
       return CreateSchemaValue(props[0])
     }
     case 'Func': {
-      const props = schema.properties as TFuncSchema<Schema[], Schema>['properties']
+      const props = schema.properties as TFuncSchema<SchemaDefinition[], SchemaDefinition>['properties']
       return () => CreateSchemaValue(props.return)
     }
     default:
@@ -379,11 +386,11 @@ export const CloneSerializable = <Val>(value: Val) => {
   return NonSerializable
 }
 
-const isSerializable = <T extends Schema>(schema: T) => {
+const isSerializable = <T extends SchemaDefinition>(schema: T) => {
   return !!schema?.options?.serialized
 }
 
-export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) => {
+export const CheckSchemaValue = <T extends SchemaDefinition, Val>(schema: T, value: Val) => {
   switch (schema[Kind]) {
     case 'Null':
       return value === null
@@ -413,7 +420,7 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
       return true
 
     case 'Record': {
-      const props = schema.properties as TRecordSchema<TPropertyKeySchema, Schema>['properties']
+      const props = schema.properties as TRecordSchema<TPropertyKeySchema, SchemaDefinition>['properties']
       const keySchema = props.key
       const valueSchema = props.value
 
@@ -433,7 +440,7 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
       return true
 
     case 'Array': {
-      const props = schema.properties as TArraySchema<Schema>['properties']
+      const props = schema.properties as TArraySchema<SchemaDefinition>['properties']
       if (!isSerializable(props)) return true
 
       if (!Array.isArray(value)) return false
@@ -448,7 +455,7 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
     }
 
     case 'Tuple': {
-      const props = schema.properties as TTupleSchema<Schema[]>['properties']
+      const props = schema.properties as TTupleSchema<SchemaDefinition[]>['properties']
       if (!Array.isArray(value)) return false
       // Tuple of optional values?
       // else if (value.length !== props.length) return false
@@ -460,7 +467,7 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
     }
 
     case 'Union': {
-      const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      const props = schema.properties as TUnionSchema<SchemaDefinition[]>['properties']
       if (!props.length) return false
       else {
         let nonSerializable = true
@@ -476,7 +483,7 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
     }
 
     case 'Proxy': {
-      const props = schema.properties as TProxySchema<Schema>['properties']
+      const props = schema.properties as TProxySchema<SchemaDefinition>['properties']
       return CheckSchemaValue(props, value)
     }
 
@@ -488,7 +495,7 @@ export const CheckSchemaValue = <T extends Schema, Val>(schema: T, value: Val) =
   }
 }
 
-const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
+const ConvertToSchema = <T extends SchemaDefinition, Val>(schema: T, value: Val) => {
   if (!isSerializable(schema)) return undefined
   if (schema.options?.serialize) return schema.options?.serialize(value)
 
@@ -518,7 +525,7 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
     }
 
     case 'Record': {
-      const props = schema.properties as TRecordSchema<TPropertyKeySchema, Schema>['properties']
+      const props = schema.properties as TRecordSchema<TPropertyKeySchema, SchemaDefinition>['properties']
       const keySchema = props.key
       const valueSchema = props.value
 
@@ -536,20 +543,20 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
     }
 
     case 'Array': {
-      const props = schema.properties as TArraySchema<Schema>['properties']
+      const props = schema.properties as TArraySchema<SchemaDefinition>['properties']
       if (!isSerializable(props)) return null
       if (Array.isArray(value)) return value.map((item) => ConvertToSchema(props, item))
       else return value
     }
 
     case 'Tuple': {
-      const props = schema.properties as TTupleSchema<Schema[]>['properties']
+      const props = schema.properties as TTupleSchema<SchemaDefinition[]>['properties']
       if (Array.isArray(value)) return value.map((item, i) => ConvertToSchema(props[i], item))
       else return value
     }
 
     case 'Union': {
-      const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      const props = schema.properties as TUnionSchema<SchemaDefinition[]>['properties']
       if (!props.length) return null
 
       for (const schema of props) {
@@ -564,7 +571,9 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
 
     case 'Partial':
     case 'Proxy': {
-      const props = schema.properties as TPartialSchema<Schema>['properties'] | TProxySchema<Schema>['properties']
+      const props = schema.properties as
+        | TPartialSchema<SchemaDefinition>['properties']
+        | TProxySchema<SchemaDefinition>['properties']
       return ConvertToSchema(props, value)
     }
 
@@ -574,7 +583,7 @@ const ConvertToSchema = <T extends Schema, Val>(schema: T, value: Val) => {
 }
 
 // Generate a JSON Schema from the Typebox Schema
-export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | undefined => {
+export const GenerateJSONSchema = <T extends SchemaDefinition>(schema: T): JSONSchema | undefined => {
   if (schema.options?.serialized === false) return undefined
 
   const jsonSchema: any = {}
@@ -615,13 +624,13 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
       break
     }
     case 'Record': {
-      const props = schema.properties as TRecordSchema<TPropertyKeySchema, Schema>['properties']
+      const props = schema.properties as TRecordSchema<TPropertyKeySchema, SchemaDefinition>['properties']
       jsonSchema.type = 'object'
       jsonSchema.additionalProperties = GenerateJSONSchema(props.value)
       break
     }
     case 'Partial': {
-      const props = schema.properties as TPartialSchema<Schema>['properties']
+      const props = schema.properties as TPartialSchema<SchemaDefinition>['properties']
       jsonSchema.type = 'object'
       const subSchema = GenerateJSONSchema(props)
       jsonSchema.properties = subSchema?.properties
@@ -629,8 +638,8 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
       break
     }
     case 'Array': {
-      const props = schema.properties as TArraySchema<Schema>['properties']
-      const options = schema.options as TArraySchema<Schema>['options']
+      const props = schema.properties as TArraySchema<SchemaDefinition>['properties']
+      const options = schema.options as TArraySchema<SchemaDefinition>['options']
 
       jsonSchema.type = 'array'
       jsonSchema.items = GenerateJSONSchema(props)
@@ -639,7 +648,7 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
       break
     }
     case 'Tuple': {
-      const props = schema.properties as TTupleSchema<Schema[]>['properties']
+      const props = schema.properties as TTupleSchema<SchemaDefinition[]>['properties']
       jsonSchema.type = 'array'
       jsonSchema.items = props.map((prop) => GenerateJSONSchema(prop))
       jsonSchema.minItems = props.length
@@ -647,7 +656,7 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
       break
     }
     case 'Union': {
-      const props = schema.properties as TUnionSchema<Schema[]>['properties']
+      const props = schema.properties as TUnionSchema<SchemaDefinition[]>['properties']
       const isLiteralUnion = props.every((prop) => prop[Kind] === 'Literal')
       if (isLiteralUnion) {
         const enumValues = Object.values(
@@ -665,7 +674,7 @@ export const GenerateJSONSchema = <T extends Schema>(schema: T): JSONSchema | un
       break
     }
     case 'Proxy': {
-      const props = schema.properties as TProxySchema<Schema>['properties']
+      const props = schema.properties as TProxySchema<SchemaDefinition>['properties']
       return GenerateJSONSchema(props)
     }
     // These types are not to be serialized
@@ -706,7 +715,7 @@ export type JSONSchema = {
   $id?: string
 }
 
-export const SerializeSchema = <T extends Schema, Val>(schema: T, value: Val): Val => {
+export const SerializeSchema = <T extends SchemaDefinition, Val>(schema: T, value: Val): Val => {
   const converted = ConvertToSchema(schema, value)
   return CloneSerializable(converted)
 }

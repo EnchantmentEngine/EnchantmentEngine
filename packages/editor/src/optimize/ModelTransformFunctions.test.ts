@@ -1,6 +1,6 @@
+import { MATCH_ASSET_PROJECT_FILENAME_REGEX } from '@ir-engine/common/src/regex'
 import assert from 'assert'
 import { describe, it } from 'vitest'
-import { MATCH_ASSET_PROJECT_FILENAME_REGEX } from '../regex'
 
 describe('Model Transform Functions', () => {
   describe('MATCH_ASSET_PROJECT_FILENAME_REGEX', () => {

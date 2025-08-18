@@ -51,9 +51,9 @@ export function createXRUI<S extends State<any> | null>(
 
   if (!WebLayerManager.instance) {
     const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-    const renderer = getComponent(viewerEntity, RendererComponent)
+    const renderer = getComponent(viewerEntity, RendererComponent).renderer!
     const ktx2Loader = getState(KTX2LoaderState)
-    WebLayerManager.initialize(renderer.renderer!, ktx2Loader!)
+    WebLayerManager.initialize(renderer, ktx2Loader!)
   }
 
   const container = new WebContainer3D(containerElement, { manager: WebLayerManager.instance })

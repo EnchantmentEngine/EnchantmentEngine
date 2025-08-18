@@ -1,3 +1,4 @@
+import { getMaxCubeMapSize } from '@ir-engine/spatial/src/renderer/functions/RendererBackendUtils'
 import {
   CubeCamera,
   LinearFilter,
@@ -8,23 +9,26 @@ import {
   WebGLCubeRenderTarget,
   WebGLRenderer
 } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 
 export default class CubemapCapturer {
   width: number
   height: number
-  renderer: WebGLRenderer
+  renderer: WebGLRenderer | WebGPURenderer
   cubeCamera: CubeCamera
   cubeRenderTarget: WebGLCubeRenderTarget
   sceneToRender: Scene
 
-  constructor(renderer: WebGLRenderer, sceneToRender: Scene, resolution: number) {
+  constructor(renderer: WebGLRenderer | WebGPURenderer, sceneToRender: Scene, resolution: number) {
     this.width = resolution
     this.height = resolution
     this.sceneToRender = sceneToRender
     this.renderer = renderer
     this.cubeCamera = null!
-    const gl = this.renderer.getContext()
-    const cubeMapSize = Math.min(resolution, gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE))
+
+    const minCubeMapSize = getMaxCubeMapSize(renderer)
+
+    const cubeMapSize = Math.min(resolution, minCubeMapSize)
     this.cubeRenderTarget = new WebGLCubeRenderTarget(cubeMapSize, {
       format: RGBAFormat,
       colorSpace: SRGBColorSpace,
