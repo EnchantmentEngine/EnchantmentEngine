@@ -1,18 +1,6 @@
-import { useLayoutEffect } from 'react'
-
 import { OpaqueType, PeerID, UserID } from '@ir-engine/hyperflux'
 import { createResizableTypeArray } from '../bitecsLegacy'
-import {
-  Component,
-  defineComponent,
-  getComponent,
-  hasComponent,
-  removeComponent,
-  setComponent,
-  useComponent,
-  useEntityContext
-} from '../ComponentFunctions'
-import { Engine } from '../Engine'
+import { Component, defineComponent, getComponent, hasComponent } from '../ComponentFunctions'
 import { Entity, UndefinedEntity } from '../Entity'
 import { defineQuery } from '../QueryFunctions'
 import { S } from '../schemas/JSONSchemas'
@@ -20,9 +8,6 @@ import { TTypedSchema } from '../schemas/JSONSchemaTypes'
 import { proxySoAStore } from '../schemas/proxySoAStore'
 
 export type NetworkId = OpaqueType<'networkId'> & number
-
-/** ID of last network created. */
-let availableNetworkId = 0 as NetworkId
 
 export const NetworkSchema = {
   /** NetworkID type schema helper, defaults to 0 */
@@ -52,24 +37,6 @@ export const NetworkObjectComponent = defineComponent({
   onInit(entity, initial) {
     proxyNetworkId(entity, 'networkId', initial)
     return initial
-  },
-
-  reactor: function () {
-    const entity = useEntityContext()
-    const networkObject = useComponent(entity, NetworkObjectComponent)
-
-    useLayoutEffect(() => {
-      if (networkObject.authorityPeerID === Engine.instance.store.peerID)
-        setComponent(entity, NetworkObjectAuthorityTag)
-      else removeComponent(entity, NetworkObjectAuthorityTag)
-    }, [networkObject.authorityPeerID])
-
-    useLayoutEffect(() => {
-      if (networkObject.ownerId === Engine.instance.userID) setComponent(entity, NetworkObjectOwnedTag)
-      else removeComponent(entity, NetworkObjectOwnedTag)
-    }, [networkObject.ownerId])
-
-    return null
   },
 
   /**
@@ -117,11 +84,6 @@ export const NetworkObjectComponent = defineComponent({
     return NetworkObjectComponent.getOwnedNetworkObjects(userId).filter((eid) => {
       return hasComponent(eid, component)
     })
-  },
-
-  /** Get next network id. */
-  createNetworkId(): NetworkId {
-    return ++availableNetworkId as NetworkId
   }
 })
 
