@@ -1,4 +1,4 @@
-import { PeerID, UserID } from '@ir-engine/hyperflux'
+import { PeerID, UserID } from '../types/Types'
 import {
   Kind,
   Kinds,

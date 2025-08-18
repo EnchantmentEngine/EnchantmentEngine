@@ -41,9 +41,9 @@ export type ActionOptions = {
 }
 
 /** Generic action (flat payload + meta) */
-export type AnyAction = { type: string | string[] } & ActionOptions & Record<string, any>
+export type Action = { type: string | string[] } & ActionOptions & Record<string, any>
 
-export type ResolvedActionType<Shape = any> = AnyAction
+export type ResolvedActionType<Shape = any> = Action
 
 /** Utility: deep equality (used in caching logic) */
 export function deepEqual(x: any, y: any): boolean {
@@ -198,7 +198,7 @@ const validateCompiledSchemaValue = (schema: SchemaDefinition, value: any, path:
 // Action Definition API (compiled schemas)
 // -------------------------------------------------------------
 export type ActionCreator<P extends Record<string, any>, TType extends string> = {
-  (partial?: Partial<P> & ActionOptions): AnyAction & P & { type: TType | string[] }
+  (partial?: Partial<P> & ActionOptions): Action & P & { type: TType | string[] }
   type: TType
   schema: SchemaDefinition
   defaults: () => Partial<P>
@@ -208,17 +208,17 @@ export type ActionCreator<P extends Record<string, any>, TType extends string> =
     schema: CS
     defaults?: Partial<CP> | (() => Partial<CP>)
   }) => ActionCreator<CP, CT>
-  receive: (fn: (action: AnyAction & P & { type: TType | string[] }) => void) => ActionReceptor<P, TType>
-  matches: (a: AnyAction) => a is AnyAction & P & { type: TType | string[] }
-  matchesAction: { test: (a: AnyAction) => boolean }
+  receive: (fn: (action: Action & P & { type: TType | string[] }) => void) => ActionReceptor<P, TType>
+  matches: (a: Action) => a is Action & P & { type: TType | string[] }
+  matchesAction: { test: (a: Action) => boolean }
 }
 
 export type ActionReceptor<P extends Record<string, any>, TType extends string> = ((
-  action: AnyAction & P & { type: TType | string[] }
+  action: Action & P & { type: TType | string[] }
 ) => void) & {
-  matchesAction: { test: (a: AnyAction) => boolean }
-  validate: (filter: (action: AnyAction & P & { type: TType | string[] }) => boolean) => ActionReceptor<P, TType>
-  validator?: (action: AnyAction & P & { type: TType | string[] }) => boolean
+  matchesAction: { test: (a: Action) => boolean }
+  validate: (filter: (action: Action & P & { type: TType | string[] }) => boolean) => ActionReceptor<P, TType>
+  validator?: (action: Action & P & { type: TType | string[] }) => boolean
 }
 
 export function isActionReceptor(f: any): f is ActionReceptor<any, any> {
@@ -255,7 +255,7 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
     if (errors.length)
       throw new Error(`Schema validation failed for action ${primaryType} (compiled):\n${errors.join('\n')}`)
 
-    const action: AnyAction = {
+    const action: Action = {
       ...payload,
       type: typeChain.length === 1 ? primaryType : typeChain
     }
@@ -263,7 +263,7 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
     if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) (action as any)[k] = v
     if (def.meta) Object.assign(action, def.meta)
 
-    return action as AnyAction & P & { type: TType | string[] }
+    return action as Action & P & { type: TType | string[] }
   }) as ActionCreator<P, TType>
 
   creator.type = primaryType
@@ -276,7 +276,7 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
       schema: ext.schema as any,
       defaults: ext.defaults as any
     }) as any
-  creator.matches = (a: AnyAction): a is AnyAction & P & { type: TType | string[] } => {
+  creator.matches = (a: Action): a is Action & P & { type: TType | string[] } => {
     if (!a || !a.type) return false
     const types = Array.isArray(a.type) ? a.type : [a.type]
     if (!types.includes(primaryType)) return false
@@ -286,10 +286,10 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
     }
     return validate(subset)
   }
-  creator.matchesAction = { test: (a: AnyAction) => creator.matches(a) }
+  creator.matchesAction = { test: (a: Action) => creator.matches(a) }
   creator.receive = (receptor) => {
     const hookable = createHookableFunction(receptor) as any
-    hookable.matchesAction = { test: (a: AnyAction) => creator.matches(a) }
+    hookable.matchesAction = { test: (a: Action) => creator.matches(a) }
     hookable.validate = (fn: any) => {
       hookable.validator = fn
       return hookable
@@ -304,8 +304,8 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
 // -------------------------------------------------------------
 // Dispatch & Processing Pipeline (unchanged semantics)
 // -------------------------------------------------------------
-export const dispatchAction = <A extends AnyAction>(_action: A) => {
-  const action = JSON.parse(JSON.stringify(_action)) as AnyAction
+export const dispatchAction = <A extends Action>(_action: A) => {
+  const action = JSON.parse(JSON.stringify(_action)) as Action
 
   const peerID = HyperFlux.store.peerID
   const agentID = HyperFlux.store.getAgentID()
@@ -328,7 +328,7 @@ export const dispatchAction = <A extends AnyAction>(_action: A) => {
   }
 
   const internal = action as Required<Pick<ActionOptions, '$uuid' | '$time' | '$topic' | '$to' | '$peer' | '$user'>> &
-    AnyAction
+    Action
 
   HyperFlux.store.actions.incoming.push(internal as any)
   addOutgoingTopicIfNecessary(topic as Topic)
@@ -345,9 +345,9 @@ export function addOutgoingTopicIfNecessary(topic: Topic) {
   }
 }
 
-const _updateCachedActions = (incomingAction: AnyAction) => {
+const _updateCachedActions = (incomingAction: Action) => {
   if (incomingAction.$cache) {
-    const cachedActions = HyperFlux.store.actions.cached as AnyAction[]
+    const cachedActions = HyperFlux.store.actions.cached as Action[]
     if (typeof incomingAction.$cache === 'boolean') {
       if (incomingAction.$cache) cachedActions.push(incomingAction)
     } else {
@@ -379,20 +379,20 @@ const _updateCachedActions = (incomingAction: AnyAction) => {
   }
 }
 
-const applyIncomingActionsToAllQueues = (action: AnyAction) => {
+const applyIncomingActionsToAllQueues = (action: Action) => {
   for (const [queueHandle, queue] of HyperFlux.store.actions.queues) {
     if ((queueHandle as any).test(action)) {
       if (queue.actions.length > 0) {
-        const last = queue.actions.at(-1) as AnyAction
+        const last = queue.actions.at(-1) as Action
         if (last && last.$time !== undefined && action.$time !== undefined && last.$time > action.$time)
           queue.needsResync = true
       }
-      queue.actions.push(action as AnyAction)
+      queue.actions.push(action as Action)
     }
   }
 }
 
-const createEventSourceQueues = (action: AnyAction) => {
+const createEventSourceQueues = (action: Action) => {
   for (const definition of StateDefinitions.values()) {
     if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
 
@@ -434,7 +434,7 @@ const createEventSourceQueues = (action: AnyAction) => {
   }
 }
 
-const _applyIncomingAction = (action: AnyAction) => {
+const _applyIncomingAction = (action: Action) => {
   if (action.$uuid && HyperFlux.store.actions.knownUUIDs.has(action.$uuid)) {
     try {
       JSON.stringify(action)
@@ -460,21 +460,21 @@ const _applyIncomingAction = (action: AnyAction) => {
   } catch (e) {
     messageStackError(e)
   } finally {
-    HyperFlux.store.actions.history.push(action as AnyAction)
+    HyperFlux.store.actions.history.push(action as Action)
     if (action.$uuid) HyperFlux.store.actions.knownUUIDs.add(action.$uuid)
     const idx = HyperFlux.store.actions.incoming.indexOf(action as any)
     if (idx !== -1) HyperFlux.store.actions.incoming.splice(idx, 1)
   }
 }
 
-const _forwardIfNecessary = (action: AnyAction) => {
+const _forwardIfNecessary = (action: Action) => {
   if (!action.$topic) return
   addOutgoingTopicIfNecessary(action.$topic as Topic)
   if (HyperFlux.store.peerID === action.$peer || HyperFlux.store.forwardingTopics.has(action.$topic as Topic)) {
     const outgoingActions = HyperFlux.store.actions.outgoing[action.$topic as Topic]
     if (!outgoingActions) return
     if (action.$uuid && outgoingActions.forwardedUUIDs.has(action.$uuid)) return
-    ;(outgoingActions.queue as AnyAction[]).push(action)
+    ;(outgoingActions.queue as Action[]).push(action)
     if (action.$uuid) outgoingActions.forwardedUUIDs.add(action.$uuid)
   }
 }
@@ -484,7 +484,7 @@ const applyEventSourcingToAllQueues = () => {
 }
 
 export const applyIncomingActions = () => {
-  const incoming = HyperFlux.store.actions.incoming as AnyAction[]
+  const incoming = HyperFlux.store.actions.incoming as Action[]
   if (!incoming.length) return
   const now = HyperFlux.store.getDispatchTime()
   const actions = incoming.slice()
@@ -508,7 +508,7 @@ export const clearOutgoingActions = (topic: Topic) => {
 // -------------------------------------------------------------
 // Action Queues
 // -------------------------------------------------------------
-export type ActionMatcher = { test: (a: AnyAction) => boolean }
+export type ActionMatcher = { test: (a: Action) => boolean }
 
 export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
   const shapes = Array.isArray(matchers) ? matchers : [matchers]
@@ -533,12 +533,12 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
 
   const actionQueueGetter = () => {
     const queueInstance = getOrCreateInstance()
-    const result = queueInstance.actions.slice(queueInstance.nextIndex) as AnyAction[]
+    const result = queueInstance.actions.slice(queueInstance.nextIndex) as Action[]
     queueInstance.nextIndex = queueInstance.actions.length
     return result
   }
 
-  ;(actionQueueGetter as any).test = (a: AnyAction) => shapes.some((s) => s.test(a))
+  ;(actionQueueGetter as any).test = (a: Action) => shapes.some((s) => s.test(a))
   ;(actionQueueGetter as any).shapeHash = shapeHash
 
   Object.defineProperty(actionQueueGetter, 'instance', {
@@ -553,8 +553,8 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
   ;(actionQueueGetter as any).resync = () => {
     const queue = getOrCreateInstance()
     queue.actions = HyperFlux.store.actions.history
-      .filter((a: AnyAction) => (actionQueueGetter as any).test(a))
-      .sort((a: AnyAction, b: AnyAction) => (a.$time || 0) - (b.$time || 0))
+      .filter((a: Action) => (actionQueueGetter as any).test(a))
+      .sort((a: Action, b: Action) => (a.$time || 0) - (b.$time || 0))
     queue.nextIndex = 0
     ;(actionQueueGetter as any).needsResync = false
   }
@@ -566,7 +566,7 @@ export const createActionQueue = defineActionQueue
 
 export type ActionQueueHandle = ReturnType<typeof defineActionQueue>
 export type ActionQueueInstance = {
-  actions: AnyAction[]
+  actions: Action[]
   nextIndex: number
   needsResync: boolean
   reactorRoot: ReactorRoot | undefined

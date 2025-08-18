@@ -1,30 +1,25 @@
-import { NetworkID, PeerID, UserID, defineAction, defineState, getMutableState, none } from '@ir-engine/hyperflux'
+import { defineAction } from '../functions/ActionFunctions'
+import { defineState, getMutableState, none } from '../functions/StateFunctions'
+import { Schema } from '../schemas/JSONSchemas'
+import { NetworkID, PeerID, UserID } from '../types/Types'
 import { NetworkPeer } from './NetworkState'
 
 export class NetworkActions {
   static peerJoined = defineAction({
     type: 'ee.engine.network.PEER_JOINED',
-    schema: {
-      type: 'object',
-      properties: {
-        peerID: { type: 'string' },
-        peerIndex: { type: 'number' },
-        userID: { type: 'string' }
-      },
-      required: ['peerID', 'peerIndex', 'userID']
-    }
+    schema: Schema.Object({
+      peerID: Schema.PeerID({ required: true }),
+      peerIndex: Schema.Number({ required: true }),
+      userID: Schema.UserID({ required: true })
+    })
   })
 
   static peerLeft = defineAction({
     type: 'ee.engine.network.PEER_LEFT',
-    schema: {
-      type: 'object',
-      properties: {
-        peerID: { type: 'string' },
-        userID: { type: 'string' }
-      },
-      required: ['peerID', 'userID']
-    }
+    schema: Schema.Object({
+      peerID: Schema.PeerID({ required: true }),
+      userID: Schema.UserID({ required: true })
+    })
   })
 }
 

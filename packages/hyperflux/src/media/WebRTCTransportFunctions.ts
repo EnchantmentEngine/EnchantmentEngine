@@ -1,4 +1,7 @@
-import { defineState, getMutableState, getState, HyperFlux, NetworkID, none, PeerID } from '@ir-engine/hyperflux'
+import { none } from '@hookstate/core'
+import { defineState, getMutableState, getState } from '../functions/StateFunctions'
+import { HyperFlux } from '../functions/StoreFunctions'
+import { NetworkID, PeerID } from '../types/Types'
 import { DataChannelType } from './DataChannelRegistry'
 import { MediaChannelType } from './MediaChannelState'
 
