@@ -230,7 +230,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
 /**
  * Get a deterministic network ID scoped to each owner peer
- * @todo this causes temporary desync when a new entity is spawned, as the network ID is not yet known
+ * @todo this causes temporary desync when a new entity is spawned, as network IDs may change
  */
 const useNetworkID = (uuid: EntityUUID) => {
   const state = useMutableState(EntityNetworkState)
