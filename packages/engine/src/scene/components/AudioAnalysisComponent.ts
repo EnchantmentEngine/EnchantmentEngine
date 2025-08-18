@@ -5,7 +5,7 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { PositionalAudioComponent } from '../../audio/components/PositionalAudioComponent'
 import { AudioNodeGroups, MediaComponent, MediaElementComponent } from './MediaComponent'
 
@@ -18,15 +18,15 @@ export const AudioAnalysisComponent = defineComponent({
   name: 'EE_audio_analyzer',
   jsonID: 'audio-analyzer',
 
-  schema: S.Object({
-    src: S.String(),
-    session: S.Type<AudioAnalysisSession | null>(),
-    bassEnabled: S.Bool({ default: true }),
-    midEnabled: S.Bool({ default: true }),
-    trebleEnabled: S.Bool({ default: true }),
-    bassMultiplier: S.Number({ default: 1 }),
-    midMultiplier: S.Number({ default: 1 }),
-    trebleMultiplier: S.Number({ default: 1 })
+  schema: Schema.Object({
+    src: Schema.String(),
+    session: Schema.Type<AudioAnalysisSession | null>(),
+    bassEnabled: Schema.Bool({ default: true }),
+    midEnabled: Schema.Bool({ default: true }),
+    trebleEnabled: Schema.Bool({ default: true }),
+    bassMultiplier: Schema.Number({ default: 1 }),
+    midMultiplier: Schema.Number({ default: 1 }),
+    trebleMultiplier: Schema.Number({ default: 1 })
   }),
 
   reactor: () => {

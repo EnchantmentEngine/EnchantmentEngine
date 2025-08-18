@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 
-import { useEntityContext } from '@ir-engine/ecs'
+import { EntitySchema, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, Schema } from '@ir-engine/hyperflux'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import {
   CameraMode,
@@ -17,17 +16,17 @@ export const CameraSettingsComponent = defineComponent({
   name: 'CameraSettingsComponent',
   jsonID: 'EE_camera_settings',
 
-  schema: S.Object({
-    cameraNearClip: S.Number({ default: 0.1 }),
-    cameraFarClip: S.Number({ default: 1000 }),
-    projectionType: S.Enum(ProjectionType, {
+  schema: Schema.Object({
+    cameraNearClip: Schema.Number({ default: 0.1 }),
+    cameraFarClip: Schema.Number({ default: 1000 }),
+    projectionType: Schema.Enum(ProjectionType, {
       $comment:
         "An indexed enum, ie. the numeric index of a value in the following sequence: 'Orthographic', 'Perspective'",
       default: ProjectionType.Perspective
     }),
-    fov: S.Number({ default: 60 }),
+    fov: Schema.Number({ default: 60 }),
 
-    cameraMode: S.Enum(CameraMode, {
+    cameraMode: Schema.Enum(CameraMode, {
       $comment: "An indexed enum, ie. the numeric index of a value in the following sequence: 'FOLLOW', 'GUIDED' ",
       default: CameraMode.FOLLOW,
       deserialize(curr, value) {
@@ -46,46 +45,46 @@ export const CameraSettingsComponent = defineComponent({
     }),
 
     //Fields for FOLLOW camera mode
-    minPhi: S.Number({ default: -70 }),
-    maxPhi: S.Number({ default: 85 }),
+    minPhi: Schema.Number({ default: -70 }),
+    maxPhi: Schema.Number({ default: 85 }),
 
-    isAvatarVisible: S.Bool({ default: true }),
+    isAvatarVisible: Schema.Bool({ default: true }),
 
-    followCameraScrollSensitivity: S.Number({ default: 1 }),
+    followCameraScrollSensitivity: Schema.Number({ default: 1 }),
 
-    canCameraFirstPerson: S.Bool({ default: true }),
-    canCameraThirdPerson: S.Bool({ default: true }),
-    canCameraTopDown: S.Bool({ default: true }),
+    canCameraFirstPerson: Schema.Bool({ default: true }),
+    canCameraThirdPerson: Schema.Bool({ default: true }),
+    canCameraTopDown: Schema.Bool({ default: true }),
 
-    isFistPersonFreeCamera: S.Bool({ default: true }),
-    isThirdPersonFreeCamera: S.Bool({ default: true }),
-    isTopDownFreeCamera: S.Bool({ default: false }),
+    isFistPersonFreeCamera: Schema.Bool({ default: true }),
+    isThirdPersonFreeCamera: Schema.Bool({ default: true }),
+    isTopDownFreeCamera: Schema.Bool({ default: false }),
 
-    firstPersonCameraLimits: S.Number({ default: 360 }),
-    thirdPersonCameraLimits: S.Number({ default: 360 }),
-    topDownCameraLimits: S.Number({ default: 360 }),
+    firstPersonCameraLimits: Schema.Number({ default: 360 }),
+    thirdPersonCameraLimits: Schema.Number({ default: 360 }),
+    topDownCameraLimits: Schema.Number({ default: 360 }),
 
-    isFirstPersonCameraReset: S.Bool({ default: true }),
-    isThirdPersonCameraReset: S.Bool({ default: true }),
-    isTopDownCameraReset: S.Bool({ default: true }),
+    isFirstPersonCameraReset: Schema.Bool({ default: true }),
+    isThirdPersonCameraReset: Schema.Bool({ default: true }),
+    isTopDownCameraReset: Schema.Bool({ default: true }),
 
-    thirdPersonMinDistance: S.Number({ default: 1.5 }),
-    thirdPersonMaxDistance: S.Number({ default: 50 }),
-    thirdPersonDefaultDistance: S.Number({ default: 3 }),
+    thirdPersonMinDistance: Schema.Number({ default: 1.5 }),
+    thirdPersonMaxDistance: Schema.Number({ default: 50 }),
+    thirdPersonDefaultDistance: Schema.Number({ default: 3 }),
 
-    topDownMinDistance: S.Number({ default: 10 }),
-    topDownMaxDistance: S.Number({ default: 70 }),
-    topDownDefaultDistance: S.Number({ default: 40 }),
+    topDownMinDistance: Schema.Number({ default: 10 }),
+    topDownMaxDistance: Schema.Number({ default: 70 }),
+    topDownDefaultDistance: Schema.Number({ default: 40 }),
 
     // Fields for Guided camera mode
-    poiEntities: S.Array(S.EntityUUID()),
-    poiLerpSpeed: S.Number({ default: 0.5 }),
-    scrollDeadzone: S.Number({ default: 1.0 }),
-    scrollSensitivity: S.Number({ default: 0.1 }),
-    scrollDistancePerPoi: S.Number({ default: 3.0 }),
-    scrollBehavior: S.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp }),
-    poiScrollTransitionType: S.Enum(PoiScrollTransition, { default: PoiScrollTransition.Scrolling }),
-    enableTransitionButtons: S.Bool({ default: false })
+    poiEntities: Schema.Array(EntitySchema.EntityUUID()),
+    poiLerpSpeed: Schema.Number({ default: 0.5 }),
+    scrollDeadzone: Schema.Number({ default: 1.0 }),
+    scrollSensitivity: Schema.Number({ default: 0.1 }),
+    scrollDistancePerPoi: Schema.Number({ default: 3.0 }),
+    scrollBehavior: Schema.Enum(CameraScrollBehavior, { default: CameraScrollBehavior.Clamp }),
+    poiScrollTransitionType: Schema.Enum(PoiScrollTransition, { default: PoiScrollTransition.Scrolling }),
+    enableTransitionButtons: Schema.Bool({ default: false })
   }),
 
   reactor: () => {

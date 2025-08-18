@@ -12,13 +12,12 @@ import {
   EntityUUID,
   getComponent,
   Layers,
-  S,
   setComponent,
   SourceID,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { applyIncomingActions, getMutableState, getState, UserID } from '@ir-engine/hyperflux'
+import { applyIncomingActions, getMutableState, getState, Schema, UserID } from '@ir-engine/hyperflux'
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -830,8 +829,8 @@ describe('AuthoringState', () => {
       const MaterialCustomPlugin = defineComponent({
         name: 'MaterialCustomPlugin',
         jsonID: 'IR_material_custom',
-        schema: S.Object({
-          customMap: S.String()
+        schema: Schema.Object({
+          customMap: Schema.String()
         })
       })
 
@@ -944,8 +943,8 @@ describe('AuthoringState', () => {
       const MaterialCustomPlugin = defineComponent({
         name: 'MaterialCustomPlugin',
         jsonID: 'IR_material_custom',
-        schema: S.Object({
-          customMap: S.String()
+        schema: Schema.Object({
+          customMap: Schema.String()
         })
       })
 

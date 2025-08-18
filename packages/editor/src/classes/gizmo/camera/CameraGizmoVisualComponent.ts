@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import {
+  EntitySchema,
   EntityTreeComponent,
   createEntity,
   defineComponent,
@@ -9,8 +10,7 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState } from '@ir-engine/hyperflux'
+import { Schema, getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraGizmoTagComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -24,10 +24,10 @@ import { cameraGizmo, cameraPicker, setupGizmo } from '../../../constants/GizmoP
 export const CameraGizmoVisualComponent = defineComponent({
   name: 'CameraGizmoVisual',
 
-  schema: S.Object({
-    sceneEntity: S.Entity(),
-    gizmo: S.Entity(),
-    picker: S.Entity()
+  schema: Schema.Object({
+    sceneEntity: EntitySchema.Entity(),
+    gizmo: EntitySchema.Entity(),
+    picker: EntitySchema.Entity()
   }),
 
   reactor: function () {

@@ -1,6 +1,6 @@
 import { defineComponent, Entity, getComponent, getOptionalComponent } from '@ir-engine/ecs'
 import { Engine } from '@ir-engine/ecs/src/Engine'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { Material, Vector2 } from 'three'
 import { CameraComponent } from '../../camera/components/CameraComponent'
@@ -15,7 +15,7 @@ import { isCSMPluginSupportedByRenderer } from './Shader'
 export const CSMPluginComponent = defineComponent({
   name: 'CSMPluginComponent',
 
-  schema: S.Object({}),
+  schema: Schema.Object({}),
 
   reactor: (props: { entity: Entity }) => {
     const entity = props.entity

@@ -19,12 +19,14 @@ import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/Obje
 import { setupMixamoAnimation } from '../../src/avatar/systems/AvatarAnimationSystem'
 import { GLTFComponent } from '../../src/gltf/GLTFComponent'
 
+let i = 0
+
 export const createTestGLTFEntity = () => {
   const parent = createEntity()
   setComponent(parent, EntityTreeComponent)
   setComponent(parent, UUIDComponent, {
     entitySourceID: 'source' as SourceID,
-    entityID: 'test-gltf-entity' as EntityID
+    entityID: ('test-gltf-entity' + i++) as EntityID
   })
   const entity = createEntity()
   setComponent(entity, EntityTreeComponent, { parentEntity: parent })

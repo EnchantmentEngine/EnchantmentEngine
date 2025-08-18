@@ -1,20 +1,20 @@
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { defineNodeMaterialPlugin } from '@ir-engine/engine/src/material/defineNodeMaterialPlugin'
+import { Schema } from '@ir-engine/hyperflux'
 import { float, mix, mul, uniform, vec3 } from 'three/tsl'
 
 export const WebGPUCSMPlugin = defineNodeMaterialPlugin({
   name: 'WebGPUCSMPlugin',
   jsonID: 'IR_webgpu_csm_plugin',
 
-  uniforms: S.Object({
-    csmFade: S.Bool({ default: true }),
-    shadowIntensity: S.Number({ default: 1.0 }),
-    shadowBias: S.Number({ default: 0.0001 }),
-    cascadeBlendDistance: S.Number({ default: 0.1 }),
+  uniforms: Schema.Object({
+    csmFade: Schema.Bool({ default: true }),
+    shadowIntensity: Schema.Number({ default: 1.0 }),
+    shadowBias: Schema.Number({ default: 0.0001 }),
+    cascadeBlendDistance: Schema.Number({ default: 0.1 }),
 
-    shadowSoftness: S.Number({ default: 1.0 }),
-    ambientShadowColor: S.Array(S.Number(), { default: [0.1, 0.1, 0.2] }),
-    shadowColorTint: S.Array(S.Number(), { default: [0.8, 0.8, 1.0] })
+    shadowSoftness: Schema.Number({ default: 1.0 }),
+    ambientShadowColor: Schema.Array(Schema.Number(), { default: [0.1, 0.1, 0.2] }),
+    shadowColorTint: Schema.Array(Schema.Number(), { default: [0.8, 0.8, 1.0] })
   }),
 
   wgslCode: `

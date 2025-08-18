@@ -11,7 +11,7 @@ import {
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { initBrownianMotionFogShader, initHeightFogShader, removeFogShader } from './FogShaders'
 import { FogComponent } from './SceneComponents'
 import { VisibleComponent } from './VisibleComponent'
@@ -30,18 +30,18 @@ export const FogSettingsComponent = defineComponent({
   name: 'FogSettingsComponent',
   jsonID: 'EE_fog',
 
-  schema: S.Object({
-    type: S.Enum(FogType, {
+  schema: Schema.Object({
+    type: Schema.Enum(FogType, {
       $comment:
         "A string enum, ie. one of the following values: 'disabled', 'linear', 'exponential', 'brownian', 'height'",
       default: FogType.Disabled
     }),
-    color: S.String({ default: '#FFFFFF' }),
-    density: S.Number({ default: 0.005 }),
-    near: S.Number({ default: 1 }),
-    far: S.Number({ default: 1000 }),
-    timeScale: S.Number({ default: 1 }),
-    height: S.Number({ default: 0.05 })
+    color: Schema.String({ default: '#FFFFFF' }),
+    density: Schema.Number({ default: 0.005 }),
+    near: Schema.Number({ default: 1 }),
+    far: Schema.Number({ default: 1000 }),
+    timeScale: Schema.Number({ default: 1 }),
+    height: Schema.Number({ default: 0.05 })
   }),
 
   reactor: () => {

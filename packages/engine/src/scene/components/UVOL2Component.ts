@@ -41,7 +41,7 @@ import { isIPhone, isMobile } from '@ir-engine/spatial/src/common/functions/isMo
 import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { AssetExt } from '@ir-engine/spatial/src/resources/AssetType'
 import { getLoader } from '@ir-engine/spatial/src/resources/resourceLoaderFunctions'
@@ -254,44 +254,44 @@ function sortAndMergeBufferMetadata(ranges: BufferMetadata[], gapTolerance: numb
   return mergedRanges
 }
 
-const BufferMetadataSchema = S.Object({
-  start: S.Number(),
-  end: S.Number(),
-  fetchTime: S.Number()
+const BufferMetadataSchema = Schema.Object({
+  start: Schema.Number(),
+  end: Schema.Number(),
+  fetchTime: Schema.Number()
 })
 
-const InfoItemSchema = S.Object({
-  targets: S.Array(S.String()),
-  userTarget: S.Number({ default: -1 }), // -1 implies 'auto'
-  currentTarget: S.Number({ default: 0 }),
-  buffered: S.Array(BufferMetadataSchema)
+const InfoItemSchema = Schema.Object({
+  targets: Schema.Array(Schema.String()),
+  userTarget: Schema.Number({ default: -1 }), // -1 implies 'auto'
+  currentTarget: Schema.Number({ default: 0 }),
+  buffered: Schema.Array(BufferMetadataSchema)
 })
 
 export const UVOL2Component = defineComponent({
   name: 'UVOL2Component',
 
-  schema: S.Object({
-    canPlay: S.Bool({ default: false }),
-    manifestPath: S.String({ default: '' }),
-    data: S.Type<PlayerManifest>({ default: {} as PlayerManifest }),
-    useVideoTexture: S.Bool({ default: true }),
-    hasAudio: S.Bool({ default: false }),
-    bufferedUntil: S.Number({ default: 0 }),
+  schema: Schema.Object({
+    canPlay: Schema.Bool({ default: false }),
+    manifestPath: Schema.String({ default: '' }),
+    data: Schema.Type<PlayerManifest>({ default: {} as PlayerManifest }),
+    useVideoTexture: Schema.Bool({ default: true }),
+    hasAudio: Schema.Bool({ default: false }),
+    bufferedUntil: Schema.Number({ default: 0 }),
     geometryInfo: InfoItemSchema,
-    textureInfo: S.Object({
-      textureTypes: S.Array(TextureTypeSchema),
+    textureInfo: Schema.Object({
+      textureTypes: Schema.Array(TextureTypeSchema),
       baseColor: InfoItemSchema,
       normal: InfoItemSchema,
       metallicRoughness: InfoItemSchema,
       emissive: InfoItemSchema,
       occlusion: InfoItemSchema
     }),
-    initialGeometryBuffersLoaded: S.Bool({ default: false }),
-    initialTextureBuffersLoaded: S.Bool({ default: false }),
-    firstGeometryFrameLoaded: S.Bool({ default: false }),
-    firstTextureFrameLoaded: S.Bool({ default: false }),
-    loadingEffectStarted: S.Bool({ default: false }),
-    loadingEffectEnded: S.Bool({ default: false })
+    initialGeometryBuffersLoaded: Schema.Bool({ default: false }),
+    initialTextureBuffersLoaded: Schema.Bool({ default: false }),
+    firstGeometryFrameLoaded: Schema.Bool({ default: false }),
+    firstTextureFrameLoaded: Schema.Bool({ default: false }),
+    loadingEffectStarted: Schema.Bool({ default: false }),
+    loadingEffectEnded: Schema.Bool({ default: false })
   }),
 
   setStartAndPlaybackTime: (entity: Entity, newMediaStartTime: number, newPlaybackStartDate: number) => {

@@ -8,8 +8,7 @@ import {
   removeComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY, State, useHookstate } from '@ir-engine/hyperflux'
+import { NO_PROXY, Schema, State, useHookstate } from '@ir-engine/hyperflux'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
@@ -26,9 +25,9 @@ import { AvatarRigComponent } from './AvatarAnimationComponent'
 export const AnimationComponent = defineComponent({
   name: 'AnimationComponent',
 
-  schema: S.Object({
-    mixer: S.Type<AnimationMixer>(),
-    animations: S.Array(S.Type<AnimationClip>())
+  schema: Schema.Object({
+    mixer: Schema.Type<AnimationMixer>(),
+    animations: Schema.Array(Schema.Type<AnimationClip>())
   })
 })
 

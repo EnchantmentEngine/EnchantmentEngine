@@ -1,4 +1,5 @@
-import { defineComponent, Easing, Entity, getComponent, S } from '@ir-engine/ecs'
+import { defineComponent, Easing, Entity, getComponent } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { Box3, Vector3 } from 'three'
 import { T } from '../../schema/schemaFunctions'
 import { TransformComponent } from '../../transform/components/TransformComponent'
@@ -13,12 +14,12 @@ export const CameraOrbitComponent = defineComponent({
 
   jsonID: 'IR_camera_orbit',
 
-  schema: S.Object({
-    minimumZoomDistance: S.Number({ default: 0.5 }),
-    maximumZoomDistance: S.Number({ default: Infinity }),
-    zoomSpeed: S.Number({ default: 0.1 }),
-    panSpeed: S.Number({ default: 1 }),
-    orbitSpeed: S.Number({ default: 5 }),
+  schema: Schema.Object({
+    minimumZoomDistance: Schema.Number({ default: 0.5 }),
+    maximumZoomDistance: Schema.Number({ default: Infinity }),
+    zoomSpeed: Schema.Number({ default: 0.1 }),
+    panSpeed: Schema.Number({ default: 1 }),
+    orbitSpeed: Schema.Number({ default: 5 }),
     cameraOrbitCenter: T.Vec3()
   }),
 

@@ -2,10 +2,10 @@ import { Easing, Tween } from '@tweenjs/tween.js'
 import { useEffect } from 'react'
 import { AdditiveBlending, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three'
 
-import { EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import { EntitySchema, EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ObjectDirection, Vector3_Right, Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { Physics, RaycastArgs } from '@ir-engine/spatial/src/physics/classes/Physics'
@@ -20,11 +20,11 @@ import { TweenComponent } from '@ir-engine/spatial/src/transform/components/Twee
 export const SpawnEffectComponent = defineComponent({
   name: 'SpawnEffectComponent',
 
-  schema: S.Object({
-    sourceEntity: S.Entity(),
-    opacityMultiplier: S.Number({ default: 1 }),
-    plateEntity: S.Entity(),
-    lightEntities: S.Array(S.Entity())
+  schema: Schema.Object({
+    sourceEntity: EntitySchema.Entity(),
+    opacityMultiplier: Schema.Number({ default: 1 }),
+    plateEntity: EntitySchema.Entity(),
+    lightEntities: Schema.Array(EntitySchema.Entity())
   }),
 
   reactor: () => {

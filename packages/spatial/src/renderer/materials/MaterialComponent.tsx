@@ -15,8 +15,8 @@ import {
 import { Entity, EntityUUID, EntityUUIDPair } from '@ir-engine/ecs/src/Entity'
 import { PluginType } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema, defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { NameComponent } from '../../common/NameComponent'
 import { MeshComponent } from '../components/MeshComponent'
@@ -78,10 +78,10 @@ export const MaterialStateComponent = defineComponent({
 
   jsonID: 'IR_material',
 
-  schema: S.Object({
-    material: S.Type<Material>(),
+  schema: Schema.Object({
+    material: Schema.Type<Material>(),
     // serialized data (textures as URLs, colors as numbers etc)
-    parameters: S.Record(S.String(), S.Any())
+    parameters: Schema.Record(Schema.String(), Schema.Any())
   }),
 
   fallbackMaterialUUIDPair: {
@@ -158,7 +158,7 @@ export const MaterialReferenceState = defineState({
 export const MaterialInstanceComponent = defineComponent({
   name: 'MaterialInstanceComponent',
 
-  schema: S.Object({ entities: S.Array(S.Entity()) }),
+  schema: Schema.Object({ entities: Schema.Array(EntitySchema.Entity()) }),
 
   onRemove: (entity) => {
     const entities = getOptionalComponent(entity, MaterialInstanceComponent)?.entities

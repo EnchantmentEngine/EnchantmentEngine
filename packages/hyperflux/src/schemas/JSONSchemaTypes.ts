@@ -1,5 +1,3 @@
-import { Entity } from '../Entity'
-
 export const Kind = Symbol('Kind')
 export const NonSerializable = Symbol('NonSerializable')
 export const Required = Symbol('Required')
@@ -23,16 +21,16 @@ export type Kinds =
   | 'Proxy'
   | 'Any'
 
-export interface Schema {
+export interface SchemaDefinition {
   [Kind]: Kinds
   static: unknown
   properties?: unknown
   options?: Options<any>
 }
 
-export type Static<T extends Schema> = T['static']
+export type Static<T extends SchemaDefinition> = T['static']
 
-type ValueOrInitializer<T> = T | ((entity: Entity) => T)
+type ValueOrInitializer<T> = T | (() => T)
 
 export interface Options<V = unknown> {
   id?: string
@@ -40,31 +38,30 @@ export interface Options<V = unknown> {
   serialized?: boolean
   serialize?: (value: V) => unknown
   deserialize?: (curr: V, value: V) => V
-  validate?: (value: V, prev: V, entity: Entity) => boolean
   required?: boolean
   $comment?: string
   metadata?: Record<string, any>
 }
 
-export interface TNullSchema extends Schema {
+export interface TNullSchema extends SchemaDefinition {
   [Kind]: 'Null'
   static: null
   options: Options<this['static']>
 }
 
-export interface TUndefinedSchema extends Schema {
+export interface TUndefinedSchema extends SchemaDefinition {
   [Kind]: 'Undefined'
   static: undefined
   options: Options<this['static']>
 }
 
-export interface TVoidSchema extends Schema {
+export interface TVoidSchema extends SchemaDefinition {
   [Kind]: 'Void'
   static: void
   options: Options<this['static']>
 }
 
-export interface TNumberSchema extends Schema {
+export interface TNumberSchema extends SchemaDefinition {
   [Kind]: 'Number'
   static: number
   options: Options<this['static']> & {
@@ -76,13 +73,13 @@ export interface TNumberSchema extends Schema {
   }
 }
 
-export interface TBoolSchema extends Schema {
+export interface TBoolSchema extends SchemaDefinition {
   [Kind]: 'Bool'
   static: boolean
   options: Options<this['static']>
 }
 
-export interface TStringSchema extends Schema {
+export interface TStringSchema extends SchemaDefinition {
   [Kind]: 'String'
   static: string
   options: Options<this['static']> & {
@@ -93,7 +90,7 @@ export interface TStringSchema extends Schema {
 }
 
 export type TLiteralValue = boolean | number | string
-export interface TLiteralSchema<T extends TLiteralValue> extends Schema {
+export interface TLiteralSchema<T extends TLiteralValue> extends SchemaDefinition {
   [Kind]: 'Literal'
   static: T
   properties: T
@@ -102,7 +99,7 @@ export interface TLiteralSchema<T extends TLiteralValue> extends Schema {
 
 export type TPropertyKeySchema = TStringSchema | TNumberSchema
 export type TPropertyKey = string | number
-export type TProperties = Record<TPropertyKey, Schema>
+export type TProperties = Record<TPropertyKey, SchemaDefinition>
 
 type ObjectOptionalKeys<T extends TProperties> = {
   [K in keyof T]: undefined extends Static<T[K]> ? K : never
@@ -116,7 +113,7 @@ type ObjectStatic<T extends TProperties> = {
   [K in ObjectOptionalKeys<T>]?: Static<T[K]>
 }
 
-export interface TObjectSchema<T extends TProperties> extends Schema {
+export interface TObjectSchema<T extends TProperties> extends SchemaDefinition {
   [Kind]: 'Object'
   static: ObjectStatic<T>
   properties: T
@@ -129,26 +126,26 @@ export interface TObjectSchema<T extends TProperties> extends Schema {
 }
 
 type Key<K> = K extends PropertyKey ? K : never
-type RecordStatic<K extends Schema, V extends Schema> = {
+type RecordStatic<K extends SchemaDefinition, V extends SchemaDefinition> = {
   [_ in Key<Static<K>>]: Static<V>
 }
 
-export interface TRecordSchema<K extends Schema, V extends Schema> extends Schema {
+export interface TRecordSchema<K extends SchemaDefinition, V extends SchemaDefinition> extends SchemaDefinition {
   [Kind]: 'Record'
   static: RecordStatic<K, V>
   properties: { key: K; value: V }
   options: Options<this['static']>
 }
 
-export interface TPartialSchema<T extends Schema> extends Schema {
+export interface TPartialSchema<T extends SchemaDefinition> extends SchemaDefinition {
   [Kind]: 'Partial'
   static: Partial<Static<T>>
   properties: T
   options: Options<this['static']>
 }
 
-type ArrayStatic<T extends Schema> = Static<T>[]
-export interface TArraySchema<T extends Schema> extends Schema {
+type ArrayStatic<T extends SchemaDefinition> = Static<T>[]
+export interface TArraySchema<T extends SchemaDefinition> extends SchemaDefinition {
   [Kind]: 'Array'
   static: ArrayStatic<T>
   options: Options<this['static']> & {
@@ -161,51 +158,52 @@ export interface TArraySchema<T extends Schema> extends Schema {
   properties: T
 }
 
-type TupleStatic<T extends Schema[]> = [...{ [K in keyof T]: Static<T[K]> }]
-export interface TTupleSchema<T extends Schema[]> extends Schema {
+type TupleStatic<T extends SchemaDefinition[]> = [...{ [K in keyof T]: Static<T[K]> }]
+export interface TTupleSchema<T extends SchemaDefinition[]> extends SchemaDefinition {
   [Kind]: 'Tuple'
   static: TupleStatic<T>
   properties: T
   options: Options<this['static']>
 }
 
-type UnionStatic<T extends Schema[]> = {
-  [K in keyof T]: T[K] extends Schema ? Static<T[K]> : never
+type UnionStatic<T extends SchemaDefinition[]> = {
+  [K in keyof T]: T[K] extends SchemaDefinition ? Static<T[K]> : never
 }[number]
-export interface TUnionSchema<T extends Schema[]> extends Schema {
+export interface TUnionSchema<T extends SchemaDefinition[]> extends SchemaDefinition {
   [Kind]: 'Union'
   static: UnionStatic<T>
   properties: T
   options: Options<this['static']>
 }
 
-type ParamsStatic<T extends Schema[], Arr extends unknown[] = []> = T extends [
-  infer L extends Schema,
-  ...infer R extends Schema[]
+type ParamsStatic<T extends SchemaDefinition[], Arr extends unknown[] = []> = T extends [
+  infer L extends SchemaDefinition,
+  ...infer R extends SchemaDefinition[]
 ]
   ? ParamsStatic<R, [...Arr, ...[Static<L>]]>
   : Arr
-export interface TFuncSchema<Params extends Schema[], Return extends Schema> extends Schema {
+export interface TFuncSchema<Params extends SchemaDefinition[], Return extends SchemaDefinition>
+  extends SchemaDefinition {
   [Kind]: 'Func'
   static: (...params: ParamsStatic<Params>) => Static<Return>
   properties: { params: Params; return: Return }
   options: Options<this['static']>
 }
 
-export interface TClassSchema<T extends TProperties, Class> extends Schema {
+export interface TClassSchema<T extends TProperties, Class> extends SchemaDefinition {
   [Kind]: 'Class'
   static: Class
   properties: T
   options: Options<this['static']>
 }
 
-export interface TTypedSchema<T> extends Schema {
+export interface TTypedSchema<T> extends SchemaDefinition {
   [Kind]: 'Any'
   static: T
   options: Options<this['static']>
 }
 
-export interface TProxySchema<T extends Schema> extends Schema {
+export interface TProxySchema<T extends SchemaDefinition> extends SchemaDefinition {
   [Kind]: 'Proxy'
   static: Static<T>
   properties: T

@@ -1,7 +1,7 @@
 import { Color, CubeTexture, Fog, FogExp2, Texture } from 'three'
 
 import { defineComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const SceneComponent = defineComponent({
   name: 'SceneComponent'
@@ -9,15 +9,15 @@ export const SceneComponent = defineComponent({
 
 export const BackgroundComponent = defineComponent({
   name: 'BackgroundComponent',
-  schema: S.Type<Color | Texture | CubeTexture>()
+  schema: Schema.Type<Color | Texture | CubeTexture>()
 })
 
 export const EnvironmentMapComponent = defineComponent({
   name: 'EnvironmentMapComponent',
-  schema: S.Type<Texture>()
+  schema: Schema.Type<Texture>()
 })
 
 export const FogComponent = defineComponent({
   name: 'FogComponent',
-  schema: S.Type<Fog | FogExp2>()
+  schema: Schema.Type<Fog | FogExp2>()
 })

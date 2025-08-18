@@ -3,12 +3,11 @@ import {
   Entity,
   getComponent,
   hasComponent,
-  S,
   setComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { getState, isDev, useMutableState } from '@ir-engine/hyperflux'
+import { getState, isDev, Schema, useMutableState } from '@ir-engine/hyperflux'
 import { Effect, EffectComposer, EffectPass, NormalPass, OutlineEffect, Pass, RenderPass } from 'postprocessing'
 import { useEffect } from 'react'
 import { ArrayCamera, Scene, SRGBColorSpace, WebGLRenderer, WebGLRendererParameters } from 'three'
@@ -19,12 +18,13 @@ import { createWebXRManager, WebXRManager } from '../../xr/WebXRManager'
 import { ObjectLayers } from '../constants/ObjectLayers'
 import { updateWebGPUPostProcessing } from '../webgpu/WebGPUPostProcessingPipeline'
 
+import { EntitySchema } from '@ir-engine/ecs'
 import { RenderBackends } from '../constants/RenderModes'
 import CSMHelper from '../csm/CSMHelper'
 import { HighlightState } from '../HighlightState'
 import { RendererState } from '../RendererState'
 
-export const EffectSchema = S.Union([S.Any(), S.Type<Effect>(undefined, { isActive: S.Bool() })])
+export const EffectSchema = Schema.Union([Schema.Any(), Schema.Type<Effect>(undefined, { isActive: Schema.Bool() })])
 type PassCount = {
   pass: Pass
   count: number
@@ -32,35 +32,35 @@ type PassCount = {
 export const RendererComponent = defineComponent({
   name: 'RendererComponent',
 
-  schema: S.Object(
+  schema: Schema.Object(
     {
       /** Is resize needed? */
-      needsResize: S.Bool({ default: false }),
+      needsResize: Schema.Bool({ default: false }),
 
-      renderPass: S.Type<RenderPass | null>(),
-      normalPass: S.Type<NormalPass | null>(),
-      passes: S.Record(S.String(), S.Type<Pass>()),
-      passesFakeMap: S.Record(S.String(), S.Type<PassCount>()),
+      renderPass: Schema.Type<RenderPass | null>(),
+      normalPass: Schema.Type<NormalPass | null>(),
+      passes: Schema.Record(Schema.String(), Schema.Type<Pass>()),
+      passesFakeMap: Schema.Record(Schema.String(), Schema.Type<PassCount>()),
 
-      renderContext: S.Type<WebGLRenderingContext | null | WebGL2RenderingContext | GPUCanvasContext>(),
-      effects: S.Record(S.String(), EffectSchema),
-      effectInstances: S.Record(S.String(), S.Type<Effect>()),
+      renderContext: Schema.Type<WebGLRenderingContext | null | WebGL2RenderingContext | GPUCanvasContext>(),
+      effects: Schema.Record(Schema.String(), EffectSchema),
+      effectInstances: Schema.Record(Schema.String(), Schema.Type<Effect>()),
 
-      canvas: S.Type<HTMLCanvasElement | null>(),
+      canvas: Schema.Type<HTMLCanvasElement | null>(),
 
-      renderer: S.Type<WebGPURenderer | WebGLRenderer | null>(),
-      effectComposer: S.Type<EffectComposer | null>(),
-      postProcessing: S.Type<PostProcessing | null>(),
-      webgpuPostProcessingPipeline: S.Type<PostProcessing | null>(),
+      renderer: Schema.Type<WebGPURenderer | WebGLRenderer | null>(),
+      effectComposer: Schema.Type<EffectComposer | null>(),
+      postProcessing: Schema.Type<PostProcessing | null>(),
+      webgpuPostProcessingPipeline: Schema.Type<PostProcessing | null>(),
 
-      scenes: S.Array(S.Entity()),
-      scene: S.Class(() => new Scene()),
+      scenes: Schema.Array(EntitySchema.Entity()),
+      scene: Schema.Class(() => new Scene()),
 
       /** @todo deprecate and replace with engine implementation */
-      xrManager: S.Type<WebXRManager | null>(),
-      webGLLostContext: S.Type<WEBGL_lose_context | null>(),
+      xrManager: Schema.Type<WebXRManager | null>(),
+      webGLLostContext: Schema.Type<WEBGL_lose_context | null>(),
 
-      csmHelper: S.Type<CSMHelper | null>()
+      csmHelper: Schema.Type<CSMHelper | null>()
     },
     { serialized: false }
   ),

@@ -20,8 +20,7 @@ import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/Re
 import { createSDFShader } from '@ir-engine/spatial/src/renderer/effects/sdf/SDFShader'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
@@ -41,11 +40,11 @@ export const SDFComponent = defineComponent({
   name: 'SDFComponent',
   jsonID: 'EE_sdf',
 
-  schema: S.Object({
+  schema: Schema.Object({
     color: T.Color(0xffffff),
     scale: T.Vec3(new Vector3(0.25, 0.001, 0.25)),
-    enable: S.Bool({ default: false }),
-    mode: S.Number({
+    enable: Schema.Bool({ default: false }),
+    mode: Schema.Number({
       $comment:
         "A number enum, where: 0 represents 'TORUS', 1 represents 'BOX', 2 represents 'SPHERE', 3 represents 'FOG'",
       default: SDFMode.TORUS

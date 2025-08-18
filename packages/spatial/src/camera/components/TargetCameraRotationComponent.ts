@@ -1,13 +1,13 @@
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const TargetCameraRotationComponent = defineComponent({
   name: 'TargetCameraRotationComponent',
 
-  schema: S.Object({
-    phi: S.Number(),
-    theta: S.Number(),
-    time: S.Number()
+  schema: Schema.Object({
+    phi: Schema.Number(),
+    theta: Schema.Number(),
+    time: Schema.Number()
   }),
 
   onInit: (entity, initial) => ({

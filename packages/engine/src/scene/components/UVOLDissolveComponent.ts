@@ -11,14 +11,14 @@ import {
 
 import { defineComponent, getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const UVOLDissolveComponent = defineComponent({
   name: 'UVOLDissolveComponent',
 
-  schema: S.Object({
-    currentTime: S.Number(),
-    duration: S.Number({ default: 2 })
+  schema: Schema.Object({
+    currentTime: Schema.Number(),
+    duration: Schema.Number({ default: 2 })
   }),
 
   /**

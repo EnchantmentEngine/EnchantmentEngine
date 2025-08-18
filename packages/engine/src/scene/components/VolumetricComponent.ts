@@ -12,8 +12,7 @@ import {
   useExecute,
   useOptionalComponent
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { State, getMutableState, getState } from '@ir-engine/hyperflux'
+import { Schema, State, getMutableState, getState } from '@ir-engine/hyperflux'
 import {
   ObjectComponent,
   addObjectToGroup,
@@ -156,62 +155,68 @@ const resetState = {
   paused: true
 } as ComponentType<typeof VolumetricComponent>
 
-export const TextureTypeSchema = S.LiteralUnion(['normal', 'metallicRoughness', 'emissive', 'occlusion', 'baseColor'])
+export const TextureTypeSchema = Schema.LiteralUnion([
+  'normal',
+  'metallicRoughness',
+  'emissive',
+  'occlusion',
+  'baseColor'
+])
 
 /** @todo figure out how get this type to work */
-const PreTrackBufferingCallbackSchema = S.Optional(
-  S.Func([S.Type<State<ComponentType<typeof VolumetricComponent>>>()], S.Void())
+const PreTrackBufferingCallbackSchema = Schema.Optional(
+  Schema.Func([Schema.Type<State<ComponentType<typeof VolumetricComponent>>>()], Schema.Void())
 )
 
 export const VolumetricComponent = defineComponent({
   name: 'VolumetricComponent',
   jsonID: 'IR_volumetric',
 
-  schema: S.Object({
-    useVideoTextureForBaseColor: S.Bool({ default: false }), // legacy for UVOL1
-    useLoadingEffect: S.Bool({ default: true }),
-    volume: S.Number({ default: 1 }),
-    checkForEnoughBuffers: S.Bool({ default: true }),
-    notEnoughBuffers: S.Bool({ default: true }),
-    time: S.Object({
-      start: S.Number({ default: 0 }),
-      checkpointAbsolute: S.Number({ default: -1 }),
-      checkpointRelative: S.Number({ default: 0 }),
-      currentTime: S.Number({ default: 0 }),
-      bufferedUntil: S.Number({ default: 0 }),
-      duration: S.Number({ default: 0 })
+  schema: Schema.Object({
+    useVideoTextureForBaseColor: Schema.Bool({ default: false }), // legacy for UVOL1
+    useLoadingEffect: Schema.Bool({ default: true }),
+    volume: Schema.Number({ default: 1 }),
+    checkForEnoughBuffers: Schema.Bool({ default: true }),
+    notEnoughBuffers: Schema.Bool({ default: true }),
+    time: Schema.Object({
+      start: Schema.Number({ default: 0 }),
+      checkpointAbsolute: Schema.Number({ default: -1 }),
+      checkpointRelative: Schema.Number({ default: 0 }),
+      currentTime: Schema.Number({ default: 0 }),
+      bufferedUntil: Schema.Number({ default: 0 }),
+      duration: Schema.Number({ default: 0 })
     }),
-    geometry: S.Object({
-      targets: S.Array(S.String()),
-      initialBufferLoaded: S.Bool({ default: false }),
-      firstFrameLoaded: S.Bool({ default: false }),
-      currentTarget: S.Number({ default: 0 }),
-      userTarget: S.Number({ default: -1 })
+    geometry: Schema.Object({
+      targets: Schema.Array(Schema.String()),
+      initialBufferLoaded: Schema.Bool({ default: false }),
+      firstFrameLoaded: Schema.Bool({ default: false }),
+      currentTarget: Schema.Number({ default: 0 }),
+      userTarget: Schema.Number({ default: -1 })
     }),
-    geometryType: S.Enum(GeometryType, {
+    geometryType: Schema.Enum(GeometryType, {
       $comment: "A number enum, where: 0 represents 'Corto', 1 represents 'Draco', 2 represents 'Unify'",
       default: GeometryType.Corto
     }),
-    textureBuffer: S.Type<Map<string, Map<string, CompressedTexture[]>>>({
+    textureBuffer: Schema.Type<Map<string, Map<string, CompressedTexture[]>>>({
       default: () => new Map<string, Map<string, CompressedTexture[]>>()
     }),
-    setIntervalId: S.Number({ default: -1 }),
-    texture: S.Record(
+    setIntervalId: Schema.Number({ default: -1 }),
+    texture: Schema.Record(
       TextureTypeSchema,
-      S.Object({
-        initialBufferLoaded: S.Bool(),
-        firstFrameLoaded: S.Bool(),
-        targets: S.Array(S.String()),
-        currentTarget: S.Number(),
-        userTarget: S.Number()
+      Schema.Object({
+        initialBufferLoaded: Schema.Bool(),
+        firstFrameLoaded: Schema.Bool(),
+        targets: Schema.Array(Schema.String()),
+        currentTarget: Schema.Number(),
+        userTarget: Schema.Number()
       })
     ),
-    textureInfo: S.Object({
-      textureTypes: S.Array(TextureTypeSchema),
-      initialBufferLoaded: S.Partial(S.Record(TextureTypeSchema, S.Bool())),
-      firstFrameLoaded: S.Partial(S.Record(TextureTypeSchema, S.Bool()))
+    textureInfo: Schema.Object({
+      textureTypes: Schema.Array(TextureTypeSchema),
+      initialBufferLoaded: Schema.Partial(Schema.Record(TextureTypeSchema, Schema.Bool())),
+      firstFrameLoaded: Schema.Partial(Schema.Record(TextureTypeSchema, Schema.Bool()))
     }),
-    paused: S.Bool({ default: true })
+    paused: Schema.Bool({ default: true })
   }),
 
   toJSON: (component) => ({

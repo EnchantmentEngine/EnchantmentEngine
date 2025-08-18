@@ -30,8 +30,7 @@ import {
   useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getMutableState, getState, NO_PROXY, none, SceneUser, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, NO_PROXY, none, SceneUser, Schema, useMutableState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -61,22 +60,22 @@ export const GLTFComponent = defineComponent({
   name: 'GLTFComponent',
   jsonID: 'EE_model',
 
-  schema: S.Object({
-    src: S.String({ default: '' }),
+  schema: Schema.Object({
+    src: Schema.String({ default: '' }),
 
     /** @todo move this to it's own component */
-    cameraOcclusion: S.Bool({ default: true }),
+    cameraOcclusion: Schema.Bool({ default: true }),
 
     //collision info
-    applyColliders: S.Bool(),
+    applyColliders: Schema.Bool(),
     shape: ShapeSchema('box'),
 
     // internals
-    loaded: S.Bool({ default: false, serialized: false }),
-    document: S.Type<GLTF.IGLTF | null>({ serialized: false }),
-    progress: S.Number({ default: 0, serialized: false }),
-    extensions: S.Record(S.String(), S.Any(), { serialized: false }),
-    dependencies: S.Type<Dependencies | undefined>({ serialized: false })
+    loaded: Schema.Bool({ default: false, serialized: false }),
+    document: Schema.Type<GLTF.IGLTF | null>({ serialized: false }),
+    progress: Schema.Number({ default: 0, serialized: false }),
+    extensions: Schema.Record(Schema.String(), Schema.Any(), { serialized: false }),
+    dependencies: Schema.Type<Dependencies | undefined>({ serialized: false })
   }),
 
   errors: ['LOADING_ERROR', 'INVALID_SOURCE'],

@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { HyperFlux } from '@ir-engine/hyperflux'
+import { HyperFlux, Schema } from '@ir-engine/hyperflux'
 
 import { getAllEntities } from 'bitecs'
 import {
@@ -17,14 +17,13 @@ import {
 } from '../src/ComponentFunctions'
 import { createEngine, destroyEngine } from '../src/Engine'
 import { defineQuery } from '../src/QueryFunctions'
-import { S } from '../src/schemas/JSONSchemas'
 
 const mockDeltaMillis = 1000 / 60
 
 const MockComponent = defineComponent({
   name: 'MockComponent',
-  schema: S.Object({
-    mockValue: S.Number(0)
+  schema: Schema.Object({
+    mockValue: Schema.Number({ default: 0 })
   })
 })
 

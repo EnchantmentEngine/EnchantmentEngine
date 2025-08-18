@@ -1,9 +1,9 @@
 import { Tween } from '@tweenjs/tween.js'
 
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const TweenComponent = defineComponent({
   name: 'TweenComponent',
-  schema: S.Type<Tween<any>>()
+  schema: Schema.Type<Tween<any>>()
 })

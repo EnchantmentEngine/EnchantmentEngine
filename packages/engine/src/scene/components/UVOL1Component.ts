@@ -31,7 +31,7 @@ import { useVideoFrameCallback } from '@ir-engine/spatial/src/common/functions/u
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { CORTOLoader } from '../../assets/loaders/corto/CORTOLoader'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
@@ -68,29 +68,29 @@ interface ManifestSchema {
 export const UVOL1Component = defineComponent({
   name: 'UVOL1Component',
 
-  schema: S.Object({
-    manifestPath: S.String({ default: '' }),
-    data: S.Object(
+  schema: Schema.Object({
+    manifestPath: Schema.String({ default: '' }),
+    data: Schema.Object(
       {
-        maxVertices: S.Number(),
-        maxTriangles: S.Number(),
-        frameData: S.Array(
-          S.Object({
-            frameNumber: S.Number(),
-            keyframeNumber: S.Number(),
-            startBytePosition: S.Number(),
-            vertices: S.Number(),
-            faces: S.Number(),
-            meshLength: S.Number()
+        maxVertices: Schema.Number(),
+        maxTriangles: Schema.Number(),
+        frameData: Schema.Array(
+          Schema.Object({
+            frameNumber: Schema.Number(),
+            keyframeNumber: Schema.Number(),
+            startBytePosition: Schema.Number(),
+            vertices: Schema.Number(),
+            faces: Schema.Number(),
+            meshLength: Schema.Number()
           })
         ),
-        frameRate: S.Number()
+        frameRate: Schema.Number()
       },
       {}
     ),
-    firstGeometryFrameLoaded: S.Bool({ default: false }),
-    loadingEffectStarted: S.Bool({ default: false }),
-    loadingEffectEnded: S.Bool({ default: false })
+    firstGeometryFrameLoaded: Schema.Bool({ default: false }),
+    loadingEffectStarted: Schema.Bool({ default: false }),
+    loadingEffectEnded: Schema.Bool({ default: false })
   }),
 
   reactor: UVOL1Reactor

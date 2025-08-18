@@ -1,4 +1,4 @@
-import { NO_PROXY, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import { NO_PROXY, Schema, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import * as bitECS from 'bitecs'
 import React, { useEffect } from 'react'
 import {
@@ -19,7 +19,7 @@ import {
 } from './ComponentFunctions'
 import { Entity, UndefinedEntity } from './Entity'
 import { QueryReactor, useQuery } from './QueryFunctions'
-import { S } from './schemas/JSONSchemas'
+import { EntitySchema } from './Schemas'
 import { UUIDComponent } from './UUIDComponent'
 
 type EntityTreeSetType = {
@@ -41,21 +41,12 @@ export const EntityTreeComponent = defineComponent({
 
   jsonID: 'IR_hierarchy',
 
-  schema: S.Object({
-    parentEntity: S.Entity({
-      validate: (value, prev, entity) => {
-        if (entity === value) {
-          console.error('Entity cannot be its own parent: ' + entity)
-          return false
-        }
-
-        return true
-      }
-    }),
+  schema: Schema.Object({
+    parentEntity: EntitySchema.Entity({}),
     // automatically updated if parent exists
-    childIndex: S.Optional(S.Number()),
+    childIndex: Schema.Optional(Schema.Number()),
     // automatically updated if parent exists
-    children: S.Array(S.Entity(), { serialized: false })
+    children: Schema.Array(EntitySchema.Entity(), { serialized: false })
   }),
 
   onSet: (entity, component, json?: Readonly<EntityTreeSetType>) => {
