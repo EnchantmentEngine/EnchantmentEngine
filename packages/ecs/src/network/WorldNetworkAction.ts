@@ -9,10 +9,9 @@ export class WorldNetworkAction {
       entityID: EntitySchema.EntityID({ required: true }),
       entitySourceID: Schema.String({ required: true }), // no SourceID helper yet
       parentUUID: EntitySchema.EntityUUID({ required: true }),
-      ownerID: Schema.UserID({ required: true }),
+      ownerID: Schema.UserID({ required: true, default: () => getState(EngineState).userID }),
       authorityPeerId: Schema.Optional(Schema.PeerID())
     }),
-    defaults: () => ({ ownerID: getState(EngineState).userID }),
     meta: { $cache: true, $topic: NetworkTopics.world }
   })
 

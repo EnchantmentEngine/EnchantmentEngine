@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'vitest'
 
-import { PeerID } from '@ir-engine/hyperflux'
+import { PeerID, Schema } from '@ir-engine/hyperflux'
 
 import {
   applyIncomingActions,
@@ -15,36 +15,18 @@ import {
   removeActionQueue
 } from '..'
 
-// Since defineAction now expects a compiled Schema (Kind:'Object'), we provide minimal object schemas.
-const emptyObjectSchema: any = { [Symbol.for('Kind')]: 'Object', properties: {}, options: {} }
-const stringGreetingSchema: any = {
-  [Symbol.for('Kind')]: 'Object',
-  properties: { greeting: { [Symbol.for('Kind')]: 'String', options: {} } },
-  options: {}
-}
-const patternSchema: any = {
-  [Symbol.for('Kind')]: 'Object',
-  properties: {
-    payload: { [Symbol.for('Kind')]: 'String', options: {} },
-    optionalThing: { [Symbol.for('Kind')]: 'Number', options: {} }
-  },
-  options: {}
-}
-const defaultValuesSchema: any = {
-  [Symbol.for('Kind')]: 'Object',
-  properties: {
-    count: { [Symbol.for('Kind')]: 'Number', options: {} },
-    greeting: { [Symbol.for('Kind')]: 'String', options: {} }
-  },
-  options: {}
-}
+// Since defineAction now expects a compiled Schema, build them with Schema helpers.
+const emptyObjectSchema = Schema.Object({})
+const patternSchema = Schema.Object({
+  payload: Schema.String(),
+  optionalThing: Schema.Optional(Schema.Number())
+})
 
-// Helper to build a basic greeting action with default greeting
+// Helper to build a basic greeting action with default greeting (schema field default)
 const makeGreetingAction = (type: string, defaultGreeting: string) =>
   defineAction({
     type,
-    schema: stringGreetingSchema,
-    defaults: () => ({ greeting: defaultGreeting })
+    schema: Schema.Object({ greeting: Schema.String({ default: defaultGreeting }) })
   })
 
 describe('Hyperflux Unit Tests (Compiled Schema Actions)', () => {
@@ -62,20 +44,22 @@ describe('Hyperflux Unit Tests (Compiled Schema Actions)', () => {
       type: 'TEST_PATTERN',
       schema: patternSchema
     })
-    // assert.throws(() => test({ payload: 100 } as any), /Schema validation failed/)
     const action = test({ payload: 'abcd', $cache: false })
     assert.equal(action.type, 'TEST_PATTERN')
-    assert.equal((action as any).optionalThing, undefined)
+    assert.equal(action.optionalThing, undefined)
     assert(action.$cache === false)
     assert(test.matches(action))
   })
 
   it('should support default values (dynamic)', () => {
     let count = 0
+    const dynamicDefaultsSchema = Schema.Object({
+      count: Schema.Number({ default: () => count++ }),
+      greeting: Schema.String({ default: 'hi' })
+    })
     const test = defineAction({
       type: 'TEST_DEFAULT_VALUES',
-      schema: defaultValuesSchema,
-      defaults: () => ({ count: count++, greeting: 'hi' })
+      schema: dynamicDefaultsSchema
     })
     assert.equal(test({}).count, 0)
     assert.equal(test({}).count, 1)

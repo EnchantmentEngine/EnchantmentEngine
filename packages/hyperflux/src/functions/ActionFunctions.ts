@@ -1,47 +1,105 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import { createHookableFunction } from './createHookableFunction'
-
+import type { SchemaDefinition, Static } from '../schemas/JSONSchemaTypes'
+import { Kind } from '../schemas/JSONSchemaTypes'
+import { CheckSchemaValue, CreateSchemaValue } from '../schemas/JSONSchemaUtils'
 import { OpaqueType } from '../types/OpaqueType'
 import { NetworkID, PeerID, UserID } from '../types/Types'
+import { createHookableFunction } from './createHookableFunction'
 import { isDev } from './EnvironmentConstants'
 import { ReactorReconciler, ReactorRoot } from './ReactorFunctions'
 import { setInitialState, StateDefinitions } from './StateFunctions'
 import { HyperFlux } from './StoreFunctions'
 
-/**
- * Actions now use the compiled ECS Schema system (see ecs JSONSchemas / JSONSchemaTypes).
- */
-import type { SchemaDefinition, Static } from '../schemas/JSONSchemaTypes'
-import { Kind } from '../schemas/JSONSchemaTypes'
-
 export type Topic = OpaqueType<'Topic'> & string
+
+/** Generic action (flat payload + meta) */
+export type Action = {
+  /**
+   * The type of action
+   */
+  type: string | string[]
+} & ActionOptions
 
 export type ActionRecipients = PeerID | PeerID[] | 'all' | null | undefined
 
 export type ActionCacheOptions =
   | boolean
   | {
+      /**
+       * If non-falsy, remove previous actions in the cache that match `$peer` and `type` fields,
+       * and any specified fields
+       */
       removePrevious?: boolean | string[]
+      /**
+       * If true, do not cache this action
+       */
       disable?: boolean
     }
 
 export type ActionOptions = {
+  /**
+   * The uuid of this action, uniquely identifying it
+   */
   $uuid?: string
+
+  /**
+   * The id of the dispatching peer's unique identifier
+   * Will be undefined if dispatched locally or not in a network
+   * - It is recommended that transports implement this upon receiving actions to ensure the peer is who they say they are
+   */
   $peer?: PeerID
+
+  /**
+   * The user that dispatched this action
+   * Will be undefined if dispatched locally or not authenticated
+   * - It is recommended that transports implement this upon receiving actions to ensure the user is who they say they are
+   */
   $user?: UserID
+
+  /**
+   * The intended recipients
+   */
   $to?: ActionRecipients
+
+  /**
+   * The intended time for this action to be applied
+   * - If this option is missing, the action is applied the next time applyIncomingActions() is called.
+   * - If this action is received late (after the desired tick has passed), it is dispatched on the next tick.
+   */
   $time?: number | undefined
+
+  /**
+   * The network type for which to send this action to
+   */
   $topic?: Topic
+
+  /**
+   * Optionally specify the network to send this action to.
+   * Specifying this will not send the action to other networks, even as a cached action.
+   */
   $network?: NetworkID | undefined
+
+  /**
+   * Specifies how this action should be cached for newly joining clients.
+   */
   $cache?: ActionCacheOptions
+
+  /**
+   * This action is being replayed from the cache
+   */
   $fromCache?: true
+
+  /**
+   * The call stack at the time the action was dispatched
+   */
   $stack?: string[]
+
+  /**
+   * An error that occurred while applying this action
+   */
   $ERROR?: { message: string; stack: string[] }
 }
-
-/** Generic action (flat payload + meta) */
-export type Action = { type: string | string[] } & ActionOptions & Record<string, any>
 
 export type ResolvedActionType<Shape = any> = Action
 
@@ -61,152 +119,16 @@ export function deepEqual(x: any, y: any): boolean {
 }
 
 // -------------------------------------------------------------
-// Compiled Schema Helpers (defaults + validation)
-// -------------------------------------------------------------
-const baseDefaults: Record<string, any> = {
-  Number: 0,
-  Bool: false,
-  String: '',
-  Array: () => [],
-  Tuple: () => [],
-  Record: () => ({}),
-  Object: () => ({}),
-  Union: undefined,
-  Literal: undefined,
-  Null: null,
-  Undefined: undefined,
-  Any: undefined
-}
-
-const clone = <T>(v: T): T =>
-  Array.isArray(v) ? (v.slice() as any) : v && typeof v === 'object' ? { ...(v as any) } : v
-
-const applyDefaultsFromCompiledSchema = (schema: SchemaDefinition, target: any): any => {
-  const kind = (schema as any)[Kind] as string
-  const opt = (schema as any).options || {}
-  let value = target
-  if (value === undefined) {
-    if (opt.default !== undefined) {
-      try {
-        value = typeof opt.default === 'function' && opt.default.length === 0 ? (opt.default as any)() : opt.default
-      } catch {
-        value = opt.default
-      }
-    } else if (baseDefaults[kind]) {
-      const base = baseDefaults[kind]
-      value = typeof base === 'function' ? base() : clone(base)
-    }
-  }
-  switch (kind) {
-    case 'Object': {
-      const props = (schema as any).properties || {}
-      if (typeof value !== 'object' || value === null || Array.isArray(value)) value = {}
-      for (const [k, propSchema] of Object.entries<any>(props)) {
-        value[k] = applyDefaultsFromCompiledSchema(propSchema, value[k])
-      }
-      break
-    }
-    case 'Array': {
-      if (!Array.isArray(value)) value = []
-      break
-    }
-    case 'Tuple': {
-      if (!Array.isArray(value)) value = []
-      const items: SchemaDefinition[] = (schema as any).properties || []
-      for (let i = 0; i < items.length; i++) value[i] = applyDefaultsFromCompiledSchema(items[i], value[i])
-      break
-    }
-    case 'Record': {
-      if (typeof value !== 'object' || value === null || Array.isArray(value)) value = {}
-      break
-    }
-    case 'Union': {
-      // select first schema default if union has schemas
-      const variants: SchemaDefinition[] = (schema as any).properties || []
-      if (value === undefined && variants.length) value = applyDefaultsFromCompiledSchema(variants[0], undefined)
-      break
-    }
-    default:
-      break
-  }
-  return value
-}
-
-const validateCompiledSchemaValue = (schema: SchemaDefinition, value: any, path: string, errors: string[]): void => {
-  const kind = (schema as any)[Kind] as string
-  const current = path || '(root)'
-  const opt = (schema as any).options || {}
-  if (opt.validate) {
-    try {
-      if (!(opt.validate as any)(value, undefined, undefined)) errors.push(`Custom validate failed at ${current}`)
-    } catch (e) {
-      errors.push(`Custom validator threw at ${current}: ${(e as Error).message}`)
-    }
-  }
-  switch (kind) {
-    case 'Number':
-      if (typeof value !== 'number') errors.push(`Expected number at ${current}`)
-      break
-    case 'Bool':
-      if (typeof value !== 'boolean') errors.push(`Expected boolean at ${current}`)
-      break
-    case 'String':
-      if (typeof value !== 'string') errors.push(`Expected string at ${current}`)
-      break
-    case 'Literal': {
-      const lit = (schema as any).properties
-      if (value !== lit) errors.push(`Expected literal ${lit} at ${current}`)
-      break
-    }
-    case 'Object': {
-      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-        errors.push(`Expected object at ${current}`)
-        return
-      }
-      const props = (schema as any).properties || {}
-      for (const [k, propSchema] of Object.entries<any>(props))
-        validateCompiledSchemaValue(propSchema, (value as any)[k], current === '(root)' ? k : current + '.' + k, errors)
-      break
-    }
-    case 'Array':
-    case 'Tuple': {
-      if (!Array.isArray(value)) {
-        errors.push(`Expected array/tuple at ${current}`)
-        return
-      }
-      break
-    }
-    case 'Union': {
-      const variants: SchemaDefinition[] = (schema as any).properties || []
-      if (
-        variants.length &&
-        !variants.some((v) => {
-          const errs: string[] = []
-          validateCompiledSchemaValue(v, value, current, errs)
-          return !errs.length
-        })
-      )
-        errors.push(`Value at ${current} failed union variants`)
-      break
-    }
-    default:
-      break
-  }
-}
-
-// -------------------------------------------------------------
 // Action Definition API (compiled schemas)
 // -------------------------------------------------------------
 export type ActionCreator<P extends Record<string, any>, TType extends string> = {
   (partial?: Partial<P> & ActionOptions): Action & P & { type: TType | string[] }
   type: TType
   schema: SchemaDefinition
-  defaults: () => Partial<P>
   validate: (payload: unknown) => payload is P
   extend: <CT extends string, CS extends SchemaDefinition, CP extends Record<string, any>>(def: {
     type: CT
     schema: CS
-    defaults?: Partial<CP> | (() => Partial<CP>)
   }) => ActionCreator<CP, CT>
   receive: (fn: (action: Action & P & { type: TType | string[] }) => void) => ActionReceptor<P, TType>
   matches: (a: Action) => a is Action & P & { type: TType | string[] }
@@ -230,30 +152,21 @@ export const ActionDefinitions: Record<string, ActionCreator<any, string>> = {}
 export function defineAction<TType extends string, S extends SchemaDefinition & { [Kind]: 'Object' }>(def: {
   type: TType | [TType, ...string[]]
   schema: S
-  defaults?: Partial<Static<S>> | (() => Partial<Static<S>>)
   meta?: Partial<ActionOptions>
 }): ActionCreator<Static<S> & Record<string, any>, TType> {
   type P = Static<S> & Record<string, any>
   const typeChain = Array.isArray(def.type) ? def.type : [def.type]
   const primaryType = typeChain[0] as TType
-  const getDefaults = (): Partial<P> =>
-    (typeof def.defaults === 'function' ? (def.defaults as any)() : def.defaults) || {}
 
   const validate = (payload: unknown): payload is P => {
-    const errors: string[] = []
-    validateCompiledSchemaValue(def.schema, payload, '', errors)
-    return !errors.length
+    return CheckSchemaValue(def.schema, payload)
   }
 
   const creator = ((partial?: Partial<P> & ActionOptions) => {
-    const payload: any = applyDefaultsFromCompiledSchema(def.schema, {})
-    Object.assign(payload, getDefaults())
+    const payload: any = CreateSchemaValue(def.schema)
     if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
 
-    const errors: string[] = []
-    validateCompiledSchemaValue(def.schema, payload, '', errors)
-    if (errors.length)
-      throw new Error(`Schema validation failed for action ${primaryType} (compiled):\n${errors.join('\n')}`)
+    if (!CheckSchemaValue(def.schema, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
 
     const action: Action = {
       ...payload,
@@ -268,13 +181,11 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
 
   creator.type = primaryType
   creator.schema = def.schema
-  creator.defaults = () => getDefaults()
   creator.validate = validate
   creator.extend = (ext) =>
     defineAction({
       type: [ext.type, ...typeChain],
-      schema: ext.schema as any,
-      defaults: ext.defaults as any
+      schema: ext.schema as any
     }) as any
   creator.matches = (a: Action): a is Action & P & { type: TType | string[] } => {
     if (!a || !a.type) return false
@@ -301,11 +212,12 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
   return creator
 }
 
-// -------------------------------------------------------------
-// Dispatch & Processing Pipeline (unchanged semantics)
-// -------------------------------------------------------------
+/**
+ * Dispatch actions to the store.
+ * @param action
+ */
 export const dispatchAction = <A extends Action>(_action: A) => {
-  const action = JSON.parse(JSON.stringify(_action)) as Action
+  const action = JSON.parse(JSON.stringify(_action)) as A
 
   const peerID = HyperFlux.store.peerID
   const agentID = HyperFlux.store.getAgentID()
@@ -320,9 +232,9 @@ export const dispatchAction = <A extends Action>(_action: A) => {
   const topic = action.$topic
 
   if (isDev && !action.$stack) {
-    const trace = { stack: '' as string }
-    Error.captureStackTrace?.(trace, dispatchAction)
-    const stack = (trace.stack || '').split('\n')
+    const trace = { stack: '' }
+    Error.captureStackTrace?.(trace, dispatchAction) // In firefox captureStackTrace is undefined
+    const stack = trace.stack.split('\n')
     stack.shift()
     action.$stack = stack
   }
@@ -348,6 +260,7 @@ export function addOutgoingTopicIfNecessary(topic: Topic) {
 const _updateCachedActions = (incomingAction: Action) => {
   if (incomingAction.$cache) {
     const cachedActions = HyperFlux.store.actions.cached as Action[]
+    // see if we must remove any previous actions
     if (typeof incomingAction.$cache === 'boolean') {
       if (incomingAction.$cache) cachedActions.push(incomingAction)
     } else {
@@ -361,7 +274,7 @@ const _updateCachedActions = (incomingAction: Action) => {
             } else {
               let match = true
               for (const key of remove) {
-                if (!deepEqual((a as any)[key], (incomingAction as any)[key])) {
+                if (!deepEqual(a[key], incomingAction[key])) {
                   match = false
                   break
                 }
@@ -381,7 +294,8 @@ const _updateCachedActions = (incomingAction: Action) => {
 
 const applyIncomingActionsToAllQueues = (action: Action) => {
   for (const [queueHandle, queue] of HyperFlux.store.actions.queues) {
-    if ((queueHandle as any).test(action)) {
+    if (queueHandle.test(action)) {
+      // if the action is out of order, mark the queue as needing resync
       if (queue.actions.length > 0) {
         const last = queue.actions.at(-1) as Action
         if (last && last.$time !== undefined && action.$time !== undefined && last.$time > action.$time)
