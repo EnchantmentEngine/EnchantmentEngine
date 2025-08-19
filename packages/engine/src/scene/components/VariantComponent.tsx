@@ -58,8 +58,8 @@ export const Devices = {
 export type DevicesType = (typeof Devices)[keyof typeof Devices]
 
 export const distanceMetadataSchema = Schema.Object({
-  minDistance: Schema.Union([Schema.Number(), Schema.Undefined()], { default: undefined }),
-  maxDistance: Schema.Union([Schema.Number(), Schema.Undefined()], { default: undefined })
+  minDistance: Schema.Optional(Schema.Number()),
+  maxDistance: Schema.Optional(Schema.Number())
 })
 
 export const deviceMetadataSchema = Schema.Object({

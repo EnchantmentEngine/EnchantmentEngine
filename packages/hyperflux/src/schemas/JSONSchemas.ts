@@ -220,10 +220,6 @@ export const Schema = {
       properties: { params: parameters, return: returns }
     }) as TFuncSchema<Params, Return>,
 
-  Call: <Initial extends (...params: any[]) => any>(
-    options?: TFuncSchema<SchemaDefinition[], TVoidSchema>['options']
-  ) => Schema.Func([], Schema.Void(), options),
-
   /**
    * Schemas wrapped in this schema are optional values that can be undefined, will default to undefined if not default value is provided
    */
