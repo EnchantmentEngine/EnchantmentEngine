@@ -1,4 +1,4 @@
-import { createSimpleStore, useSimpleStore } from '@ir-engine/hyperflux'
+import { Schema, TTypedSchema, createSimpleStore, useSimpleStore } from '@ir-engine/hyperflux'
 import { v4 as uuidv4 } from 'uuid'
 import {
   LayerComponent,
@@ -13,7 +13,7 @@ import {
   useOptionalComponent
 } from './ComponentFunctions'
 import { Entity, EntityID, EntityUUID, EntityUUIDPair, SourceID, UndefinedEntity } from './Entity'
-import { S } from './schemas/JSONSchemas'
+import { EntitySchema } from './Schemas'
 
 /**
  * SimpleStore instances for each layer - EntitiesBySource
@@ -80,35 +80,15 @@ export const UUIDComponent = defineComponent({
 
   jsonID: 'EE_uuid',
 
-  schema: S.EntityUUIDPair({
-    validate: (idPair, prev, entity) => {
-      if (idPair === prev) return true
-      if (!idPair.entitySourceID) {
-        console.error('UUID context cannot be empty')
-        return false
-      }
-      if (!idPair.entityID) {
-        console.error('UUID id cannot be empty')
-        return false
-      }
-      const uuid = UUIDComponent.join(idPair)
-      const layer = LayerComponent.get(entity)
-      const uuidStore = getEntitiesByUUIDStore(layer)
-      const currentState = uuidStore.get()
-      if (!currentState[uuid]) {
-        return true
-      }
-      // throw error if uuid is already in use
-      const currentEntity = currentState[uuid]
-      if (currentEntity && currentEntity !== entity) {
-        console.error(`UUID ${uuid} is already in use`, currentEntity, entity)
-        return false
-      }
-
-      return true
+  schema: Schema.Object(
+    {
+      entitySourceID: Schema.String(),
+      entityID: EntitySchema.EntityID()
     },
-    required: true
-  }),
+    {
+      required: true
+    }
+  ) as unknown as TTypedSchema<EntityUUIDPair>,
 
   toJSON(component) {
     return { entityID: component.entityID }
@@ -118,7 +98,17 @@ export const UUIDComponent = defineComponent({
     if (!idPair.entitySourceID) throw new Error('UUID context cannot be empty')
     if (!idPair.entityID) throw new Error('UUID id cannot be empty')
 
+    const uuid = UUIDComponent.join(idPair)
+
     const layer = LayerComponent.get(entity)
+    const uuidStore = getEntitiesByUUIDStore(layer)
+
+    // throw error if uuid is already in use
+    const currentEntity = uuidStore.value[uuid]
+    if (currentEntity && currentEntity !== entity) {
+      throw new Error(`UUID ${uuid} is already in use by ${currentEntity} ${entity}`)
+    }
+
     const prev = component.entityID && component.entitySourceID ? UUIDComponent.join(component) : undefined
     // remove old uuid
     if (prev) {
@@ -126,17 +116,15 @@ export const UUIDComponent = defineComponent({
     }
 
     // set new uuid
-    const uuid = UUIDComponent.join(idPair)
+    const sourceStore = getEntitiesBySourceStore(layer)
+    const currentState = sourceStore.value
     UUIDComponentFunctions._getUUIDState(uuid, layer)
-    const uuidStore = getEntitiesByUUIDStore(layer)
-    uuidStore[uuid] = entity
-    uuidStore.set(uuidStore)
+    uuidStore.value[uuid] = entity
+    uuidStore.set(uuidStore.value)
 
     component.entityID = idPair.entityID
     component.entitySourceID = idPair.entitySourceID
 
-    const sourceStore = getEntitiesBySourceStore(layer)
-    const currentState = sourceStore.value
     const entitiesBySourceState = currentState[idPair.entitySourceID]
     if (!entitiesBySourceState) {
       currentState[idPair.entitySourceID] = [entity]
@@ -279,7 +267,7 @@ function _getUUIDState(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
   const state = uuidStore.value
 
   let entityState = state[uuid]
-  if (!entityState) {
+  if (typeof entityState === 'undefined') {
     entityState = UndefinedEntity
     state[uuid] = entityState
     uuidStore.set(state)

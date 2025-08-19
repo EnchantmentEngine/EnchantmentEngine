@@ -2,14 +2,14 @@ import {
   defineComponent,
   defineQuery,
   Entity,
+  EntitySchema,
   getComponent,
   UndefinedEntity,
   useComponent,
   useEntityContext,
   useQuery
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineState, getState, OpaqueType, useImmediateEffect } from '@ir-engine/hyperflux'
+import { defineState, getState, OpaqueType, Schema, useImmediateEffect } from '@ir-engine/hyperflux'
 import { T } from '../../schema/schemaFunctions'
 
 /**
@@ -39,12 +39,12 @@ export const InputPointerState = defineState({
 export const InputPointerComponent = defineComponent({
   name: 'InputPointerComponent',
 
-  schema: S.Object({
-    pointerId: S.Number({ default: -1 }),
+  schema: Schema.Object({
+    pointerId: Schema.Number({ default: -1 }),
     position: T.Vec2(),
     lastPosition: T.Vec2(),
     movement: T.Vec2(),
-    cameraEntity: S.Entity()
+    cameraEntity: EntitySchema.Entity()
   }),
 
   reactor: () => {

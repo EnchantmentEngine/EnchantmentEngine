@@ -8,6 +8,7 @@ import {
   EntityUUID,
   EntityUUIDPair,
   getOptionalComponent,
+  removeComponent,
   removeEntity,
   setComponent,
   SourceID,
@@ -28,7 +29,12 @@ import {
   UserID
 } from '@ir-engine/hyperflux'
 import { EngineState } from '../EngineState'
-import { NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
+import {
+  NetworkId,
+  NetworkObjectAuthorityTag,
+  NetworkObjectComponent,
+  NetworkObjectOwnedTag
+} from './NetworkObjectComponent'
 import { WorldNetworkAction } from './WorldNetworkAction'
 
 export const EntityNetworkState = defineState({
@@ -177,6 +183,18 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
     )
   }, [userConnected, state.requestingPeerId.value])
 
+  useLayoutEffect(() => {
+    const entity = UUIDComponent.getEntityByUUID(props.uuid)
+    if (state.authorityPeerId.value === Engine.instance.store.peerID) setComponent(entity, NetworkObjectAuthorityTag)
+    else removeComponent(entity, NetworkObjectAuthorityTag)
+  }, [state.authorityPeerId.value])
+
+  useLayoutEffect(() => {
+    const entity = UUIDComponent.getEntityByUUID(props.uuid)
+    if (state.ownerId.value === Engine.instance.userID) setComponent(entity, NetworkObjectOwnedTag)
+    else removeComponent(entity, NetworkObjectOwnedTag)
+  }, [state.ownerId.value])
+
   const authorityPeer = state.authorityPeerId.value ?? state.ownerPeer.value
   const isAuthorInNetwork = !!(worldNetwork && networkPeerState[worldNetwork.id]?.peers[authorityPeer])
 
@@ -212,6 +230,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
 /**
  * Get a deterministic network ID scoped to each owner peer
+ * @todo this causes temporary desync when a new entity is spawned, as network IDs may change
  */
 const useNetworkID = (uuid: EntityUUID) => {
   const state = useMutableState(EntityNetworkState)

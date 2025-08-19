@@ -3,21 +3,20 @@ import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D, ShadowMaterial } 
 import matches from 'ts-matches'
 
 import {
+  createEntity,
+  defineComponent,
   Engine,
   EntityTreeComponent,
   EntityUUID,
-  S,
-  UUIDComponent,
-  createEntity,
-  defineComponent,
   getComponent,
   removeEntity,
   setComponent,
   useComponent,
   useEntityContext,
-  useOptionalComponent
+  useOptionalComponent,
+  UUIDComponent
 } from '@ir-engine/ecs'
-import { defineAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { defineAction, Schema, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
 import { NameComponent } from '../common/NameComponent'
 import { matchesQuaternion, matchesVector3 } from '../common/functions/MatchesUtils'
@@ -34,13 +33,13 @@ export const PersistentAnchorComponent = defineComponent({
   name: 'PersistentAnchorComponent',
   jsonID: 'EE_persistent_anchor',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** an identifiable name for this anchor */
-    name: S.String({ default: '' }),
+    name: Schema.String({ default: '' }),
     /** whether to show this object as a wireframe upon tracking - useful for debugging */
-    wireframe: S.Bool({ default: false }),
+    wireframe: Schema.Bool({ default: false }),
     /** internal - whether this anchor is currently being tracked */
-    active: S.Bool({ default: false })
+    active: Schema.Bool({ default: false })
   }),
 
   reactor: PersistentAnchorReactor

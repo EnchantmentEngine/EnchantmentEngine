@@ -1,8 +1,7 @@
 import { EngineState, EntityID, NetworkObjectComponent, SourceID, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState, useMutableState, UserID } from '@ir-engine/hyperflux'
+import { getState, Schema, useMutableState, UserID } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -12,27 +11,27 @@ import { setAvatarColliderTransform } from '../functions/spawnAvatarReceptor'
 
 export const AvatarComponent = defineComponent({
   name: 'AvatarComponent',
-  schema: S.Object({
+  schema: Schema.Object({
     /** The total height of the avatar in a t-pose, must always be non zero and positive for the capsule collider */
-    avatarHeight: S.Number(),
+    avatarHeight: Schema.Number(),
     /** The length of the torso in a t-pose, from the hip joint to the head joint */
-    torsoLength: S.Number(),
+    torsoLength: Schema.Number(),
     /** The length of the upper leg in a t-pose, from the hip joint to the knee joint */
-    upperLegLength: S.Number(),
+    upperLegLength: Schema.Number(),
     /** The length of the lower leg in a t-pose, from the knee joint to the ankle joint */
-    lowerLegLength: S.Number(),
+    lowerLegLength: Schema.Number(),
     /** The height of the foot in a t-pose, from the ankle joint to the bottom of the avatar's model */
-    footHeight: S.Number(),
+    footHeight: Schema.Number(),
     /** The height of the hips in a t-pose */
-    hipsHeight: S.Number(),
+    hipsHeight: Schema.Number(),
     /** The length of the arm in a t-pose, from the shoulder joint to the elbow joint */
-    armLength: S.Number(),
+    armLength: Schema.Number(),
     /** The distance between the left and right foot in a t-pose */
-    footGap: S.Number(),
+    footGap: Schema.Number(),
     /** The angle of the foot in a t-pose */
-    footAngle: S.Number(),
+    footAngle: Schema.Number(),
     /** The height of the eyes in a t-pose */
-    eyeHeight: S.Number()
+    eyeHeight: Schema.Number()
   }),
 
   /**

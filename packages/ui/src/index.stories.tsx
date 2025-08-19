@@ -1,7 +1,7 @@
 import { TextButton } from '@ir-engine/client-core/src/components/Glass/buttons/TextButton'
 import { useFind } from '@ir-engine/common'
 import { scopePath } from '@ir-engine/common/src/schema.type.module'
-import { Meta, StoryObj } from '@storybook/react/*'
+import { Meta, StoryObj } from '@storybook/react'
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { handleMocks } from '../.storybook/util'

@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { Color, PointLight } from 'three'
 
-import { S, defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { Schema, useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 
+import { EntitySchema } from '@ir-engine/ecs'
 import { T } from '../../../schema/schemaFunctions'
 import { isMobileXRHeadset } from '../../../xr/XRState'
 import { RendererState } from '../../RendererState'
@@ -14,15 +15,15 @@ export const PointLightComponent = defineComponent({
   name: 'PointLightComponent',
   jsonID: 'EE_point_light',
 
-  schema: S.Object({
+  schema: Schema.Object({
     color: T.Color(0xffffff),
-    intensity: S.Number({ default: 1 }),
-    range: S.Number({ default: 0 }),
-    decay: S.Number({ default: 2 }),
-    castShadow: S.Bool({ default: false }),
-    shadowBias: S.Number({ default: 0 }),
-    shadowRadius: S.Number({ default: 1 }),
-    helperEntity: S.Entity({ serialized: false })
+    intensity: Schema.Number({ default: 1 }),
+    range: Schema.Number({ default: 0 }),
+    decay: Schema.Number({ default: 2 }),
+    castShadow: Schema.Bool({ default: false }),
+    shadowBias: Schema.Number({ default: 0 }),
+    shadowRadius: Schema.Number({ default: 1 }),
+    helperEntity: EntitySchema.Entity({ serialized: false })
   }),
 
   reactor: function () {

@@ -1,6 +1,6 @@
 import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { PlayMode } from '../constants/PlayMode'
 
@@ -8,21 +8,21 @@ export const PlaylistComponent = defineComponent({
   name: 'PlaylistComponent',
   jsonID: 'EE_playlist',
 
-  schema: S.Object({
-    tracks: S.Array(
-      S.Object({
-        uuid: S.String(),
-        src: S.String()
+  schema: Schema.Object({
+    tracks: Schema.Array(
+      Schema.Object({
+        uuid: Schema.String(),
+        src: Schema.String()
       })
     ),
-    currentTrackUUID: S.String(),
-    currentTrackIndex: S.Number({ default: -1 }),
-    paused: S.Bool({ default: true }),
-    playMode: S.Enum(PlayMode, {
+    currentTrackUUID: Schema.String(),
+    currentTrackIndex: Schema.Number({ default: -1 }),
+    paused: Schema.Bool({ default: true }),
+    playMode: Schema.Enum(PlayMode, {
       $comment: "A string enum, ie. one of the following values: 'single', 'random', 'loop', 'singleloop'",
       default: PlayMode.loop
     }),
-    autoplay: S.Bool({ default: true })
+    autoplay: Schema.Bool({ default: true })
   }),
 
   toJSON: (component) => {

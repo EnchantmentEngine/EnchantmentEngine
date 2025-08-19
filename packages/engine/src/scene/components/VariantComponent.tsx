@@ -5,7 +5,6 @@ import {
   EntityID,
   EntityTreeComponent,
   EntityUUIDPair,
-  Static,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
@@ -21,8 +20,7 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useHookstate } from '@ir-engine/hyperflux'
+import { Schema, Static, useHookstate } from '@ir-engine/hyperflux'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -59,13 +57,13 @@ export const Devices = {
 
 export type DevicesType = (typeof Devices)[keyof typeof Devices]
 
-export const distanceMetadataSchema = S.Object({
-  minDistance: S.Union([S.Number(), S.Undefined()], { default: undefined }),
-  maxDistance: S.Union([S.Number(), S.Undefined()], { default: undefined })
+export const distanceMetadataSchema = Schema.Object({
+  minDistance: Schema.Optional(Schema.Number()),
+  maxDistance: Schema.Optional(Schema.Number())
 })
 
-export const deviceMetadataSchema = S.Object({
-  device: S.Enum(Devices, {
+export const deviceMetadataSchema = Schema.Object({
+  device: Schema.Enum(Devices, {
     $comment: "A string enum, ie. one of the following values: 'DESKTOP', 'MOBILE', 'XR'",
     default: Devices.DESKTOP
   })
@@ -77,18 +75,18 @@ export const VariantComponent = defineComponent({
   name: 'VariantComponent',
   jsonID: 'EE_variant',
 
-  schema: S.Object({
-    levels: S.Array(
-      S.Object({
-        src: S.String(),
-        metadata: S.Union([distanceMetadataSchema, deviceMetadataSchema])
+  schema: Schema.Object({
+    levels: Schema.Array(
+      Schema.Object({
+        src: Schema.String(),
+        metadata: Schema.Union([distanceMetadataSchema, deviceMetadataSchema])
       })
     ),
-    heuristic: S.Enum(Heuristic, {
+    heuristic: Schema.Enum(Heuristic, {
       $comment: "A string enum, ie. one of the following values: 'DISTANCE', 'MANUAL', 'DEVICE'",
       default: Heuristic.MANUAL
     }),
-    currentLevel: S.Number({ default: 0, serialized: false })
+    currentLevel: Schema.Number({ default: 0, serialized: false })
   }),
 
   setDistanceLevel: (entity: Entity) => {
@@ -183,9 +181,9 @@ export const VariantComponent = defineComponent({
 export const InstanceVariantMaterialPluginComponent = defineMaterialPlugin({
   name: 'InstanceVariantMaterialPluginComponent',
   jsonID: 'IR_instance_variant_material',
-  uniforms: S.Object({
-    minDistance: S.Number(),
-    maxDistance: S.Number()
+  uniforms: Schema.Object({
+    minDistance: Schema.Number(),
+    maxDistance: Schema.Number()
   }),
   onApply: (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(

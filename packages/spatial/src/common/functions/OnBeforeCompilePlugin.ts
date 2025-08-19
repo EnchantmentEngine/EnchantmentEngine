@@ -106,6 +106,7 @@ export function overrideOnBeforeCompile() {
 
     Material.prototype._onBeforeCompile = function (shader, renderer) {
       if (!this.shader) this.shader = shader
+
       if (!this.plugins) return
 
       for (let i = 0, l = this.plugins.length; i < l; i++) {

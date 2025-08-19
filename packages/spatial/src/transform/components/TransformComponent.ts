@@ -1,11 +1,12 @@
 import { Matrix4, Quaternion, Vector3 } from 'three'
 
-import { EntityTreeComponent, getAncestorWithComponents, hasComponent, S } from '@ir-engine/ecs'
+import { EntityTreeComponent, getAncestorWithComponents, hasComponent } from '@ir-engine/ecs'
 import { defineComponent, getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { ComputedTransformComponent } from './ComputedTransformComponent'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
+import { Schema } from '@ir-engine/hyperflux'
 import { isZero } from '../../common/functions/MathFunctions'
 import { proxifyQuaternionWithDirty, proxifyVector3WithDirty } from '../../common/proxies/createThreejsProxy'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
@@ -33,7 +34,7 @@ export const TransformComponent = defineComponent({
 
   jsonID: 'IR_transform',
 
-  schema: S.Object({
+  schema: Schema.Object({
     position: T.Vec3(),
     rotation: T.Quaternion(),
     scale: T.Vec3(),

@@ -15,7 +15,7 @@ import {
   MaterialStateComponent,
   SerializedTexture
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import { MeshStandardMaterial } from 'three'
+import { MeshStandardMaterial, WebGLRenderer } from 'three'
 import { commitProperty } from '../components/properties/Util'
 import { LightmapBakeComponent } from './LightmapBakeComponent'
 import { Lightmapper } from './LightmapperFunctions'
@@ -41,7 +41,7 @@ const execute = () => {
         renderTarget,
         raycastMaterial,
         orthographicCamera,
-        getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!,
+        getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer! as WebGLRenderer,
         currentSamples
       )
     } else {

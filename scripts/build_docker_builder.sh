@@ -50,10 +50,10 @@ if [ $REPO_PROVIDER === "aws" ]
 then
   if [ $PRIVATE_REPO == "true" ]
   then
-    npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $REPO_NAME-builder --region $REGION --service builder --releaseName $STAGE
+    npx tsx ./scripts/prune_ecr_images.ts --repoName $REPO_NAME-builder --region $REGION --service builder --releaseName $STAGE
   else
-    npx ts-node --swc ./scripts/prune_ecr_images.ts --repoName $REPO_NAME-builder --region us-east-1 --service builder --releaseName $STAGE --public
+    npx tsx ./scripts/prune_ecr_images.ts --repoName $REPO_NAME-builder --region us-east-1 --service builder --releaseName $STAGE --public
   fi
 elif [ $REPO_PROVIDER === "gcp" ]; then
-  npx ts-node --swc ./scripts/prune_gcp_ar_images.ts --repoName $REPO_NAME-builder --service builder --releaseName $STAGE
+  npx tsx ./scripts/prune_gcp_ar_images.ts --repoName $REPO_NAME-builder --service builder --releaseName $STAGE
 fi

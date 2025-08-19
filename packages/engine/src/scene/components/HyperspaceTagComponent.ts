@@ -49,7 +49,7 @@ import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/Vis
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
@@ -152,9 +152,9 @@ class PortalEffect extends Object3D {
 export const HyperspaceTagComponent = defineComponent({
   name: 'HyperspaceTagComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     // all internals
-    sceneVisible: S.Bool({ default: true }),
+    sceneVisible: Schema.Bool({ default: true }),
     transition: TransitionStateSchema(createTransitionState(0.5, 'OUT'))
   }),
 

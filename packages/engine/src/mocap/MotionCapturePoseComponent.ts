@@ -1,10 +1,10 @@
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
-const MotionCapturePoses = S.LiteralUnion(['sitting', 'standing'])
+const MotionCapturePoses = Schema.LiteralUnion(['sitting', 'standing'])
 
 export const MotionCapturePoseComponent = defineComponent({
   name: 'MotionCapturePoseComponent',
-  schema: S.Record(MotionCapturePoses, S.Object({ begun: S.Bool() }))
+  schema: Schema.Record(MotionCapturePoses, Schema.Object({ begun: Schema.Bool() }))
 })

@@ -10,8 +10,7 @@ import {
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, Schema, useHookstate } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
@@ -23,9 +22,9 @@ export const SplineComponent = defineComponent({
   name: 'SplineComponent',
   jsonID: 'EE_spline',
 
-  schema: S.Object({
-    elements: S.Array(
-      S.Object({
+  schema: Schema.Object({
+    elements: Schema.Array(
+      Schema.Object({
         position: T.Vec3(),
         rotation: T.Quaternion()
       }),
@@ -47,7 +46,7 @@ export const SplineComponent = defineComponent({
         ]
       }
     ),
-    curve: S.Class(() => new CatmullRomCurve3([], true), { serialized: false })
+    curve: Schema.Class(() => new CatmullRomCurve3([], true), { serialized: false })
   }),
 
   reactor: () => {

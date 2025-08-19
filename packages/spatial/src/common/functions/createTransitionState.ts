@@ -1,22 +1,21 @@
 import { MathUtils } from 'three'
 
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { AnimationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, Schema, useHookstate } from '@ir-engine/hyperflux'
 
 type TransitionType = 'IN' | 'OUT'
 
-const TransitionTypeSchema = S.LiteralUnion(['IN', 'OUT'])
+const TransitionTypeSchema = Schema.LiteralUnion(['IN', 'OUT'])
 
 export const TransitionStateSchema = (init: ReturnType<typeof createTransitionState>) =>
-  S.Object(
+  Schema.Object(
     {
       state: TransitionTypeSchema,
-      alpha: S.Number(),
-      setState: S.Func([TransitionTypeSchema], S.Void()),
-      update: S.Func([S.Number(), S.Func([S.Number()], S.Void())], S.Void())
+      alpha: Schema.Number(),
+      setState: Schema.Func([TransitionTypeSchema], Schema.Void()),
+      update: Schema.Func([Schema.Number(), Schema.Func([Schema.Number()], Schema.Void())], Schema.Void())
     },
     {
       default: () => init,

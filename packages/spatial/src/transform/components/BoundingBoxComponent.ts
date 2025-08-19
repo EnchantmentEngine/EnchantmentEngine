@@ -18,7 +18,8 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '../../common/NameComponent'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
@@ -36,9 +37,9 @@ export const BOUNDING_BOX_COLORS = {
 export const BoundingBoxComponent = defineComponent({
   name: 'BoundingBoxComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     box: T.Box3(),
-    helper: S.Entity(),
+    helper: EntitySchema.Entity(),
     color: T.Color('white')
   }),
 

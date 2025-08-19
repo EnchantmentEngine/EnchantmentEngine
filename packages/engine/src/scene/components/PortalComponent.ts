@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Mesh, MeshBasicMaterial, SphereGeometry } from 'three'
 
-import { EntityTreeComponent, createEntity, useEntityContext } from '@ir-engine/ecs'
+import { EntitySchema, EntityTreeComponent, createEntity, useEntityContext } from '@ir-engine/ecs'
 import { ComponentType, defineComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { defineState, getMutableState, getState } from '@ir-engine/hyperflux'
@@ -14,7 +14,7 @@ import { CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionG
 import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 
@@ -42,18 +42,18 @@ export const PortalComponent = defineComponent({
   name: 'PortalComponent',
   jsonID: 'EE_portal',
 
-  schema: S.Object({
-    linkedPortalId: S.EntityID(),
-    location: S.String({ default: '' }),
-    effectType: S.String({ default: 'None' }),
-    previewType: S.String({ default: PortalPreviewTypeSimple }),
-    previewImageURL: S.String({ default: '' }),
-    redirect: S.Bool({ default: false }),
+  schema: Schema.Object({
+    linkedPortalId: EntitySchema.EntityID(),
+    location: Schema.String({ default: '' }),
+    effectType: Schema.String({ default: 'None' }),
+    previewType: Schema.String({ default: PortalPreviewTypeSimple }),
+    previewImageURL: Schema.String({ default: '' }),
+    redirect: Schema.Bool({ default: false }),
     spawnPosition: T.Vec3(),
     spawnRotation: T.Quaternion(),
     remoteSpawnPosition: T.Vec3(),
     remoteSpawnRotation: T.Quaternion(),
-    mesh: S.Type<Mesh<SphereGeometry, MeshBasicMaterial>>({ serialized: false })
+    mesh: Schema.Type<Mesh<SphereGeometry, MeshBasicMaterial>>({ serialized: false })
   }),
 
   reactor: function () {

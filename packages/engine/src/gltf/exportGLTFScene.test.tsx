@@ -30,7 +30,6 @@ import {
   defineComponent,
   EntityID,
   EntityTreeComponent,
-  S,
   SerializedComponentType,
   setComponent,
   SourceID,
@@ -39,6 +38,7 @@ import {
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 
+import { Schema } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
 import {
@@ -353,9 +353,9 @@ describe('exportGLTFScene', () => {
     const TestComponent = defineComponent({
       name: 'TestComponent',
       jsonID: 'IR_test-component',
-      schema: S.Object({
-        string: S.String({ default: 'value' }),
-        number: S.Number({ default: 1 })
+      schema: Schema.Object({
+        string: Schema.String({ default: 'value' }),
+        number: Schema.Number({ default: 1 })
       })
     })
     const entity = createSceneEntity('test')

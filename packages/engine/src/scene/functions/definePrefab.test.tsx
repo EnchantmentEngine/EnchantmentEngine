@@ -17,7 +17,7 @@ import {
   SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
@@ -67,10 +67,10 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefab',
       jsonID: 'test-prefab',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' }),
-        isActive: S.Bool({ default: true })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' }),
+        isActive: Schema.Bool({ default: true })
       }),
       reactor: () => null
     })
@@ -101,9 +101,9 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabReactor',
       jsonID: 'test-prefab-reactor',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' })
       }),
       reactor: () => null
     })
@@ -119,9 +119,9 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabSpawn',
       jsonID: 'test-prefab-spawn',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' })
       }),
       reactor: () => null
     })
@@ -169,9 +169,9 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabSpawn2',
       jsonID: 'test-prefab-spawn-2',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' })
       }),
       reactor: () => null
     })
