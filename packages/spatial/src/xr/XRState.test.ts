@@ -1,4 +1,4 @@
-import { createEngine, destroyEngine } from '@ir-engine/ecs'
+import { createEngine, destroyEngine, UndefinedEntity } from '@ir-engine/ecs'
 import { getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,7 +16,7 @@ const SessionMode = {
   immersiveVR: 'immersive-vr' as SessionModes
 }
 
-const XRStateDefaults = {
+const XRStateDefaults: typeof XRState._TYPE = {
   sessionActive: false,
   requestingSession: false,
   scenePosition: new Vector3(),
@@ -40,7 +40,8 @@ const XRStateDefaults = {
   viewerPose: null as XRViewerPose | null | undefined,
   userEyeHeight: 1.75,
   userHeightRatio: 1,
-  xrFrame: null as XRFrame | null
+  xrFrame: null as XRFrame | null,
+  cameraAttachedEntity: UndefinedEntity
 }
 
 /** @note Runs once on the `describe` implied by vitest for this file */

@@ -1,5 +1,5 @@
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createHookableFunction, getMutableState, getState } from '@ir-engine/hyperflux'
+import { createHookableFunction, getMutableState, getState, HyperFlux } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Q_Y_180, Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
@@ -176,9 +176,11 @@ export const endXRSession = createHookableFunction(async () => {
   await getMutableState(XRState)
     .session.value?.end()
     .then(() => {
-      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
-      const canvas = renderer.canvas!.parentElement
-      renderer.renderer!.setSize(canvas!.clientWidth, canvas!.clientHeight, false)
+      if (!HyperFlux.store) return // engine is destroyed
+      const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+      if (!viewerEntity) return // viewer entity is destroyed
+      const renderer = getComponent(viewerEntity, RendererComponent)
+      renderer.needsResize = true
       // need this to reset the camera manually immediately as the session ends
     })
 })
