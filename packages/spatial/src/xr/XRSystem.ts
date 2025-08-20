@@ -11,7 +11,6 @@ import { XRState } from './XRState'
  */
 
 const updateSessionSupportForMode = (mode: XRSessionMode) => {
-  console.debug(`Checking support for XR session mode: ${mode}`, navigator.xr, navigator.xr?.isSessionSupported)
   navigator.xr
     ?.isSessionSupported(mode)
     .then((supported) => getMutableState(XRState).supportedSessionModes[mode].set(supported))

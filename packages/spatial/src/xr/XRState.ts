@@ -3,6 +3,7 @@ import matches from 'ts-matches'
 
 import { defineAction, defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
+import { UndefinedEntity } from '@ir-engine/ecs'
 import { DepthDataTexture } from './DepthDataTexture'
 
 export class XRAction {
@@ -34,6 +35,7 @@ export const XRState = defineState({
         'immersive-ar': false,
         'immersive-vr': false
       },
+      cameraAttachedEntity: UndefinedEntity,
       avatarCameraMode: 'auto' as 'auto' | 'attached' | 'detached',
       unassingedInputSources: [] as XRInputSource[],
       session: null as XRSession | null,
@@ -81,8 +83,9 @@ export const XRState = defineState({
   },
 
   /**
-   * Specifies that the camera is attached to the avatar if:
+   * Specifies that the camera should be attached to the controller if:
    * - in an immersion session and not in placement mode or miniature mode
+   * @todo rename this to 'shouldViewerFollowController' for clarity
    */
   get isCameraAttachedToAvatar(): boolean {
     const { session, sceneScale, scenePlacementMode, avatarCameraMode } = getState(XRState)

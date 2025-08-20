@@ -2,7 +2,7 @@ import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { createHookableFunction, getMutableState, getState } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
-import { Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
+import { Q_Y_180, Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
 import { isSafari } from '../common/functions/isMobile'
 import { RendererComponent } from '../renderer/components/RendererComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -116,6 +116,14 @@ export const setupXRSession = async (requestedMode?: 'inline' | 'immersive-ar' |
 }
 
 export const getReferenceSpaces = (xrSession: XRSession) => {
+  const worldOriginTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
+  const cameraAttachedEntity = getState(XRState).cameraAttachedEntity || getState(ReferenceSpaceState).viewerEntity
+  const transform = getComponent(cameraAttachedEntity, TransformComponent)
+
+  /** since the world origin is based on gamepad movement, we need to transform it by the pose of the avatar */
+  worldOriginTransform.position.copy(transform.position)
+  worldOriginTransform.rotation.copy(transform.rotation).multiply(Q_Y_180)
+
   const onLocalFloorReset = (_ev: XRReferenceSpaceEvent) => {
     /** @todo ev.transform is not yet implemented on the Quest browser */
     // if (ev.transform) {
@@ -134,7 +142,9 @@ export const getReferenceSpaces = (xrSession: XRSession) => {
     computeAndUpdateWorldOrigin()
   })
 
-  xrSession.requestReferenceSpace('viewer').then((space) => (ReferenceSpace.viewer = space))
+  xrSession.requestReferenceSpace('viewer').then((space) => {
+    ReferenceSpace.viewer = space
+  })
 }
 
 /**
