@@ -33,7 +33,6 @@ import { FollowCameraMode, FollowCameraShoulderSide } from '../types/FollowCamer
 import { CameraOrbitComponent } from './CameraOrbitComponent'
 import { TargetCameraRotationComponent } from './TargetCameraRotationComponent'
 
-const window = 'window' in globalThis ? globalThis.window : ({} as any as Window)
 const topDownDefaultPhi = 85
 
 export const FollowCameraComponent = defineComponent({
@@ -399,20 +398,20 @@ const initialCameraPlacement = (entity: Entity) => {
 }
 
 const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
-  const follow = getComponent(cameraEntity, FollowCameraComponent)
-  const followState = getComponent(cameraEntity, FollowCameraComponent)
+  const follow = getOptionalComponent(cameraEntity, FollowCameraComponent)
+  if (!follow) return
   const cameraTransform = getComponent(cameraEntity, TransformComponent)
   const targetTransform = getOptionalComponent(referenceEntity, TransformComponent)
   const cameraSettings = getMutableState(CameraSettingsState)
 
-  followState.lerpValue =
+  follow.lerpValue =
     follow.mode != FollowCameraMode.FirstPerson && follow.thirdPersonOffset.y === 0
       ? 0
-      : Math.min(followState.lerpValue + getState(ECSState).deltaSeconds, LERP_TIME)
+      : Math.min(follow.lerpValue + getState(ECSState).deltaSeconds, LERP_TIME)
 
-  const lerpVal = follow.smoothLerp ? smootherStep(followState.lerpValue / LERP_TIME) : 1
+  const lerpVal = follow.smoothLerp ? smootherStep(follow.lerpValue / LERP_TIME) : 1
 
-  if (!targetTransform || !follow || !follow?.enabled) return
+  if (!targetTransform || !follow?.enabled) return
 
   // Limit the pitch
   follow.phi = Math.min(follow.maxPhi, Math.max(follow.minPhi, follow.phi))
@@ -525,23 +524,23 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
   }
 
   const switchToFirstPerson = () => {
-    followState.mode = FollowCameraMode.FirstPerson
-    resetMode[followState.mode]()
+    follow.mode = FollowCameraMode.FirstPerson
+    resetMode[follow.mode]()
   }
   const switchToThirdPerson = () => {
-    followState.mode = FollowCameraMode.ThirdPerson
-    resetMode[followState.mode]()
+    follow.mode = FollowCameraMode.ThirdPerson
+    resetMode[follow.mode]()
   }
   const switchToTopDown = () => {
-    followState.mode = FollowCameraMode.TopDown
-    resetMode[followState.mode]()
+    follow.mode = FollowCameraMode.TopDown
+    resetMode[follow.mode]()
   }
 
   const timeInSeconds = Math.floor(Date.now() / 1000)
   const resetThreshold = 3 //in seconds
   if (follow.isResetCamera) {
     if (follow.lastCameraAdjustmentTime !== -1 && follow.lastCameraAdjustmentTime + resetThreshold <= timeInSeconds) {
-      resetMode[followState.mode]()
+      resetMode[follow.mode]()
       follow.lastCameraAdjustmentTime = -1
     }
   } else {

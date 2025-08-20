@@ -108,42 +108,6 @@ const updateClickEventsForController = (entity: Entity) => {
 const execute = () => {
   if (!isClient) return
 
-  const interactableXRUIEntities = visibleInteractableXRUIQuery()
-
-  const inputSourceEntities = inputSourceQuery()
-
-  /** do intersection tests */
-  for (const inputSourceEntity of inputSourceEntities) {
-    const inputSourceComponent = getComponent(inputSourceEntity, InputSourceComponent)
-    const inputSource = inputSourceComponent.source
-    const buttons = inputSourceComponent.buttons
-
-    if (inputSource.targetRayMode !== 'tracked-pointer') continue
-    if (!PointerComponent.pointers.has(inputSource)) {
-      PointerComponent.addPointer(inputSourceEntity)
-    }
-
-    const pointerEntity = PointerComponent.pointers.get(inputSource)
-    if (!pointerEntity) continue
-
-    const pointer = getComponent(pointerEntity, PointerComponent).pointer
-    if (!pointer) continue
-
-    if (
-      buttons.XRStandardGamepadTrigger?.down &&
-      (inputSource.handedness === 'left' || inputSource.handedness === 'right')
-    )
-      updateClickEventsForController(pointerEntity)
-
-    updateControllerRayInteraction(pointerEntity, interactableXRUIEntities)
-  }
-
-  for (const [pointerSource, entity] of PointerComponent.pointers) {
-    if (!inputSourceEntities.find((entity) => getComponent(entity, InputSourceComponent).source === pointerSource)) {
-      removeEntity(entity)
-    }
-  }
-
   /** only update visible XRUI */
 
   for (const entity of visibleXRUIQuery()) {
@@ -239,6 +203,42 @@ export const XRUIInputSystem = defineSystem({
     const interactionRays = inputSourceQuery().map(getIntersectionRays)
     for (const xrui of visibleXRUIQuery()) {
       getComponent(xrui, XRUIComponent).interactionRays = interactionRays
+    }
+
+    const interactableXRUIEntities = visibleInteractableXRUIQuery()
+
+    const inputSourceEntities = inputSourceQuery()
+
+    /** do intersection tests */
+    for (const inputSourceEntity of inputSourceEntities) {
+      const inputSourceComponent = getComponent(inputSourceEntity, InputSourceComponent)
+      const inputSource = inputSourceComponent.source
+      const buttons = inputSourceComponent.buttons
+
+      if (inputSource.targetRayMode !== 'tracked-pointer') continue
+      if (!PointerComponent.pointers.has(inputSource)) {
+        PointerComponent.addPointer(inputSourceEntity)
+      }
+
+      const pointerEntity = PointerComponent.pointers.get(inputSource)
+      if (!pointerEntity) continue
+
+      const pointer = getComponent(pointerEntity, PointerComponent).pointer
+      if (!pointer) continue
+
+      if (
+        buttons.XRStandardGamepadTrigger?.down &&
+        (inputSource.handedness === 'left' || inputSource.handedness === 'right')
+      )
+        updateClickEventsForController(pointerEntity)
+
+      updateControllerRayInteraction(pointerEntity, interactableXRUIEntities)
+    }
+
+    for (const [pointerSource, entity] of PointerComponent.pointers) {
+      if (!inputSourceEntities.find((entity) => getComponent(entity, InputSourceComponent).source === pointerSource)) {
+        removeEntity(entity)
+      }
     }
   },
   reactor: () => {

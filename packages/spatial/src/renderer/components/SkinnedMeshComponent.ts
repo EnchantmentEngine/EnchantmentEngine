@@ -1,13 +1,4 @@
-import {
-  BufferGeometry,
-  Color,
-  Float32BufferAttribute,
-  LineBasicMaterial,
-  LineSegments,
-  Matrix4,
-  SkinnedMesh,
-  Vector3
-} from 'three'
+import { BufferGeometry, Color, Float32BufferAttribute, LineBasicMaterial, Matrix4, SkinnedMesh, Vector3 } from 'three'
 
 import {
   createEntity,
@@ -21,19 +12,17 @@ import {
   setComponent,
   useComponent,
   useEntityContext,
-  useOptionalComponent
+  useHasComponent
 } from '@ir-engine/ecs'
 import { getMutableState, Schema, useHookstate } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
-import { NameComponent } from '../../common/NameComponent'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { ObjectLayers } from '../constants/ObjectLayers'
+import { ObjectLayerMasks } from '../constants/ObjectLayers'
 import { RendererState } from '../RendererState'
 import { BoneComponent } from './BoneComponent'
+import { LineSegmentComponent } from './LineSegmentComponent'
 import { MeshComponent } from './MeshComponent'
-import { addObjectToGroup } from './ObjectComponent'
-import { setObjectLayers } from './ObjectLayerComponent'
 import { setVisibleComponent, VisibleComponent } from './VisibleComponent'
 
 export const SkinnedMeshComponent = defineComponent({
@@ -55,10 +44,10 @@ export const SkinnedMeshComponent = defineComponent({
     const component = useComponent(entity, SkinnedMeshComponent)
 
     const debugEnabled = useHookstate(getMutableState(RendererState).avatarDebug)
-    const visible = useOptionalComponent(entity, VisibleComponent)
+    const visible = useHasComponent(entity, VisibleComponent)
 
     useEffect(() => {
-      if (!visible?.value || !debugEnabled.value) return
+      if (!visible || !debugEnabled.value) return
 
       const root = getComponent(entity, SkinnedMeshComponent)
       const bones = root.skeleton.bones //getBoneList(entity)
@@ -96,17 +85,15 @@ export const SkinnedMeshComponent = defineComponent({
         transparent: true
       })
 
-      const line = new LineSegments(geometry, material)
-
-      line.frustumCulled = false
-      line.name = `Skinned Mesh Helper For: ${entity}`
-
       const helperEntity = createEntity()
       setVisibleComponent(helperEntity, true)
-      addObjectToGroup(helperEntity, line)
-      setComponent(helperEntity, NameComponent, line.name)
-      setObjectLayers(line, ObjectLayers.AvatarHelper)
       setComponent(helperEntity, EntityTreeComponent, { parentEntity: entity })
+      setComponent(helperEntity, LineSegmentComponent, {
+        geometry,
+        material,
+        name: `Skinned Mesh Helper For: ${entity}`,
+        layerMask: ObjectLayerMasks.AvatarHelper
+      })
 
       setComponent(helperEntity, ComputedTransformComponent, {
         referenceEntities: [entity],
