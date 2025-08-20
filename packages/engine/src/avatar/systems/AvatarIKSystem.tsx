@@ -22,6 +22,7 @@ import {
   createPriorityQueue,
   createSortAndApplyPriorityQueue
 } from '@ir-engine/spatial/src/common/functions/PriorityQueue'
+import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { compareDistanceToCamera } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { XRLeftHandComponent, XRRightHandComponent } from '@ir-engine/spatial/src/xr/XRComponents'
@@ -110,21 +111,17 @@ const execute = () => {
     const head = AvatarIKTargetComponent.getTargetEntity(ownerID, ikTargets.head)
     const headTargetBlendWeight = AvatarIKTargetComponent.blendWeight[head]
 
-    const worldRotation = TransformComponent.getWorldRotation(entity, _worldRot)
+    const rotation = getComponent(entity, RigidBodyComponent).rotation
 
     if (headTargetBlendWeight) {
       const headTransform = getComponent(head, TransformComponent)
       const hips = getComponent(rig.hips, TransformComponent)
 
-      hips.position.set(
-        headTransform.position.x,
-        headTransform.position.y - avatarComponent.torsoLength - 0.125,
-        headTransform.position.z
-      )
+      hips.position.y = headTransform.position.y - avatarComponent.torsoLength - 0.125
 
       //offset target forward to account for hips being behind the head
       hipsForward.set(0, 0, 1)
-      hipsForward.applyQuaternion(worldRotation)
+      hipsForward.applyQuaternion(rotation)
       hipsForward.multiplyScalar(0.125)
       hips.position.sub(hipsForward)
 
