@@ -22,7 +22,6 @@ import {
   createPriorityQueue,
   createSortAndApplyPriorityQueue
 } from '@ir-engine/spatial/src/common/functions/PriorityQueue'
-import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { compareDistanceToCamera } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { XRLeftHandComponent, XRRightHandComponent } from '@ir-engine/spatial/src/xr/XRComponents'
@@ -111,7 +110,7 @@ const execute = () => {
     const head = AvatarIKTargetComponent.getTargetEntity(ownerID, ikTargets.head)
     const headTargetBlendWeight = AvatarIKTargetComponent.blendWeight[head]
 
-    const rotation = getComponent(entity, RigidBodyComponent).rotation
+    const rotation = TransformComponent.getSceneRotation(entity, _worldRot)
 
     if (headTargetBlendWeight) {
       const headTransform = getComponent(head, TransformComponent)

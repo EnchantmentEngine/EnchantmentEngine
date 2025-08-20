@@ -190,6 +190,13 @@ export const TransformComponent = defineComponent({
     return vec3
   },
 
+  getSceneRotation: (entity: Entity, quaternion: Quaternion) => {
+    const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
+    if (!sceneEntity) return quaternion.set(0, 0, 0, 1)
+    TransformComponent.getMatrixRelativeToEntity(entity, sceneEntity, _m1)
+    return TransformComponent.getWorldRotation(entity, quaternion)
+  },
+
   getSceneScale: (entity: Entity, vec3: Vector3) => {
     const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
     if (!sceneEntity) return vec3.set(1, 1, 1)
