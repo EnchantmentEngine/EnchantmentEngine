@@ -398,7 +398,8 @@ const initialCameraPlacement = (entity: Entity) => {
 }
 
 const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
-  const follow = getComponent(cameraEntity, FollowCameraComponent)
+  const follow = getOptionalComponent(cameraEntity, FollowCameraComponent)
+  if (!follow) return
   const cameraTransform = getComponent(cameraEntity, TransformComponent)
   const targetTransform = getOptionalComponent(referenceEntity, TransformComponent)
   const cameraSettings = getMutableState(CameraSettingsState)
@@ -410,7 +411,7 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
 
   const lerpVal = follow.smoothLerp ? smootherStep(follow.lerpValue / LERP_TIME) : 1
 
-  if (!targetTransform || !follow || !follow?.enabled) return
+  if (!targetTransform || !follow?.enabled) return
 
   // Limit the pitch
   follow.phi = Math.min(follow.maxPhi, Math.max(follow.minPhi, follow.phi))
