@@ -86,7 +86,7 @@ function createWireframeBoxGeometry(box: Box3): BufferGeometry {
 }
 
 export const OrientedBoundingBoxSystem = defineSystem({
-  uuid: 'napster.engine.OrientedBoundingBoxSystem',
+  uuid: 'ee.engine.OrientedBoundingBoxSystem',
   insert: { after: TransformSystem },
   reactor: () => {
     return (

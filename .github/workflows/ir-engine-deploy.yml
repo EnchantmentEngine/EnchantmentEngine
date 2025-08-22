@@ -1,4 +1,4 @@
-name: Deploy Napster Engine
+name: Deploy Enchantment Engine
 
 on:
   push:

@@ -189,7 +189,7 @@ export default function Toolbar() {
           <div className="cursor-pointer" data-testid="back-to-dashboard-button" onClick={onCloseProject}>
             <img
               src={themeState.theme.value === 'dark' ? studioIconDark : studioIconLight}
-              alt="Napster Engine Logo"
+              alt="Enchantment Engine Logo"
               className="h-6 w-6"
             />
           </div>

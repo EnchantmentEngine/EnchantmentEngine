@@ -43,7 +43,7 @@ const AdminTopBar = () => {
       <a href="/">
         <img
           src="static/app_logo.svg"
-          alt="Napster Engine Logo"
+          alt="Enchantment Engine Logo"
           className={`h-7 w-7${theme.value === 'light' ? ' invert' : ''}`}
         />
       </a>
