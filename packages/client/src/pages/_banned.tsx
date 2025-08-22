@@ -1,10 +1,15 @@
+import { useThemeProvider } from '@ir-engine/client-core/src/common/services/ThemeService'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdWarning } from 'react-icons/md'
+import '../styles.scss'
 
 export default function UserBanned() {
   const { t } = useTranslation()
+
+  useThemeProvider()
+
   return (
     <Modal
       id="user-banned-modal"
