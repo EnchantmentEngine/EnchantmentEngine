@@ -3,7 +3,7 @@ import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { MdWarning } from 'react-icons/md'
-import '../styles.scss'
+import './styles.scss'
 
 export default function UserBanned() {
   const { t } = useTranslation()
