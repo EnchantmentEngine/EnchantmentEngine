@@ -43,7 +43,6 @@ import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { PoiCameraComponent } from '@ir-engine/spatial/src/camera/components/PoiCameraComponent'
 import { CameraMode, CameraModeType } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { SearchParamState } from '../common/services/RouterService'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
 import { LocationState } from '../social/services/LocationService'
 import { AuthState } from '../user/services/AuthService'
@@ -51,16 +50,16 @@ import { AuthState } from '../user/services/AuthService'
 export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   const userID = useMutableState(EngineState).userID.value
   const { sceneEntity } = props
-  const searchParams = useMutableState(SearchParamState)
+  const searchParamSpectate = getSearchParamFromURL('spectate') as EntityID
 
-  const spectateEntity = useHookstate(getSearchParamFromURL('spectate') as EntityID)
+  const spectateEntity = useHookstate(searchParamSpectate)
 
   const settingsQuery = useChildrenWithComponents(sceneEntity, [SceneSettingsComponent])
 
   useImmediateEffect(() => {
     const sceneSettingsSpectateEntity = getOptionalComponent(settingsQuery[0], SceneSettingsComponent)?.spectateEntity
-    spectateEntity.set(sceneSettingsSpectateEntity || (getSearchParamFromURL('spectate') as EntityID))
-  }, [settingsQuery[0], searchParams.value['spectate']])
+    spectateEntity.set(sceneSettingsSpectateEntity || searchParamSpectate)
+  }, [settingsQuery[0], searchParamSpectate])
 
   const isSpectating = typeof spectateEntity.value === 'string'
 

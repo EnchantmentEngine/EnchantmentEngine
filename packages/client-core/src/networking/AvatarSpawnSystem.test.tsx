@@ -43,7 +43,6 @@ import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { act, render } from '@testing-library/react'
 import { v4 } from 'uuid'
-import { SearchParamState } from '../common/services/RouterService'
 import { LocationState } from '../social/services/LocationService'
 import { AvatarSpawnSystem } from './AvatarSpawnSystem'
 
@@ -176,9 +175,6 @@ describe('AvatarSpawnSystem', async () => {
   })
 
   it('should spawn an avatar when there is no spectate data', async () => {
-    // ensure no spectate data
-    getMutableState(SearchParamState).set({})
-
     startReactor(system.reactor!)
 
     await act(async () => render(null))
@@ -208,9 +204,6 @@ describe('AvatarSpawnSystem', async () => {
   })
 
   it('should enter spectate mode with freecam when empty spectate is in search state', async () => {
-    // ensure spectate data
-    getMutableState(SearchParamState).set({ spectate: '' })
-
     // add spectate to search
     const url = new URL(location.href)
     url.searchParams.set('spectate', '')
@@ -233,9 +226,6 @@ describe('AvatarSpawnSystem', async () => {
 
   it('should enter spectate mode when spectate specified user is in search state', async () => {
     const otherUserID = 'other user id' as EntityID
-
-    // ensure spectate data
-    getMutableState(SearchParamState).set({ spectate: otherUserID })
 
     // add spectate to search
     const url = new URL(location.href)

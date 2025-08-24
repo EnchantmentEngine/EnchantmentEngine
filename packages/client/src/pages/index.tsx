@@ -2,13 +2,18 @@ import React, { useEffect } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
 
-import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
+import {
+  NotificationService,
+  NotificationSnackbar
+} from '@ir-engine/client-core/src/common/services/NotificationService'
 
 import config from '@ir-engine/common/src/config'
 import { useMutableState } from '@ir-engine/hyperflux'
 
 import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
+import { useThemeProvider } from '@ir-engine/client-core/src/common/services/ThemeService'
 import ProfileMenu from '@ir-engine/client-core/src/user/menus/ProfileMenu'
+import { Authenticate } from '@ir-engine/client-core/src/user/services/Authenticate'
 import { ViewerMenuState } from '@ir-engine/client-core/src/util/ViewerMenuState'
 import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
 import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
@@ -131,4 +136,16 @@ export const HomePage = (): any => {
     )
 }
 
-export default HomePage
+export const HomePageWrapper = () => {
+  useThemeProvider()
+  return (
+    <>
+      <NotificationSnackbar />
+      <Authenticate>
+        <HomePage />
+      </Authenticate>
+    </>
+  )
+}
+
+export default HomePageWrapper

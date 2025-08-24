@@ -3,7 +3,6 @@ import '@ir-engine/engine/src/EngineModule'
 import '@ir-engine/client-core/src/user/UserUISystem'
 import '@ir-engine/client-core/src/world/ClientNetworkModule'
 
-import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { LocationService } from '@ir-engine/client-core/src/social/services/LocationService'
 import { AuthService } from '@ir-engine/client-core/src/user/services/AuthService'
 import { clientContextParams } from '@ir-engine/client-core/src/util/ClientContextState'
@@ -23,8 +22,6 @@ const logger = multiLogger.child({ component: 'ui:chat:newchat', modifier: clien
 export function ChatPage() {
   AuthService.useAPIListeners()
   LocationService.useLocationBanListeners()
-
-  useEngineInjection()
 
   const chatState = useMutableState(NewChatState)
 

@@ -1,11 +1,11 @@
 import { createBrowserHistory, History } from 'history'
 import i18n from 'i18next'
 import React, { lazy, useEffect, useLayoutEffect } from 'react'
-import { BrowserRouterProps as NativeBrowserRouterProps, Router, useSearchParams } from 'react-router-dom'
+import { BrowserRouterProps as NativeBrowserRouterProps, Router } from 'react-router-dom'
 
 import { API } from '@ir-engine/common'
 import { routePath, RouteType } from '@ir-engine/common/src/schema.type.module'
-import { defineState, getMutableState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import { loadRoute } from '@ir-engine/projects/loadRoute'
 
 type SearchParamsType = { [key: string]: string }
@@ -41,24 +41,6 @@ export const RouterState = defineState({
     }
   }
 })
-
-/**
- * Read-only state that exposes search params to reactors & non-reactive contexts
- */
-export const SearchParamState = defineState({
-  name: 'SearchParamState',
-  initial: {} as SearchParamsType
-})
-
-/** This hook wraps useSearchParams in a hyperflux state such that we can reactively change params in reactors */
-export const useSearchParamState = () => {
-  const [search] = useSearchParams()
-
-  useEffect(() => {
-    const searchParams = Object.fromEntries(search)
-    getMutableState(SearchParamState).set(searchParams)
-  }, [search])
-}
 
 export type CustomRoute = {
   route: string

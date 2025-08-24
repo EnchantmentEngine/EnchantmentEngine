@@ -12,11 +12,11 @@ import { BsFillExclamationTriangleFill } from 'react-icons/bs'
 import { useLocation } from 'react-router-dom'
 import { AuthService, AuthState } from '../services/AuthService'
 
-interface ErrorPageProps {
+interface AuthPageProps {
   name: string
 }
 
-export default function ErrorPage({ name }: ErrorPageProps) {
+export default function AuthPage({ name }: AuthPageProps) {
   const { t } = useTranslation()
   const initialState = { error: '', token: '', email: '', promptForConnection: 'false', loginToken: '', loginId: '' }
   const [state, setState] = useState(initialState)
