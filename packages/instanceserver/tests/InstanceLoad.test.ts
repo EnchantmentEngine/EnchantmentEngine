@@ -22,7 +22,7 @@ import {
   userPath
 } from '@ir-engine/common/src/schema.type.module'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { getState, NetworkState, PeerID } from '@ir-engine/hyperflux'
+import { getState, HyperFlux, NetworkState, PeerID } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
