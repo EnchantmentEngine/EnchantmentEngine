@@ -30,6 +30,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   NetworkActions,
   NetworkState,
   PeerID
