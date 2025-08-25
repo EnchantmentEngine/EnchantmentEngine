@@ -2,7 +2,6 @@ import React, { useLayoutEffect } from 'react'
 
 import {
   createEntity,
-  Engine,
   EntityID,
   EntityTreeComponent,
   EntityUUID,
@@ -19,6 +18,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   NetworkPeerState,
   NetworkState,
   none,
@@ -185,7 +185,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
   useLayoutEffect(() => {
     const entity = UUIDComponent.getEntityByUUID(props.uuid)
-    if (state.authorityPeerId.value === Engine.instance.store.peerID) setComponent(entity, NetworkObjectAuthorityTag)
+    if (state.authorityPeerId.value === HyperFlux.store.peerID) setComponent(entity, NetworkObjectAuthorityTag)
     else removeComponent(entity, NetworkObjectAuthorityTag)
   }, [state.authorityPeerId.value])
 
@@ -213,13 +213,13 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
       // Use the lowest peer as the new authority
       const lowestPeer = [...NetworkState.worldNetwork.users[userID]].sort((a, b) => (a > b ? 1 : -1))[0]
-      if (lowestPeer !== Engine.instance.store.peerID) return
+      if (lowestPeer !== HyperFlux.store.peerID) return
 
       dispatchAction(
         WorldNetworkAction.transferAuthorityOfObject({
           ownerID: state.ownerId.value,
           entityUUID: props.uuid,
-          newAuthority: Engine.instance.store.peerID
+          newAuthority: HyperFlux.store.peerID
         })
       )
     }

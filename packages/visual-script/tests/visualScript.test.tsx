@@ -356,7 +356,7 @@ describe('visual Script', () => {
       assert(result.includes(messageQueue[1]))
     })
 
-    //Engine.instance.store.stateMap
+    //HyperFlux.store.stateMap
 
     await waitForConsoleLog(messageQueue[2]).then((result) => {
       // set state

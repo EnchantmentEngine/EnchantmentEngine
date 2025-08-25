@@ -5,7 +5,6 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
-  Engine,
   Entity,
   EntityID,
   EntityTreeComponent,
@@ -17,7 +16,7 @@ import {
   SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { Schema } from '@ir-engine/hyperflux'
+import { HyperFlux, Schema } from '@ir-engine/hyperflux'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
@@ -149,7 +148,7 @@ describe('definePrefab', () => {
 
     applyIncomingActions()
 
-    const actions = Engine.instance.store.actions.history
+    const actions = HyperFlux.store.actions.history
     expect(actions.length).toBe(2)
     expect(actions[0].type).toBe('ir.engine.prefab_TestPrefabSpawn')
     expect(actions[1].type).toStrictEqual(['ee.engine.world.SPAWN_OBJECT', 'ee.network.SPAWN_ENTITY'])
@@ -218,7 +217,7 @@ describe('definePrefab', () => {
 
     applyIncomingActions()
 
-    const actions = Engine.instance.store.actions.history
+    const actions = HyperFlux.store.actions.history
     expect(actions.length).toBe(0)
   })
 })

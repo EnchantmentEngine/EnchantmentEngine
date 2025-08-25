@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem, destroySystem, SystemUUID } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { HyperFlux, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import { makeEventNodeDefinition, makeFlowNodeDefinition, NodeCategory, NodeDefinition } from '@ir-engine/visual-script'
 
 import { EnginetoNodetype, getSocketType, NodetoEnginetype } from './commonHelper'
@@ -30,7 +29,7 @@ export function generateStateNodeSchema(state, withFlow = false) {
 export function registerStateSetters() {
   const setters: NodeDefinition[] = []
   const skipped: string[] = []
-  for (const [stateName, state] of Object.entries(Engine.instance.store.stateMap)) {
+  for (const [stateName, state] of Object.entries(HyperFlux.store.stateMap)) {
     if (skipState.includes(stateName)) {
       skipped.push(stateName)
       continue
@@ -67,7 +66,7 @@ export function registerStateSetters() {
 export function registerStateGetters() {
   const getters: NodeDefinition[] = []
   const skipped: string[] = []
-  for (const [stateName, state] of Object.entries(Engine.instance.store.stateMap)) {
+  for (const [stateName, state] of Object.entries(HyperFlux.store.stateMap)) {
     if (skipState.includes(stateName)) {
       skipped.push(stateName)
       continue
@@ -123,7 +122,7 @@ export const getUseStateSystemUUID = (stateName) =>
 export function registerStateListeners() {
   const getters: NodeDefinition[] = []
   const skipped: string[] = []
-  for (const [stateName, state] of Object.entries(Engine.instance.store.stateMap)) {
+  for (const [stateName, state] of Object.entries(HyperFlux.store.stateMap)) {
     if (skipState.includes(stateName)) {
       skipped.push(stateName)
       continue

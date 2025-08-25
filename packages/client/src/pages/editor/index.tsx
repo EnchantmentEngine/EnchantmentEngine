@@ -15,7 +15,7 @@ import { useFind } from '@ir-engine/common'
 import { ScopeType, scopePath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState } from '@ir-engine/ecs'
 import { EditorPage } from '@ir-engine/editor/src/pages/EditorPage'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { Route, Routes, useLocation } from 'react-router-dom'
 

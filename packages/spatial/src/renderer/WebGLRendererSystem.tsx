@@ -48,8 +48,13 @@ function renderWebGPUPostProcessing(renderer: ComponentType<typeof RendererCompo
 }
 
 /**
- * Executes the system. Called each frame by default from the Engine.instance.
+ * Renders the scene using either WebGL or WebGPU renderer, with optional post-processing.
+ * @param renderer The renderer component containing the renderer and settings.
+ * @param scene The scene to be rendered.
+ * @param camera The camera through which the scene is viewed.
  * @param delta Time since last frame.
+ * @param effectComposer Whether to use effect composer for post-processing.
+ * @param csm Optional CSM component for shadow mapping.
  */
 export const render = (
   renderer: ComponentType<typeof RendererComponent>,

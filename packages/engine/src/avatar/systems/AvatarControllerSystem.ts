@@ -3,7 +3,6 @@ import { Vector3 } from 'three'
 import {
   defineQuery,
   defineSystem,
-  Engine,
   EngineState,
   getComponent,
   getOptionalComponent,
@@ -15,7 +14,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { dispatchAction, getState, NetworkState, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, HyperFlux, NetworkState, useMutableState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { DistanceFromLocalClientComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { getDistanceSquaredFromTarget, TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
@@ -53,7 +52,7 @@ const execute = () => {
           WorldNetworkAction.transferAuthorityOfObject({
             ownerID: getState(EngineState).userID,
             entityUUID: UUIDComponent.get(entity),
-            newAuthority: Engine.instance.store.peerID
+            newAuthority: HyperFlux.store.peerID
           })
         )
         setComponent(entity, NetworkObjectAuthorityTag)

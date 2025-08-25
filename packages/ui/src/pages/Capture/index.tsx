@@ -23,7 +23,6 @@ import {
   recordingPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import {
   MotionCaptureFunctions,
@@ -31,6 +30,7 @@ import {
   mocapDataChannelType
 } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
 import {
+  HyperFlux,
   MediaStreamState,
   NetworkState,
   defineState,
@@ -103,7 +103,7 @@ const sendResults = (results: MotionCaptureResults) => {
   const network = NetworkState.worldNetwork as SocketWebRTCClientNetwork
   if (!network?.ready) return
   const data = MotionCaptureFunctions.sendResults(results)
-  network.bufferToAll(mocapDataChannelType, Engine.instance.store.peerID, data)
+  network.bufferToAll(mocapDataChannelType, HyperFlux.store.peerID, data)
 }
 
 export const CaptureState = defineState({
@@ -133,7 +133,7 @@ const CaptureMode = () => {
     } else {
       RecordingState.requestRecording({
         user: { Avatar: true },
-        peers: { [Engine.instance.store.peerID]: { Audio: true, Video: true, Mocap: true } }
+        peers: { [HyperFlux.store.peerID]: { Audio: true, Video: true, Mocap: true } }
       })
     }
   }

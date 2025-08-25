@@ -9,10 +9,11 @@ import {
   instanceSignalingPath
 } from '@ir-engine/common/src/schema.type.module'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine, EngineState } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import {
   ErrorBoundary,
+  HyperFlux,
   MediaStreamState,
   MessageTypes,
   NetworkActions,
@@ -119,8 +120,8 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
       NetworkActions.peerJoined({
         $network: network.id,
         $topic: network.topic,
-        $to: Engine.instance.store.peerID,
-        peerID: Engine.instance.store.peerID,
+        $to: HyperFlux.store.peerID,
+        peerID: HyperFlux.store.peerID,
         peerIndex: joinResponse.value.index,
         userID: getState(EngineState).userID
       })
@@ -132,8 +133,8 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
         NetworkActions.peerLeft({
           $network: network.id,
           $topic: network.topic,
-          $to: Engine.instance.store.peerID,
-          peerID: Engine.instance.store.peerID,
+          $to: HyperFlux.store.peerID,
+          peerID: HyperFlux.store.peerID,
           userID: getState(EngineState).userID
         })
       )
@@ -174,7 +175,7 @@ const PeersReactor = (props: { instanceID: InstanceID }) => {
 
   useEffect(() => {
     if (instanceAttendanceQuery.status === 'success') {
-      otherPeers.set(instanceAttendanceQuery.data.filter((peer) => peer.peerId !== Engine.instance.store.peerID))
+      otherPeers.set(instanceAttendanceQuery.data.filter((peer) => peer.peerId !== HyperFlux.store.peerID))
     }
   }, [instanceAttendanceQuery.status])
 
@@ -212,7 +213,7 @@ const PeerReactor = (props: { peerID: PeerID; peerIndex: number; userID: UserID;
     API.instance.service(instanceSignalingPath).on('patched', (data) => {
       // need to ignore messages from self
       if (data.fromPeerID !== props.peerID) return
-      if (data.targetPeerID !== Engine.instance.store.peerID) return
+      if (data.targetPeerID !== HyperFlux.store.peerID) return
       if (data.instanceID !== network.id) return
 
       WebRTCTransportFunctions.onMessage(sendMessage, data.instanceID, props.peerID, data.message)

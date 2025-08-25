@@ -1,7 +1,6 @@
 import * as bitECS from 'bitecs'
 import { getAllEntities } from 'bitecs'
 
-import * as Hyperflux from '@ir-engine/hyperflux'
 import { createHyperStore, getState, HyperFlux, HyperStore, stopAllReactors } from '@ir-engine/hyperflux'
 
 import { $RemovedComponent, removeEntity } from './ComponentFunctions'
@@ -12,22 +11,16 @@ import { queries, removeQuery } from './QueryFunctions'
 import { SystemState } from './SystemState'
 import { EntitiesBySourceStores, EntitiesByUUIDStores } from './UUIDComponent'
 
-export class Engine {
-  static instance: Engine
-  store: HyperStore
-}
+globalThis.HyperStore = HyperFlux.store
 
-globalThis.Engine = Engine
-globalThis.Hyperflux = Hyperflux
-
-export function createEngine(hyperstore = createHyperStore()) {
-  if (Engine.instance) throw new Error('Store already exists')
-  Engine.instance = new Engine()
+export function createEngine(store?: HyperStore) {
+  if (HyperFlux.store) throw new Error('Store already exists')
+  const hyperstore = store ?? createHyperStore()
   hyperstore.getCurrentReactorRoot = () =>
     getState(SystemState).activeSystemReactors.get(getState(SystemState).currentSystemUUID)
   hyperstore.getDispatchTime = () => getState(ECSState).simulationTime
   hyperstore.getAgentID = () => getState(EngineState).userID
-  Engine.instance.store = bitECS.createWorld(hyperstore) as HyperStore
+  HyperFlux.store = bitECS.createWorld(hyperstore) as HyperStore
   const UndefinedEntity = bitECS.addEntity(hyperstore)
 }
 
@@ -61,7 +54,4 @@ export function destroyEngine() {
 
   /** Dereference store */
   HyperFlux.store = null!
-
-  /** Dereference engine */
-  Engine.instance = null!
 }

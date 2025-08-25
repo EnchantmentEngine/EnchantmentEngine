@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, RenderResult, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, TestContext, vi } from 'vitest'
 
-import { createEngine, destroyEngine, Engine, EngineState, Entity } from '@ir-engine/ecs'
+import { createEngine, destroyEngine, EngineState, Entity } from '@ir-engine/ecs'
 import React from 'react'
 import { MediaIconsBox } from './index'
 
@@ -12,6 +12,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   joinNetwork,
   MediaStreamState,
   NetworkActions,
@@ -69,7 +70,7 @@ describe('MediaIconsBox component', () => {
 
     sceneEntity = getState(SceneState)[sceneURL]
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const hostUserID = 'host user' as UserID
     const instanceID = 'instanceID' as NetworkID
     getMutableState(EngineState).userID.set(hostUserID)

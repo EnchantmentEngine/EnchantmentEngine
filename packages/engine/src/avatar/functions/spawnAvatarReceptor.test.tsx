@@ -7,8 +7,9 @@ import '../state/AvatarNetworkState'
 
 import { Entity, UUIDComponent } from '@ir-engine/ecs'
 import { hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import {
+  HyperFlux,
   NetworkTopics,
   UserID,
   applyIncomingActions,
@@ -49,11 +50,11 @@ describe('spawnAvatarReceptor', () => {
     const physicsWorld = Physics.createWorld(sceneEntity)
     physicsWorld.timestep = 1 / 60
 
-    createMockNetwork(NetworkTopics.world, Engine.instance.store.peerID, getState(EngineState).userID)
+    createMockNetwork(NetworkTopics.world, HyperFlux.store.peerID, getState(EngineState).userID)
 
     dispatchAction(
       AvatarNetworkAction.spawn({
-        $peer: Engine.instance.store.peerID,
+        $peer: HyperFlux.store.peerID,
         parentUUID: UUIDComponent.get(sceneEntity),
         position: new Vector3(),
         rotation: new Quaternion(),

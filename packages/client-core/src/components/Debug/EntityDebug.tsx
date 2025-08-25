@@ -12,7 +12,6 @@ import {
   getOptionalComponent,
   hasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { SuspendedQueryChildState, defineQuery, removeQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
@@ -162,7 +161,7 @@ export const EntityDebug = () => {
   const entityQuery = useMutableState(EntitySearchState).query
 
   erroredComponents.set(
-    [...Engine.instance.store.activeReactors.values()]
+    [...HyperFlux.store.activeReactors.values()]
       .filter((reactor) => (reactor as any).entity && reactor.errors.length)
       .map((reactor) => {
         return reactor.errors.map((error) => {

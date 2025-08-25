@@ -2,10 +2,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
 
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import {
   getMutableState,
+  HyperFlux,
   MediaChannelState,
   MediaStreamState,
   PeerID,
@@ -42,7 +42,7 @@ export const MediaControl: React.FC<MediaControlProps> = ({ peerID, type }) => {
   const mediaSessionState = useHookstate(getMutableState(MediaSessionState))
   const audioState = useHookstate(getMutableState(AudioState))
 
-  const isSelf = peerID === Engine.instance.store.peerID || peerID === 'self'
+  const isSelf = peerID === HyperFlux.store.peerID || peerID === 'self'
 
   const isScreen = type === 'screen'
 
@@ -240,7 +240,7 @@ export const MediaSessionControls: React.FC = () => {
       <div className="space-y-2">
         <div className="rounded bg-gray-50 p-2">
           <h4 className="mb-2 text-sm font-medium">{t('mediaSession:mediaSession.yourControls')}</h4>
-          <MediaControl peerID={Engine.instance.store.peerID} type="cam" />
+          <MediaControl peerID={HyperFlux.store.peerID} type="cam" />
         </div>
         {peers.length > 0 && (
           <div className="rounded bg-gray-50 p-2">

@@ -1,7 +1,7 @@
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
 import * as ECS from '@ir-engine/ecs'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, HyperFlux } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import React, { useEffect, useRef, useState } from 'react'
 import { Euler, Quaternion, Vector3 } from 'three'
@@ -28,7 +28,7 @@ export default function SceneDecorator({ sceneName }: { sceneName?: string }) {
     setActiveScene(sceneName)
 
     return () => {
-      if (!ECS.Engine.instance) return
+      if (!HyperFlux.store) return
       getMutableState(LocationState).currentLocation.location.sceneId.set('')
       getMutableState(LocationState).currentLocation.location.sceneURL.set('')
       unload()

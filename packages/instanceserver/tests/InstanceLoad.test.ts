@@ -21,7 +21,7 @@ import {
   UserID,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
-import { destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
+import { destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { getState, NetworkState, PeerID } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 
@@ -160,7 +160,7 @@ describe('InstanceLoad', () => {
     assert.equal(messages[0].status, 'pending')
     assert.equal(messages[1].status, 'success')
     assert.equal(messages[1].hostPeerID, NetworkState.worldNetwork.hostPeerID)
-    assert.equal(messages[1].hostPeerID, Engine.instance.store.peerID)
+    assert.equal(messages[1].hostPeerID, HyperFlux.store.peerID)
 
     const instanceAttendance = await app.service(instanceAttendancePath).find({
       query: {
