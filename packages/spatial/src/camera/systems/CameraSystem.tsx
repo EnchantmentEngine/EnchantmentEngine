@@ -4,7 +4,6 @@ import { PerspectiveCamera } from 'three'
 import {
   AnimationSystemGroup,
   defineSystem,
-  Engine,
   EntityUUID,
   getComponent,
   getOptionalComponent,
@@ -17,7 +16,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, none, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
@@ -71,7 +70,7 @@ function CameraReactor() {
 
   useEffect(() => {
     if (!cameraSettings?.cameraNearClip) return
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent) as PerspectiveCamera
+    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent) as PerspectiveCamera
     if (camera?.isPerspectiveCamera) {
       camera.fov = cameraSettings.fov.value
       camera.near = cameraSettings.cameraNearClip.value
@@ -83,7 +82,7 @@ function CameraReactor() {
   // TODO: this is messy and not properly reactive; we need a better way to handle camera settings
   useEffect(() => {
     if (!cameraSettings?.fov) return
-    const follow = getOptionalComponent(Engine.instance.cameraEntity, FollowCameraComponent)
+    const follow = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, FollowCameraComponent)
     if (follow) {
       let startDistance = cameraSettings.thirdPersonDefaultDistance.value
       let minDistance = cameraSettings.thirdPersonMinDistance.value

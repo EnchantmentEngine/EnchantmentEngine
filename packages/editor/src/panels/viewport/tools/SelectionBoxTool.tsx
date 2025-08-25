@@ -1,5 +1,4 @@
 import {
-  Engine,
   EntityTreeComponent,
   EntityUUID,
   UUIDComponent,
@@ -75,7 +74,7 @@ export default function SelectionBox({
     const rightNDC = box.value.max.x + 0.001
     const topNDC = box.value.max.y + 0.001
     const bottomNDC = box.value.min.y
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     camera.updateMatrixWorld()
     camera.updateProjectionMatrix()
     let selectedUUIDs = [] as EntityUUID[]

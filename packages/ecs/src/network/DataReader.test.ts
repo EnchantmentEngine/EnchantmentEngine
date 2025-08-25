@@ -995,7 +995,7 @@ describe('DataReader', () => {
   //     network.userIDToUserIndex.set(userId, userIndex)
   //   })
 
-  //   const packet = write(network, Engine.instance.userID, peerID, entities)
+  //   const packet = write(network, getState(EngineState).userID, peerID, entities)
 
   //   strictEqual(packet.byteLength, 376)
   // })

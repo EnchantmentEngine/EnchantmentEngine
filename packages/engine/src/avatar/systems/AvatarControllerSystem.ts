@@ -4,6 +4,7 @@ import {
   defineQuery,
   defineSystem,
   Engine,
+  EngineState,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -14,7 +15,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { dispatchAction, NetworkState, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, NetworkState, useMutableState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { DistanceFromLocalClientComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { getDistanceSquaredFromTarget, TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
@@ -50,7 +51,7 @@ const execute = () => {
       ) {
         dispatchAction(
           WorldNetworkAction.transferAuthorityOfObject({
-            ownerID: Engine.instance.userID,
+            ownerID: getState(EngineState).userID,
             entityUUID: UUIDComponent.get(entity),
             newAuthority: Engine.instance.store.peerID
           })

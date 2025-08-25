@@ -14,13 +14,13 @@ import {
 
 import { AnimationSystemGroup, defineSystem, ECSState, Entity, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { createSDFShader } from '@ir-engine/spatial/src/renderer/effects/sdf/SDFShader'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { getState, Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 
@@ -57,10 +57,10 @@ export const SDFComponent = defineComponent({
     const rendererEntity = useRendererEntity(entity)
 
     useEffect(() => {
-      const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
       const cameraPosition = cameraTransform.position
       const transformComponent = getComponent(entity, TransformComponent)
-      const cameraComponent = getComponent(Engine.instance.cameraEntity, CameraComponent)
+      const cameraComponent = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
 
       if (!SDFShader) SDFShader = createSDFShader()
 

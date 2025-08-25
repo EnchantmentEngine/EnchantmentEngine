@@ -9,7 +9,7 @@ import {
   instanceSignalingPath
 } from '@ir-engine/common/src/schema.type.module'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine } from '@ir-engine/ecs'
+import { Engine, EngineState } from '@ir-engine/ecs'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import {
   ErrorBoundary,
@@ -122,7 +122,7 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
         $to: Engine.instance.store.peerID,
         peerID: Engine.instance.store.peerID,
         peerIndex: joinResponse.value.index,
-        userID: Engine.instance.userID
+        userID: getState(EngineState).userID
       })
     )
 
@@ -134,7 +134,7 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
           $topic: network.topic,
           $to: Engine.instance.store.peerID,
           peerID: Engine.instance.store.peerID,
-          userID: Engine.instance.userID
+          userID: getState(EngineState).userID
         })
       )
       leaveNetwork(network)

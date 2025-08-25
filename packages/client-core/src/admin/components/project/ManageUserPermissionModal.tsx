@@ -15,8 +15,8 @@ import {
   projectPermissionPath,
   scopePath
 } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
-import { ImmutableObject, getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { ImmutableObject, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { Button, Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -30,7 +30,7 @@ export default function ManageUserPermissionModal({ project }: { project: Immuta
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'admin:admin' as ScopeType
     }
   })

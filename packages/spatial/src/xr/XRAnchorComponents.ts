@@ -5,7 +5,6 @@ import matches from 'ts-matches'
 import {
   createEntity,
   defineComponent,
-  Engine,
   EntityTreeComponent,
   EntityUUID,
   getComponent,
@@ -16,8 +15,9 @@ import {
   useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { defineAction, Schema, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { defineAction, getState, Schema, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { NameComponent } from '../common/NameComponent'
 import { matchesQuaternion, matchesVector3 } from '../common/functions/MatchesUtils'
 import { MeshComponent } from '../renderer/components/MeshComponent'
@@ -69,7 +69,7 @@ function PersistentAnchorReactor() {
     /** remove from scene and add to world origins */
     const originalParent = UUIDComponent.get(getComponent(entity, EntityTreeComponent).parentEntity)
     originalParentEntityUUID.set(originalParent)
-    setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     TransformComponent.dirty[entity] = 1
 
     const wireframe = anchor.wireframe

@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
 
 import { isDev } from '@ir-engine/common/src/config'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import Badge from '@ir-engine/ui/src/primitives/tailwind/Badge'
 import Tabs from '@ir-engine/ui/src/primitives/tailwind/Tabs'
 
 import { useFind } from '@ir-engine/common'
 import { ScopeType, scopePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import SearchBar from '@ir-engine/ui/src/components/tailwind/SearchBar'
 import { ProjectService, ProjectState } from '../../../common/services/ProjectService'
 import ProjectTable from './ProjectTable'
@@ -24,7 +24,7 @@ export default function AdminProject() {
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'projects:read' as ScopeType
     }
   })

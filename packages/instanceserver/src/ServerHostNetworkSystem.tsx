@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { API } from '@ir-engine/common'
 import { RecordingAPIState } from '@ir-engine/common/src/recording/ECSRecordingSystem'
 import { RecordingID, recordingResourceUploadPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import {
@@ -22,7 +21,7 @@ export const lastSeen = new Map<PeerID, number>()
 
 export async function checkPeerHeartbeat(network: SocketWebRTCServerNetwork): Promise<void> {
   for (const [peerID, client] of Object.entries(network.peers) as [PeerID, NetworkPeer][]) {
-    if (client.userId === Engine.instance.userID) continue
+    if (client.userId === getState(EngineState).userID) continue
     if (!lastSeen.has(peerID)) lastSeen.set(peerID, Date.now())
     if (Date.now() - lastSeen.get(peerID)! > 10000) {
       if (network.transports[peerID]) network.transports[peerID]!.end!()

@@ -6,7 +6,6 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
-  Engine,
   EngineState,
   Entity,
   EntityID,
@@ -511,9 +510,9 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Do not make the testEntity an Avatar entity, so that it is undefined
         // getMutableState(EngineState).userID.set("testUserID" as UserID)
-        // const UUID = Engine.instance.userID + '_avatar' as EntityUUID
+        // const UUID = getState(EngineState).userID + '_avatar' as EntityUUID
         // setComponent(testEntity, UUIDComponent, UUID)
-        const selfAvatarEntity = UUIDComponent.getEntityByUUID((Engine.instance.userID + 'avatar') as EntityUUID)
+        const selfAvatarEntity = UUIDComponent.getEntityByUUID((getState(EngineState).userID + 'avatar') as EntityUUID)
         assert.equal(selfAvatarEntity, UndefinedEntity)
 
         // Run and Check the result
@@ -600,9 +599,9 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Do not make the testEntity an Avatar entity, so that it is undefined
         // getMutableState(EngineState).userID.set("testUserID" as UserID)
-        // const UUID = Engine.instance.userID + '_avatar' as EntityUUID
+        // const UUID = getState(EngineState).userID + '_avatar' as EntityUUID
         // setComponent(testEntity, UUIDComponent, UUID)
-        const selfAvatarEntity = UUIDComponent.getEntityByUUID((Engine.instance.userID + '_avatar') as EntityUUID)
+        const selfAvatarEntity = UUIDComponent.getEntityByUUID((getState(EngineState).userID + '_avatar') as EntityUUID)
         assert.equal(selfAvatarEntity, UndefinedEntity)
 
         // Run and Check the result

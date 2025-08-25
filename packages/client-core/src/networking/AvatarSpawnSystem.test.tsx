@@ -220,7 +220,7 @@ describe('AvatarSpawnSystem', async () => {
       SpectateActions.spectateEntity.matches.test(action)
     ) as typeof SpectateActions.spectateEntity.matches._TYPE
     assert.ok(spectateAction)
-    assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+    assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
     assert.equal(spectateAction.spectatingEntity, '')
   })
 
@@ -242,7 +242,7 @@ describe('AvatarSpawnSystem', async () => {
         SpectateActions.spectateEntity.matches.test(action)
       ) as typeof SpectateActions.spectateEntity.matches._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, otherUserID)
     })
   })
@@ -265,7 +265,7 @@ describe('AvatarSpawnSystem', async () => {
         SpectateActions.spectateEntity.matches.test(action)
       ) as typeof SpectateActions.spectateEntity.matches._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, spectateUUID)
     })
   })

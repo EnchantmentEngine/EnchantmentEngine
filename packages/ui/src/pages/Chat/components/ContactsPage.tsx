@@ -4,8 +4,8 @@ import { ChannelService } from '@ir-engine/client-core/src/social/services/Chann
 import { FriendService, FriendState } from '@ir-engine/client-core/src/social/services/FriendService'
 import { API } from '@ir-engine/common'
 import { UserID, UserName, userPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiChat, HiCheck, HiDotsVertical, HiPhone, HiSearch, HiUserAdd, HiUserRemove, HiX } from 'react-icons/hi'
@@ -18,7 +18,7 @@ export const ContactsPage: React.FC = () => {
   const searchQuery = useHookstate('')
   const addFriendUsername = useHookstate('')
   const isAddingFriend = useHookstate(false)
-  const userId = Engine.instance.userID as UserID
+  const userId = getState(EngineState).userID as UserID
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const contextMenu = useHookstate({
     visible: false,

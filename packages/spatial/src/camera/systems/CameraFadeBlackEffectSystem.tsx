@@ -4,7 +4,6 @@ import { Color, DoubleSide, Mesh, MeshBasicMaterial, SphereGeometry } from 'thre
 import { createEntity, entityExists, removeEntity } from '@ir-engine/ecs'
 import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineActionQueue, defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
@@ -68,10 +67,10 @@ const execute = () => {
     transition.setState(action.in ? 'IN' : 'OUT')
     if (action.in) {
       setComponent(entity, ComputedTransformComponent, {
-        referenceEntities: [Engine.instance.cameraEntity],
+        referenceEntities: [getState(ReferenceSpaceState).viewerEntity],
         computeFunction: () => {
           getComponent(entity, TransformComponent).position.copy(
-            getComponent(Engine.instance.cameraEntity, TransformComponent).position
+            getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).position
           )
         }
       })

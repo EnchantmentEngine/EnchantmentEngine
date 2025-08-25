@@ -2,7 +2,6 @@ import { MeshBasicMaterial, Quaternion, Vector3 } from 'three'
 
 import { isClient } from '@ir-engine/common/src/utils/getEnvironment'
 import {
-  Engine,
   EngineState,
   EntityTreeComponent,
   getChildrenWithComponents,
@@ -25,6 +24,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import React, { useEffect } from 'react'
 import { createMediaControlsView } from './ui/MediaControlsUI'
 
@@ -37,7 +37,7 @@ export const createMediaControlsUI = (entity: Entity, aspectRatio: number = 1) =
   const mediaTransform = getComponent(entity, TransformComponent)
 
   const uiFront = createMediaControlsView(entity)
-  setComponent(uiFront.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+  setComponent(uiFront.entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiFront.entity, NameComponent, 'mediacontrols-ui-frontside-' + entity)
   setComponent(uiFront.entity, TransformComponent, { rotation: mediaTransform.rotation })
   uiFront.container.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
@@ -143,7 +143,9 @@ const MediaXRUIReactor = ({ entity }: { entity: Entity }) => {
     const transition = createTransitionState(0.25, 'IN')
     MediaFadeTransitions.set(entity, transition)
     mediaComponent.xruiEntity = createMediaControlsUI(entity).entity
-    setComponent(mediaComponent.xruiEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    setComponent(mediaComponent.xruiEntity, EntityTreeComponent, {
+      parentEntity: getState(ReferenceSpaceState).originEntity
+    })
 
     return () => {
       if (MediaFadeTransitions.has(entity)) MediaFadeTransitions.delete(entity)

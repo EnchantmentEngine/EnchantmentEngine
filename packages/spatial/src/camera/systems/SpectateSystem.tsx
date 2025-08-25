@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { MathUtils } from 'three'
 
 import {
-  Engine,
+  EngineState,
   EntityUUID,
   getComponent,
   getOptionalComponent,
@@ -73,14 +73,14 @@ export const SpectateEntityState = defineState({
   reactor: () => {
     const state = useMutableState(SpectateEntityState)
 
-    if (!state.value[Engine.instance.userID]) return null
+    if (!state.value[getState(EngineState).userID]) return null
 
     return <SpectatorReactor />
   }
 })
 
 const SpectatorReactor = () => {
-  const state = useHookstate(getMutableState(SpectateEntityState)[Engine.instance.userID])
+  const state = useHookstate(getMutableState(SpectateEntityState)[getState(EngineState).userID])
 
   useEffect(() => {
     const cameraEntity = getState(ReferenceSpaceState).viewerEntity

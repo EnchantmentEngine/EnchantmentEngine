@@ -12,7 +12,7 @@ import {
   Vector3
 } from 'three'
 
-import { Engine, useEntityContext } from '@ir-engine/ecs'
+import { useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -32,6 +32,7 @@ import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/Obje
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 
 import { Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { CORTOLoader } from '../../assets/loaders/corto/CORTOLoader'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
@@ -219,7 +220,7 @@ function UVOL1Reactor() {
       mesh.geometry.attributes.position.needsUpdate = true
 
       videoTexture.needsUpdate = true
-      const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent)
+      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
       renderer.renderer!.initTexture(videoTexture)
 
       if (volumetric.useLoadingEffect) {
@@ -254,7 +255,7 @@ function UVOL1Reactor() {
         mesh.geometry.attributes.position.needsUpdate = true
 
         videoTexture.needsUpdate = true
-        getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.initTexture(videoTexture)
+        getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!.initTexture(videoTexture)
       }
       removePlayedBuffer(frameToPlay)
     }

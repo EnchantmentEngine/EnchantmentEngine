@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { Engine, Entity, useEntityContext } from '@ir-engine/ecs'
+import { Entity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
@@ -13,6 +13,7 @@ import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/Re
 
 import { hasComponent } from '@ir-engine/ecs'
 import { Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { AudioState } from '../../audio/AudioState'
 import { PlayMode } from '../constants/PlayMode'
 import { AudioNodeGroups, createAudioNodeGroup, getNextTrack, MediaElementComponent } from './MediaComponent'
@@ -22,7 +23,7 @@ import { UVOL2Component } from './UVOL2Component'
 
 export function handleAutoplay(audioContext: AudioContext, media: HTMLMediaElement, entity: Entity) {
   const attachEventListeners = () => {
-    const canvas = getComponent(Engine.instance.viewerEntity, RendererComponent).canvas!
+    const canvas = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).canvas!
     const playMedia = () => {
       media.play()
       audioContext.resume()

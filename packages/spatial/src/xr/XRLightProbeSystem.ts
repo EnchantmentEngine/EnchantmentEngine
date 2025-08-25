@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Color, CubeTexture, LightProbe, Vector3, WebGLCubeRenderTarget, WebGLRenderer } from 'three'
 
-import { Engine, createEntity } from '@ir-engine/ecs'
+import { createEntity } from '@ir-engine/ecs'
 import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -58,7 +58,8 @@ const updateReflection = () => {
 
   if (!xrLightProbeState.environment || !xrLightProbeState.xrWebGLBinding || !xrLightProbeState.probe) return
 
-  const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer! as WebGLRenderer
+  const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+    .renderer! as WebGLRenderer
   const textureProperties = renderer.properties.get(xrLightProbeState.environment) as any
 
   if (textureProperties) {

@@ -2,7 +2,7 @@ import { AnimationClip, AnimationMixer, Object3D, Vector3 } from 'three'
 
 import {
   createEntity,
-  Engine,
+  EngineState,
   Entity,
   EntityTreeComponent,
   EntityUUID,
@@ -25,7 +25,8 @@ import {
 } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { isClient } from '@ir-engine/hyperflux'
+import { getState, isClient } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
@@ -75,7 +76,7 @@ export const spawnAvatarReceptor = (entityUUID: EntityUUID) => {
     enabledRotations: [false, true, false]
   })
 
-  if (ownerID === Engine.instance.userID) {
+  if (ownerID === getState(EngineState).userID) {
     createAvatarController(entity)
   }
 
@@ -111,7 +112,7 @@ export const setAvatarColliderTransform = (entity: Entity) => {
     return
   }
   const colliderEntity = avatarCollider.colliderEntity
-  const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   const avatarRadius = eyeOffset + camera.near
   const avatarComponent = getComponent(entity, AvatarComponent)
   const halfHeight = avatarComponent.avatarHeight * 0.5
@@ -130,7 +131,7 @@ export const createAvatarController = (entity: Entity) => {
   let targetTheta = (cameraForward.angleTo(avatarForward) * 180) / Math.PI
   const orientation = cameraForward.x * avatarForward.z - cameraForward.z * avatarForward.x
   if (orientation > 0) targetTheta = 2 * Math.PI - targetTheta
-  setTargetCameraRotation(Engine.instance.cameraEntity, 0, targetTheta, 0.01)
+  setTargetCameraRotation(getState(ReferenceSpaceState).viewerEntity, 0, targetTheta, 0.01)
 
   setComponent(entity, AvatarControllerComponent)
 }

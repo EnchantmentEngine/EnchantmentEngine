@@ -191,7 +191,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
   useLayoutEffect(() => {
     const entity = UUIDComponent.getEntityByUUID(props.uuid)
-    if (state.ownerId.value === Engine.instance.userID) setComponent(entity, NetworkObjectOwnedTag)
+    if (state.ownerId.value === getState(EngineState).userID) setComponent(entity, NetworkObjectOwnedTag)
     else removeComponent(entity, NetworkObjectOwnedTag)
   }, [state.ownerId.value])
 

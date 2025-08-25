@@ -13,7 +13,6 @@ import {
   useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { getMutableState, getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
@@ -69,7 +68,7 @@ export const AvatarControllerComponent = defineComponent({
     const avatarControllerComponent = useComponent(entity, AvatarControllerComponent)
     const shouldCameraAttachToController = XRState.useCameraAttachedToAvatar()
     const hasSession = !!useMutableState(XRState).session.value
-    const camera = useComponent(Engine.instance.cameraEntity, CameraComponent)
+    const camera = useComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const world = Physics.useWorld(entity)
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
     const cameraHasTargetRotation = useHasComponent(

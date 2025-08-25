@@ -14,14 +14,7 @@ import {
   Vector3
 } from 'three'
 
-import {
-  AnimationSystemGroup,
-  createEntity,
-  Engine,
-  removeEntity,
-  useEntityContext,
-  UUIDComponent
-} from '@ir-engine/ecs'
+import { AnimationSystemGroup, createEntity, removeEntity, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   getOptionalComponent,
@@ -120,7 +113,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
     let csmShadowNode: CSMShadowNode | undefined
 
     if (useWebGPU) {
-      const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+      const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
       //will update
       csmShadowNode = new CSMShadowNode(directionalLight, {
         cascades: 4,
@@ -335,7 +328,7 @@ const DropShadowReactor = () => {
     const shadowEntity = createEntity()
     setComponent(shadowEntity, MeshComponent, new Mesh(_shadowGeometry.clone(), _shadowMaterial.clone()))
     ObjectLayerMaskComponent.setLayer(shadowEntity, ObjectLayers.Avatar)
-    setComponent(shadowEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    setComponent(shadowEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
     setComponent(
       shadowEntity,
       NameComponent,

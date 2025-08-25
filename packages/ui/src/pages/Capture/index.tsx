@@ -49,6 +49,7 @@ import RecordingsList from '@ir-engine/ui/src/components/tailwind/RecordingList'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
 import Video from '@ir-engine/ui/src/primitives/tailwind/Video'
 
+import { EngineState } from '@ir-engine/ecs'
 import { Slider } from '../../../editor'
 import Button from '../../primitives/tailwind/Button'
 
@@ -75,14 +76,14 @@ export const startPlayback = async (recordingID: RecordingID, twin = true, fromS
   // // Server playback
   // PlaybackState.startPlayback({
   //   recordingID,
-  //   targetUser: twin ? undefined : Engine.instance.userID
+  //   targetUser: twin ? undefined : getState(EngineState).userID
   // })
 
   // Client Playback
   dispatchAction(
     ECSRecordingActions.startPlayback({
       recordingID,
-      targetUser: Engine.instance.userID,
+      targetUser: getState(EngineState).userID,
       autoplay: false
     })
   )
