@@ -12,9 +12,11 @@ import {
   PeerID,
   dispatchAction,
   getMutableState,
+  getState,
   none
 } from '@ir-engine/hyperflux'
 
+import { EngineState } from '@ir-engine/ecs'
 import { SocketWebRTCServerNetwork } from './SocketWebRTCServerFunctions'
 
 export const lastSeen = new Map<PeerID, number>()
