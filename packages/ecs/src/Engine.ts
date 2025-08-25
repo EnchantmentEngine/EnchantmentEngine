@@ -13,9 +13,9 @@ import { EntitiesBySourceStores, EntitiesByUUIDStores } from './UUIDComponent'
 
 globalThis.HyperStore = HyperFlux.store
 
-export function createEngine(store?: HyperStore) {
+export function createEngine() {
   if (HyperFlux.store) throw new Error('Store already exists')
-  const hyperstore = store ?? createHyperStore()
+  const hyperstore = createHyperStore()
   hyperstore.getCurrentReactorRoot = () =>
     getState(SystemState).activeSystemReactors.get(getState(SystemState).currentSystemUUID)
   hyperstore.getDispatchTime = () => getState(ECSState).simulationTime
