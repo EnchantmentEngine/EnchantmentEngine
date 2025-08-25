@@ -1,11 +1,4 @@
-import {
-  defineSystem,
-  Engine,
-  Entity,
-  EntityTreeComponent,
-  PresentationSystemGroup,
-  QueryReactor
-} from '@ir-engine/ecs'
+import { defineSystem, Entity, EntityTreeComponent, PresentationSystemGroup, QueryReactor } from '@ir-engine/ecs'
 import {
   getOptionalComponent,
   Layers,
@@ -49,7 +42,7 @@ const PoiReactor = () => {
   useEffect(() => {
     const xrui = createPoiUI(entity)
     setComponent(xrui.entity, EntityTreeComponent, {
-      parentEntity: Engine.instance.originEntity
+      parentEntity: getState(ReferenceSpaceState).originEntity
     })
 
     const { viewerEntity } = getState(ReferenceSpaceState)
@@ -75,7 +68,7 @@ const PoiReactor = () => {
 export const createPoiUI = (entity: Entity, aspectRatio: number = 1) => {
   const PoiUi = () => <PoiUiView entity={entity} />
   const ui = createXRUI(PoiUi, null, { interactable: false })
-  setComponent(ui.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+  setComponent(ui.entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(ui.entity, NameComponent, 'poi-ui-' + entity)
   return ui
 }

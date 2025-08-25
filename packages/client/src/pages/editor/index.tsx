@@ -13,9 +13,9 @@ import { LoadWebappInjection } from '@ir-engine/client-core/src/components/LoadW
 import { Authenticate } from '@ir-engine/client-core/src/user/services/Authenticate'
 import { useFind } from '@ir-engine/common'
 import { ScopeType, scopePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine, EngineState } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { EditorPage } from '@ir-engine/editor/src/pages/EditorPage'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { Route, Routes, useLocation } from 'react-router-dom'
 
@@ -23,7 +23,7 @@ export const EditorRouter = () => {
   const location = useLocation()
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'editor:write' as ScopeType
     }
   })

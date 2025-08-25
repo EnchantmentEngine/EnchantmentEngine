@@ -2,8 +2,8 @@ import { Suspense, useEffect } from 'react'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { InstanceID, projectsPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
 import {
+  HyperFlux,
   Network,
   NetworkActions,
   NetworkState,
@@ -73,7 +73,7 @@ export const useNetwork = (props: { online?: boolean }) => {
   useEffect(() => {
     if (props.online || !userID) return
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const peerIndex = 1
     const networkID = userID as any as InstanceID
 
@@ -90,7 +90,7 @@ export const useNetwork = (props: { online?: boolean }) => {
       NetworkActions.peerJoined({
         $network: networkID,
         $topic: network.topic,
-        $to: Engine.instance.store.peerID,
+        $to: HyperFlux.store.peerID,
         peerID,
         peerIndex,
         userID
@@ -102,7 +102,7 @@ export const useNetwork = (props: { online?: boolean }) => {
         NetworkActions.peerLeft({
           $network: networkID,
           $topic: network.topic,
-          $to: Engine.instance.store.peerID,
+          $to: HyperFlux.store.peerID,
           peerID,
           userID
         })

@@ -4,7 +4,6 @@ import {
   defineComponent,
   defineQuery,
   destroyEngine,
-  Engine,
   EngineState,
   entityExists,
   EntityID,
@@ -17,7 +16,7 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { applyIncomingActions, getMutableState, getState, Schema, UserID } from '@ir-engine/hyperflux'
+import { applyIncomingActions, getMutableState, getState, HyperFlux, Schema, UserID } from '@ir-engine/hyperflux'
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -752,7 +751,7 @@ describe('AuthoringState', () => {
     it('should do nothing when no entities are provided', () => {
       AuthoringState.snapshotEntities([])
 
-      const actions = Engine.instance.store.actions.history
+      const actions = HyperFlux.store.actions.history
       expect(actions).toHaveLength(0)
     })
 
@@ -768,7 +767,7 @@ describe('AuthoringState', () => {
 
       AuthoringState.snapshotEntities([entity])
 
-      const actions = Engine.instance.store.actions.incoming
+      const actions = HyperFlux.store.actions.incoming
       expect(actions).toHaveLength(1)
       const action = actions[0] as typeof AuthoringActions.ops.matches._TYPE
       expect(action.type).toBe(AuthoringActions.ops.type)
@@ -800,7 +799,7 @@ describe('AuthoringState', () => {
 
       AuthoringState.snapshotEntities([entity1, entity2])
 
-      const actions = Engine.instance.store.actions.incoming
+      const actions = HyperFlux.store.actions.incoming
       expect(actions).toHaveLength(1)
       const action = actions[0] as typeof AuthoringActions.ops.matches._TYPE
       expect(action.type).toBe(AuthoringActions.ops.type)

@@ -18,10 +18,11 @@ import {
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
+import { getState } from '@ir-engine/hyperflux'
 import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
 import WebGPUBackend from 'three/src/renderers/webgpu/WebGPUBackend.js'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { NameComponent } from '../../common/NameComponent'
 import { Vector3_Zero } from '../../common/constants/MathConstants'
@@ -130,7 +131,7 @@ function createLight(i: number, rendererEntity: Entity, sourceLight?: Directiona
   setComponent(lightEntity, NameComponent, 'CSM light ' + i)
   setComponent(lightEntity, VisibleComponent)
   setComponent(lightEntity, TransformComponent)
-  setComponent(lightEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+  setComponent(lightEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(lightEntity, ObjectComponent, light)
 
   csm.lightEntities.push(lightEntity)
@@ -141,7 +142,7 @@ function createLight(i: number, rendererEntity: Entity, sourceLight?: Directiona
 }
 
 function createLights(sourceLight?: DirectionalLight, rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const csm = getComponent(entity, CSMComponent)
 
   /**@todo why aren't these being cleared after the component is ostensibly removed and reset??? */
@@ -166,10 +167,10 @@ function createLights(sourceLight?: DirectionalLight, rendererEntity?: Entity): 
 }
 
 function initCascades(rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const csm = getComponent(entity, CSMComponent)
 
-  const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   camera.updateProjectionMatrix()
 
   const mainFrustum = new Frustum()
@@ -189,10 +190,10 @@ function initCascades(rendererEntity?: Entity): void {
 }
 
 function updateShadowBounds(rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const csm = getComponent(entity, CSMComponent)
   const frustums = csm.frustums
-  const c = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const c = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   const csmShadowNode = (csm as any).csmShadowNode
   // try {
   //   if (csmShadowNode) {
@@ -227,7 +228,7 @@ function updateShadowBounds(rendererEntity?: Entity): void {
     let squaredBBWidth = point1.distanceTo(point2)
     if (csm.fade) {
       // expand the shadow extents by the fade margin if fade is enabled.
-      const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+      const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
       const far = Math.max(camera.far, csm.maxFar)
       const linearDepth = frustum.vertices.far[0].z / (far - camera.near)
       const margin = 0.25 * Math.pow(linearDepth, 2.0) * (far - camera.near)
@@ -249,11 +250,11 @@ function updateShadowBounds(rendererEntity?: Entity): void {
 }
 
 function getBreaks(rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const csm = getComponent(entity, CSMComponent)
   const mutableCsm = getComponent(entity, CSMComponent)
 
-  const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   const far = Math.min(camera.far, csm.maxFar)
 
   // Create a new breaks array
@@ -306,7 +307,7 @@ function updateCSM(rendererEntity: Entity): void {
     mutableCsm.needsUpdate = false
   }
 
-  const camera = getComponent(Engine.instance.cameraEntity, TransformComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
   const frustums = csm.frustums
 
   for (let i = 0; i < frustums.length; i++) {
@@ -350,7 +351,7 @@ function updateCSM(rendererEntity: Entity): void {
 }
 
 function injectInclude(rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
 
   // if (entity) {
   //   console.warn('CSM: Current renderer does not support Cascaded Shadow Maps')
@@ -366,7 +367,7 @@ function injectInclude(rendererEntity?: Entity): void {
 }
 
 function removeInclude(rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
 
   if (supportsShaderChunkInjection(entity)) {
     ShaderChunk.lights_fragment_begin = originalLightsFragmentBegin
@@ -375,10 +376,10 @@ function removeInclude(rendererEntity?: Entity): void {
 }
 
 function updateUniforms(rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const csm = getComponent(entity, CSMComponent)
 
-  const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   const far = Math.min(camera.far, csm.maxFar)
 
   const updatedShaders = { ...csm.shaders }
@@ -416,7 +417,7 @@ function updateUniforms(rendererEntity?: Entity): void {
 }
 
 function getExtendedBreaks(target: Vector2[], rendererEntity?: Entity): Vector2[] {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const csm = getComponent(entity, CSMComponent)
 
   while (target.length < csm.breaks.length) {
@@ -500,7 +501,7 @@ const CSMDefaults = Object.freeze({
 })
 
 function validateCSMParams(params: CSMParams, rendererEntity?: Entity): CSMParams {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const validatedParams = { ...params }
 
   if (validatedParams.cascades) {
@@ -517,7 +518,7 @@ function validateCSMParams(params: CSMParams, rendererEntity?: Entity): CSMParam
 }
 
 function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
 
   const validatedParams = validateCSMParams(params, entity)
 
@@ -558,7 +559,7 @@ function initCSM(params: CSMParams = {}, rendererEntity?: Entity): void {
 }
 
 function updateProperty(key: string, value: any, rendererEntity?: Entity): void {
-  const entity = rendererEntity || Engine.instance.viewerEntity
+  const entity = rendererEntity || getState(ReferenceSpaceState).viewerEntity
   const csm = getComponent(entity, CSMComponent)
 
   const props = key.split('.')

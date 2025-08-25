@@ -18,7 +18,6 @@ import {
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -68,10 +67,10 @@ export const renderAvatarContextMenu = (userId: UserID, contextMenuEntity: Entit
   const userTransform = getOptionalComponent(userEntity, TransformComponent)
   if (!userTransform) return
 
-  const cameraPosition = getComponent(Engine.instance.cameraEntity, TransformComponent).position
+  const cameraPosition = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).position
   const { avatarHeight } = getComponent(userEntity, AvatarComponent)
 
-  const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
+  const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
 
   contextMenuXRUI.scale.setScalar(Math.max(1, cameraPosition.distanceTo(userTransform.position) / 3))
   contextMenuXRUI.position.copy(userTransform.position)
@@ -100,12 +99,12 @@ const raycastComponentData = {
 const onSecondaryClick = () => {
   const physicsWorld = Physics.getWorld(AvatarComponent.getSelfAvatarEntity())
   if (!physicsWorld) return
-  const inputPointerEntity = InputPointerComponent.getPointersForCamera(Engine.instance.viewerEntity)[0]
+  const inputPointerEntity = InputPointerComponent.getPointersForCamera(getState(ReferenceSpaceState).viewerEntity)[0]
   if (!inputPointerEntity) return
   const pointerPosition = getComponent(inputPointerEntity, InputPointerComponent).position
   const hits = Physics.castRayFromCamera(
     physicsWorld,
-    getComponent(Engine.instance.cameraEntity, CameraComponent),
+    getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent),
     pointerPosition,
     raycastComponentData
   )

@@ -8,7 +8,6 @@ import { Cache } from 'three'
 import { API } from '@ir-engine/common'
 import { avatarPath, staticResourcePath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import {
-  Engine,
   EngineState,
   Entity,
   EntityID,
@@ -27,6 +26,7 @@ import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/S
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import {
   EventDispatcher,
+  HyperFlux,
   NetworkActions,
   NetworkState,
   NetworkTopics,
@@ -148,7 +148,7 @@ describe('AvatarSpawnSystem', async () => {
 
     createMockNetwork(NetworkTopics.world)
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     getMutableState(EngineState).userID.set(userID)
 
     const network = NetworkState.worldNetwork
@@ -182,7 +182,7 @@ describe('AvatarSpawnSystem', async () => {
     applyIncomingActions()
 
     // should have spawn action
-    const spawnAction = Engine.instance.store.actions.history.findLast((action) =>
+    const spawnAction = HyperFlux.store.actions.history.findLast((action) =>
       AvatarNetworkAction.spawn.matches.test(action)
     ) as typeof AvatarNetworkAction.spawn.matches._TYPE
     assert.ok(spawnAction)
@@ -194,7 +194,7 @@ describe('AvatarSpawnSystem', async () => {
     assert.equal(spawnAction.entityID, 'avatar')
     assert.equal(spawnAction.entitySourceID, userID as string)
 
-    const avatarURLAction = Engine.instance.store.actions.history.findLast((action) =>
+    const avatarURLAction = HyperFlux.store.actions.history.findLast((action) =>
       AvatarNetworkAction.setAvatarURL.matches.test(action)
     ) as typeof AvatarNetworkAction.setAvatarURL.matches._TYPE
     assert.ok(avatarURLAction)
@@ -216,11 +216,11 @@ describe('AvatarSpawnSystem', async () => {
     applyIncomingActions()
 
     // should have spectate action
-    const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
+    const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
       SpectateActions.spectateEntity.matches.test(action)
     ) as typeof SpectateActions.spectateEntity.matches._TYPE
     assert.ok(spectateAction)
-    assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+    assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
     assert.equal(spectateAction.spectatingEntity, '')
   })
 
@@ -238,11 +238,11 @@ describe('AvatarSpawnSystem', async () => {
       applyIncomingActions()
 
       // should have spectate action
-      const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
+      const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
         SpectateActions.spectateEntity.matches.test(action)
       ) as typeof SpectateActions.spectateEntity.matches._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, otherUserID)
     })
   })
@@ -261,11 +261,11 @@ describe('AvatarSpawnSystem', async () => {
       applyIncomingActions()
 
       // should have spectate action
-      const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
+      const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
         SpectateActions.spectateEntity.matches.test(action)
       ) as typeof SpectateActions.spectateEntity.matches._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, spectateUUID)
     })
   })

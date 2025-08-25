@@ -1,5 +1,6 @@
-import { Engine, Entity, getChildrenWithComponents, getComponent, setComponent } from '@ir-engine/ecs'
+import { Entity, getChildrenWithComponents, getComponent, setComponent } from '@ir-engine/ecs'
 import { ImmutableArray, getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
@@ -629,7 +630,7 @@ interface HandleAutoplayProps {
 
 export const handleMediaAutoplay = ({ audioContext, media, entity }: HandleAutoplayProps) => {
   const attachEventListeners = () => {
-    const canvas = getComponent(Engine.instance.viewerEntity, RendererComponent).canvas!
+    const canvas = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).canvas!
     const playMedia = () => {
       media.play()
       audioContext.resume()

@@ -8,7 +8,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { WidgetAppActions } from './WidgetAppService'
 
 import {
-  Engine,
+  EngineState,
   EntityNetworkState,
   EntityTreeComponent,
   EntityUUID,
@@ -37,7 +37,7 @@ export function createAvatarModeWidget() {
       const currentParent = getComponent(avatarEntity, EntityTreeComponent).parentEntity
       if (currentParent === getState(ReferenceSpaceState).localFloorEntity) {
         getMutableState(XRState).avatarCameraMode.set('auto')
-        const uuid = Engine.instance.userID as any as EntityUUID
+        const uuid = getState(EngineState).userID as any as EntityUUID
         const parentUUID = getState(EntityNetworkState)[uuid].parentUUID
         const parentEntity = UUIDComponent.getEntityByUUID(parentUUID)
         setComponent(avatarEntity, EntityTreeComponent, { parentEntity })

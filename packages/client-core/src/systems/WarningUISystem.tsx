@@ -5,11 +5,11 @@ import { MeshBasicMaterial } from 'three'
 import { removeEntity } from '@ir-engine/ecs'
 import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
@@ -179,9 +179,9 @@ const execute = () => {
 
   if (transition.state === 'IN') {
     setComponent(ui.entity, ComputedTransformComponent, {
-      referenceEntities: [Engine.instance.viewerEntity],
+      referenceEntities: [getState(ReferenceSpaceState).viewerEntity],
       computeFunction: () => {
-        const camera = getComponent(Engine.instance.viewerEntity, CameraComponent)
+        const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
         const distance = camera.near * 1.1 // 10% in front of camera
         ObjectFitFunctions.attachObjectInFrontOfCamera(ui.entity, 0.3, distance)
       }

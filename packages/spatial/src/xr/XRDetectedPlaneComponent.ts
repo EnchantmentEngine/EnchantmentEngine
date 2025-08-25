@@ -4,7 +4,6 @@ import { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, ShadowMateria
 import {
   createEntity,
   defineComponent,
-  Engine,
   Entity,
   EntityTreeComponent,
   getComponent,
@@ -17,6 +16,7 @@ import {
 import { getState, Schema } from '@ir-engine/hyperflux'
 
 import { NameComponent } from '../common/NameComponent'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { MeshComponent } from '../renderer/components/MeshComponent'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -132,7 +132,7 @@ export const XRDetectedPlaneComponent = defineComponent({
       return state.detectedPlanesMap.get(plane)!
     }
     const entity = createEntity()
-    setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     setComponent(entity, TransformComponent)
     setVisibleComponent(entity, true)
     setComponent(entity, XRDetectedPlaneComponent, { plane })

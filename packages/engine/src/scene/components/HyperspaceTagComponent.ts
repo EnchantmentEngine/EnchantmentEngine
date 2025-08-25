@@ -32,7 +32,6 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
@@ -50,6 +49,7 @@ import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLa
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
@@ -190,8 +190,8 @@ export const HyperspaceTagComponent = defineComponent({
       // TODO: add BPCEM of old and new scenes and fade them in and out too
       transition.setState('IN')
 
-      const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
-      const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
+      const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
       camera.layers.enable(ObjectLayers.Portal)
       camera.zoom = 1.5
 
@@ -223,8 +223,8 @@ export const HyperspaceTagComponent = defineComponent({
         const { transition } = getComponent(entity, HyperspaceTagComponent)
 
         const hyperspaceEffect = getComponent(hyperspaceEffectEntity, ObjectComponent) as any as PortalEffect
-        const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
-        const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+        const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
+        const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
         const ecsState = getState(ECSState)
 
         if (transition.alpha >= 1 && transition.state === 'IN') {

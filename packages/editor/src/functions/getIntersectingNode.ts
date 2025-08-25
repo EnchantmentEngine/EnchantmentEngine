@@ -2,7 +2,6 @@ import { Camera, Intersection, Mesh, Object3D, Raycaster, Vector2 } from 'three'
 
 import { defineQuery } from '@ir-engine/ecs'
 import { getComponent, hasComponent, Layers } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -10,6 +9,7 @@ import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshCo
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { SelectionState } from '../services/SelectionServices'
 
@@ -55,7 +55,7 @@ export const getIntersectingNodeOnScreen = (
   raycaster: Raycaster,
   coord: Vector2,
   target: Intersection<Object3D>[] = [],
-  camera: Camera = getComponent(Engine.instance.cameraEntity, CameraComponent),
+  camera: Camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent),
   object?: Object3D,
   recursive = true
 ): RaycastIntersectionNode | undefined => {

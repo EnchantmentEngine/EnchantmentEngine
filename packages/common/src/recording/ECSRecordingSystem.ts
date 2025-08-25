@@ -14,7 +14,7 @@ import { checkScope } from '@ir-engine/common/src/utils/checkScope'
 import {
   defineSystem,
   ECSState,
-  Engine,
+  EngineState,
   EntityUUID,
   NetworkSchemaState,
   PresentationSystemGroup,
@@ -590,7 +590,8 @@ export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActi
       for (let i = 0; i < entityChunks[chunkIndex].entities.length; i++) {
         const uuid = entityChunks[chunkIndex].entities[i]
         // override entity ID such that it is actually unique, by appendig the recording id
-        const entityID = ((isClone ? uuid + '_' + recording.id : uuid) ?? Engine.instance.userID) as UserID & EntityUUID
+        const entityID = ((isClone ? uuid + '_' + recording.id : uuid) ?? getState(EngineState).userID) as UserID &
+          EntityUUID
         entityChunks[chunkIndex].entities[i] = entityID
         api
           .service(userPath)
@@ -810,7 +811,7 @@ const execute = () => {
         const encodedData = encode(frame.data)
 
         /** PeerID must be the original peerID if server playback, otherwise it is our peerID */
-        const peerID = isClient ? Engine.instance.store.peerID : chunks.fromPeerID
+        const peerID = isClient ? HyperFlux.store.peerID : chunks.fromPeerID
         if (isClient) {
           const dataChannelFunctions = getState(DataChannelRegistryState)[dataChannel]
           if (dataChannelFunctions) {

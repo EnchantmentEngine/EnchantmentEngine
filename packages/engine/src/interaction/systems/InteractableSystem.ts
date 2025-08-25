@@ -55,7 +55,7 @@ export const InteractableSystem = defineSystem({
 // const executeInput = () => {
 //   if (getState(EngineState).isEditing) return
 
-//   const inputPointerEntity = InputPointerComponent.getPointerForCanvas(Engine.instance.viewerEntity)
+//   const inputPointerEntity = InputPointerComponent.getPointerForCanvas(getState(ReferenceSpaceState).viewerEntity)
 //   if (!inputPointerEntity) return
 
 //   const buttons = InputSourceComponent.getMergedButtons()

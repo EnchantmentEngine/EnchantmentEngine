@@ -9,7 +9,7 @@ import studioIconDark from '@ir-engine/client/src/assets/studio-icon-dark.svg'
 import studioIconLight from '@ir-engine/client/src/assets/studio-icon-light.svg'
 import { useFind } from '@ir-engine/common'
 import { ScopeType, locationPath, scopePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, DropdownItem } from '@ir-engine/ui'
@@ -165,7 +165,7 @@ export default function Toolbar() {
 
   const locationScopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'location:write' as ScopeType
     }
   })

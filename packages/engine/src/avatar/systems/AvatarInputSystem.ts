@@ -9,7 +9,6 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
@@ -33,6 +32,7 @@ import { applyInputSourcePoseToIKTargets } from '../functions/applyInputSourcePo
 import { setIkFootTarget } from '../functions/avatarFootHeuristics'
 
 import { EngineState, Entity } from '@ir-engine/ecs'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { getThumbstickOrThumbpadAxes } from '@ir-engine/spatial/src/input/functions/getThumbstickOrThumbpadAxes'
 
@@ -101,7 +101,7 @@ const onShiftLeft = () => {
 // const isAvatarClicked = () => {
 //   const pointerState = getState(InputState).pointerState
 //   const hits = Physics.castRayFromCamera(
-//     getComponent(Engine.instance.cameraEntity, CameraComponent),
+//     getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent),
 //     pointerState.position,
 //     getState(PhysicsState).physicsWorld,
 //     raycastComponentData
@@ -126,7 +126,7 @@ const onShiftLeft = () => {
 // TODO: this should be done using the input system components,
 // which already performs raycasts and has the necessary data
 const getAvatarDoubleClick = (buttons): boolean => {
-  // const followComponent = getOptionalComponent(Engine.instance.cameraEntity, FollowCameraComponent)
+  // const followComponent = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, FollowCameraComponent)
   // if (followComponent && followComponent.zoomLevel < 1) return false
 
   // if (buttons.PrimaryClick?.up) {
@@ -209,7 +209,7 @@ const execute = () => {
 
   controller.gamepadLocalInput.set(0, 0, 0)
 
-  const viewerEntity = Engine.instance.viewerEntity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
 
   const inputPointerEntity = InputPointerComponent.getPointersForCamera(viewerEntity)[0]
 

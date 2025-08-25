@@ -15,7 +15,6 @@ import {
 } from 'three'
 
 import {
-  Engine,
   Entity,
   QueryReactor,
   UUIDComponent,
@@ -185,7 +184,7 @@ const useVisibleVertexCount = () => {
 }
 
 const getRendererInfo = () => {
-  const viewer = Engine?.instance?.viewerEntity as Entity | undefined
+  const viewer = getState(ReferenceSpaceState).viewerEntity
   if (!viewer) return {}
   const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer as WebGLRenderer | undefined
   if (!renderer) return {}

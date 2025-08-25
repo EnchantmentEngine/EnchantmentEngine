@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 
 import { useFind, useMutation } from '@ir-engine/common'
 import { ChannelID, messagePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
+import { EngineState } from '@ir-engine/ecs'
 import { Input } from '@ir-engine/ui'
 import { ArrowLeftLg, Send01Lg } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
@@ -19,7 +19,7 @@ import FriendsMenu from './FriendsMenu'
 const MessagesMenu = (props: { channelID: ChannelID; name: string }): JSX.Element => {
   const { t } = useTranslation()
 
-  const userThumbnail = useUserAvatarThumbnail(Engine.instance.userID)
+  const userThumbnail = useUserAvatarThumbnail(getState(EngineState).userID)
 
   const { data: messages } = useFind(messagePath, {
     query: {
@@ -184,7 +184,8 @@ const MessagesMenu = (props: { channelID: ChannelID; name: string }): JSX.Elemen
           }}
         >
           {messages.map((message, index) => {
-            if (message.sender?.id === Engine.instance.userID) return <SelfMessage key={index} message={message} />
+            if (message.sender?.id === getState(EngineState).userID)
+              return <SelfMessage key={index} message={message} />
             else return <OtherMessage key={index} message={message} />
           })}
         </div>

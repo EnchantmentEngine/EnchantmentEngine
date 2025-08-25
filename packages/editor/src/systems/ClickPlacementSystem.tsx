@@ -1,7 +1,6 @@
 import { Ray } from '@dimforge/rapier3d-compat'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import {
-  Engine,
   Entity,
   EntityTreeComponent,
   UUIDComponent,
@@ -19,7 +18,7 @@ import { AssetExt, FileToAssetExt } from '@ir-engine/spatial/src/resources/Asset
 
 import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
 import { NO_PROXY, defineState, getMutableState, getState, useHookstate, useState } from '@ir-engine/hyperflux'
-import { TransformComponent } from '@ir-engine/spatial'
+import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
@@ -260,13 +259,13 @@ export const ClickPlacementSystem = defineSystem({
       !!obj && sceneObjects.push(obj)
     }
     //const sceneObjects = Array.from(Engine.instance.objectLayerList[ObjectLayers.Scene] || [])
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const pointerScreenRaycaster = new Raycaster()
 
     let intersectEntity: Entity = UndefinedEntity
     let targetIntersection: { point: Vector3; normal: Vector3 } | null = null
 
-    const viewerEntity = Engine.instance.viewerEntity
+    const viewerEntity = getState(ReferenceSpaceState).viewerEntity
     const mouseEntity = InputPointerComponent.getPointersForCamera(viewerEntity)[0]
     if (!mouseEntity) return
 
