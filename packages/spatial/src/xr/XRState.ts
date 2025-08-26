@@ -1,20 +1,9 @@
 import { Quaternion, Vector3 } from 'three'
-import matches from 'ts-matches'
 
-import { defineAction, defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { UndefinedEntity } from '@ir-engine/ecs'
 import { DepthDataTexture } from './DepthDataTexture'
-
-export class XRAction {
-  // todo, support more haptic formats other than just vibrating controllers
-  static vibrateController = defineAction({
-    type: 'xre.xr.vibrateController',
-    handedness: matches.literals('left', 'right'),
-    value: matches.number,
-    duration: matches.number
-  })
-}
 
 // TODO: divide this up into the systems that manage these states
 export const XRState = defineState({

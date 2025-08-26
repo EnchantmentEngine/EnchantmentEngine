@@ -31,11 +31,12 @@ import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/In
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { ReferenceSpace, XRAction, XRState } from '@ir-engine/spatial/src/xr/XRState'
+import { ReferenceSpace, XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
+import { XRHaptics } from '@ir-engine/spatial/src/xr/XRHapticsFunctions'
 import { AvatarTeleportComponent } from '.././components/AvatarTeleportComponent'
 import { teleportAvatar } from '.././functions/moveAvatar'
 import { AvatarComponent } from '../components/AvatarComponent'
@@ -142,8 +143,8 @@ const execute = () => {
       fadeBackInAccumulator = -1
       teleportAvatar(selfAvatarEntity, getComponent(guideCursorEntity, TransformComponent).position)
       dispatchAction(CameraActions.fadeToBlack({ in: false }))
-      dispatchAction(XRAction.vibrateController({ handedness: 'left', value: 0.5, duration: 100 }))
-      dispatchAction(XRAction.vibrateController({ handedness: 'right', value: 0.5, duration: 100 }))
+      XRHaptics.playEffect('left', 0.5, 100)
+      XRHaptics.playEffect('right', 0.5, 100)
     }
   }
   for (const entity of avatarTeleportQuery.exit()) {

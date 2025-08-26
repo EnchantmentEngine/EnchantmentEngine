@@ -6,7 +6,7 @@ import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 import { DepthDataTexture } from './DepthDataTexture'
 import { onSessionEnd } from './XRSessionFunctions'
-import { ReferenceSpace, XRAction, XRState } from './XRState'
+import { ReferenceSpace, XRState } from './XRState'
 
 type SessionModes = 'inline' | 'immersive-ar' | 'immersive-vr' | 'none'
 const SessionMode = {
@@ -48,14 +48,6 @@ const XRStateDefaults: typeof XRState._TYPE = {
 beforeAll(() => {
   new CustomWebXRPolyfill()
 })
-
-describe('XRAction', () => {
-  describe('vibrateController', () => {
-    it('should initialize the .name field with the expected value', () => {
-      expect(XRAction.vibrateController.type).toBe('xre.xr.vibrateController')
-    })
-  }) //:: XRAction.vibrateController
-}) //:: XRAction
 
 describe('XRState', () => {
   describe('Fields', () => {
