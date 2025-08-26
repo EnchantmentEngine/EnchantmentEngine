@@ -127,8 +127,8 @@ let fadeBackInAccumulator = -1
 let visibleSegments = 2
 
 const execute = () => {
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
-  if (!isCameraAttachedToAvatar) return
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
+  if (!shouldViewerFollowController) return
   const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
 
   const { guideCursor, transition, guideline, guidelineEntity, guideCursorEntity, lineMaterial } =
@@ -237,7 +237,7 @@ const execute = () => {
 }
 
 const reactor = () => {
-  const cameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
+  const cameraAttachedToAvatar = XRState.useShouldViewerFollowController()
 
   useEffect(() => {
     if (!cameraAttachedToAvatar) return

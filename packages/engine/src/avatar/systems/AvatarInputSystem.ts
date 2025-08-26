@@ -177,12 +177,12 @@ const execute = () => {
   if (!controller) return
 
   const xrState = getState(XRState)
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
   const isMovementControlsEnabled = XRState.isMovementControlsEnabled
 
   if (!isMovementControlsEnabled) return
 
-  if (!isCameraAttachedToAvatar && !getState(XRState).session) {
+  if (!shouldViewerFollowController && !getState(XRState).session) {
     const firstWalkableEntityWithInput = walkableQuery().find(findWalkableWithInput)
 
     if (firstWalkableEntityWithInput) {
@@ -222,7 +222,7 @@ const execute = () => {
   const gamepadJump = buttons[StandardGamepadButton.StandardGamepadButtonA]?.down
 
   //** touch input (only for avatar jump)*/
-  const doubleClicked = isCameraAttachedToAvatar ? false : getAvatarDoubleClick(buttons)
+  const doubleClicked = shouldViewerFollowController ? false : getAvatarDoubleClick(buttons)
   /** keyboard input */
   const keyDeltaX =
     (buttons.KeyA?.pressed ? -1 : 0) +
@@ -248,7 +248,7 @@ const execute = () => {
     if (hasComponent(eid, InputPointerComponent)) continue
     const inputSource = getComponent(eid, InputSourceComponent)
     const controlScheme =
-      !isCameraAttachedToAvatar || inputSource.source.handedness === 'none'
+      !shouldViewerFollowController || inputSource.source.handedness === 'none'
         ? AvatarAxesControlScheme.Move
         : inputSource.source.handedness === inputState.preferredHand
         ? avatarInputSettings.rightAxesControlScheme

@@ -42,7 +42,7 @@ const execute = () => {
     ]
   })
   const killableEntities = heightKillApplicableQuery()
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
 
   for (const entity of killableEntities) {
     const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
@@ -61,7 +61,7 @@ const execute = () => {
       })
       TransformComponent.dirty[entity] = 1
 
-      if (!isCameraAttachedToAvatar) continue
+      if (!shouldViewerFollowController) continue
 
       //@TODO see if we can implicitly update the reference space when the avatar teleports
       updateReferenceSpaceFromAvatarMovement(
