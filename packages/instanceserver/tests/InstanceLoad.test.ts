@@ -81,9 +81,9 @@ describe('InstanceLoad', () => {
 
     const peerID = uuidv4() as PeerID
 
-    const skyStationScene = await app.service(locationPath).find({
+    const testScene = await app.service(locationPath).find({
       query: {
-        slugifiedName: 'sky-station'
+        slugifiedName: 'test'
       }
     })
 
@@ -92,7 +92,7 @@ describe('InstanceLoad', () => {
 
     const instance = await app.service(instancePath).create({
       ipAddress: `${localIp}:3031`,
-      locationId: skyStationScene.data[0].id,
+      locationId: testScene.data[0].id,
       assigned: false,
       assignedAt: toDateTimeSql(new Date()),
       roomCode: '' as RoomCode
@@ -104,7 +104,7 @@ describe('InstanceLoad', () => {
       socketQuery: {
         peerID,
         token: createdIdentityProvider.accessToken,
-        locationId: skyStationScene.data[0].id,
+        locationId: testScene.data[0].id,
         instanceID: '',
         channelId: '',
         roomCode: '',
@@ -120,7 +120,7 @@ describe('InstanceLoad', () => {
 
     await loadLocation(query)
 
-    const scene = await app.service(staticResourcePath).get(skyStationScene.data[0].sceneId)
+    const scene = await app.service(staticResourcePath).get(testScene.data[0].sceneId)
 
     const entity = UUIDComponent.getEntityByUUID(('root' + scene.id) as EntityUUID)
     assert(entity > 0)
