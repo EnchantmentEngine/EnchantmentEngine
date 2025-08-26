@@ -171,11 +171,11 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
 
     gizmoIconUpdate(entity, studioIconEntity, [...directionalEntitiesState.get(NO_PROXY_STEALTH)], iconSize.value)
 
-    iconSize.set((currentSize) => setIconSize(hovered.value, currentSize))
+    iconSize.set((currentSize) => setIconSize(hovered, currentSize))
 
     const isEditing = getState(EngineState).isEditing
     for (const lineEntity of lineEntitiesState.value) {
-      setVisibleComponent(lineEntity, hovered.value && isEditing)
+      setVisibleComponent(lineEntity, hovered && isEditing)
     }
 
     if (selected.value) {
@@ -199,7 +199,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
     editorHelperState.gizmoEnabled.value,
     directionalEntitiesState,
     iconSize,
-    hovered.value,
+    hovered,
     lineEntitiesState.value,
     selected.value
   ])
@@ -246,11 +246,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
           updateBoundingBox(entity)
         }
 
-        const color = selected.value
-          ? BOUNDING_BOX_COLORS.SELECTED
-          : hovered.value
-          ? BOUNDING_BOX_COLORS.HOVERED
-          : undefined
+        const color = selected.value ? BOUNDING_BOX_COLORS.SELECTED : hovered ? BOUNDING_BOX_COLORS.HOVERED : undefined
 
         if (color) {
           setComponent(entity, BoundingBoxComponent, { color })
@@ -259,7 +255,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
       }
 
       case VolumeVisibility.Auto:
-        if (selected.value || hovered.value) {
+        if (selected.value || hovered) {
           if (!hasPreexistingBoundingBoxComponent) {
             setComponent(entity, BoundingBoxComponent)
           } else {
@@ -294,12 +290,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
   }>
 
   return (
-    <ReactorComponent
-      parentEntity={entity}
-      iconEntity={studioIconEntity}
-      selected={selected.value}
-      hovered={hovered.value}
-    />
+    <ReactorComponent parentEntity={entity} iconEntity={studioIconEntity} selected={selected.value} hovered={hovered} />
   )
 }
 
