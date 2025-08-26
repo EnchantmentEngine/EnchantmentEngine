@@ -87,7 +87,7 @@ export const XRState = defineState({
    * - in an immersion session and not in placement mode or miniature mode
    * @todo rename this to 'shouldViewerFollowController' for clarity
    */
-  get isCameraAttachedToAvatar(): boolean {
+  get shouldViewerFollowController(): boolean {
     const { session, sceneScale, scenePlacementMode, avatarCameraMode } = getState(XRState)
     if (!session || scenePlacementMode === 'placing') return false
     if (avatarCameraMode === 'auto') {
@@ -96,7 +96,7 @@ export const XRState = defineState({
     return avatarCameraMode === 'attached'
   },
 
-  useCameraAttachedToAvatar: () => {
+  useShouldViewerFollowController: () => {
     const { session, sceneScale, scenePlacementMode, avatarCameraMode } = useMutableState(XRState).value
     if (!session || scenePlacementMode === 'placing') return false
     if (avatarCameraMode === 'auto') {

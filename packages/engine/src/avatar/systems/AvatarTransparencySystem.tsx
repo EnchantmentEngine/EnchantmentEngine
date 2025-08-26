@@ -37,7 +37,7 @@ const execute = () => {
   const selfEntity = AvatarComponent.getSelfAvatarEntity()
   if (!selfEntity) return
 
-  const cameraAttached = XRState.isCameraAttachedToAvatar
+  const cameraAttached = XRState.shouldViewerFollowController
 
   for (const avatarEntity of avatarQuery()) {
     const transparencyDitheringRoot = getOptionalComponent(avatarEntity, TransparencyDitheringRootComponent)

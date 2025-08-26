@@ -69,11 +69,11 @@ export function createAvatarModeWidget() {
 
   const reactor = startReactor(() => {
     const xrState = useHookstate(getMutableState(XRState))
-    const isCameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
+    const shouldViewerFollowController = XRState.useShouldViewerFollowController()
     const widgetEnabled =
       xrState.sessionMode.value === 'immersive-ar' &&
       xrState.scenePlacementMode.value === 'placed' &&
-      !isCameraAttachedToAvatar
+      !shouldViewerFollowController
 
     useEffect(() => {
       dispatchAction(WidgetAppActions.enableWidget({ id, enabled: widgetEnabled }))

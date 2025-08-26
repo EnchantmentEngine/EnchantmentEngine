@@ -69,10 +69,10 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
   const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   desiredMovement.copy(Vector3_Zero)
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
   const isMovementControlsEnabled = XRState.isMovementControlsEnabled
 
-  if (isCameraAttachedToAvatar) {
+  if (shouldViewerFollowController) {
     const viewerPose = xrState.viewerPose
     /** move head position forward a bit to not be inside the avatar's body */
     avatarHeadPosition
@@ -158,14 +158,14 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
         )
       }
       beganFalling = false
-      if (isCameraAttachedToAvatar) originTransform.position.y = hit.position.y
+      if (shouldViewerFollowController) originTransform.position.y = hit.position.y
       /** @todo after a physical jump, only apply viewer vertical movement once the user is back on the virtual ground */
     }
   }
 
   if (!controller.isInAir) controller.verticalVelocity = 0
 
-  if (isCameraAttachedToAvatar)
+  if (shouldViewerFollowController)
     updateReferenceSpaceFromAvatarMovement(entity, finalAvatarMovement.subVectors(computedMovement, viewerMovement))
   else updateLocalAvatarPosition(entity)
 }
@@ -328,8 +328,8 @@ export const translateAndRotateAvatar = (entity: Entity, translation: Vector3, r
   rigidBody.targetKinematicPosition.add(translation)
   rigidBody.targetKinematicRotation.multiply(rotation)
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
-  if (isCameraAttachedToAvatar) {
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
+  if (shouldViewerFollowController) {
     const avatarTransform = getComponent(entity, TransformComponent)
     const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
 
@@ -401,7 +401,7 @@ const _updateLocalAvatarRotationAttachedMode = (entity: Entity) => {
 }
 
 export const updateLocalAvatarRotation = (entity: Entity) => {
-  if (XRState.isCameraAttachedToAvatar) {
+  if (XRState.shouldViewerFollowController) {
     _updateLocalAvatarRotationAttachedMode(entity)
   } else {
     const deltaSeconds = getState(ECSState).deltaSeconds
@@ -438,8 +438,8 @@ export const teleportAvatar = (entity: Entity, targetPosition: Vector3, force = 
     const newPosition = raycastHit ? (raycastHit.position as Vector3) : targetPosition
     rigidbody.targetKinematicPosition.copy(newPosition)
     rigidbody.position.copy(newPosition)
-    const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
-    if (isCameraAttachedToAvatar)
+    const shouldViewerFollowController = XRState.shouldViewerFollowController
+    if (shouldViewerFollowController)
       updateReferenceSpaceFromAvatarMovement(entity, new Vector3().subVectors(newPosition, transform.position))
   } else {
     // console.log('invalid position', targetPosition, raycastHit)

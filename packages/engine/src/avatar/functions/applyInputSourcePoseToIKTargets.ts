@@ -121,10 +121,10 @@ export const applyInputSourcePoseToIKTargets = () => {
     return
   }
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
 
   /** Head */
-  if (isCameraAttachedToAvatar && ikTargetHead) {
+  if (shouldViewerFollowController && ikTargetHead) {
     const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
     const ikTransform = getComponent(ikTargetHead, TransformComponent)
     ikTransform.position.copy(cameraTransform.position)
@@ -142,7 +142,7 @@ export const applyInputSourcePoseToIKTargets = () => {
   }
 
   /** In miniature mode, IK doesn't make much sense */
-  if (!isCameraAttachedToAvatar) return
+  if (!shouldViewerFollowController) return
 
   const inverseWorldScale = 1 / XRState.worldScale
 

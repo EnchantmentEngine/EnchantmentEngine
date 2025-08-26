@@ -31,7 +31,7 @@ const controllerQuery = defineQuery([AvatarControllerComponent, NetworkObjectOwn
 const execute = () => {
   const controlledEntities = controllerQuery()
 
-  /** @todo non-immersive camera should utilize isCameraAttachedToAvatar */
+  /** @todo non-immersive camera should utilize shouldViewerFollowController */
   for (const entity of controlledEntities) {
     const controller = getComponent(entity, AvatarControllerComponent)
 
