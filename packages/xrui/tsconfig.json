@@ -3,11 +3,7 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -31,5 +27,5 @@
     "erasableSyntaxOnly": true,
     "types": ["@types/node"]
   },
-  "include": ["./src", "./index.ts"]
+  "include": ["../../__global.d.ts", "./core", "./src", "./index.ts"]
 }

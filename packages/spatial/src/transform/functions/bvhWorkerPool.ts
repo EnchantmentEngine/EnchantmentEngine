@@ -8,20 +8,14 @@ import {
   TypedArray
 } from 'three'
 import { MeshBVH, SerializedBVH } from 'three-mesh-bvh'
-import Worker from 'web-worker'
 
-import { isClient } from '@ir-engine/hyperflux'
 import { deinterleaveAttribute } from '../../common/classes/BufferGeometryUtils'
 import { WorkerPool } from '../../common/classes/WorkerPool'
 
+import Worker from './generateBVHAsync.worker.js?worker'
+
 const createWorker = () => {
-  if (isClient) {
-    // module workers currently don't work in safari and firefox
-    return new Worker('/workers/generateBVHAsync.worker.js')
-  } else {
-    const workerPath = __dirname + '/generateBVHAsync.worker.js'
-    return new Worker(workerPath, { type: 'module' })
-  }
+  return new Worker()
 }
 
 export const bvhWorkerPool = new WorkerPool(1)

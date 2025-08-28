@@ -7,13 +7,17 @@
  * @returns {string}
  */
 export const createWorkerFromCrossOriginURL = (path: string, isModule = true, workerArgs: WorkerOptions = {}) => {
-  const data = `globalThis.process = ${JSON.stringify(process)};\n`.concat(
-    isModule ? `import '${path}';` : `importScripts('${path}')`
-  )
+  const data = `globalThis.process = ${JSON.stringify(process)};\n`
+    .concat(`globalThis.global = globalThis;\n`)
+    .concat(isModule ? `import '${path}';` : `importScripts('${path}')`)
 
   const workerBlob = new Blob([data], { type: 'text/javascript' })
 
   const workerBlobUrl = URL.createObjectURL(workerBlob)
 
-  return new Worker(workerBlobUrl, { type: isModule ? 'module' : 'classic', ...workerArgs })
+  const worker = new Worker(workerBlobUrl, { type: isModule ? 'module' : 'classic', ...workerArgs })
+  worker.onerror = (error) => {
+    console.error('Worker error:', error)
+  }
+  return worker
 }
