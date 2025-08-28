@@ -13,11 +13,13 @@ import Worker from 'web-worker'
 import { isClient } from '@ir-engine/hyperflux'
 import { deinterleaveAttribute } from '../../common/classes/BufferGeometryUtils'
 import { WorkerPool } from '../../common/classes/WorkerPool'
+import { createWorkerFromCrossOriginURL } from '../../common/functions/createWorkerFromCrossOriginURL'
+
+import workerPath from './generateBVHAsync.worker.js?worker&url'
 
 const createWorker = () => {
   if (isClient) {
-    // module workers currently don't work in safari and firefox
-    return new Worker('/workers/generateBVHAsync.worker.js')
+    return createWorkerFromCrossOriginURL(workerPath, true, { name: 'BVH' })
   } else {
     const workerPath = __dirname + '/generateBVHAsync.worker.js'
     return new Worker(workerPath, { type: 'module' })
