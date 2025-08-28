@@ -1,6 +1,3 @@
-
-export * from './core/WebLayer'
-export * from './core/WebRenderer'
 export * from './core/classes/Bounds'
 export * from './core/classes/Edges'
 export * from './core/classes/Transition'

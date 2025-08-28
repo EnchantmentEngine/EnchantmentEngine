@@ -1,4 +1,3 @@
-
 export class Edges {
   left = 0
   top = 0

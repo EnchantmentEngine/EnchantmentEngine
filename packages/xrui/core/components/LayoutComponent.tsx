@@ -1,4 +1,3 @@
-
 import {
   ECSState,
   Entity,
