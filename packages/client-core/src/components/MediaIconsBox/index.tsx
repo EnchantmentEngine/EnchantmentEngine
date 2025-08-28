@@ -179,7 +179,6 @@ export const MediaIconsBox = () => {
       {!isMobile &&
       !(typeof navigator.mediaDevices.getDisplayMedia === 'undefined') &&
       screenshareEnabled &&
-      mediaNetworkReady &&
       mediaNetworkState?.ready.value ? (
         <LocationIconButton
           tooltip={{
@@ -203,7 +202,7 @@ export const MediaIconsBox = () => {
           }}
         />
       )}
-      {supportsAR && xrEnabled && (
+      {supportsAR && (
         <LocationIconButton
           id="UserAR"
           tooltip={{
