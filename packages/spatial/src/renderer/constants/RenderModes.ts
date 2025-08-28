@@ -12,3 +12,10 @@ export type RenderModesType =
   | typeof RenderModes.SHADOW
   | typeof RenderModes.WIREFRAME
   | typeof RenderModes.NORMALS
+
+export const RenderBackends = {
+  WEBGL: 'Webgl' as const,
+  WEBGPU: 'Webgpu' as const
+}
+
+export type RenderBackendsType = (typeof RenderBackends)[keyof typeof RenderBackends]

@@ -16,7 +16,6 @@ import {
 import {
   Entity,
   QueryReactor,
-  getAncestorWithComponents,
   getAuthoringCounterpart,
   getComponent,
   useComponent,
@@ -30,7 +29,6 @@ import React, { useEffect } from 'react'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Geometry } from '../common/constants/Geometry'
 import iterateObject3D from '../common/functions/iterateObject3D'
-import { ColliderComponent } from '../physics/components/ColliderComponent'
 import { RendererComponent } from '../renderer/components/RendererComponent'
 
 // offloadTextureData implemented in engine package, but needs to be called and typed here
@@ -168,36 +166,38 @@ const resourceCallbacks = {
       asset.onUpdate = () => {
         if (!resource?.value?.metadata) return
         resource.metadata.merge({ onGPU: true, discarded: false })
-        setTimeout(() => {
-          const viewer = getState(ReferenceSpaceState).viewerEntity
-          const renderer = getComponent(viewer, RendererComponent)
-          const gl = renderer.renderContext as WebGL2RenderingContext
-          if (discardUponUpload && typeof gl.fenceSync === 'function') {
-            const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
-            if (sync) {
-              gl.flush()
-              let count = 0
-              const checkSync = () => {
-                const status = gl.clientWaitSync(sync, 0, 0)
-                if (status === gl.TIMEOUT_EXPIRED && count++ < 10) {
-                  setTimeout(checkSync)
-                } else {
-                  gl.deleteSync(sync)
-                  asset
-                    .offloadTextureData()
-                    .then(() => {
-                      if (!resource?.value?.metadata) return
-                      resource.metadata.merge({ onGPU: true, discarded: true })
-                    })
-                    .catch((err) => {
-                      console.error(err)
-                    })
-                }
+        if (!discardUponUpload) return
+
+        const viewer = getState(ReferenceSpaceState).viewerEntity
+        const renderer = getComponent(viewer, RendererComponent)
+        const gl = renderer.renderer?.getContext() as any as WebGL2RenderingContext | GPUCanvasContext | null
+        if (gl && 'fenceSync' in gl && typeof gl.fenceSync === 'function') {
+          const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
+          if (sync) {
+            gl.flush()
+            let count = 0
+            const checkSync = () => {
+              const status = gl.clientWaitSync(sync, 0, 0)
+              if (status === gl.TIMEOUT_EXPIRED && count++ < 10) {
+                setTimeout(checkSync)
+              } else {
+                gl.deleteSync(sync)
+                asset
+                  .offloadTextureData()
+                  .then(() => {
+                    resource.metadata.merge({ onGPU: true, discarded: true })
+                  })
+                  .catch((err) => {
+                    console.error(err)
+                  })
               }
               setTimeout(checkSync)
             }
           }
-        }, 1000)
+        } else {
+          // webgpu path
+          resource.metadata.merge({ onGPU: true, discarded: true })
+        }
       }
       //Compressed texture size
       if (asset.mipmaps![0]) {
@@ -501,8 +501,7 @@ const addEntityResource = (
 
   returnedResources.push(resource)
 
-  const entityHasAuthoringUpstream =
-    getAuthoringCounterpart(entity) || getAncestorWithComponents(entity, [ColliderComponent]) // collider component is a hack to prevent unloading of physics objects
+  const entityHasAuthoringUpstream = getAuthoringCounterpart(entity)
 
   const callbacks = resourceCallbacks[resourceType]
   if (callbacks?.onLoad)

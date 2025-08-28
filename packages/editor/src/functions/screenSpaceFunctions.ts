@@ -1,11 +1,12 @@
 import { Intersection, Object3D, Raycaster, Vector2, Vector3 } from 'three'
 
-import { Engine, getComponent } from '@ir-engine/ecs'
+import { getComponent } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
 import { SnapMode } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { getIntersectingNodeOnScreen } from './getIntersectingNode'
 
@@ -69,7 +70,7 @@ export const getSpawnPositionAtCenter = (() => {
  */
 export function getCursorSpawnPosition(mousePos: Vector2, target = new Vector3()): Vector3 {
   const rect = getComponent(
-    Engine.instance.viewerEntity,
+    getState(ReferenceSpaceState).viewerEntity,
     RendererComponent
   ).renderer!.domElement.getBoundingClientRect()
   const position = new Vector2()
@@ -80,7 +81,7 @@ export function getCursorSpawnPosition(mousePos: Vector2, target = new Vector3()
 
 export function getCursorPositionNormalized(mousePos: Vector2): Vector2 {
   const rect = getComponent(
-    Engine.instance.viewerEntity,
+    getState(ReferenceSpaceState).viewerEntity,
     RendererComponent
   ).renderer!.domElement.getBoundingClientRect()
   const position = new Vector2()

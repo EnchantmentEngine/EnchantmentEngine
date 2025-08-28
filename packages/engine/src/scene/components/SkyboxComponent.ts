@@ -7,7 +7,8 @@ import {
   EquirectangularReflectionMapping,
   LinearFilter,
   RGBAFormat,
-  SRGBColorSpace
+  SRGBColorSpace,
+  WebGLRenderer
 } from 'three'
 
 import { entityExists, useEntityContext } from '@ir-engine/ecs'
@@ -23,7 +24,7 @@ import { getState, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
@@ -43,20 +44,20 @@ export const SkyboxComponent = defineComponent({
   name: 'SkyboxComponent',
   jsonID: 'EE_skybox',
 
-  schema: S.Object({
+  schema: Schema.Object({
     backgroundColor: T.Color(0x000000),
-    equirectangularPath: S.String({ default: '' }),
-    cubemapPath: S.String({ default: '' }),
-    backgroundType: S.Number({ default: 1 }),
-    sky: S.Type<Sky | null>({ serialized: false }),
-    skyboxProps: S.Object({
-      turbidity: S.Number({ default: 10 }),
-      rayleigh: S.Number({ default: 1 }),
-      luminance: S.Number({ default: 1 }),
-      mieCoefficient: S.Number({ default: 0.004999999999999893 }),
-      mieDirectionalG: S.Number({ default: 0.99 }),
-      inclination: S.Number({ default: 0.10471975511965978 }),
-      azimuth: S.Number({ default: 0.16666666666666666 })
+    equirectangularPath: Schema.String({ default: '' }),
+    cubemapPath: Schema.String({ default: '' }),
+    backgroundType: Schema.Number({ default: 1 }),
+    sky: Schema.Type<Sky | null>({ serialized: false }),
+    skyboxProps: Schema.Object({
+      turbidity: Schema.Number({ default: 10 }),
+      rayleigh: Schema.Number({ default: 1 }),
+      luminance: Schema.Number({ default: 1 }),
+      mieCoefficient: Schema.Number({ default: 0.004999999999999893 }),
+      mieDirectionalG: Schema.Number({ default: 0.99 }),
+      inclination: Schema.Number({ default: 0.10471975511965978 }),
+      azimuth: Schema.Number({ default: 0.16666666666666666 })
     })
   }),
 
@@ -177,7 +178,8 @@ export const SkyboxComponent = defineComponent({
       sky.luminance = skyboxState.skyboxProps.luminance
 
       const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
-      const generatedTexture = sky.generateSkyboxTextureCube(renderer.renderer!)
+        .renderer as WebGLRenderer
+      const generatedTexture = sky.generateSkyboxTextureCube(renderer)
       generatedTexture.mapping = CubeReflectionMapping
       generatedTexture.generateMipmaps = false
       setComponent(entity, BackgroundComponent, generatedTexture)

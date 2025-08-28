@@ -8,8 +8,6 @@ import {
   ComponentType,
   defineSystem,
   ECSState,
-  Engine,
-  Entity,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -27,6 +25,7 @@ import { GLTFMetadata, Resource, ResourceState, ResourceType } from '../resource
 import { RendererState } from './RendererState'
 import { RendererComponent } from './components/RendererComponent'
 import { VisibleComponent } from './components/VisibleComponent'
+import { RenderBackends } from './constants/RenderModes'
 
 type PerformanceTier = 0 | 1 | 2 | 3 | 4 | 5
 type TargetFPS = 30 | 60
@@ -423,11 +422,19 @@ const buildPerformanceState = async (
   renderer: ComponentType<typeof RendererComponent>,
   override?: GetGPUTier['override']
 ) => {
-  const performanceState = getMutableState(PerformanceState)
-  const gl = renderer.renderContext as WebGL2RenderingContext
-
   // hack fix for nodejs
+  if (!renderer.renderer) return
+  const isWebGLBackend = getState(RendererState).backend
+
+  if (isWebGLBackend === RenderBackends.WEBGPU) {
+    console.log('Performance state: Skipping GPU tier detection for WebGPU renderer')
+    return
+  }
+
   if (!renderer.canvas || !renderer.canvas!.getContext('webgl2')) return
+
+  const performanceState = getMutableState(PerformanceState)
+  const gl = renderer.renderer?.getContext() as any as WebGL2RenderingContext
 
   const gpuTier = await getGPUTier({
     glContext: gl,
@@ -527,13 +534,13 @@ const useVisibleVertexCount = () => {
 }
 
 const getRendererInfo = () => {
-  const viewer = Engine?.instance?.viewerEntity as Entity | undefined
+  const viewer = getState(ReferenceSpaceState).viewerEntity
   if (!viewer) return {}
   const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer
   if (!renderer) return {}
   return {
     memory: renderer.info.memory,
-    programCount: renderer.info.programs?.length
+    programCount: renderer.info.render.calls
   }
 }
 

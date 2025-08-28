@@ -23,9 +23,8 @@ import {
   useComponent,
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
 import { useGLTFComponent } from '@ir-engine/engine/src/assets/functions/useGLTFComponent'
-import { NO_PROXY, getMutableState, none, useHookstate } from '@ir-engine/hyperflux'
+import { NO_PROXY, Schema, getMutableState, none, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Vector3_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -109,11 +108,11 @@ export const ParticleSystemComponent = defineComponent({
   name: 'ParticleSystemComponent',
   jsonID: 'EE_particle_system',
 
-  schema: S.Object({
+  schema: Schema.Object({
     systemParameters: DEFAULT_PARTICLE_SYSTEM_PARAMETERS,
-    behaviorParameters: S.Array(S.Type<BehaviorJSON>()),
-    behaviors: S.Optional(S.Array(S.Type<Behavior>()), { serialized: false }),
-    system: S.Type<ParticleSystem>({ serialized: false } as any)
+    behaviorParameters: Schema.Array(Schema.Type<BehaviorJSON>()),
+    behaviors: Schema.Optional(Schema.Array(Schema.Type<Behavior>()), { serialized: false }),
+    system: Schema.Type<ParticleSystem>({ serialized: false } as any)
   }),
 
   onSet: (entity, component, json) => {

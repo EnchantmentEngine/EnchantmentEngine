@@ -7,15 +7,15 @@ import {
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { Entity, S, UndefinedEntity } from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
+import { Entity, UndefinedEntity } from '@ir-engine/ecs'
+import { getState, Schema } from '@ir-engine/hyperflux'
 import { MaterialComponent, MaterialInstanceComponent, MaterialMapState } from '../../materials/MaterialComponent'
 import { ObjectComponent } from './ObjectComponent'
 
 export const MeshComponent = defineComponent({
   name: 'MeshComponent',
 
-  schema: S.Type<Mesh>({ required: true }),
+  schema: Schema.Type<Mesh>({ required: true }),
 
   onSet(entity, component, json) {
     MeshComponent.valueMap[entity] = json as Mesh

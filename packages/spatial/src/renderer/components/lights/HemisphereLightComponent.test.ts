@@ -13,13 +13,15 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import assert from 'assert'
-import { BoxGeometry, Color, ColorRepresentation, MeshBasicMaterial } from 'three'
+import { BoxGeometry, Color, ColorRepresentation, MeshBasicMaterial, WebGLRenderer } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { assertColor } from '../../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../../tests/util/mockSpatialEngine'
 import { destroySpatialEngine } from '../../../initializeEngine'
 import { TransformComponent } from '../../../transform/components/TransformComponent'
 import { LineSegmentComponent } from '../LineSegmentComponent'
+import { RendererComponent } from '../RendererComponent'
 import { HemisphereLightComponent } from './HemisphereLightComponent'
 import { LightTagComponent } from './LightTagComponent'
 
@@ -164,14 +166,54 @@ describe('HemisphereLightComponent', () => {
     })
 
     it('should set a LightTagComponent on the entityContext when it is mounted', async () => {
-      // Sanity check before running
       assert.equal(hasComponent(testEntity, LightTagComponent), false)
 
-      // Run and Check the result
       setComponent(testEntity, HemisphereLightComponent)
       await vi.waitFor(() => {
         assert.equal(hasComponent(testEntity, LightTagComponent), true)
       })
+    })
+
+    it('should not create ObjectComponent for WebGPU renderer', async () => {
+      const rendererEntity = createEntity()
+      const mockWebGPURenderer = {
+        isWebGPURenderer: true,
+        backend: { isWebGLBackend: false }
+      } as any as WebGPURenderer
+
+      setComponent(rendererEntity, RendererComponent, {
+        renderer: mockWebGPURenderer,
+        scenes: [testEntity]
+      })
+
+      setComponent(testEntity, HemisphereLightComponent)
+
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      })
+
+      removeEntity(rendererEntity)
+    })
+
+    it('should create ObjectComponent for WebGL renderer', async () => {
+      const rendererEntity = createEntity()
+      const mockWebGLRenderer = {
+        isWebGLRenderer: true,
+        getContext: vi.fn()
+      } as any as WebGLRenderer
+
+      setComponent(rendererEntity, RendererComponent, {
+        renderer: mockWebGLRenderer,
+        scenes: [testEntity]
+      })
+
+      setComponent(testEntity, HemisphereLightComponent)
+
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      })
+
+      removeEntity(rendererEntity)
     })
 
     it('should react when directionalLightComponent.groundColor changes', async () => {

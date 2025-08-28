@@ -42,7 +42,7 @@ describe.skip('InputSourceComponent', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   setComponent(entity, InputSourceComponent, { source: mockXRInputSource })
   //   assert(hasComponent(entity, InputSourceComponent))
   //   const inputSourceComponent = getComponent(entity, InputSourceComponent)
@@ -70,7 +70,7 @@ describe.skip('InputSourceComponent', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   setComponent(entity, InputSourceComponent, { source: mockXRInputSource })
   //   const hands = ['left', 'right', 'none']
   //   const state = getMutableState(InputSourceCaptureState)

@@ -36,12 +36,12 @@
     "vite-plugin-static-copy": "^1.0.6"
   },
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
+    "check-errors": "tsc --noemit",
     "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts",
     "test-coverage": "npm run test-coverage-generate ; npm run test-coverage-launch",
     "test-coverage-generate": "npm run test -- --coverage --silent",
     "test-coverage-launch": "vite preview --open --outDir coverage",
-    "build": "ts-node --swc build.ts",
+    "build": "tsx build.ts",
     "build-publish": "npm run build && cd dist && npm publish --access public --dry-run"
   },
   "overrides": {

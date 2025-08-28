@@ -15,7 +15,7 @@ import { dispatchAction, getState, useMutableState } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { emoteAnimations, preloadedAnimations } from '../../avatar/animation/Util'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
@@ -32,7 +32,7 @@ export const MountPoint = {
 
 export type MountPointTypes = (typeof MountPoint)[keyof typeof MountPoint]
 
-const MountPointTypesSchema = S.LiteralUnion(Object.values(MountPoint), { default: 'seat' })
+const MountPointTypesSchema = Schema.LiteralUnion(Object.values(MountPoint), { default: 'seat' })
 
 /** Mapping of mount point types to interact messages using translation keys from i18n. */
 const mountPointInteractMessages = {
@@ -115,10 +115,10 @@ export const MountPointComponent = defineComponent({
   name: 'MountPointComponent',
   jsonID: 'EE_mount_point',
 
-  schema: S.Object({
+  schema: Schema.Object({
     type: MountPointTypesSchema,
     dismountOffset: T.Vec3(new Vector3(0, 0, 0.75)),
-    forceDismountPosition: S.Bool()
+    forceDismountPosition: Schema.Bool()
   }),
 
   mountEntity,

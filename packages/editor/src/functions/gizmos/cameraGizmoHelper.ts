@@ -129,7 +129,7 @@ function pointerDown(gizmoEntity: Entity) {
 
 /*function pointerMove(gizmoEntity) {
   // TODO support gizmos in multiple viewports
-  const inputPointerEntity = InputPointerComponent.getPointersForCamera(Engine.instance.viewerEntity)[0]
+  const inputPointerEntity = InputPointerComponent.getPointersForCamera(getState(ReferenceSpaceState).viewerEntity)[0]
   if (!inputPointerEntity) return
   const pointer = getComponent(inputPointerEntity, InputPointerComponent)
   const gizmoControlComponent = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
@@ -159,7 +159,7 @@ function pointerDown(gizmoEntity: Entity) {
   )
     return
 
-  const camera = getComponent(Engine.instance?.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   _raycaster.setFromCamera(pointer.position, camera)
 
   const planeIntersect = intersectObjectWithRay(plane, _raycaster, true)

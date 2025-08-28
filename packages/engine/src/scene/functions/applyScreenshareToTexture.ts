@@ -4,7 +4,7 @@ import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunction
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
-import { S } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { defineMaterialPlugin } from '@ir-engine/spatial'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { ScreenshareTargetComponent } from '../components/ScreenshareTargetComponent'
@@ -24,7 +24,7 @@ export const ScreenshareShaderPluginComponent = defineMaterialPlugin({
 
   jsonID: 'IR_screenshare_shader',
 
-  uniforms: S.Object({
+  uniforms: Schema.Object({
     clipColor: T.Vec4(new Vector4(0, 0, 0, 1))
   }),
 

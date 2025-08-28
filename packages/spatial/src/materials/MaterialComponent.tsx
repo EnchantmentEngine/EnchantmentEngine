@@ -16,11 +16,8 @@ import {
 import {
   ComponentType,
   ECSState,
+  EntitySchema,
   PresentationSystemGroup,
-  Schema,
-  Static,
-  TObjectSchema,
-  TProperties,
   UUIDComponent,
   defineComponent,
   getComponent,
@@ -31,8 +28,17 @@ import {
 } from '@ir-engine/ecs'
 import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY, defineState, getState, useHookstate } from '@ir-engine/hyperflux'
+import {
+  NO_PROXY,
+  Schema,
+  SchemaDefinition,
+  Static,
+  TObjectSchema,
+  TProperties,
+  defineState,
+  getState,
+  useHookstate
+} from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { NameComponent } from '../common/NameComponent'
 import { useTexture } from '../resources/resourceLoaderHooks'
@@ -44,11 +50,14 @@ import { T } from '../schema/schemaFunctions'
  * - `null` for no texture
  */
 export const TextureSchema = () =>
-  S.Union([S.String(), S.Null(), S.Type<Texture>()], { default: null, metadata: { $isTexture: true } }) // @todo replace $isTexture with $id
+  Schema.Union([Schema.String(), Schema.Null(), Schema.Type<Texture>()], {
+    default: null,
+    metadata: { $isTexture: true }
+  }) // @todo replace $isTexture with $id
 
 export type TextureSchemaType = Static<ReturnType<typeof TextureSchema>>
 
-export const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
+export const isTextureUniform = (uniformSchema: SchemaDefinition) => !!uniformSchema.options?.metadata?.$isTexture
 
 export type ValidUniformTypes = boolean | number | string | Vector2 | Vector3 | Vector4 | Color | Texture | null
 
@@ -161,31 +170,31 @@ const MaterialUniformSchemaProperties = {
   /**
    * These schema properties map directly to threejs' internal uniforms.
    */
-  opacity: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  opacity: Schema.Number({ default: 1, minimum: 0, maximum: 1 }),
   diffuse: T.Color(), // Material.color
   envMap: TextureSchema(),
-  envMapIntensity: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  envMapIntensity: Schema.Number({ default: 1, minimum: 0, maximum: 1 }),
   map: TextureSchema(),
   alphaMap: TextureSchema(),
   emissiveMap: TextureSchema(),
   specularMap: TextureSchema(),
-  alphaTest: S.Number({ default: 0, minimum: 0, maximum: 1 })
+  alphaTest: Schema.Number({ default: 0, minimum: 0, maximum: 1 })
 }
 
 const PBRMaterialUniformSchemaProperties = {
   bumpMap: TextureSchema(),
-  bumpScale: S.Number({ default: 1, minimum: 0 }),
+  bumpScale: Schema.Number({ default: 1, minimum: 0 }),
   displacementMap: TextureSchema(),
   emissive: T.Color(),
-  emissiveIntensity: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  emissiveIntensity: Schema.Number({ default: 1, minimum: 0, maximum: 1 }),
   normalMap: TextureSchema(),
-  metalness: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  metalness: Schema.Number({ default: 1, minimum: 0, maximum: 1 }),
   metalnessMap: TextureSchema(),
-  roughness: S.Number({ default: 1, minimum: 0, maximum: 1 }),
+  roughness: Schema.Number({ default: 1, minimum: 0, maximum: 1 }),
   roughnessMap: TextureSchema()
 }
 
-const MaterialUniformSchema = S.Object({
+const MaterialUniformSchema = Schema.Object({
   ...MaterialUniformSchemaProperties,
   ...PBRMaterialUniformSchemaProperties
 })
@@ -195,14 +204,14 @@ export const MaterialComponent = defineComponent({
 
   jsonID: 'IR_material',
 
-  schema: S.Object({
+  schema: Schema.Object({
     ...MaterialUniformSchemaProperties,
     ...PBRMaterialUniformSchemaProperties,
-    alphaMode: S.LiteralUnion(['OPAQUE', 'MASK', 'BLEND'], { default: 'OPAQUE' }),
-    alphaCutoff: S.Number({ default: 0.5, minimum: 0, maximum: 1 }),
-    side: S.LiteralUnion([FrontSide, BackSide, DoubleSide], { default: FrontSide }),
-    vertexColors: S.Bool({ default: false }),
-    flatShading: S.Bool({ default: false })
+    alphaMode: Schema.LiteralUnion(['OPAQUE', 'MASK', 'BLEND'], { default: 'OPAQUE' }),
+    alphaCutoff: Schema.Number({ default: 0.5, minimum: 0, maximum: 1 }),
+    side: Schema.LiteralUnion([FrontSide, BackSide, DoubleSide], { default: FrontSide }),
+    vertexColors: Schema.Bool({ default: false }),
+    flatShading: Schema.Bool({ default: false })
   }),
 
   reactor: ({ entity }) => {
@@ -229,7 +238,7 @@ export const MaterialComponent = defineComponent({
 
 export const MaterialInstanceComponent = defineComponent({
   name: 'MaterialInstanceComponent',
-  schema: S.Object({ entities: S.Array(S.Union([S.Entity(), S.Undefined()])) })
+  schema: Schema.Object({ entities: Schema.Array(Schema.Union([EntitySchema.Entity(), Schema.Undefined()])) })
 })
 
 const lazilyCreateMaterial = (entity: Entity) => {

@@ -20,7 +20,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '../../common/NameComponent'
 import { setVisibleComponent } from '../../renderer/components/VisibleComponent'
 import { T } from '../../schema/schemaFunctions'
@@ -111,10 +111,10 @@ void main() {
 export const InfiniteGridComponent = defineComponent({
   name: 'InfiniteGridComponent',
 
-  schema: S.Object({
-    size: S.Number({ default: 1 }),
+  schema: Schema.Object({
+    size: Schema.Number({ default: 1 }),
     color: T.Color(0x535353),
-    distance: S.Number({ default: 200 })
+    distance: Schema.Number({ default: 200 })
   }),
 
   reactor: () => {

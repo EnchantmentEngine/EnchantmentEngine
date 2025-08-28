@@ -10,8 +10,9 @@ import {
   WorldNetworkAction
 } from '@ir-engine/ecs'
 import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import {
+  HyperFlux,
   Network,
   NetworkActions,
   NetworkState,
@@ -65,7 +66,7 @@ describe('GrabbableSystem', () => {
     const hostUserID = 'host user' as UserID
 
     const userID = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
 
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
@@ -187,7 +188,7 @@ describe('GrabbableSystem', () => {
     const hostUserID = 'host user' as UserID
 
     const userID = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
 
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 

@@ -2,13 +2,14 @@ import assert, { strictEqual } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import {
   ActionRecipients,
   applyIncomingActions,
   defineAction,
   getMutableState,
   getState,
+  HyperFlux,
   NetworkTopics
 } from '@ir-engine/hyperflux'
 
@@ -20,7 +21,7 @@ describe('IncomingActionSystem Unit Tests', async () => {
   beforeEach(() => {
     createEngine()
     // this is hacky but works and preserves the logic
-    Engine.instance.store.getDispatchTime = () => {
+    HyperFlux.store.getDispatchTime = () => {
       return getState(ECSState).simulationTime
     }
     createMockNetwork()
@@ -44,20 +45,20 @@ describe('IncomingActionSystem Unit Tests', async () => {
       })
       action.$topic = NetworkTopics.world
 
-      Engine.instance.store.actions.incoming.push(action)
+      HyperFlux.store.actions.incoming.push(action)
 
       /* run */
       applyIncomingActions()
 
       /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 0)
+      strictEqual(HyperFlux.store.actions.history.length, 0)
 
       // fixed tick update
       ecsState.simulationTime.set(2)
       applyIncomingActions()
 
       /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 1)
+      strictEqual(HyperFlux.store.actions.history.length, 1)
     })
 
     it('should immediately apply incoming action from the past or present', () => {
@@ -69,13 +70,13 @@ describe('IncomingActionSystem Unit Tests', async () => {
       })
       action.$topic = NetworkTopics.world
 
-      Engine.instance.store.actions.incoming.push(action)
+      HyperFlux.store.actions.incoming.push(action)
 
       /* run */
       applyIncomingActions()
 
       /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 1)
+      strictEqual(HyperFlux.store.actions.history.length, 1)
     })
   })
 
@@ -90,14 +91,14 @@ describe('IncomingActionSystem Unit Tests', async () => {
       })
       action.$topic = NetworkTopics.world
 
-      Engine.instance.store.actions.incoming.push(action)
+      HyperFlux.store.actions.incoming.push(action)
 
       /* run */
       applyIncomingActions()
 
       /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 1)
-      assert(Engine.instance.store.actions.cached.indexOf(action) !== -1)
+      strictEqual(HyperFlux.store.actions.history.length, 1)
+      assert(HyperFlux.store.actions.cached.indexOf(action) !== -1)
     })
   })
 })

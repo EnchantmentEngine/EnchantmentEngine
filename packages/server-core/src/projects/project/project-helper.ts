@@ -1028,8 +1028,7 @@ export async function getProjectUpdateJobBody(
 ): Promise<V1Job> {
   const command = [
     'npx',
-    'ts-node',
-    '--swc',
+    'tsx',
     'scripts/update-project.ts',
     '--sourceURL',
     data.sourceURL,
@@ -1097,8 +1096,7 @@ export async function getProjectPushJobBody(
 ): Promise<V1Job> {
   const command = [
     'npx',
-    'ts-node',
-    '--swc',
+    'tsx',
     'scripts/push-project.ts',
     `--userId`,
     user.id,
@@ -1171,7 +1169,7 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
                   name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${project.name.toLowerCase()}`),
                   image,
                   imagePullPolicy: 'IfNotPresent',
-                  command: ['npx', 'ts-node', '--swc', 'scripts/auto-update-project.ts', '--projectName', project.name],
+                  command: ['npx', 'tsx', 'scripts/auto-update-project.ts', '--projectName', project.name],
                   env: Object.entries(process.env).map(([key, value]) => {
                     return { name: key, value: value }
                   })
@@ -1210,16 +1208,7 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
 }
 
 export async function getDirectoryArchiveJobBody(app: Application, projectName: string, jobId: string): Promise<V1Job> {
-  const command = [
-    'npx',
-    'ts-node',
-    '--swc',
-    'scripts/archive-directory.ts',
-    `--project`,
-    projectName,
-    '--jobId',
-    jobId
-  ]
+  const command = ['npx', 'tsx', 'scripts/archive-directory.ts', `--project`, projectName, '--jobId', jobId]
 
   const projectJobName = cleanProjectName(projectName)
 

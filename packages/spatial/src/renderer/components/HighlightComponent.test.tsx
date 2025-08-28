@@ -102,7 +102,7 @@ describe('HighlightSystem', () => {
       list.forEach((value, _) => assert.equal(Expected.includes(value.name), true))
     })
 
-    it('should not do anything if the Engine.instance.viewerEntity does not have a RendererComponent', async () => {
+    it('should not do anything if the getState(ReferenceSpaceState).viewerEntity does not have a RendererComponent', async () => {
       const entity1 = createOutlineEntity('entity1')
       const entity2 = createOutlineEntity('entity2')
       const entity3 = createOutlineEntity('entity3')

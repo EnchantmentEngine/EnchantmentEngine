@@ -1,7 +1,7 @@
 import { FrontSide, Vector3 } from 'three'
 
-import { defineComponent, setComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { defineComponent, EntitySchema, setComponent } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
@@ -24,7 +24,7 @@ export const MAX_DITHER_POINTS = 2 //should be equal to the length of the vec3 a
 
 export const TransparencyDitheringRootComponent = defineComponent({
   name: 'TransparencyDitheringRootComponent',
-  schema: S.Object({ materials: S.Array(S.Entity()) })
+  schema: Schema.Object({ materials: Schema.Array(EntitySchema.Entity()) })
 })
 
 export const TransparencyDitheringPluginComponent = defineMaterialPlugin({
@@ -32,11 +32,11 @@ export const TransparencyDitheringPluginComponent = defineMaterialPlugin({
 
   jsonID: 'IR_transparency_dithering',
 
-  uniforms: S.Object({
-    centers: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => new Vector3())),
-    exponents: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
-    distances: S.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
-    useWorldCalculation: S.Class(() =>
+  uniforms: Schema.Object({
+    centers: Schema.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => new Vector3())),
+    exponents: Schema.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
+    distances: Schema.Class(() => Array.from({ length: MAX_DITHER_POINTS }, () => 1)),
+    useWorldCalculation: Schema.Class(() =>
       Array.from({ length: MAX_DITHER_POINTS }, () => DitherCalculationType.worldTransformed as DitherCalculationType)
     )
   }),

@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineQuery, useQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { isMobile } from '../../common/functions/isMobile'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { PersistentAnchorComponent } from '../XRAnchorComponents'
 import { endXRSession, getReferenceSpaces, requestXRSession } from '../XRSessionFunctions'
 import { ReferenceSpace, XRState } from '../XRState'
@@ -172,7 +172,7 @@ const viewerInputSource = {
   handedness: 'none',
   targetRayMode: 'screen',
   get targetRaySpace() {
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     return new XRSpace(camera.position, camera.quaternion) as any
   },
   gamepad: {

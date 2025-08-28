@@ -7,7 +7,8 @@ export class KTX2Loader extends CompressedTextureLoader {
 
     setTranscoderPath(path: string): KTX2Loader;
     setWorkerLimit(limit: number): KTX2Loader;
-    detectSupport(renderer: WebGLRenderer): KTX2Loader;
+    detectWebGLSupport(renderer: WebGLRenderer): KTX2Loader;
+    detectWebGPUSupport(): KTX2Loader;
     dispose(): KTX2Loader;
 
     parse(

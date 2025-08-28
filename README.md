@@ -2,7 +2,7 @@
 
 A fork of ([Ethereal / IR-Engine](https://github.com/ir-engine))
 
-[Napster Engine sizzle.webm](https://github.com/user-attachments/assets/b09dc3c3-7fa2-4e01-b1b9-2c9eef4c317b)
+[sizzle.webm](https://github.com/user-attachments/assets/b09dc3c3-7fa2-4e01-b1b9-2c9eef4c317b)
 
 ## Background
 

@@ -1,11 +1,11 @@
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { XRHandedness } from '../../grabbable/GrabbableComponent'
 
 export const AvatarTeleportComponent = defineComponent({
   name: 'AvatarTeleportComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     side: XRHandedness
   })
 })

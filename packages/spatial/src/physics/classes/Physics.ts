@@ -63,7 +63,6 @@ import {
 export type PhysicsWorld = World & {
   id: Entity
   substeps: number
-  cameraAttachedRigidbodyEntity: Entity
   Colliders: Map<Entity, Collider>
   Rigidbodies: Map<Entity, RigidBody>
   Controllers: Map<Entity, KinematicCharacterController>
@@ -96,7 +95,6 @@ function createWorld(id: Entity, args = { gravity: { x: 0.0, y: -9.81, z: 0.0 },
 
   world.id = id
   world.substeps = args.substeps
-  world.cameraAttachedRigidbodyEntity = UndefinedEntity
 
   const Colliders = new Map<Entity, Collider>()
   const Rigidbodies = new Map<Entity, RigidBody>()

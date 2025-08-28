@@ -1,21 +1,21 @@
 import {
-  EngineState,
-  Entity,
-  EntityTreeComponent,
-  S,
-  UndefinedEntity,
   createEntity,
   defineComponent,
+  EngineState,
+  Entity,
+  EntitySchema,
+  EntityTreeComponent,
   getComponent,
   hasComponent,
   iterateEntityNode,
   removeComponent,
   removeEntity,
   setComponent,
+  UndefinedEntity,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { getMutableState, useDidMount, useHookstate, useState } from '@ir-engine/hyperflux'
+import { getMutableState, Schema, useDidMount, useHookstate, useState } from '@ir-engine/hyperflux'
 import { Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { LineSegmentComponent } from '@ir-engine/spatial/src/renderer/components/LineSegmentComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -84,12 +84,12 @@ function createBBoxGridGeometry(matrixWorld: Matrix4, bbox: Box3, density: numbe
 export const BoundingBoxHelperComponent = defineComponent({
   name: 'BoundingBoxHelperComponent',
 
-  schema: S.Object({
-    bbox: S.Type<Box3>({ required: true }),
-    density: S.Number({ default: 2 }),
+  schema: Schema.Object({
+    bbox: Schema.Type<Box3>({ required: true }),
+    density: Schema.Number({ default: 2 }),
     color: T.Color(0xff0000),
-    layerMask: S.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper }),
-    helperEntity: S.Entity()
+    layerMask: Schema.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper }),
+    helperEntity: EntitySchema.Entity()
   }),
 
   reactor: function () {
@@ -151,8 +151,8 @@ const originalScale = new Vector3()
 export const ObjectGridSnapComponent = defineComponent({
   name: 'ObjectGridSnapComponent',
 
-  schema: S.Object({
-    bbox: S.Class(() => new Box3())
+  schema: Schema.Object({
+    bbox: Schema.Class(() => new Box3())
   }),
 
   reactor: () => {

@@ -18,7 +18,6 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
@@ -108,18 +107,18 @@ export const LoadingUISystemState = defineState({
     setComponent(meshEntity, NameComponent, 'Loading XRUI Mesh')
 
     setComponent(meshEntity, ComputedTransformComponent, {
-      referenceEntities: [Engine.instance.viewerEntity],
+      referenceEntities: [getState(ReferenceSpaceState).viewerEntity],
       computeFunction: () => {
         getComponent(meshEntity, TransformComponent).position.copy(
-          getComponent(Engine.instance.viewerEntity, TransformComponent).position
+          getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).position
         )
       }
     })
 
     setComponent(meshEntity, TransformComponent)
 
-    setComponent(ui.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
-    setComponent(meshEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    setComponent(ui.entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
+    setComponent(meshEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
 
     setComponent(meshEntity, VisibleComponent)
     setComponent(meshEntity, MeshComponent, mesh)
@@ -244,7 +243,7 @@ const SceneSettingsChildReactor = (props: { entity: Entity }) => {
     mesh.material.map = loadingTexture
     mesh.material.needsUpdate = true
     mesh.material.map.needsUpdate = true
-    getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.initTexture(loadingTexture)
+    getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!.initTexture(loadingTexture)
 
     state.ready.set(true)
   }, [loadingTexture])
@@ -297,16 +296,17 @@ const execute = () => {
   if (transition.state === 'IN' && transition.alpha === 1) {
     if (!hasComponent(ui.entity, ComputedTransformComponent))
       setComponent(ui.entity, ComputedTransformComponent, {
-        referenceEntities: [Engine.instance.cameraEntity],
+        referenceEntities: [getState(ReferenceSpaceState).viewerEntity],
         computeFunction: () => {
-          const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+          const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
           const distance = camera.near * 1.1 // 10% in front of camera
           const uiContainer = ui.container.rootLayer.querySelector('#loading-ui')
           if (!uiContainer) return
           const uiSize = uiContainer.domSize
-          const screenSize = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.getSize(
-            SCREEN_SIZE
-          )
+          const screenSize = getComponent(
+            getState(ReferenceSpaceState).viewerEntity,
+            RendererComponent
+          ).renderer!.getSize(SCREEN_SIZE)
           const aspectRatio = screenSize.x / screenSize.y
           const scaleMultiplier = aspectRatio < 1 ? 1 / aspectRatio : 1
           const scale =
@@ -319,7 +319,7 @@ const execute = () => {
   }
 
   // add a slow rotation to animate on desktop, otherwise just keep it static for VR
-  // getComponent(Engine.instance.cameraEntity, CameraComponent).rotateY(world.delta * 0.35)
+  // getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent).rotateY(world.delta * 0.35)
 
   mainThemeColor.set(colors.alternate)
 

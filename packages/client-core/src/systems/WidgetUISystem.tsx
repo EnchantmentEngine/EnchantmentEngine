@@ -10,7 +10,6 @@ import {
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import {
@@ -122,7 +121,9 @@ const execute = () => {
   }
   for (const action of unregisterWidgetQueue()) {
     const widget = RegisteredWidgets.get(action.id)!
-    setComponent(widget.ui.entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(widget.ui.entity, EntityTreeComponent, {
+      parentEntity: getState(ReferenceSpaceState).localFloorEntity
+    })
     if (typeof widget.cleanup === 'function') widget.cleanup()
   }
 
@@ -191,7 +192,9 @@ const Reactor = () => {
 
   useEffect(() => {
     const widgetMenuUI = createWidgetButtonsView()
-    setComponent(widgetMenuUI.entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(widgetMenuUI.entity, EntityTreeComponent, {
+      parentEntity: getState(ReferenceSpaceState).localFloorEntity
+    })
     setComponent(widgetMenuUI.entity, TransformComponent)
     removeComponent(widgetMenuUI.entity, VisibleComponent)
     setComponent(widgetMenuUI.entity, NameComponent, 'widget_menu')

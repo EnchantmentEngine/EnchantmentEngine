@@ -15,7 +15,6 @@ import { ObjectGridSnapSystem } from './systems/ObjectGridSnapSystem'
 import { RenderMonitorSystem } from './systems/RenderMonitorSystem'
 import { SelectionHighlightSystem } from './systems/SelectionHighlightSystem'
 import { TransformGizmoSystem } from './systems/TransformGizmoSystem'
-import { UploadRequestSystem } from './systems/UploadRequestSystem'
 
 export {
   ActiveHelperSystem,
@@ -34,6 +33,5 @@ export {
   SelectionHighlightSystem,
   // EditorInstanceNetworkingSystem,
   TransformGizmoSystem,
-  UploadRequestSystem,
   UserUISystem
 }

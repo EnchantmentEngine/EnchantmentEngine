@@ -3,23 +3,28 @@ import {
   Entity,
   getComponent,
   hasComponent,
-  S,
   setComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { getState, useMutableState } from '@ir-engine/hyperflux'
+import { getState, isDev, Schema, useMutableState } from '@ir-engine/hyperflux'
 import { Effect, EffectComposer, EffectPass, NormalPass, OutlineEffect, Pass, RenderPass } from 'postprocessing'
 import { useEffect } from 'react'
 import { ArrayCamera, Scene, SRGBColorSpace, WebGLRenderer, WebGLRendererParameters } from 'three'
+import { WebGPURendererParameters } from 'three/src/renderers/webgpu/WebGPURenderer.js'
+import { PostProcessing, WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { createWebXRManager, WebXRManager } from '../../xr/WebXRManager'
 import { ObjectLayers } from '../constants/ObjectLayers'
+import { updateWebGPUPostProcessing } from '../webgpu/WebGPUPostProcessingPipeline'
+
+import { EntitySchema } from '@ir-engine/ecs'
+import { RenderBackends } from '../constants/RenderModes'
 import CSMHelper from '../csm/CSMHelper'
 import { HighlightState } from '../HighlightState'
 import { RendererState } from '../RendererState'
 
-export const EffectSchema = S.Union([S.Any(), S.Type<Effect>(undefined, { isActive: S.Bool() })])
+export const EffectSchema = Schema.Union([Schema.Any(), Schema.Type<Effect>(undefined, { isActive: Schema.Bool() })])
 type PassCount = {
   pass: Pass
   count: number
@@ -27,33 +32,35 @@ type PassCount = {
 export const RendererComponent = defineComponent({
   name: 'RendererComponent',
 
-  schema: S.Object(
+  schema: Schema.Object(
     {
       /** Is resize needed? */
-      needsResize: S.Bool({ default: false }),
+      needsResize: Schema.Bool({ default: false }),
 
-      renderPass: S.Type<RenderPass | null>(),
-      normalPass: S.Type<NormalPass | null>(),
-      passes: S.Record(S.String(), S.Type<Pass>()),
-      passesFakeMap: S.Record(S.String(), S.Type<PassCount>()),
+      renderPass: Schema.Type<RenderPass | null>(),
+      normalPass: Schema.Type<NormalPass | null>(),
+      passes: Schema.Record(Schema.String(), Schema.Type<Pass>()),
+      passesFakeMap: Schema.Record(Schema.String(), Schema.Type<PassCount>()),
 
-      renderContext: S.Type<WebGLRenderingContext | null | WebGL2RenderingContext>(),
-      effects: S.Record(S.String(), EffectSchema),
-      effectInstances: S.Record(S.String(), S.Type<Effect>()),
+      renderContext: Schema.Type<WebGLRenderingContext | null | WebGL2RenderingContext | GPUCanvasContext>(),
+      effects: Schema.Record(Schema.String(), EffectSchema),
+      effectInstances: Schema.Record(Schema.String(), Schema.Type<Effect>()),
 
-      canvas: S.Type<HTMLCanvasElement | null>(),
+      canvas: Schema.Type<HTMLCanvasElement | null>(),
 
-      renderer: S.Type<WebGLRenderer | null>(),
-      effectComposer: S.Type<EffectComposer | null>(),
+      renderer: Schema.Type<WebGPURenderer | WebGLRenderer | null>(),
+      effectComposer: Schema.Type<EffectComposer | null>(),
+      postProcessing: Schema.Type<PostProcessing | null>(),
+      webgpuPostProcessingPipeline: Schema.Type<PostProcessing | null>(),
 
-      scenes: S.Array(S.Entity()),
-      scene: S.Class(() => new Scene()),
+      scenes: Schema.Array(EntitySchema.Entity()),
+      scene: Schema.Class(() => new Scene()),
 
       /** @todo deprecate and replace with engine implementation */
-      xrManager: S.Type<WebXRManager | null>(),
-      webGLLostContext: S.Type<WEBGL_lose_context | null>(),
+      xrManager: Schema.Type<WebXRManager | null>(),
+      webGLLostContext: Schema.Type<WEBGL_lose_context | null>(),
 
-      csmHelper: S.Type<CSMHelper | null>()
+      csmHelper: Schema.Type<CSMHelper | null>()
     },
     { serialized: false }
   ),
@@ -142,82 +149,147 @@ export const RendererComponent = defineComponent({
     const camera = useComponent(entity, CameraComponent) as ArrayCamera
     const hightlightState = useMutableState(HighlightState)
     const renderSettings = useMutableState(RendererState)
+    const effectComposerState = rendererComponent.effectComposer
+    const webgpuFlag = globalThis.location.search.includes('webgpu')
+    const shouldUseWebGPU = webgpuFlag && !!(navigator as any).gpu
+    // const shouldUseWebGPU = true
+    renderSettings.backend.set(shouldUseWebGPU ? RenderBackends.WEBGPU : RenderBackends.WEBGL)
     const effectComposer = rendererComponent.effectComposer
 
     useEffect(() => {
       const canvas = rendererComponent.canvas as HTMLCanvasElement
-      const context = canvas.getContext('webgl2')
-
+      const context = shouldUseWebGPU
+        ? (canvas.getContext('webgpu') as GPUCanvasContext)
+        : (canvas.getContext('webgl2') as WebGL2RenderingContext)
       rendererComponent.renderContext = context
     }, [])
 
     useEffect(() => {
-      const context = rendererComponent.renderContext
+      const context = rendererComponent.renderContext as
+        | WebGLRenderingContext
+        | WebGL2RenderingContext
+        | GPUCanvasContext
       if (!context) return
 
       const canvas = rendererComponent.canvas!
+      const initializeRenderer = async (context, canvas) => {
+        if (shouldUseWebGPU) {
+          try {
+            const options: WebGPURendererParameters = {
+              powerPreference: 'high-performance',
+              stencil: false,
+              antialias: false,
+              depth: true,
+              logarithmicDepthBuffer: false,
+              canvas,
+              context: context,
+              forceWebGL: false
+            }
 
-      const options: WebGLRendererParameters = {
-        precision: 'highp',
-        powerPreference: 'high-performance',
-        stencil: false,
-        antialias: false,
-        depth: true,
-        logarithmicDepthBuffer: false,
-        canvas,
-        context,
-        preserveDrawingBuffer: false,
-        //@ts-ignore
-        multiviewStereo: true
+            const renderer = new WebGPURenderer(options)
+            await renderer.init()
+            console.log('WebGPU renderer initialized')
+            rendererComponent.renderer = renderer
+            //document.body.appendChild(renderer.domElement)
+
+            renderSettings.features.set({
+              astcSupported: renderer.hasFeature('texture-compression-astc'),
+              etc1Supported: false,
+              etc2Supported: renderer.hasFeature('texture-compression-etc2'),
+              dxtSupported: renderer.hasFeature('texture-compression-bc'),
+              bptcSupported: renderer.hasFeature('texture-compression-bc'),
+              pvrtcSupported: false
+            })
+
+            renderer.debug.checkShaderErrors = isDev
+            renderer.autoClear = true
+
+            const postProcessing = new PostProcessing(renderer)
+            rendererComponent.postProcessing = postProcessing
+
+            getState(RendererState).backend = RenderBackends.WEBGPU
+
+            rendererComponent.effectComposer = null
+
+            return renderer
+          } catch (err) {
+            console.warn('WebGPU initialization failed, falling back to WebGL:', err)
+          }
+        }
+
+        const options: WebGLRendererParameters = {
+          precision: 'highp',
+          powerPreference: 'high-performance',
+          stencil: false,
+          antialias: false,
+          depth: true,
+          logarithmicDepthBuffer: false,
+          canvas,
+          context,
+          preserveDrawingBuffer: false,
+          //@ts-ignore
+          multiviewStereo: true
+        }
+
+        const renderer = new WebGLRenderer(options)
+        console.log('WebGL renderer initialized')
+        rendererComponent.renderer = renderer
+        //document.body.appendChild(renderer.domElement)
+
+        renderer.outputColorSpace = SRGBColorSpace
+        renderer.debug.checkShaderErrors = isDev
+        renderer.autoClear = true
+
+        const composer = new EffectComposer(renderer)
+        rendererComponent.effectComposer = composer
+        const renderPass = new RenderPass()
+        composer.addPass(renderPass)
+        rendererComponent.renderPass = renderPass
+
+        // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
+        renderer.debug.checkShaderErrors = false //isDev
+
+        const xrManager = createWebXRManager(renderer)
+        renderer.xr = xrManager as any
+        rendererComponent.xrManager = xrManager
+        xrManager.cameraAutoUpdate = false
+        xrManager.enabled = true
+
+        return renderer
       }
-
-      const renderer = new WebGLRenderer(options)
-      rendererComponent.renderer = renderer
-      renderer.outputColorSpace = SRGBColorSpace
-
-      const composer = new EffectComposer(renderer)
-      rendererComponent.effectComposer = composer
-      const renderPass = new RenderPass()
-      composer.addPass(renderPass)
-      rendererComponent.renderPass = renderPass
-
-      // DISABLE THIS IF YOU ARE SEEING SHADER MISBEHAVING - UNCHECK THIS WHEN TESTING UPDATING THREEJS
-      // renderer.debug.checkShaderErrors = false //isDev
-
-      const xrManager = createWebXRManager(renderer)
-      renderer.xr = xrManager as any
-      rendererComponent.xrManager = xrManager
-      xrManager.cameraAutoUpdate = false
-      xrManager.enabled = true
 
       const onResize = () => {
         rendererComponent.needsResize = true
       }
-
-      // https://stackoverflow.com/questions/48124372/pointermove-event-not-working-with-touch-why-not
       canvas.style.touchAction = 'none'
       canvas.addEventListener('resize', onResize, false)
       window.addEventListener('resize', onResize, false)
 
-      renderer.autoClear = true
+      initializeRenderer(context, canvas)
+        .then((renderer) => {
+          console.log('Renderer initialized successfully')
+        })
+        .catch((err) => {
+          console.error('Renderer initialization failed:', err)
+        })
 
       /**
        * This can be tested with document.getElementById('engine-renderer-canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext();
        */
-      rendererComponent.webGLLostContext = context.getExtension('WEBGL_lose_context')
+      // rendererComponent.webGLLostContext.set(context.getExtension('WEBGL_lose_context'))
 
-      if (!rendererComponent.webGLLostContext) {
-        console.warn('Browser does not support `WEBGL_lose_context` extension')
-      }
+      // if (!rendererComponent.webGLLostContext.value) {
+      //   console.warn('Browser does not support `WEBGL_lose_context` extension')
+      // }
 
-      const handleWebGLContextLost = (e) => {
-        console.log('Browser lost the context.', e, rendererComponent.webGLLostContext)
-        e.preventDefault()
-        rendererComponent.needsResize = false
-        setTimeout(() => {
-          rendererComponent.webGLLostContext!.restoreContext()
-        }, 1)
-      }
+      // const handleWebGLContextLost = (e) => {
+      //   console.log('Browser lost the context.', e, rendererComponent.webGLLostContext.value)
+      //   e.preventDefault()
+      //   rendererComponent.needsResize.set(false)
+      //   setTimeout(() => {
+      //     rendererComponent.webGLLostContext.get(NO_PROXY)!.restoreContext()
+      //   }, 1)
+      // }
 
       /** @todo this seems unnecessary, since threejs recovers internally */
       // const handleWebGLContextRestore = (e) => {
@@ -232,17 +304,17 @@ export const RendererComponent = defineComponent({
       //   console.log("Browser's context is restored.", e)
       // }
 
-      canvas.addEventListener('webglcontextlost', handleWebGLContextLost)
+      // canvas.addEventListener('webglcontextlost', handleWebGLContextLost)
 
       return () => {
         canvas.removeEventListener('resize', onResize, false)
         window.removeEventListener('resize', onResize, false)
 
-        canvas.removeEventListener('webglcontextlost', handleWebGLContextLost)
+        // canvas.removeEventListener('webglcontextlost', handleWebGLContextLost)
         // canvas.removeEventListener('webglcontextrestored', handleWebGLContextRestore)
 
-        renderer.dispose()
-        composer.dispose()
+        //renderer.dispose()
+        // composer.dispose()
       }
     }, [rendererComponent.renderContext])
 
@@ -317,6 +389,25 @@ export const RendererComponent = defineComponent({
       JSON.stringify(Object.keys(rendererComponent.effects)),
       !!rendererComponent.effectComposer,
       !!rendererComponent?.effectInstances?.OutlineEffect,
+      renderSettings.usePostProcessing.value
+    ])
+
+    useEffect(() => {
+      const postProcessing = rendererComponent.webgpuPostProcessingPipeline
+      if (!postProcessing) return
+
+      const enabled = renderSettings.usePostProcessing.value
+      const effectsVal = rendererComponent.effects
+
+      updateWebGPUPostProcessing(
+        postProcessing,
+        rendererComponent.scene,
+        camera,
+        enabled && effectsVal ? effectsVal : {}
+      )
+    }, [
+      rendererComponent.effects,
+      rendererComponent.webgpuPostProcessingPipeline,
       renderSettings.usePostProcessing.value
     ])
 

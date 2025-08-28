@@ -18,7 +18,7 @@ import commonConfig from '@ir-engine/common/src/config'
 import { pipeLogs } from '@ir-engine/common/src/logger'
 import { pipe } from '@ir-engine/common/src/utils/pipe'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
-import { createHyperStore, getMutableState } from '@ir-engine/hyperflux'
+import { getMutableState } from '@ir-engine/hyperflux'
 
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { Application } from '../declarations'
@@ -205,7 +205,7 @@ export const createFeathersKoaApp = async (
   serverMode: ServerTypeMode = ServerMode.API,
   configurationPipe = serverPipe
 ): Promise<Application> => {
-  createEngine(createHyperStore())
+  createEngine()
 
   getMutableState(DomainConfigState).merge({
     publicDomain: appConfig.client.dist,

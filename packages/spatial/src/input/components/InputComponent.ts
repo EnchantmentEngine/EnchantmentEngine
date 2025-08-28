@@ -19,8 +19,8 @@ import {
 import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
 
-import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema, getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import {
   AnyAxis,
@@ -58,20 +58,20 @@ export const DefaultAxisBindings = {
   FollowCameraShoulderCamScroll: [MouseScroll.HorizontalScroll]
 } satisfies InputAxisBindings
 
-const ButtonSchema = S.Union([
-  S.Enum(KeyboardButton, {
+const ButtonSchema = Schema.Union([
+  Schema.Enum(KeyboardButton, {
     $comment:
       "Likely a string enum, ie. one of the following values: 'Backspace', 'Tab', 'Enter', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'Pause', 'CapsLock', 'Escape', 'Space', 'PageUp', 'PageDown', 'End', 'Home', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'PrintScreen', 'Insert', 'Delete', 'Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'KeyA', 'KeyB', 'KeyC', 'KeyD', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyM', 'KeyN', 'KeyO', 'KeyP', 'KeyQ', 'KeyR', 'KeyS', 'KeyT', 'KeyU', 'KeyV', 'KeyW', 'KeyX', 'KeyY', 'KeyZ'"
   }),
-  S.Enum(MouseButton, {
+  Schema.Enum(MouseButton, {
     $comment:
       "Likely a string enum, ie. one of the following values: 'PrimaryClick', 'AuxiliaryClick', 'SecondaryClick'"
   }),
-  S.Enum(StandardGamepadButton, {
+  Schema.Enum(StandardGamepadButton, {
     $comment:
       "A number enum, where: 0 represents 'StandardGamepadButtonA', 1 represents 'StandardGamepadButtonB', 2 represents 'StandardGamepadButtonX', 3 represents 'StandardGamepadButtonY', 4 represents 'StandardGamepadLeft1', 5 represents 'StandardGamepadRight1', 6 represents 'StandardGamepadLeft2', 7 represents 'StandardGamepadRight2', 8 represents 'StandardGamepadButtonBack', 9 represents 'StandardGamepadButtonStart', 10 represents 'StandardGamepadLeftStick', 11 represents 'StandardGamepadRightStick', 12 represents 'StandardGamepadDPadUp', 13 represents 'StandardGamepadDPadDown', 14 represents 'StandardGamepadDPadLeft', 15 represents 'StandardGamepadDPadRight', 16 represents 'StandardGamepadButtonHome'"
   }),
-  S.Enum(XRStandardGamepadButton, {
+  Schema.Enum(XRStandardGamepadButton, {
     $comment:
       "A number enum, where: 0 represents 'XRStandardGamepadTrigger', 1 represents 'XRStandardGamepadSqueeze', 2 represents 'XRStandardGamepadPad', 3 represents 'XRStandardGamepadStick', 4 represents 'XRStandardGamepadButtonA', 5 represents 'XRStandardGamepadButtonB'"
   })
@@ -131,23 +131,27 @@ export const InputComponent = defineComponent({
   name: 'InputComponent',
   jsonID: 'EE_input',
 
-  schema: S.Object({
-    inputSinks: S.Array(S.EntityID(), { default: ['Self' as EntityID] }),
-    activationDistance: S.Number({ default: 2 }),
-    highlight: S.Bool({ default: false }),
-    grow: S.Bool({ default: false }),
-    buttonBindings: S.Record(S.String(), S.Array(S.Union([ButtonSchema, S.Array(ButtonSchema)])), {
-      default: { ...DefaultButtonBindings }
-    }),
+  schema: Schema.Object({
+    inputSinks: Schema.Array(EntitySchema.EntityID(), { default: ['Self' as EntityID] }),
+    activationDistance: Schema.Number({ default: 2 }),
+    highlight: Schema.Bool({ default: false }),
+    grow: Schema.Bool({ default: false }),
+    buttonBindings: Schema.Record(
+      Schema.String(),
+      Schema.Array(Schema.Union([ButtonSchema, Schema.Array(ButtonSchema)])),
+      {
+        default: { ...DefaultButtonBindings }
+      }
+    ),
     //internal
     /** populated automatically by ClientInputSystem */
-    inputSources: S.Array(S.Entity(), { serialized: false }),
-    cachedButtons: S.Type<ButtonStateMap<any>>({ serialized: false, default: {} }),
+    inputSources: Schema.Array(EntitySchema.Entity(), { serialized: false }),
+    cachedButtons: Schema.Type<ButtonStateMap<any>>({ serialized: false, default: {} }),
 
     /** if true, the input component will automatically capture input when a button is consumed */
-    autoCapture: S.Bool({ default: false }),
+    autoCapture: Schema.Bool({ default: false }),
 
-    buttons: S.Type<ButtonStateMap<any>>({ serialized: false })
+    buttons: Schema.Type<ButtonStateMap<any>>({ serialized: false })
   }),
 
   onInit(entity, initial) {
@@ -348,14 +352,14 @@ export const InputComponent = defineComponent({
     })
     useExecute(
       () => {
-        const inputSources = InputComponent.getInputSourceEntities(entity)
-        hasFocus.set(inputSources.length > 0)
+        const focus = InputComponent.getInputSourceEntities(entity).length > 0
+        if (focus !== hasFocus.value) hasFocus.set(focus)
       },
       // we want to evaluate input sources after the input system group has run, after all input systems
       // have had a chance to respond to input and/or capture input sources
       { after: InputSystemGroup }
     )
-    return hasFocus
+    return hasFocus.value
   }
 })
 

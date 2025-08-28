@@ -14,14 +14,7 @@ import {
   Vector3
 } from 'three'
 
-import {
-  AnimationSystemGroup,
-  createEntity,
-  Engine,
-  removeEntity,
-  useEntityContext,
-  UUIDComponent
-} from '@ir-engine/ecs'
+import { AnimationSystemGroup, createEntity, removeEntity, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   getOptionalComponent,
@@ -56,6 +49,7 @@ import { CSM, CSMParams } from '@ir-engine/spatial/src/renderer/csm/CSM'
 import { CSMComponent } from '@ir-engine/spatial/src/renderer/csm/CSMComponent'
 //import { CSMHelper } from '@ir-engine/spatial/src/renderer/csm/CSMHelper'
 import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/ecs'
+import { isWebGPURenderer } from '@ir-engine/spatial/src/renderer/functions/RendererBackendUtils'
 import { getShadowsEnabled, useShadowsEnabled } from '@ir-engine/spatial/src/renderer/functions/RenderSettingsFunction'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { compareDistanceToCamera } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
@@ -64,6 +58,7 @@ import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { MaterialComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
@@ -72,6 +67,8 @@ import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/use
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
+import { CSMFrustum } from 'three/examples/jsm/csm/CSMFrustum.js'
 import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
@@ -112,6 +109,27 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
   useEffect(() => {
     if (!directionalLightComponent || !directionalLight) return
     if (!directionalLightComponent.castShadow) return
+    const useWebGPU = isWebGPURenderer(rendererEntity)
+    let csmShadowNode: CSMShadowNode | undefined
+
+    if (useWebGPU) {
+      const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+      //will update
+      csmShadowNode = new CSMShadowNode(directionalLight, {
+        cascades: 4,
+        maxFar: 200,
+        mode: 'practical'
+      })
+      directionalLight.shadow.shadowNode = csmShadowNode
+      directionalLight.castShadow = true
+
+      camera.cameras[0].updateProjectionMatrix()
+      csmShadowNode.camera = camera.cameras[0]
+      csmShadowNode.fade = true
+      csmShadowNode.mainFrustum = new CSMFrustum()
+      csmShadowNode.mainFrustum.setFromProjectionMatrix(camera.projectionMatrix, csmShadowNode.maxFar)
+    }
+
     const params = {
       light: directionalLight as DirectionalLight,
       shadowMapSize: shadowMapResolution.value,
@@ -120,7 +138,8 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
       lightIntensity: directionalLightComponent.intensity,
       lightColor: directionalLightComponent.color,
       cascades: renderSettingsComponent.cascades,
-      lightMargin: directionalLightComponent.cameraFar
+      lightMargin: directionalLightComponent.cameraFar,
+      csmShadowNode: csmShadowNode
     } as CSMParams
 
     CSM.initCSM(params, rendererEntity)
@@ -190,6 +209,7 @@ const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; rende
 const EntityChildCSMReactor = (props: { rendererEntity: Entity; entity: Entity }) => {
   const { rendererEntity, entity } = props
   const csm = useComponent(rendererEntity, CSMComponent)
+
   useEffect(() => {
     if (!csm) return
     setComponent(entity, CSMPluginComponent)
@@ -229,20 +249,6 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
   const directionalLightComponent = useHasComponent(activeLightEntityState.value, DirectionalLightComponent)
 
   const primaryLightVisibleComponent = useHasComponent(activeLightEntity, VisibleComponent)
-
-  //const rendererState = useMutableState(RendererState)
-
-  // useEffect(() => {
-  //   if (!rendererComponent) return
-  //   if (!rendererComponent.csm.value || !rendererState.nodeHelperVisibility.value) return
-
-  //   const helper = new CSMHelper()
-  //   rendererComponent.csmHelper.set(helper)
-  //   return () => {
-  //     helper.remove()
-  //     rendererComponent.csmHelper.set(null)
-  //   }
-  // }, [rendererComponent, renderSettingsComponent.csm, rendererState.nodeHelperVisibility])
 
   useEffect(() => {
     if (rendererEntity === getState(ReferenceSpaceState).viewerEntity && xrLightProbeEntity.value) {
@@ -321,7 +327,7 @@ const DropShadowReactor = () => {
     const shadowEntity = createEntity()
     setComponent(shadowEntity, MeshComponent, new Mesh(_shadowGeometry.clone(), _shadowMaterial.clone()))
     ObjectLayerMaskComponent.setLayer(shadowEntity, ObjectLayers.Avatar)
-    setComponent(shadowEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    setComponent(shadowEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
     setComponent(
       shadowEntity,
       NameComponent,
@@ -402,7 +408,8 @@ const RendererShadowReactor = () => {
   useEffect(() => {
     const renderer = rendererComponent.renderer
     if (!renderer) return
-    renderer.shadowMap.enabled = renderer.shadowMap.autoUpdate = useShadows
+    renderer.shadowMap.enabled = useShadows
+    ;(renderer.shadowMap as any).autoUpdate = useShadows
   }, [useShadows, rendererComponent.renderer])
 
   return null

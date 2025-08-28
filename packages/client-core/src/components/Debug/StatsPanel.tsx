@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Engine, useQuery } from '@ir-engine/ecs'
+import { useQuery } from '@ir-engine/ecs'
 
-import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
+import { HyperFlux, NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { PerformanceManager } from '@ir-engine/spatial/src/renderer/PerformanceState'
 import { RenderInfoState } from '@ir-engine/spatial/src/renderer/RenderInfoSystem'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
@@ -14,7 +14,7 @@ import Stats from './stats'
 
 const downloadStateSnapshot = () => {
   const states = Object.fromEntries(
-    Object.entries(Engine.instance.store.stateMap)
+    Object.entries(HyperFlux.store.stateMap)
       .map(([key, state]) => {
         try {
           const value = state.get(NO_PROXY)

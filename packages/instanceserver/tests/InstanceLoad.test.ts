@@ -21,8 +21,8 @@ import {
   UserID,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
-import { destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
-import { getState, NetworkState, PeerID } from '@ir-engine/hyperflux'
+import { destroyEngine } from '@ir-engine/ecs/src/Engine'
+import { getState, HyperFlux, NetworkState, PeerID } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
@@ -81,9 +81,9 @@ describe('InstanceLoad', () => {
 
     const peerID = uuidv4() as PeerID
 
-    const skyStationScene = await app.service(locationPath).find({
+    const testScene = await app.service(locationPath).find({
       query: {
-        slugifiedName: 'sky-station'
+        slugifiedName: 'test'
       }
     })
 
@@ -92,7 +92,7 @@ describe('InstanceLoad', () => {
 
     const instance = await app.service(instancePath).create({
       ipAddress: `${localIp}:3031`,
-      locationId: skyStationScene.data[0].id,
+      locationId: testScene.data[0].id,
       assigned: false,
       assignedAt: toDateTimeSql(new Date()),
       roomCode: '' as RoomCode
@@ -104,7 +104,7 @@ describe('InstanceLoad', () => {
       socketQuery: {
         peerID,
         token: createdIdentityProvider.accessToken,
-        locationId: skyStationScene.data[0].id,
+        locationId: testScene.data[0].id,
         instanceID: '',
         channelId: '',
         roomCode: '',
@@ -120,7 +120,7 @@ describe('InstanceLoad', () => {
 
     await loadLocation(query)
 
-    const scene = await app.service(staticResourcePath).get(skyStationScene.data[0].sceneId)
+    const scene = await app.service(staticResourcePath).get(testScene.data[0].sceneId)
 
     const entity = UUIDComponent.getEntityByUUID(('root' + scene.id) as EntityUUID)
     assert(entity > 0)
@@ -160,7 +160,7 @@ describe('InstanceLoad', () => {
     assert.equal(messages[0].status, 'pending')
     assert.equal(messages[1].status, 'success')
     assert.equal(messages[1].hostPeerID, NetworkState.worldNetwork.hostPeerID)
-    assert.equal(messages[1].hostPeerID, Engine.instance.store.peerID)
+    assert.equal(messages[1].hostPeerID, HyperFlux.store.peerID)
 
     const instanceAttendance = await app.service(instanceAttendancePath).find({
       query: {

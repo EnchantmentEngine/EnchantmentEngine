@@ -32,9 +32,9 @@ import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/com
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 
-import { EngineState } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EngineState, EntitySchema } from '@ir-engine/ecs'
 import { useXRUIState } from '@ir-engine/engine/src/xrui/useXRUIState'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { inFrustum } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { smootheLerpAlpha } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
@@ -216,33 +216,33 @@ export const InteractableComponent = defineComponent({
   name: 'InteractableComponent',
   jsonID: 'EE_interactable',
 
-  schema: S.Object({
-    canInteract: S.Bool({ default: false, serialized: false }),
-    uiInteractable: S.Bool({ default: true, serialized: false }),
-    uiEntity: S.Entity({ serialized: false }),
-    label: S.String({ default: 'E' }),
-    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, {
+  schema: Schema.Object({
+    canInteract: Schema.Bool({ default: false, serialized: false }),
+    uiInteractable: Schema.Bool({ default: true, serialized: false }),
+    uiEntity: EntitySchema.Entity({ serialized: false }),
+    label: Schema.String({ default: 'E' }),
+    uiVisibilityOverride: Schema.Enum(XRUIVisibilityOverride, {
       $comment: "A number enum, where: 0 represents 'none', 1 represents 'on', 2 represents 'off'",
       default: XRUIVisibilityOverride.none,
       serialized: false
     }),
-    uiActivationType: S.Enum(XRUIActivationType, {
+    uiActivationType: Schema.Enum(XRUIActivationType, {
       $comment: "A number enum, where: 0 represents 'proximity', 1 represents 'hover'",
       default: XRUIActivationType.proximity
     }),
-    activationDistance: S.Number({ default: 2 }),
-    clickInteract: S.Bool({ default: false }),
-    highlighted: S.Bool({ default: false, serialized: false }),
-    callbacks: S.Array(
-      S.Object({
+    activationDistance: Schema.Number({ default: 2 }),
+    clickInteract: Schema.Bool({ default: false }),
+    highlighted: Schema.Bool({ default: false, serialized: false }),
+    callbacks: Schema.Array(
+      Schema.Object({
         /**
          * The function to call on the CallbackComponent of the targetEntity when the trigger volume is entered.
          */
-        callbackID: S.String(),
+        callbackID: Schema.String(),
         /**
          * empty string represents self
          */
-        target: S.EntityID()
+        target: EntitySchema.EntityID()
       })
     )
   }),

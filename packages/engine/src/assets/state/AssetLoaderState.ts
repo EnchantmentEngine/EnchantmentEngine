@@ -1,5 +1,4 @@
 import { defineState, getState, isClient } from '@ir-engine/hyperflux'
-
 import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { DefaultLoadingManager } from 'three'
 import { CORTOLoader } from '../loaders/corto/CORTOLoader'

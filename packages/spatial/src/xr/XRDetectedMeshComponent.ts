@@ -2,11 +2,10 @@ import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh } from 'three'
 
 import {
-  Entity,
-  EntityTreeComponent,
-  S,
   createEntity,
   defineComponent,
+  Entity,
+  EntityTreeComponent,
   getComponent,
   removeComponent,
   removeEntity,
@@ -14,7 +13,7 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { defineState, getState } from '@ir-engine/hyperflux'
+import { defineState, getState, Schema } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { NameComponent } from '../common/NameComponent'
@@ -35,12 +34,12 @@ export const XRDetectedMeshComponentState = defineState({
 export const XRDetectedMeshComponent = defineComponent({
   name: 'XRDetectedMeshComponent',
 
-  schema: S.Object({
-    mesh: S.Type<XRMesh>(),
+  schema: Schema.Object({
+    mesh: Schema.Type<XRMesh>(),
     // internal
-    shadowMesh: S.Type<Mesh>(),
-    geometry: S.Type<BufferGeometry>(),
-    placementHelper: S.Type<Mesh>()
+    shadowMesh: Schema.Type<Mesh>(),
+    geometry: Schema.Type<BufferGeometry>(),
+    placementHelper: Schema.Type<Mesh>()
   }),
 
   reactor: function () {

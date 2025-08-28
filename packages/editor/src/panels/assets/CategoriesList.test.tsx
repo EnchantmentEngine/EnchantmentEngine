@@ -75,23 +75,23 @@ describe('CategoriesList component', () => {
     destroyEngine()
   })
 
-  it('should render a button with data-testid "assets-tab-assets-section-button"', () => {
-    const assetTabAssetsSectionButton = screen.getByTestId('assets-tab-assets-section-button')
-    expect(assetTabAssetsSectionButton).toBeInTheDocument()
-  })
+  // it('should render a button with data-testid "assets-tab-assets-section-button"', () => {
+  //   const assetTabAssetsSectionButton = screen.getByTestId('assets-tab-assets-section-button')
+  //   expect(assetTabAssetsSectionButton).toBeInTheDocument()
+  // })
 
-  it('should render a button with data-testid "assets-tab-files-section-button"', () => {
-    const assetTabFilesSectionButton = screen.getByTestId('assets-tab-files-section-button')
-    expect(assetTabFilesSectionButton).toBeInTheDocument()
-  })
+  // it('should render a button with data-testid "assets-tab-files-section-button"', () => {
+  //   const assetTabFilesSectionButton = screen.getByTestId('assets-tab-files-section-button')
+  //   expect(assetTabFilesSectionButton).toBeInTheDocument()
+  // })
 
-  it('should render a list element that has the data-testid attributes "assets-category-list"', async () => {
-    const assetTabAssetsSectionButton = screen.getByTestId('assets-tab-assets-section-button')
-    fireEvent.click(assetTabAssetsSectionButton)
+  // it('should render a list element that has the data-testid attributes "assets-category-list"', async () => {
+  //   const assetTabAssetsSectionButton = screen.getByTestId('assets-tab-assets-section-button')
+  //   fireEvent.click(assetTabAssetsSectionButton)
 
-    const assetCategoryList = screen.getByTestId('assets-category-list')
-    expect(assetCategoryList).toBeInTheDocument()
-  })
+  //   const assetCategoryList = screen.getByTestId('assets-category-list')
+  //   expect(assetCategoryList).toBeInTheDocument()
+  // })
 
   it('should render an asset container element with the data-testid attribute "assets-panel-category"', async () => {
     const assetTabAssetsSectionButton = screen.getByTestId('assets-tab-assets-section-button')

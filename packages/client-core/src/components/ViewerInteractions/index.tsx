@@ -7,7 +7,6 @@ import { getMutableState, NO_PROXY, useHookstate, useMutableState } from '@ir-en
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { useTranslation } from 'react-i18next'
 import { twMerge } from 'tailwind-merge'
 import { ModalState } from '../../common/services/ModalState'
 import { LoadingSystemState } from '../../systems/state/LoadingState'
@@ -19,13 +18,11 @@ import { ARPlacement } from '../ARPlacement'
 import { Fullscreen } from '../Fullscreen'
 import { MediaIconsBox } from '../MediaIconsBox'
 import { XRLoading } from '../XRLoading'
-import ScreenRotateImage from './screen-rotate.svg'
 
 export const ViewerInteractions = () => {
   const isPortrait = useHookstate(window.matchMedia('(orientation: portrait)').matches)
   const userID = useHookstate(getMutableState(EngineState).userID).value
   const loadingScreenVisible = useHookstate(getMutableState(LoadingSystemState).loadingScreenVisible).value
-  const { t } = useTranslation()
   const externalInjectedMenus = useMutableState(ViewerMenuState).externalInjectedMenus.get(NO_PROXY)
   const locationContainer = useRef<HTMLDivElement>(null)
 
@@ -51,16 +48,16 @@ export const ViewerInteractions = () => {
 
   if (!userID) return null
 
-  if (isMobile && isPortrait.value) {
-    return (
-      <div className="grid h-screen w-screen place-items-center bg-[#070708]">
-        <div className="flex flex-col items-center justify-center gap-y-4">
-          <span>{t('user:messages.rotateLandscape')}</span>
-          <img src={ScreenRotateImage} className="h-20 w-16" />
-        </div>
-      </div>
-    )
-  }
+  // if (isMobile && isPortrait.value) {
+  //   return (
+  //     <div className="grid h-screen w-screen place-items-center bg-[#070708]">
+  //       <div className="flex flex-col items-center justify-center gap-y-4">
+  //         <span>{t('user:messages.rotateLandscape')}</span>
+  //         <img src={ScreenRotateImage} className="h-20 w-16" />
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <div id="location-container" ref={locationContainer} className="fixed h-dvh w-full p-6">

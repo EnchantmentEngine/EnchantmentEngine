@@ -10,12 +10,12 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import {
+  MaterialComponent,
   MaterialInstanceComponent,
-  MaterialStateComponent,
   SerializedTexture
 } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
-import { MeshStandardMaterial } from 'three'
+import { MeshStandardMaterial, WebGLRenderer } from 'three'
 import { commitProperties } from '../components/properties/Util'
 import { LightmapBakeComponent } from './LightmapBakeComponent'
 import { Lightmapper } from './LightmapperFunctions'
@@ -41,7 +41,7 @@ const execute = () => {
         renderTarget,
         raycastMaterial,
         orthographicCamera,
-        getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!,
+        getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer! as WebGLRenderer,
         currentSamples
       )
     } else {
@@ -55,7 +55,7 @@ const execute = () => {
             }
             for (const materialEntity of materials) {
               commitProperties(
-                MaterialStateComponent,
+                MaterialComponent,
                 {
                   ['parameters.aoMap' as string]: { source: uploadedUrl, channel } as SerializedTexture,
                   ['parameters.aoMapIntensity' as string]: 1
@@ -77,7 +77,7 @@ const execute = () => {
     entities.map((entity) => {
       const materialInstanceComponent = getComponent(entity, MaterialInstanceComponent)
       for (const materialEntity of materialInstanceComponent.entities) {
-        const material = getComponent(materialEntity, MaterialStateComponent).material as MeshStandardMaterial
+        const material = getComponent(materialEntity, MaterialComponent).material as MeshStandardMaterial
         material.aoMapIntensity = 1
         material.aoMap = renderTarget.texture
         material.aoMap!.channel = channel
