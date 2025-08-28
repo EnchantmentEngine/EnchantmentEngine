@@ -4,9 +4,7 @@ import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
-import { Tween } from '@tweenjs/tween.js'
-import { DoubleSide, Euler, Mesh, MeshBasicMaterial, TorusGeometry } from 'three'
+import { DoubleSide, Mesh, MeshBasicMaterial, TorusGeometry } from 'three'
 
 export function createLoadingSpinner(name = 'loading spinner', loadingEntity = UndefinedEntity) {
   const sphereEntity = createEntity()
@@ -20,20 +18,6 @@ export function createLoadingSpinner(name = 'loading spinner', loadingEntity = U
     new MeshBasicMaterial({ side: DoubleSide, depthTest: false, color: 0x0077ff })
   )
   setComponent(sphereEntity, MeshComponent, sphereMesh)
-
-  const loadingTransform = getComponent(sphereEntity, TransformComponent)
-  const rotator = { rotation: 0 }
-  setComponent(
-    sphereEntity,
-    TweenComponent,
-    new Tween<any>(rotator)
-      .to({ rotation: Math.PI * 2 }, 1000)
-      .onUpdate(() => {
-        loadingTransform.rotation.setFromEuler(new Euler(0, 0, rotator.rotation))
-      })
-      .start()
-      .repeat(Infinity)
-  )
 
   return sphereEntity
 }
