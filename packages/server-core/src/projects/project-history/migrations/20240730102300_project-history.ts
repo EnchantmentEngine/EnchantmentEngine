@@ -1,8 +1,4 @@
-import {
-  ActionIdentifierTypes,
-  ActionTypes,
-  projectHistoryPath
-} from '@ir-engine/common/src/schemas/projects/project-history.schema'
+import { projectHistoryPath } from '@ir-engine/common/src/schemas/projects/project-history.schema'
 import type { Knex } from 'knex'
 
 /**
@@ -25,11 +21,11 @@ export async function up(knex: Knex): Promise<void> {
       //@ts-ignore
       table.uuid('userId', 36).collate('utf8mb4_bin')
 
-      table.enum('action', ActionTypes).notNullable()
+      table.string('action', 255).notNullable()
 
       table.string('actionIdentifier').notNullable()
 
-      table.enum('actionIdentifierType', ActionIdentifierTypes).notNullable()
+      table.string('actionIdentifierType', 255).notNullable()
 
       table.json('actionDetail').nullable()
 

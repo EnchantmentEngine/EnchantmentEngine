@@ -31,6 +31,8 @@ export async function up(knex: Knex): Promise<void> {
       table.string('sceneId', 255)
       table.boolean('isChannel').nullable()
       table.boolean('ended').defaultTo(0)
+      table.string('peerId', 255)
+      table.integer('peerIndex')
       //@ts-ignore
       table.uuid('userId', 36).collate('utf8mb4_bin').index().nullable()
       //@ts-ignore
