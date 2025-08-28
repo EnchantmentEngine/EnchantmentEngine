@@ -1,6 +1,6 @@
 import { defineComponent, Entity, SystemUUID, useComponent } from '@ir-engine/ecs'
 import { SchemaDefinition, State, Static, TObjectSchema, TProperties } from '@ir-engine/hyperflux'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { Shader, Texture, WebGLRenderer } from 'three'
 import { MaterialPluginComponents, MaterialStateComponent, UniformRecord, useUniforms } from './MaterialComponent'
 import { removePlugin, setPlugin } from './materialFunctions'
@@ -66,11 +66,14 @@ export const defineMaterialPlugin = <T extends SchemaDefinition>({
 
       const pluginState = useComponent(entity, PluginComponent) as UniformRecord
 
+      const systemUUID = useMemo(() => makeMaterialPluginUpdateSystemID(name, entity), [name, entity])
+
       const { textureState, uniforms } = useUniforms(
         entity,
         uniformSchema as TObjectSchema<TProperties>,
         pluginState,
-        update
+        update,
+        systemUUID
       )
 
       useEffect(() => {

@@ -15,6 +15,7 @@ import {
   ComponentType,
   ECSState,
   PresentationSystemGroup,
+  SystemUUID,
   UUIDComponent,
   createEntity,
   defineComponent,
@@ -114,7 +115,8 @@ export const useUniforms = <T extends TObjectSchema<TProperties>>(
   entity: Entity,
   schemas: T,
   uniformValues: UniformRecord,
-  onUpdate?: (uniforms: Static<T>, deltaSeconds: number) => void
+  onUpdate?: (uniforms: Static<T>, deltaSeconds: number) => void,
+  systemUUID?: SystemUUID
 ) => {
   const textureUniformState = useHookstate(
     () =>
@@ -139,6 +141,7 @@ export const useUniforms = <T extends TObjectSchema<TProperties>>(
       Object.fromEntries(
         Object.entries(schemas.properties)
           .map(([key, value]) => {
+            console.log({ key, value, isTexture: isTextureUniform(value) })
             if (isTextureUniform(schemas.properties![key])) return [key, new Uniform(null)]
             return [key, new Uniform(value !== null && typeof value === 'object' && 'index' in value ? null : value)]
           })
@@ -158,12 +161,12 @@ export const useUniforms = <T extends TObjectSchema<TProperties>>(
   useExecute(
     () => {
       if (!uniformValues) return
-      if (onUpdate) onUpdate(uniforms, getState(ECSState).deltaSeconds)
+      if (onUpdate) onUpdate(uniformValues, getState(ECSState).deltaSeconds)
       for (const key in uniforms) {
         uniforms[key].value = key in textureUniforms ? textureUniforms[key].value : uniformValues[key]
       }
     },
-    { before: PresentationSystemGroup }
+    { before: PresentationSystemGroup, uuid: systemUUID }
   )
 
   return { textureState, uniforms }
