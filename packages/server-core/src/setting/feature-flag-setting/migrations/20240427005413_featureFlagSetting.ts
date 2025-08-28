@@ -18,6 +18,10 @@ export async function up(knex: Knex): Promise<void> {
       table.boolean('flagValue').notNullable()
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
+      //@ts-ignore
+      table.uuid('userId', 36).collate('utf8mb4_bin').nullable().index()
+
+      table.foreign('userId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     })
   }
 
