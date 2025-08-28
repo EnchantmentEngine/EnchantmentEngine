@@ -49,6 +49,47 @@ import { useTexture } from '../../resources/resourceLoaderHooks'
 import { T } from '../../schema/schemaFunctions'
 import { MeshComponent } from '../components/MeshComponent'
 import { setMeshMaterial } from './materialFunctions'
+import MeshBasicMaterial from './prototypes/MeshBasicMaterial.mat'
+import MeshLambertMaterial from './prototypes/MeshLambertMaterial.mat'
+import MeshMatcapMaterial from './prototypes/MeshMatcapMaterial.mat'
+import MeshPhongMaterial from './prototypes/MeshPhongMaterial.mat'
+import MeshPhysicalMaterial from './prototypes/MeshPhysicalMaterial.mat'
+import MeshStandardMaterial from './prototypes/MeshStandardMaterial.mat'
+import MeshToonMaterial from './prototypes/MeshToonMaterial.mat'
+import { ShadowMaterial } from './prototypes/ShadowMaterial.mat'
+
+export type MaterialPrototypeConstructor = new (...args: any) => any
+export type MaterialPrototypeDefinition = {
+  prototypeConstructor: MaterialPrototypeConstructor
+  arguments: PrototypeArgument
+}
+
+export type PrototypeArgumentValue = {
+  type: string
+  default: any
+  min?: number
+  max?: number
+  options?: any[]
+}
+export type PrototypeArgument = {
+  [_: string]: PrototypeArgumentValue
+}
+
+export const MaterialPrototypeDefinitions = defineState({
+  name: 'MaterialPrototypeDefinitions',
+  initial: () =>
+    ({
+      MeshBasicMaterial,
+      MeshLambertMaterial,
+      MeshMatcapMaterial,
+      MeshPhongMaterial,
+      MeshPhysicalMaterial,
+      MeshStandardMaterial,
+      MeshToonMaterial,
+      // ShaderMaterial, // makes no sense since we can't supply shaders
+      ShadowMaterial
+    }) as Record<string, MaterialPrototypeDefinition>
+})
 
 /**
  * A JSON Schema for a texture uniform.
@@ -176,7 +217,7 @@ const MaterialUniformSchema = Schema.Object(MaterialUniformSchemaProperties)
 export const MaterialComponent = defineComponent({
   name: 'MaterialComponent',
 
-  jsonID: 'IR_material',
+  // jsonID: 'IR_material',
 
   schema: Schema.Object({
     ...MaterialUniformSchemaProperties,
@@ -198,7 +239,7 @@ export const MaterialComponent = defineComponent({
 export const MaterialStateComponent = defineComponent({
   name: 'MaterialStateComponent',
 
-  jsonID: 'IR_material_old',
+  jsonID: 'IR_material',
 
   schema: Schema.Object({
     material: Schema.Type<Material>(),

@@ -1,14 +1,5 @@
-import {
-  defineComponent,
-  Entity,
-  Schema,
-  Static,
-  SystemUUID,
-  TObjectSchema,
-  TProperties,
-  useComponent
-} from '@ir-engine/ecs'
-import { State } from '@ir-engine/hyperflux'
+import { defineComponent, Entity, SystemUUID, useComponent } from '@ir-engine/ecs'
+import { SchemaDefinition, State, Static, TObjectSchema, TProperties } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { Shader, Texture, WebGLRenderer } from 'three'
 import { MaterialPluginComponents, MaterialStateComponent, UniformRecord, useUniforms } from './MaterialComponent'
@@ -47,7 +38,7 @@ import { removePlugin, setPlugin } from './materialFunctions'
  * })
  **/
 
-export const defineMaterialPlugin = <T extends Schema>({
+export const defineMaterialPlugin = <T extends SchemaDefinition>({
   name,
   jsonID,
   uniforms: uniformSchema,

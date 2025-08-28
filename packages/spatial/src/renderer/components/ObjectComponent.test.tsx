@@ -12,7 +12,7 @@ import assert from 'assert'
 import { BoxGeometry, Layers, Matrix4, Mesh, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { assertMatrix, assertVec } from '../../../tests/util/assert'
-import { TransformComponent } from '../RendererModule'
+import { TransformComponent } from '../../transform/components/TransformComponent'
 import { ObjectComponent } from './ObjectComponent'
 import { Layer } from './ObjectLayerComponent'
 
