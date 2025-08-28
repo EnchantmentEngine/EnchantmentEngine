@@ -4,7 +4,6 @@ import { deleteScene } from '@ir-engine/client-core/src/world/SceneAPI'
 import { API, useFind, useMutation } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import {
   engineSettingPath,
   fileBrowserPath,
@@ -40,7 +39,6 @@ import React, { lazy, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineInformationCircle } from 'react-icons/hi2'
 import { NotificationService } from '../../../common/services/NotificationService'
-import useFeatureFlags from '../../../hooks/useFeatureFlags'
 import { CompressedPublishConfirmation, ProgressState } from './CompressedPublishConfirmation'
 
 function formatPublishedDate(isoString) {
@@ -132,9 +130,6 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
   const locationType = useHookstate(location?.locationSetting.locationType || 'public')
   const progressState = useHookstate(getMutableState(ProgressState))
   const lods = useHookstate<LODVariantDescriptor[]>([])
-  const [xrEnabled] = useFeatureFlags([FeatureFlags.Client.Menu.XR])
-
-  const [compressOnPublishEnabled] = useFeatureFlags([FeatureFlags.Studio.UI.CompressOnPublish])
 
   useEffect(() => {
     if (location) {
@@ -544,45 +539,33 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               )}
 
               <div className="grid h-full grid-rows-[auto,1fr] gap-5">
-                {xrEnabled ? (
-                  <>
-                    <div className="flex h-auto flex-col self-start">
-                      <h5>{t('editor:toolbar.publishLocation.jumpControlFeature')}</h5>
-                      <span className="text-xs">{t('editor:toolbar.publishLocation.jumpControlFeatureDesc')}</span>
-                    </div>
-                    <div className="flex flex-col gap-5">
-                      <Toggle
-                        label={t('admin:components.location.lbl-je')}
-                        /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
-                        value={false}
-                        onChange={() => {}}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  ''
-                )}
+                <div className="flex h-auto flex-col self-start">
+                  <h5>{t('editor:toolbar.publishLocation.jumpControlFeature')}</h5>
+                  <span className="text-xs">{t('editor:toolbar.publishLocation.jumpControlFeatureDesc')}</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Toggle
+                    label={t('admin:components.location.lbl-je')}
+                    /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+                    value={false}
+                    onChange={() => {}}
+                    disabled={isLoading}
+                  />
+                </div>
 
-                {xrEnabled ? (
-                  <>
-                    <div className="flex h-auto flex-col self-start">
-                      <h5>{t('editor:toolbar.publishLocation.vrCapabilitiesFeature')}</h5>
-                      <span className="text-xs">{t('editor:toolbar.publishLocation.vrCapabilitiesFeatureDesc')}</span>
-                    </div>
-                    <div className="flex flex-col gap-5">
-                      <Toggle
-                        label={t('admin:components.location.lbl-vre')}
-                        /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
-                        value={false}
-                        onChange={() => {}}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  ''
-                )}
+                <div className="flex h-auto flex-col self-start">
+                  <h5>{t('editor:toolbar.publishLocation.vrCapabilitiesFeature')}</h5>
+                  <span className="text-xs">{t('editor:toolbar.publishLocation.vrCapabilitiesFeatureDesc')}</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Toggle
+                    label={t('admin:components.location.lbl-vre')}
+                    /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+                    value={false}
+                    onChange={() => {}}
+                    disabled={isLoading}
+                  />
+                </div>
 
                 <div className="flex h-auto flex-col self-start">
                   <h5>{t('editor:toolbar.publishLocation.multiplayerFeatures')}</h5>
@@ -656,7 +639,7 @@ export default function AddEditLocationModal(props: AddEditLocationModalProps) {
               <Button
                 className="bg-[#2F3A4D]"
                 data-testid="publish-panel-compress-and-publish-button"
-                disabled={isLoading || !compressOnPublishEnabled}
+                disabled={isLoading}
                 onClick={handlePublishFolder}
               >
                 <HiOutlineInformationCircle />

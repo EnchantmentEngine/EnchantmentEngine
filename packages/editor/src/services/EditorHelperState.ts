@@ -1,7 +1,5 @@
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs'
-import { defineState, getMutableState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
+import { defineState, syncStateWithLocalStorage } from '@ir-engine/hyperflux'
 import {
   SnapMode,
   SnapModeType,
@@ -12,7 +10,6 @@ import {
   TransformSpace,
   TransformSpaceType
 } from '@ir-engine/spatial/src/common/constants/TransformConstants'
-import { useEffect } from 'react'
 import { VolumeVisibility } from '../functions/gizmos/studioIconGizmoHelper'
 
 export const PlacementMode = {
@@ -37,7 +34,6 @@ export const EditorHelperState = defineState({
     gizmoEnabled: true,
     gridVisibility: false,
     gridHeight: 0,
-    showGlbChildren: true,
     volumeVisibility: 'Auto' as keyof typeof VolumeVisibility,
     editorIconMaxSize: 0.5,
     editorIconMinSize: 0.4
@@ -51,15 +47,6 @@ export const EditorHelperState = defineState({
     'gridHeight'
   ]),
   reactor: () => {
-    const [showGlbChildrenFlag] = useFeatureFlags([FeatureFlags.Studio.UI.Hierarchy.ShowGlbChildren])
-
-    useEffect(() => {
-      const showGlbChildren = getMutableState(EditorHelperState).showGlbChildren
-      if (typeof showGlbChildrenFlag !== 'undefined') {
-        showGlbChildren.set(showGlbChildrenFlag)
-      }
-    }, [showGlbChildrenFlag])
-
     return null
   }
 })

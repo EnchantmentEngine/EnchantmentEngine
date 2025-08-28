@@ -17,6 +17,7 @@ import { LegacyVolumetricComponent } from '@ir-engine/engine/src/scene/component
 import { LinkComponent } from '@ir-engine/engine/src/scene/components/LinkComponent'
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
+import { MediaSettingsComponent } from '@ir-engine/engine/src/scene/components/MediaSettingsComponent'
 import { MixerComponent } from '@ir-engine/engine/src/scene/components/MixerComponent'
 import { MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
@@ -66,7 +67,13 @@ export const ComponentShelfCategoriesState = defineState({
         MountPointComponent,
         InteractableComponent,
         InputComponent,
-        OverlayComponent
+        OverlayComponent,
+        SplineComponent,
+        GrabbableComponent,
+        LegacyVolumetricComponent,
+        VolumetricComponent,
+        AudioAnalysisComponent,
+        ScreenshareTargetComponent
       ],
       Lighting: [
         AmbientLightComponent,
@@ -84,12 +91,7 @@ export const ComponentShelfCategoriesState = defineState({
         MixerComponent
       ],
       Scripting: [],
-      Settings: [
-        SceneSettingsComponent,
-        RenderSettingsComponent,
-        // MediaSettingsComponent
-        CameraSettingsComponent
-      ],
+      Settings: [SceneSettingsComponent, RenderSettingsComponent, MediaSettingsComponent, CameraSettingsComponent],
       Visual: [
         EnvMapBakeComponent,
         ScenePreviewCameraComponent,
@@ -104,27 +106,9 @@ export const ComponentShelfCategoriesState = defineState({
   },
   reactor: () => {
     const [portalEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.Portal])
-    const [grabbleEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.Grabble])
-    const [splineEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.Spline])
     const [visualScriptEnabled] = useFeatureFlags([FeatureFlags.Studio.Panel.VisualScript])
 
-    const [legacyVolumetricEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.LegacyVolumetric])
-    const [volumetricEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.Volumetric])
-    const [audioAnalysisEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.AudioAnalysis])
-    const [screenshareTargetEnabled] = useFeatureFlags([FeatureFlags.Studio.Components.ScreenshareTarget])
-
     const cShelfState = getMutableState(ComponentShelfCategoriesState)
-
-    useEffect(() => {
-      if (splineEnabled) {
-        cShelfState.Interaction.merge([SplineComponent])
-        return () => {
-          cShelfState.Interaction.set((curr) => {
-            return curr.splice(curr.findIndex((item) => item.name == SplineComponent.name))
-          })
-        }
-      }
-    }, [splineEnabled])
 
     useEffect(() => {
       if (portalEnabled) {
@@ -138,17 +122,6 @@ export const ComponentShelfCategoriesState = defineState({
     }, [portalEnabled])
 
     useEffect(() => {
-      if (grabbleEnabled) {
-        cShelfState.Interaction.merge([GrabbableComponent])
-        return () => {
-          cShelfState.Interaction.set((curr) => {
-            return curr.splice(curr.findIndex((item) => item.name == GrabbableComponent.name))
-          })
-        }
-      }
-    }, [grabbleEnabled])
-
-    useEffect(() => {
       if (visualScriptEnabled) {
         cShelfState.Scripting.merge([VisualScriptComponent])
         return () => {
@@ -158,50 +131,6 @@ export const ComponentShelfCategoriesState = defineState({
         }
       }
     }, [visualScriptEnabled])
-
-    useEffect(() => {
-      if (legacyVolumetricEnabled) {
-        cShelfState.Interaction.merge([LegacyVolumetricComponent])
-        return () => {
-          cShelfState.Interaction.set((curr) => {
-            return curr.splice(curr.findIndex((item) => item.name == LegacyVolumetricComponent.name))
-          })
-        }
-      }
-    }, [legacyVolumetricEnabled])
-
-    useEffect(() => {
-      if (volumetricEnabled) {
-        cShelfState.Interaction.merge([VolumetricComponent])
-        return () => {
-          cShelfState.Interaction.set((curr) => {
-            return curr.splice(curr.findIndex((item) => item.name == VolumetricComponent.name))
-          })
-        }
-      }
-    }, [volumetricEnabled])
-
-    useEffect(() => {
-      if (audioAnalysisEnabled) {
-        cShelfState.Interaction.merge([AudioAnalysisComponent])
-        return () => {
-          cShelfState.Interaction.set((curr) => {
-            return curr.splice(curr.findIndex((item) => item.name == AudioAnalysisComponent.name))
-          })
-        }
-      }
-    }, [audioAnalysisEnabled])
-
-    useEffect(() => {
-      if (screenshareTargetEnabled) {
-        cShelfState.Interaction.merge([ScreenshareTargetComponent])
-        return () => {
-          cShelfState.Interaction.set((curr) => {
-            return curr.splice(curr.findIndex((item) => item.name == ScreenshareTargetComponent.name))
-          })
-        }
-      }
-    }, [screenshareTargetEnabled])
 
     return null
   }
