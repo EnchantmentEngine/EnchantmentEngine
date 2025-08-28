@@ -15,21 +15,13 @@ import {
 } from '@ir-engine/ecs'
 import assert from 'assert'
 import sinon from 'sinon'
-import { BoxGeometry, Color, Material, Mesh, Texture } from 'three'
+import { BoxGeometry, Material, Mesh } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
-import { assertArray } from '../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../tests/util/mockSpatialEngine'
-import { TransformComponent } from '../RendererModule'
+import { TransformComponent } from '../../transform/components/TransformComponent'
 import { MeshComponent } from '../components/MeshComponent'
-import { MaterialInstanceComponent, MaterialStateComponent, PrototypeArgumentValue } from './MaterialComponent'
-import {
-  formatMaterialArgs,
-  getMaterialIndices,
-  hasPlugin,
-  removePlugin,
-  setMeshMaterial,
-  setPlugin
-} from './materialFunctions'
+import { MaterialStateComponent, PrototypeArgumentValue } from './MaterialComponent'
+import { hasPlugin, removePlugin, setMeshMaterial, setPlugin } from './materialFunctions'
 
 const prototypeDefaultArgs: PrototypeArgumentValue = {
   type: 'defaultType',
@@ -370,138 +362,4 @@ describe('materialFunctions', () => {
       assert.equal(result, Expected)
     })
   }) //:: removePlugin
-
-  describe('getMaterialIndices', () => {
-    let testEntity = UndefinedEntity
-
-    beforeEach(() => {
-      createEngine()
-      mockSpatialEngine()
-      testEntity = createEntity()
-    })
-
-    afterEach(() => {
-      removeEntity(testEntity)
-      return destroyEngine()
-    })
-
-    it('should return an empty array if `@param entity` does not have a MaterialInstanceComponent', () => {
-      // Set the data as expected
-      const materialEntity = createEntity()
-      // setComponent(testEntity, MaterialInstanceComponent)
-      // Sanity check before running
-      assert.equal(hasComponent(testEntity, MaterialInstanceComponent), false)
-      // Run and Check the result
-      const result = getMaterialIndices(testEntity, materialEntity)
-      assert.equal(result.length, 0)
-    })
-
-    it('should return an array that contains the indices of MaterialInstanceComponent.uuid that matched the `@param materialEntity`. None of them should be undefined', () => {
-      // Set the data as expected
-      const dummyEntity1 = createEntity()
-      const dummyEntity2 = createEntity()
-      const dummyEntity3 = createEntity()
-      const materialEntity = createEntity()
-      const materialEntities = [
-        materialEntity,
-        dummyEntity1,
-        materialEntity,
-        dummyEntity2,
-        materialEntity,
-        dummyEntity3
-      ] as Entity[]
-      const Expected = [0, 2, 4]
-      setComponent(testEntity, MaterialInstanceComponent, { entities: materialEntities })
-
-      // Sanity check before running
-      assert.equal(hasComponent(testEntity, MaterialInstanceComponent), true)
-      for (const id of Expected) assert.equal(materialEntities[id], materialEntity)
-
-      // Run and Check the result
-      const result = getMaterialIndices(testEntity, materialEntity)
-      assert.equal(result.length, Expected.length)
-      assertArray.eq(result, Expected)
-    })
-  }) //:: getMaterialIndices
-
-  describe('formatMaterialArgs', () => {
-    it('should return `@param args` if it is falsy', () => {
-      // Set the data as expected
-      const Expected1 = false
-      const Expected2 = undefined
-      const Expected3 = null
-      const Expected4 = 0
-      // Sanity check before running
-      assert.equal(!Expected1, true)
-      assert.equal(!Expected2, true)
-      assert.equal(!Expected3, true)
-      assert.equal(!Expected4, true)
-      // Run and Check the result
-      const result1 = formatMaterialArgs(Expected1)
-      const result2 = formatMaterialArgs(Expected2)
-      const result3 = formatMaterialArgs(Expected3)
-      const result4 = formatMaterialArgs(Expected4)
-      assert.equal(result1, Expected1)
-      assert.equal(result2, Expected2)
-      assert.equal(result3, Expected3)
-      assert.equal(result4, Expected4)
-    })
-
-    describe('when `@param defaultArgs` is not passed ...', () => {
-      it('... should return the object passed as `@param args` when none of the `@param args` object properties is a texture or an empty string', () => {
-        // Set the data as expected
-        const Expected = { asdf: 'asdf', thing: 41, other: 42, obj: { sub1: 43, sub2: 44 } }
-        // Sanity check before running
-        assert.equal(!Expected, false)
-        // Run and Check the result
-        const result = formatMaterialArgs(Expected)
-        assert.deepEqual(result, Expected)
-      })
-
-      it('... should return the object passed as `@param args` without any of its texture properties when the tex.source.data of that property is undefined', () => {
-        const texture = new Texture()
-        texture.source.data = 'SomeDefinedData'
-        const Expected = { tex: texture, asdf: 'asdfValue', other: 42 }
-        // Set the data as expected
-        const Thing = new Texture()
-        Thing.source.data = undefined
-        const Args = { thing: Thing, ...Expected }
-        // Sanity check before running
-        assert.equal(!Expected, false)
-        assert.equal(Thing.source.data, undefined)
-        assert.notEqual(texture.source.data, undefined)
-        // Run and Check the result
-        const result = formatMaterialArgs(Args)
-        assert.deepEqual(result, Expected)
-      })
-    })
-
-    describe('when `@param defaultArgs` is passed ...', () => {
-      it('... should return the object passed as `@param args` without any of the `@param defaultArgs` properties that is not a valid Color or ColorRepresentation', () => {
-        // Set the data as expected
-        const valid = { str: '0x000000', num: 0xff0000, col: new Color(0, 0, 1) }
-        const args = { ...valid, asdf: 'asdfValue', other: 42 }
-        const defaultArgs1 = { ...prototypeDefaultArgs, default: { ...valid } }
-        const defaultArgs2 = { ...prototypeDefaultArgs, default: { ...valid } }
-        const defaultArgs = { arg1: defaultArgs1, arg2: defaultArgs2 }
-        const Expected = { ...args, ...valid }
-        // Sanity check before running
-        assert.equal(!Expected, false)
-        // Run and Check the result
-        const result = formatMaterialArgs(args, defaultArgs)
-        assert.deepEqual(result, Expected)
-      })
-
-      it('... should return the object passed as `@param args` when none of the `@param args` object properties is a texture or an empty string', () => {
-        // Set the data as expected
-        const Expected = { asdf: 'asdf', thing: 41, other: 42, obj: { sub1: 43, sub2: 44 } }
-        const defaultArgs = { one: { ...prototypeDefaultArgs, default: { num: 1 } } }
-        // Sanity check before running
-        assert.equal(!Expected, false)
-        // Run and Check the result
-        const result = formatMaterialArgs(Expected, defaultArgs)
-        assert.deepEqual(result, Expected)
-      })
-    })
-  }) //:: formatMaterialArgs
 }) //:: materialFunctions

@@ -5,7 +5,7 @@ import { Schema } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { MaterialStateComponent } from '../MaterialComponent'
 import {
   ditheringAlphatestChunk,
   ditheringFragUniform,
