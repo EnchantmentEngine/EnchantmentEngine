@@ -2,7 +2,6 @@ import { NotificationService } from '@ir-engine/client-core/src/common/services/
 import { VALID_HEIRARCHY_SEARCH_REGEX } from '@ir-engine/common/src/regex'
 import {
   Entity,
-  EntityArrayBoundary,
   EntityTreeComponent,
   getAncestorWithComponents,
   getChildrenWithComponents,
@@ -10,6 +9,7 @@ import {
   hasComponent,
   isAncestor,
   Layers,
+  QueryReactor,
   traverseEntityNode,
   UndefinedEntity,
   useOptionalComponent,
@@ -118,7 +118,6 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   const entities = useQuery([UUIDComponent], Layers.Authoring)
   const showGlbChildren = useMutableState(EditorHelperState).showGlbChildren
 
-  const childEntities = useQuery([EntityTreeComponent], Layers.Authoring)
   const reparentRefresh = useHookstate(0)
   const childIndexRefresh = useHookstate(0)
 
@@ -151,7 +150,6 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
       selectionState.selectedEntities,
       showGlbChildren,
       entities,
-      childEntities,
       reparentRefresh,
       childIndexRefresh,
       rootEntity
@@ -184,7 +182,11 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
 
   return (
     <>
-      <EntityArrayBoundary entities={childEntities} ChildEntityReactor={ChildEntityReactor} />
+      <QueryReactor
+        Components={[EntityTreeComponent]}
+        layer={Layers.Authoring}
+        ChildEntityReactor={ChildEntityReactor}
+      />
       <HierarchyTreeContext.Provider
         value={{
           nodes: displayedNodes,

@@ -13,7 +13,6 @@ import {
   TransformSpaceType
 } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { useEffect } from 'react'
-import { EditorMode, EditorModeType } from '../constants/EditorModeTypes'
 import { VolumeVisibility } from '../functions/gizmos/studioIconGizmoHelper'
 
 export const PlacementMode = {
@@ -26,7 +25,6 @@ export type PlacementModeType = (typeof PlacementMode)[keyof typeof PlacementMod
 export const EditorHelperState = defineState({
   name: 'EditorHelperState',
   initial: () => ({
-    editorMode: EditorMode.Simple as EditorModeType,
     transformMode: TransformMode.translate as TransformModeType,
     transformSpace: TransformSpace.local as TransformSpaceType,
     transformPivot: TransformPivot.FirstSelected as TransformPivotType,
@@ -45,7 +43,7 @@ export const EditorHelperState = defineState({
     editorIconMinSize: 0.4
   }),
   extension: syncStateWithLocalStorage([
-    'snapMode',
+    'gridSnap',
     'translationSnap',
     'rotationSnap',
     'scaleSnap',
