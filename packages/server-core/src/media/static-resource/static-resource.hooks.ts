@@ -1,6 +1,7 @@
 import { BadRequest, Forbidden, NotFound } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import { projectHistoryPath, projectPath } from '@ir-engine/common/src/schema.type.module'
+import { staticResourceTagPath } from '@ir-engine/common/src/schemas/media/static-resource-tag.schema'
 import { staticResourceVectorPath } from '@ir-engine/common/src/schemas/media/static-resource-vector.schema'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
 import { isValidId } from '@ir-engine/common/src/utils/isValidId'
@@ -88,7 +89,7 @@ const updateName = async (context: HookContext<StaticResourceService>) => {
 
   if (Array.isArray(context.data)) throw new BadRequest('Batch create is not supported')
 
-  let id = context.id
+  const id = context.id
   const data = context.data
 
   if (!data.key) {
@@ -156,6 +157,120 @@ const removeResourcesJson = async (context: HookContext<StaticResourceService>) 
   for (const result of results) {
     await removeProjectResourcesJson(context.app, result)
   }
+}
+
+const normalizeTags = (tags?: string[] | null) =>
+  (tags || []).map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0)
+
+const delta = (oldTags: string[], newTags: string[]) => {
+  const oldSet = new Set(oldTags)
+  const newSet = new Set(newTags)
+  const added: string[] = []
+  const removed: string[] = []
+  for (const t of newSet) if (!oldSet.has(t)) added.push(t)
+  for (const t of oldSet) if (!newSet.has(t)) removed.push(t)
+  return { added, removed }
+}
+
+const upsertTagCounts = async (
+  context: HookContext<StaticResourceService>,
+  project: string | undefined | null,
+  toInc: string[],
+  toDec: string[]
+) => {
+  if (!project || (!toInc.length && !toDec.length)) return
+  const knex = context.app.get('knexClient')
+  const table = staticResourceTagPath
+
+  // increment
+  for (const tag of toInc) {
+    // Try update first
+    const updated = await knex(table)
+      .where({ project, tag })
+      .update({ count: knex.raw('?? + 1', ['count']), updatedAt: knex.fn.now() })
+
+    if (!updated) {
+      try {
+        await knex(table).insert({ project, tag, count: 1, createdAt: knex.fn.now(), updatedAt: knex.fn.now() })
+      } catch (e) {
+        // If unique violation due to race, fallback to update
+        await knex(table)
+          .where({ project, tag })
+          .update({ count: knex.raw('?? + 1', ['count']), updatedAt: knex.fn.now() })
+      }
+    }
+  }
+
+  // decrement
+  for (const tag of toDec) {
+    await knex(table)
+      .where({ project, tag })
+      .update({ count: knex.raw('GREATEST(?? - 1, 0)', ['count']), updatedAt: knex.fn.now() })
+
+    await knex(table).where({ project, tag }).andWhere('count', '<=', 0).del()
+  }
+}
+
+const syncTagsOnCreateOrUpdate = async (context: HookContext<StaticResourceService>) => {
+  if (!context.result) return context
+  const results = Array.isArray(context.result)
+    ? context.result
+    : 'data' in context.result
+    ? context.result.data
+    : [context.result]
+
+  for (const res of results) {
+    const newTags = normalizeTags(res.tags as any)
+    if (!newTags.length) continue
+    await upsertTagCounts(context, res.project, newTags, [])
+  }
+  return context
+}
+
+const syncTagsOnPatch = async (context: HookContext<StaticResourceService>) => {
+  if (!context.result) return context
+  const results = Array.isArray(context.result)
+    ? context.result
+    : 'data' in context.result
+    ? context.result.data
+    : [context.result]
+
+  for (const res of results) {
+    const id = res.id
+    if (!id) continue
+    const prev = await context.app.service(staticResourcePath).get(id)
+    const prevTags = normalizeTags(prev.tags as any)
+    const newTags = normalizeTags(
+      Array.isArray((res as any).tags) ? ((res as any).tags as string[]) : (prev.tags as any)
+    )
+    const prevProject = prev.project
+    const newProject = res.project ?? prev.project
+
+    if (prevProject !== newProject) {
+      if (prevTags.length) await upsertTagCounts(context, prevProject, [], prevTags)
+      if (newTags.length) await upsertTagCounts(context, newProject, newTags, [])
+    } else {
+      const { added, removed } = delta(prevTags, newTags)
+      if (added.length || removed.length) await upsertTagCounts(context, newProject, added, removed)
+    }
+  }
+  return context
+}
+
+const syncTagsOnRemove = async (context: HookContext<StaticResourceService>) => {
+  if (!context.result) return context
+  const results = Array.isArray(context.result)
+    ? context.result
+    : 'data' in context.result
+    ? context.result.data
+    : [context.result]
+
+  for (const res of results) {
+    const prevTags = normalizeTags(res.tags as any)
+    if (!prevTags.length) continue
+    await upsertTagCounts(context, res.project, [], prevTags)
+  }
+  return context
 }
 
 /**
@@ -492,10 +607,10 @@ export default {
         )
       )
     ],
-    create: [updateResourcesJson, syncToVectorDatabase],
-    update: [updateResourcesJson, syncToVectorDatabase],
-    patch: [updateResourcesJson, syncToVectorDatabase, (context) => addLog(context, 'patch')],
-    remove: [removeResourcesJson, removeFromVectorDatabase, (context) => addLog(context, 'delete')]
+    create: [updateResourcesJson, syncToVectorDatabase, syncTagsOnCreateOrUpdate],
+    update: [updateResourcesJson, syncToVectorDatabase, syncTagsOnCreateOrUpdate],
+    patch: [updateResourcesJson, syncToVectorDatabase, syncTagsOnPatch, (context) => addLog(context, 'patch')],
+    remove: [removeResourcesJson, removeFromVectorDatabase, syncTagsOnRemove, (context) => addLog(context, 'delete')]
   },
 
   error: {

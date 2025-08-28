@@ -3,9 +3,9 @@ import { API } from '@ir-engine/common'
 import { StaticResourceQuery, StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { State, defineState, getMutableState, getState, useHookstate, usePrevious } from '@ir-engine/hyperflux'
 import React, { ReactNode, createContext, useContext, useEffect } from 'react'
-import { AssetsPanelCategories, MyAssetCategory } from '../../services/AssetPanelCategoriesState'
+import { MyAssetCategory } from '../../services/AssetPanelCategoriesState'
 import { AssetCategoryNode } from './categories'
-import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, convertToHierarchy, iterativelyListTags } from './helpers'
+import { ASSETS_PAGE_LIMIT, calculateItemsToFetch, iterativelyListTags } from './helpers'
 
 // Define a state to track refresh operations
 export const AssetsRefreshState = defineState({
@@ -33,7 +33,7 @@ const AssetsQueryContext = createContext({
   }
 })
 
-export const assetCategories = convertToHierarchy(AssetsPanelCategories.initial)
+// export const assetCategories = convertToHierarchy(AssetsPanelCategories.initial)
 
 export const AssetsQueryProvider = ({ children }: { children: ReactNode }) => {
   const search = useHookstate({ local: '', query: '' })

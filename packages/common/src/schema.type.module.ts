@@ -16,6 +16,7 @@ export type * from './schemas/media/file-browser.schema'
 export type * from './schemas/media/invalidation.schema'
 export type * from './schemas/media/oembed.schema'
 export type * from './schemas/media/static-resource-search.schema'
+export type * from './schemas/media/static-resource-tag.schema'
 export type * from './schemas/media/static-resource-vector.schema'
 export type * from './schemas/media/static-resource.schema'
 export type * from './schemas/networking/allowed-domains.schema'
@@ -168,6 +169,8 @@ export const fileBrowserPath = 'file-browser'
 export const fileBrowserUploadPath = 'file-browser-upload'
 
 export const staticResourcePath = 'static-resource'
+
+export const staticResourceTagPath = 'static-resource-tag'
 
 export const oembedPath = 'oembed'
 

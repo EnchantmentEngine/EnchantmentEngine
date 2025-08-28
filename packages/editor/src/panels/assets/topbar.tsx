@@ -1,4 +1,6 @@
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
+import { useFind } from '@ir-engine/common'
+import { staticResourceTagPath } from '@ir-engine/common/src/schema.type.module'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Tooltip } from '@ir-engine/ui'
 import { ViewportButton } from '@ir-engine/ui/editor'
@@ -15,7 +17,7 @@ import { handleDownloadProject, ProjectDownloadProgress } from '../files/loaders
 import { BreadCrumbSlash, PanelToolbar } from '../files/toolbar'
 import { AssetCategoryNode } from './categories'
 import { findCategoryByPath } from './helpers'
-import { assetCategories, AssetsRefreshState, useAssetsCategory, useAssetsQuery } from './hooks'
+import { AssetsRefreshState, useAssetsCategory, useAssetsQuery } from './hooks'
 
 export const uploadFiles = (): Promise<null> =>
   new Promise((resolve, reject) => {
@@ -44,6 +46,11 @@ export const uploadFiles = (): Promise<null> =>
 
 export function AssetsBreadcrumbs() {
   const { currentCategoryPath } = useAssetsCategory()
+  const assetCategories = useFind(staticResourceTagPath, {
+    query: {
+      project: getState(EditorState).projectName
+    }
+  })
   const currentCategory = currentCategoryPath.get({ noproxy: true }) as AssetCategoryNode
 
   const breadcrumbTrail = currentCategory?.path
