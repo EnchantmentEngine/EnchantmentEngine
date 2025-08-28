@@ -1,5 +1,3 @@
-
-
 import { AnimationSystemGroup, defineQuery, defineSystem, ECSState, getComponent } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine'
 import { getState } from '@ir-engine/hyperflux'

@@ -1,4 +1,3 @@
-
 import { AnimationSystemGroup, defineQuery, defineSystem, ECSState, getComponent, setComponent } from '@ir-engine/ecs'
 import { SkyboxComponent, SkyTypeEnum } from '@ir-engine/engine'
 import { getState } from '@ir-engine/hyperflux'

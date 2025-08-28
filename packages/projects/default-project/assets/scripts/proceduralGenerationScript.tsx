@@ -1,4 +1,3 @@
-
 import {
   AnimationSystemGroup,
   createEntity,
