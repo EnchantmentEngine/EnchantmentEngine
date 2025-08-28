@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
   LocationInstanceConnectionService,
@@ -30,7 +29,6 @@ import { FriendService } from '../social/services/FriendService'
 import { connectToInstance } from '../transports/mediasoup/MediasoupClientFunctions'
 import { PeerToPeerNetworkState } from '../transports/p2p/PeerToPeerNetworkState'
 import { AuthState } from '../user/services/AuthService'
-import { ViewerMenuState } from '../util/ViewerMenuState'
 
 export const WorldInstanceProvisioning = () => {
   const locationState = useMutableState(LocationState)
@@ -237,22 +235,8 @@ export const SocialMenus = {
 }
 
 export const FriendMenus = () => {
-  const { t } = useTranslation()
-
-  useEffect(() => {
-    const viewerMenuState = getMutableState(ViewerMenuState)
-    viewerMenuState.userMenus.friends.set(true)
-
-    return () => {
-      viewerMenuState.userMenus.friends.set(false)
-    }
-  }, [])
-
-  const UseFriendsListeners = () => {
-    FriendService.useAPIListeners()
-    return null
-  }
-  return <UseFriendsListeners />
+  FriendService.useAPIListeners()
+  return null
 }
 
 export const reactor = () => {
