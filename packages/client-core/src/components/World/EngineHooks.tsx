@@ -1,34 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { InstanceID, projectsPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
 import {
+  HyperFlux,
   Network,
   NetworkActions,
   NetworkState,
@@ -47,6 +22,7 @@ import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
 
 import { useFind } from '@ir-engine/common'
 import { EngineState } from '@ir-engine/ecs'
+import React from 'react'
 import { AuthState } from '../../user/services/AuthService'
 
 const logger = multiLogger.child({ component: 'client-core:world' })
@@ -68,6 +44,17 @@ export const useEngineInjection = () => {
   return loaded.value
 }
 
+type Props = {
+  children: React.ReactNode
+  fallback?: JSX.Element
+}
+
+export const EngineInjection = ({ children, fallback }: Props) => {
+  const engineInjection = useEngineInjection()
+  if (!engineInjection) return fallback ?? <></>
+  return <Suspense fallback={fallback}>{children}</Suspense>
+}
+
 export const useNetwork = (props: { online?: boolean }) => {
   const userID = useMutableState(EngineState).userID.value
   const ageVerified = useMutableState(AuthState).user.ageVerified.value
@@ -86,7 +73,7 @@ export const useNetwork = (props: { online?: boolean }) => {
   useEffect(() => {
     if (props.online || !userID) return
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const peerIndex = 1
     const networkID = userID as any as InstanceID
 
@@ -103,7 +90,7 @@ export const useNetwork = (props: { online?: boolean }) => {
       NetworkActions.peerJoined({
         $network: networkID,
         $topic: network.topic,
-        $to: Engine.instance.store.peerID,
+        $to: HyperFlux.store.peerID,
         peerID,
         peerIndex,
         userID
@@ -115,7 +102,7 @@ export const useNetwork = (props: { online?: boolean }) => {
         NetworkActions.peerLeft({
           $network: networkID,
           $topic: network.topic,
-          $to: Engine.instance.store.peerID,
+          $to: HyperFlux.store.peerID,
           peerID,
           userID
         })

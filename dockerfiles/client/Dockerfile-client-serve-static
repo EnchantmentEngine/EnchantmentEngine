@@ -17,7 +17,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY patches/ ./patches/
 
 ARG NODE_ENV
-RUN --mount=type=cache,target=/root/.npm npm install --loglevel notice --legacy-peer-deps --production
+RUN --mount=type=cache,target=/root/.npm npm install --loglevel notice --production
 
 # copy then compile the code
 COPY . .
@@ -126,9 +126,9 @@ ENV GCP_URL_MAP=$GCP_URL_MAP
 
 RUN npm run build-client
 
-RUN npx ts-node --swc scripts/push-client-to-storage-provider.ts
+RUN npx tsx scripts/push-client-to-storage-provider.ts
 
-RUN if [ "$STORAGE_PROVIDER" = "s3" ]; then npx ts-node --swc scripts/update-cloudfront-function.ts --stage=$STAGE; fi
+RUN if [ "$STORAGE_PROVIDER" = "s3" ]; then npx tsx scripts/update-cloudfront-function.ts --stage=$STAGE; fi
 
 RUN rm -r packages/client/public
 

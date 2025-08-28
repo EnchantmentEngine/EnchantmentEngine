@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   AnimationSystemGroup,
   defineQuery,
@@ -36,17 +11,16 @@ import {
 } from '@ir-engine/ecs'
 import {
   defineComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
-import { getState, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
+import { getState, useHookstate } from '@ir-engine/hyperflux'
 
-import { getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema, getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
 import {
   AnyAxis,
@@ -84,20 +58,20 @@ export const DefaultAxisBindings = {
   FollowCameraShoulderCamScroll: [MouseScroll.HorizontalScroll]
 } satisfies InputAxisBindings
 
-const ButtonSchema = S.Union([
-  S.Enum(KeyboardButton, {
+const ButtonSchema = Schema.Union([
+  Schema.Enum(KeyboardButton, {
     $comment:
       "Likely a string enum, ie. one of the following values: 'Backspace', 'Tab', 'Enter', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'Pause', 'CapsLock', 'Escape', 'Space', 'PageUp', 'PageDown', 'End', 'Home', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'PrintScreen', 'Insert', 'Delete', 'Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'KeyA', 'KeyB', 'KeyC', 'KeyD', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyM', 'KeyN', 'KeyO', 'KeyP', 'KeyQ', 'KeyR', 'KeyS', 'KeyT', 'KeyU', 'KeyV', 'KeyW', 'KeyX', 'KeyY', 'KeyZ'"
   }),
-  S.Enum(MouseButton, {
+  Schema.Enum(MouseButton, {
     $comment:
       "Likely a string enum, ie. one of the following values: 'PrimaryClick', 'AuxiliaryClick', 'SecondaryClick'"
   }),
-  S.Enum(StandardGamepadButton, {
+  Schema.Enum(StandardGamepadButton, {
     $comment:
       "A number enum, where: 0 represents 'StandardGamepadButtonA', 1 represents 'StandardGamepadButtonB', 2 represents 'StandardGamepadButtonX', 3 represents 'StandardGamepadButtonY', 4 represents 'StandardGamepadLeft1', 5 represents 'StandardGamepadRight1', 6 represents 'StandardGamepadLeft2', 7 represents 'StandardGamepadRight2', 8 represents 'StandardGamepadButtonBack', 9 represents 'StandardGamepadButtonStart', 10 represents 'StandardGamepadLeftStick', 11 represents 'StandardGamepadRightStick', 12 represents 'StandardGamepadDPadUp', 13 represents 'StandardGamepadDPadDown', 14 represents 'StandardGamepadDPadLeft', 15 represents 'StandardGamepadDPadRight', 16 represents 'StandardGamepadButtonHome'"
   }),
-  S.Enum(XRStandardGamepadButton, {
+  Schema.Enum(XRStandardGamepadButton, {
     $comment:
       "A number enum, where: 0 represents 'XRStandardGamepadTrigger', 1 represents 'XRStandardGamepadSqueeze', 2 represents 'XRStandardGamepadPad', 3 represents 'XRStandardGamepadStick', 4 represents 'XRStandardGamepadButtonA', 5 represents 'XRStandardGamepadButtonB'"
   })
@@ -157,23 +131,27 @@ export const InputComponent = defineComponent({
   name: 'InputComponent',
   jsonID: 'EE_input',
 
-  schema: S.Object({
-    inputSinks: S.Array(S.EntityID(), { default: ['Self' as EntityID] }),
-    activationDistance: S.Number({ default: 2 }),
-    highlight: S.Bool({ default: false }),
-    grow: S.Bool({ default: false }),
-    buttonBindings: S.Record(S.String(), S.Array(S.Union([ButtonSchema, S.Array(ButtonSchema)])), {
-      default: { ...DefaultButtonBindings }
-    }),
+  schema: Schema.Object({
+    inputSinks: Schema.Array(EntitySchema.EntityID(), { default: ['Self' as EntityID] }),
+    activationDistance: Schema.Number({ default: 2 }),
+    highlight: Schema.Bool({ default: false }),
+    grow: Schema.Bool({ default: false }),
+    buttonBindings: Schema.Record(
+      Schema.String(),
+      Schema.Array(Schema.Union([ButtonSchema, Schema.Array(ButtonSchema)])),
+      {
+        default: { ...DefaultButtonBindings }
+      }
+    ),
     //internal
     /** populated automatically by ClientInputSystem */
-    inputSources: S.Array(S.Entity(), { serialized: false }),
-    cachedButtons: S.Type<ButtonStateMap<any>>({ serialized: false, default: {} }),
+    inputSources: Schema.Array(EntitySchema.Entity(), { serialized: false }),
+    cachedButtons: Schema.Type<ButtonStateMap<any>>({ serialized: false, default: {} }),
 
     /** if true, the input component will automatically capture input when a button is consumed */
-    autoCapture: S.Bool({ default: false }),
+    autoCapture: Schema.Bool({ default: false }),
 
-    buttons: S.Type<ButtonStateMap<any>>({ serialized: false })
+    buttons: Schema.Type<ButtonStateMap<any>>({ serialized: false })
   }),
 
   onInit(entity, initial) {
@@ -229,6 +207,7 @@ export const InputComponent = defineComponent({
                 // For combo buttons, check if all buttons in the combo are available
                 const states = b.map(findButtonState).filter((s): s is ButtonState => s !== undefined)
 
+                /** @todo we need to figure out how to distinguish when a combo matches exactly, eg CTRL+Z will fire if SHIFT is down too */
                 const isActive = states.length === b.length
 
                 if (!result && isActive) {
@@ -238,8 +217,8 @@ export const InputComponent = defineComponent({
                 }
 
                 if (result && isActive) {
-                  result.down = states.some((s) => s.down)
                   result.pressed = states.every((s) => s.pressed)
+                  result.down = states.some((s) => s.down) && result.pressed
                   result.touched = states.every((s) => s.touched)
                   result.value = Math.max(...states.map((s) => s.value))
                   result.dragging = states.some((s) => s.dragging)
@@ -303,14 +282,14 @@ export const InputComponent = defineComponent({
   ) {
     const inputEntity = InputComponent.getInputEntity(entityContext)
     if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>
-    const input = getMutableComponent(inputEntity, InputComponent)
+    const input = getComponent(inputEntity, InputComponent)
     if (inputBindings) {
       for (const binding of Object.keys(inputBindings)) {
-        if (!input.buttonBindings[binding].value) input.buttonBindings[binding].set(inputBindings[binding] as any)
+        if (!input.buttonBindings[binding]) input.buttonBindings[binding] = inputBindings[binding] as any
       }
     }
-    input.autoCapture.set(autoCapture)
-    return input.buttons.get(NO_PROXY_STEALTH) as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
+    input.autoCapture = autoCapture
+    return input.buttons as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
   },
 
   getAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
@@ -348,7 +327,7 @@ export const InputComponent = defineComponent({
     return axes as AxisValueMap<BindingsType>
   },
 
-  // @deprecated use getButtons instead
+  /** @deprecated use getButtons instead  */
   getMergedButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
     inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
@@ -356,7 +335,7 @@ export const InputComponent = defineComponent({
     return InputComponent.getButtons(entityContext, inputBindings)
   },
 
-  // @deprecated use getAxes instead
+  /** @deprecated use getAxes instead */
   getMergedAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
     entityContext: Entity,
     inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
@@ -373,14 +352,14 @@ export const InputComponent = defineComponent({
     })
     useExecute(
       () => {
-        const inputSources = InputComponent.getInputSourceEntities(entity)
-        hasFocus.set(inputSources.length > 0)
+        const focus = InputComponent.getInputSourceEntities(entity).length > 0
+        if (focus !== hasFocus.value) hasFocus.set(focus)
       },
       // we want to evaluate input sources after the input system group has run, after all input systems
       // have had a chance to respond to input and/or capture input sources
       { after: InputSystemGroup }
     )
-    return hasFocus
+    return hasFocus.value
   }
 })
 
@@ -388,11 +367,13 @@ function getLargestMagnitudeNumber(a: number, b: number) {
   return Math.abs(a) > Math.abs(b) ? a : b
 }
 
-export const enum InputExecutionOrder {
-  'Before' = -1,
-  'With' = 0,
-  'After' = 1
-}
+export const InputExecutionOrder = {
+  Before: -1,
+  With: 0,
+  After: 1
+} as const
+
+export type InputExecutionOrder = (typeof InputExecutionOrder)[keyof typeof InputExecutionOrder]
 
 function getInputExecutionInsert(order: InputExecutionOrder) {
   switch (order) {

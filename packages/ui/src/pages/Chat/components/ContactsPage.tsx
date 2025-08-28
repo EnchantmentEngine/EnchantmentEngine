@@ -1,36 +1,11 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
 import { ChannelService } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { FriendService, FriendState } from '@ir-engine/client-core/src/social/services/FriendService'
 import { API } from '@ir-engine/common'
 import { UserID, UserName, userPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiChat, HiCheck, HiDotsVertical, HiPhone, HiSearch, HiUserAdd, HiUserRemove, HiX } from 'react-icons/hi'
@@ -43,7 +18,7 @@ export const ContactsPage: React.FC = () => {
   const searchQuery = useHookstate('')
   const addFriendUsername = useHookstate('')
   const isAddingFriend = useHookstate(false)
-  const userId = Engine.instance.userID as UserID
+  const userId = getState(EngineState).userID as UserID
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const contextMenu = useHookstate({
     visible: false,

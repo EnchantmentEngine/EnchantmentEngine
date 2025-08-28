@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   EntityID,
   SourceID,
@@ -38,13 +13,15 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import assert from 'assert'
-import { BoxGeometry, Color, ColorRepresentation, MeshBasicMaterial } from 'three'
+import { BoxGeometry, Color, ColorRepresentation, MeshBasicMaterial, WebGLRenderer } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { assertColor } from '../../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../../tests/util/mockSpatialEngine'
 import { destroySpatialEngine } from '../../../initializeEngine'
 import { TransformComponent } from '../../../transform/components/TransformComponent'
 import { LineSegmentComponent } from '../LineSegmentComponent'
+import { RendererComponent } from '../RendererComponent'
 import { HemisphereLightComponent } from './HemisphereLightComponent'
 import { LightTagComponent } from './LightTagComponent'
 
@@ -189,14 +166,54 @@ describe('HemisphereLightComponent', () => {
     })
 
     it('should set a LightTagComponent on the entityContext when it is mounted', async () => {
-      // Sanity check before running
       assert.equal(hasComponent(testEntity, LightTagComponent), false)
 
-      // Run and Check the result
       setComponent(testEntity, HemisphereLightComponent)
       await vi.waitFor(() => {
         assert.equal(hasComponent(testEntity, LightTagComponent), true)
       })
+    })
+
+    it('should not create ObjectComponent for WebGPU renderer', async () => {
+      const rendererEntity = createEntity()
+      const mockWebGPURenderer = {
+        isWebGPURenderer: true,
+        backend: { isWebGLBackend: false }
+      } as any as WebGPURenderer
+
+      setComponent(rendererEntity, RendererComponent, {
+        renderer: mockWebGPURenderer,
+        scenes: [testEntity]
+      })
+
+      setComponent(testEntity, HemisphereLightComponent)
+
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      })
+
+      removeEntity(rendererEntity)
+    })
+
+    it('should create ObjectComponent for WebGL renderer', async () => {
+      const rendererEntity = createEntity()
+      const mockWebGLRenderer = {
+        isWebGLRenderer: true,
+        getContext: vi.fn()
+      } as any as WebGLRenderer
+
+      setComponent(rendererEntity, RendererComponent, {
+        renderer: mockWebGLRenderer,
+        scenes: [testEntity]
+      })
+
+      setComponent(testEntity, HemisphereLightComponent)
+
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      })
+
+      removeEntity(rendererEntity)
     })
 
     it('should react when directionalLightComponent.groundColor changes', async () => {

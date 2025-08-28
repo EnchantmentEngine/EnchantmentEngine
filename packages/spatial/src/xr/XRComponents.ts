@@ -1,27 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
 import { useEffect } from 'react'
 
 import { UndefinedEntity, useEntityContext } from '@ir-engine/ecs'
@@ -31,10 +7,10 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { NO_PROXY, getState, useImmediateEffect } from '@ir-engine/hyperflux'
+import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { ReferenceSpace, XRState } from './XRState'
@@ -185,8 +161,8 @@ export const XRHandComponent = defineComponent({
 export const XRLeftHandComponent = defineComponent({
   name: 'XRLeftHandComponent',
 
-  schema: S.Object({
-    rotations: S.Class(() => new Float32Array(4 * 19))
+  schema: Schema.Object({
+    rotations: Schema.Class(() => new Float32Array(4 * 19))
   }),
 
   onInit: (entity, initial) => {
@@ -200,8 +176,8 @@ export const XRLeftHandComponent = defineComponent({
 export const XRRightHandComponent = defineComponent({
   name: 'XRRightHandComponent',
 
-  schema: S.Object({
-    rotations: S.Class(() => new Float32Array(4 * 19))
+  schema: Schema.Object({
+    rotations: Schema.Class(() => new Float32Array(4 * 19))
   }),
 
   onInit: (entity, initial) => {
@@ -214,10 +190,10 @@ export const XRRightHandComponent = defineComponent({
 
 export const XRHitTestComponent = defineComponent({
   name: 'XRHitTestComponent',
-  schema: S.Object({
-    options: S.Type<XRTransientInputHitTestOptionsInit | XRHitTestOptionsInit>(),
-    source: S.Type<XRHitTestSource>(),
-    results: S.Array(S.Type<XRHitTestResult>())
+  schema: Schema.Object({
+    options: Schema.Type<XRTransientInputHitTestOptionsInit | XRHitTestOptionsInit>(),
+    source: Schema.Type<XRHitTestSource>(),
+    results: Schema.Array(Schema.Type<XRHitTestResult>())
   }),
 
   reactor: () => {
@@ -228,7 +204,7 @@ export const XRHitTestComponent = defineComponent({
     useEffect(() => {
       if (!hitTest) return
 
-      const options = hitTest.options.value
+      const options = hitTest.options
       const xrState = getState(XRState)
 
       let active = true
@@ -236,8 +212,8 @@ export const XRHitTestComponent = defineComponent({
       if ('space' in options) {
         xrState.session?.requestHitTestSource?.(options as XRHitTestOptionsInit)?.then((source) => {
           if (active) {
-            hitTest.source.set(source)
-            hitTest.results.set([])
+            hitTest.source = source
+            hitTest.results = []
           } else {
             source.cancel()
           }
@@ -247,8 +223,8 @@ export const XRHitTestComponent = defineComponent({
           ?.requestHitTestSourceForTransientInput?.(options as XRTransientInputHitTestOptionsInit)
           ?.then((source) => {
             if (active) {
-              hitTest.source.set(source)
-              hitTest.results.set([])
+              hitTest.source = source
+              hitTest.results = []
             } else {
               source.cancel()
             }
@@ -257,7 +233,7 @@ export const XRHitTestComponent = defineComponent({
 
       return () => {
         active = false
-        hitTest?.source?.value?.cancel?.()
+        hitTest?.source?.cancel?.()
       }
     }, [hitTest?.options])
 
@@ -267,8 +243,8 @@ export const XRHitTestComponent = defineComponent({
 
 export const XRAnchorComponent = defineComponent({
   name: 'XRAnchorComponent',
-  schema: S.Object({
-    anchor: S.Type<XRAnchor>()
+  schema: Schema.Object({
+    anchor: Schema.Type<XRAnchor>()
   }),
 
   reactor: () => {
@@ -276,7 +252,7 @@ export const XRAnchorComponent = defineComponent({
     const xrAnchorComponent = useComponent(entity, XRAnchorComponent)
 
     useImmediateEffect(() => {
-      const anchor = xrAnchorComponent.anchor.get(NO_PROXY)
+      const anchor = xrAnchorComponent.anchor
       return () => {
         anchor?.delete()
       }
@@ -289,9 +265,9 @@ export const XRAnchorComponent = defineComponent({
 export const XRSpaceComponent = defineComponent({
   name: 'XRSpaceComponent',
 
-  schema: S.Object({
-    space: S.Type<XRSpace>(),
-    baseSpace: S.Type<XRSpace>()
+  schema: Schema.Object({
+    space: Schema.Type<XRSpace>(),
+    baseSpace: Schema.Type<XRSpace>()
   }),
 
   reactor: () => {
@@ -299,7 +275,7 @@ export const XRSpaceComponent = defineComponent({
     const xrSpaceComponent = useComponent(entity, XRSpaceComponent)
 
     useImmediateEffect(() => {
-      const baseSpace = xrSpaceComponent.baseSpace.value
+      const baseSpace = xrSpaceComponent.baseSpace
       let parentEntity = UndefinedEntity
       switch (baseSpace) {
         case ReferenceSpace.localFloor:

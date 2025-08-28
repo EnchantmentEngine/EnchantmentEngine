@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   Box3,
   Box3Helper,
@@ -40,10 +15,11 @@ import {
 
 import { createEntity, EntityTreeComponent, removeEntity } from '@ir-engine/ecs'
 import { ComponentType, getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
+import { getState } from '@ir-engine/hyperflux'
 import { NameComponent } from '../../common/NameComponent'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { addObjectToGroup, ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { setObjectLayers } from '../../renderer/components/ObjectLayerComponent'
 import { setVisibleComponent } from '../../renderer/components/VisibleComponent'
@@ -72,7 +48,7 @@ export class CSMHelper {
 
     const frustumLinesEntity = createEntity()
     addObjectToGroup(frustumLinesEntity, frustumLines)
-    setComponent(frustumLinesEntity, EntityTreeComponent, { parentEntity: Engine.instance.cameraEntity })
+    setComponent(frustumLinesEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).viewerEntity })
     setComponent(frustumLinesEntity, NameComponent, 'CSM frustum lines')
     setObjectLayers(frustumLines, ObjectLayers.NodeHelper)
 
@@ -86,7 +62,7 @@ export class CSMHelper {
 
     setVisibleComponent(this.frustumLinesEntity, displayFrustum)
     setComponent(this.frustumLinesEntity, EntityTreeComponent, {
-      parentEntity: !this.paused ? Engine.instance.cameraEntity : UndefinedEntity
+      parentEntity: !this.paused ? getState(ReferenceSpaceState).viewerEntity : UndefinedEntity
     })
 
     const cascadeLines = this.cascadeLines
@@ -98,10 +74,10 @@ export class CSMHelper {
       const cascadePlane = cascadePlanes[i]
       const shadowLineGroup = shadowLines[i]
       setComponent(cascadeLine, EntityTreeComponent, {
-        parentEntity: !this.paused ? Engine.instance.cameraEntity : UndefinedEntity
+        parentEntity: !this.paused ? getState(ReferenceSpaceState).viewerEntity : UndefinedEntity
       })
       setComponent(cascadePlane, EntityTreeComponent, {
-        parentEntity: !this.paused ? Engine.instance.cameraEntity : UndefinedEntity
+        parentEntity: !this.paused ? getState(ReferenceSpaceState).viewerEntity : UndefinedEntity
       })
       setVisibleComponent(cascadeLine, displayFrustum)
       setVisibleComponent(cascadePlane, displayFrustum && displayPlanes)
@@ -141,7 +117,9 @@ export class CSMHelper {
       cascadeLine.frustumCulled = false
       const cascadeLinesEntity = createEntity()
       addObjectToGroup(cascadeLinesEntity, cascadeLine)
-      setComponent(cascadeLinesEntity, EntityTreeComponent, { parentEntity: Engine.instance.cameraEntity })
+      setComponent(cascadeLinesEntity, EntityTreeComponent, {
+        parentEntity: getState(ReferenceSpaceState).viewerEntity
+      })
       setComponent(cascadeLinesEntity, NameComponent, 'CSM cascade line ' + cascadeLines.length)
       setObjectLayers(cascadeLine, ObjectLayers.NodeHelper)
 
@@ -152,7 +130,9 @@ export class CSMHelper {
       cascadePlane.frustumCulled = false
       const cascadePlanesEntity = createEntity()
       addObjectToGroup(cascadePlanesEntity, cascadePlane)
-      setComponent(cascadePlanesEntity, EntityTreeComponent, { parentEntity: Engine.instance.cameraEntity })
+      setComponent(cascadePlanesEntity, EntityTreeComponent, {
+        parentEntity: getState(ReferenceSpaceState).viewerEntity
+      })
       setComponent(cascadePlanesEntity, NameComponent, 'CSM cascade plane ' + cascadeLines.length)
       setObjectLayers(cascadePlane, ObjectLayers.NodeHelper)
 
@@ -162,7 +142,7 @@ export class CSMHelper {
       shadowLine.frustumCulled = false
       const shadowLinesEntity = createEntity()
       addObjectToGroup(shadowLinesEntity, shadowLine)
-      setComponent(shadowLinesEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+      setComponent(shadowLinesEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
       setComponent(shadowLinesEntity, NameComponent, 'CSM shadow line ' + cascadeLines.length)
       setObjectLayers(shadowLine, ObjectLayers.NodeHelper)
       shadowLines.push(shadowLinesEntity)

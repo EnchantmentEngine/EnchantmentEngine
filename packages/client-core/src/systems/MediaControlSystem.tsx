@@ -1,37 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { MeshBasicMaterial, Quaternion, Vector3 } from 'three'
 
 import { isClient } from '@ir-engine/common/src/utils/getEnvironment'
 import {
-  Engine,
   EngineState,
   EntityTreeComponent,
   getChildrenWithComponents,
-  getMutableComponent,
   InputSystemGroup,
   UndefinedEntity
 } from '@ir-engine/ecs'
@@ -51,6 +24,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import React, { useEffect } from 'react'
 import { createMediaControlsView } from './ui/MediaControlsUI'
 
@@ -63,7 +37,7 @@ export const createMediaControlsUI = (entity: Entity, aspectRatio: number = 1) =
   const mediaTransform = getComponent(entity, TransformComponent)
 
   const uiFront = createMediaControlsView(entity)
-  setComponent(uiFront.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+  setComponent(uiFront.entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiFront.entity, NameComponent, 'mediacontrols-ui-frontside-' + entity)
   setComponent(uiFront.entity, TransformComponent, { rotation: mediaTransform.rotation })
   uiFront.container.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
@@ -88,12 +62,12 @@ export const createMediaControlsUI = (entity: Entity, aspectRatio: number = 1) =
 }
 
 const onUpdate = (entity: Entity) => {
-  const mediaComponent = getMutableComponent(entity, MediaComponent)
-  if (!mediaComponent.controls.value) return
-  const xrui = getOptionalComponent(mediaComponent.xruiEntity.value, XRUIComponent)
+  const mediaComponent = getComponent(entity, MediaComponent)
+  if (!mediaComponent.controls) return
+  const xrui = getOptionalComponent(mediaComponent.xruiEntity, XRUIComponent)
 
   if (!xrui) return
-  const xruiChildren = getChildrenWithComponents(mediaComponent.xruiEntity.value, [XRUIComponent]).map((entity) =>
+  const xruiChildren = getChildrenWithComponents(mediaComponent.xruiEntity, [XRUIComponent]).map((entity) =>
     getComponent(entity, XRUIComponent)
   )
   const xruiList = [xrui, ...xruiChildren]
@@ -115,8 +89,7 @@ const onUpdate = (entity: Entity) => {
     if (capturingEntity === entity) {
       const buttons = inputSource?.buttons
       clicking = !!buttons //clicking on our boundingbox this frame
-
-      mediaComponent.paused.set(!mediaComponent.paused.value)
+      setComponent(entity, MediaComponent, { paused: !mediaComponent.paused })
     }
   }
 
@@ -132,10 +105,10 @@ const onUpdate = (entity: Entity) => {
   } else {
     transition.setState('OUT')
   }
-  const uiTransform = getComponent(mediaComponent.xruiEntity.value, TransformComponent)
+  const uiTransform = getComponent(mediaComponent.xruiEntity, TransformComponent)
   const transform = getComponent(entity, TransformComponent)
 
-  controlsUiPosVec3.copy(mediaComponent.uiOffset.value) //used to add - might be nice to allow for some pre-placed anchor positions
+  controlsUiPosVec3.copy(mediaComponent.uiOffset) //used to add - might be nice to allow for some pre-placed anchor positions
   controlsUiPosVec3.add(transform.position)
   uiTransform.position.copy(controlsUiPosVec3)
 
@@ -170,7 +143,9 @@ const MediaXRUIReactor = ({ entity }: { entity: Entity }) => {
     const transition = createTransitionState(0.25, 'IN')
     MediaFadeTransitions.set(entity, transition)
     mediaComponent.xruiEntity = createMediaControlsUI(entity).entity
-    setComponent(mediaComponent.xruiEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    setComponent(mediaComponent.xruiEntity, EntityTreeComponent, {
+      parentEntity: getState(ReferenceSpaceState).originEntity
+    })
 
     return () => {
       if (MediaFadeTransitions.has(entity)) MediaFadeTransitions.delete(entity)

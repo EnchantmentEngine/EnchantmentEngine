@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import RAPIER, {
   ActiveCollisionTypes,
   ActiveEvents,
@@ -88,7 +63,6 @@ import {
 export type PhysicsWorld = World & {
   id: Entity
   substeps: number
-  cameraAttachedRigidbodyEntity: Entity
   Colliders: Map<Entity, Collider>
   Rigidbodies: Map<Entity, RigidBody>
   Controllers: Map<Entity, KinematicCharacterController>
@@ -121,7 +95,6 @@ function createWorld(id: Entity, args = { gravity: { x: 0.0, y: -9.81, z: 0.0 },
 
   world.id = id
   world.substeps = args.substeps
-  world.cameraAttachedRigidbodyEntity = UndefinedEntity
 
   const Colliders = new Map<Entity, Collider>()
   const Rigidbodies = new Map<Entity, RigidBody>()
@@ -413,20 +386,12 @@ function applyImpulse(world: PhysicsWorld, entity: Entity, impulse: Vector3) {
   rigidBody.applyImpulse(impulse, true)
 }
 
-function createColliderDesc(
-  world: PhysicsWorld,
-  entity: Entity,
-  rootEntity: Entity,
-  colliderEntityOverride: Entity = UndefinedEntity
-) {
+function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Entity) {
   if (!world.Rigidbodies.has(rootEntity)) return
 
   const mesh = getOptionalComponent(entity, MeshComponent)
 
-  const colliderComponent = getComponent(
-    colliderEntityOverride !== UndefinedEntity ? colliderEntityOverride : entity,
-    ColliderComponent
-  )
+  const colliderComponent = getComponent(entity, ColliderComponent)
 
   let shape: ShapeType
 
@@ -808,7 +773,7 @@ function removeCharacterController(world: PhysicsWorld, entity: Entity) {
 }
 
 /**
- * @deprecated - will be populated on AvatarControllerComponent
+ * @deprecated will be populated on AvatarControllerComponent
  */
 function getControllerOffset(world: PhysicsWorld, entity: Entity) {
   const controller = world.Controllers.get(entity)

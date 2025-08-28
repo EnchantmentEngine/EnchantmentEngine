@@ -1,27 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
 import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -30,7 +6,6 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
-  Engine,
   EngineState,
   EntityID,
   EntityNetworkState,
@@ -51,6 +26,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   Network,
   NetworkActions,
   NetworkState,
@@ -77,7 +53,7 @@ describe('EntityNetworkState', () => {
   describe('should spawn entity', () => {
     it('should spawn object owned by host as host', async () => {
       const hostUserId = 'host user' as UserID
-      const hostPeerID = Engine.instance.store.peerID
+      const hostPeerID = HyperFlux.store.peerID
 
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
@@ -121,7 +97,7 @@ describe('EntityNetworkState', () => {
       const hostUserId = 'host user' as UserID
       const hostPeerID = 'host peer' as PeerID
       const userId = 'user id' as UserID
-      const peerID2 = Engine.instance.store.peerID
+      const peerID2 = HyperFlux.store.peerID
 
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
@@ -174,7 +150,7 @@ describe('EntityNetworkState', () => {
 
     it('should spawn object owned by user as host', async () => {
       const hostUserId = 'host user' as UserID
-      const hostPeerID = Engine.instance.store.peerID
+      const hostPeerID = HyperFlux.store.peerID
 
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
@@ -230,7 +206,7 @@ describe('EntityNetworkState', () => {
       const hostUserId = 'host user' as UserID
       const hostPeerID = 'host peer' as PeerID
       const userId = 'user id' as UserID
-      const peerID2 = Engine.instance.store.peerID
+      const peerID2 = HyperFlux.store.peerID
 
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
@@ -290,7 +266,7 @@ describe('EntityNetworkState', () => {
 
       const userId = 'user id' as UserID
       const userId2 = 'second user id' as UserID
-      const peerID = Engine.instance.store.peerID
+      const peerID = HyperFlux.store.peerID
       const peerID2 = 'peer id 2' as PeerID
       const peerID3 = 'peer id 3' as PeerID
 
@@ -367,7 +343,7 @@ describe('EntityNetworkState', () => {
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
       const userId = 'user id' as UserID
-      const peerID = Engine.instance.store.peerID
+      const peerID = HyperFlux.store.peerID
 
       const userId2 = 'second user id' as UserID
       const peerID2 = 'peer id 2' as PeerID
@@ -426,7 +402,7 @@ describe('EntityNetworkState', () => {
   describe('should remove entity', () => {
     it('should remove entity owned by host as host', async () => {
       const hostUserId = 'host user' as UserID
-      const hostPeerID = Engine.instance.store.peerID
+      const hostPeerID = HyperFlux.store.peerID
 
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
@@ -487,7 +463,7 @@ describe('EntityNetworkState', () => {
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
       const userId = 'user id' as UserID
-      const peerID2 = Engine.instance.store.peerID
+      const peerID2 = HyperFlux.store.peerID
 
       getMutableState(EngineState).userID.set(userId)
       const network = NetworkState.worldNetwork as Network
@@ -552,7 +528,7 @@ describe('EntityNetworkState', () => {
 
     it('should spawn object owner by the scene as host', async () => {
       const hostUserId = 'host user' as UserID
-      const hostPeerID = Engine.instance.store.peerID
+      const hostPeerID = HyperFlux.store.peerID
 
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
@@ -599,7 +575,7 @@ describe('EntityNetworkState', () => {
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
       const userId = 'user id' as UserID
-      const peerID2 = Engine.instance.store.peerID
+      const peerID2 = HyperFlux.store.peerID
 
       getMutableState(EngineState).userID.set(userId)
 
@@ -653,7 +629,7 @@ describe('EntityNetworkState', () => {
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
 
       const userId = 'user id' as UserID
-      const peerID = Engine.instance.store.peerID
+      const peerID = HyperFlux.store.peerID
 
       const userId2 = 'second user id' as UserID
       const peerID2 = 'peer id 2' as PeerID
@@ -732,7 +708,7 @@ describe('EntityNetworkState', () => {
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
       const userID = 'user id' as UserID
-      const peerID = Engine.instance.store.peerID
+      const peerID = HyperFlux.store.peerID
       const peerID2 = 'peer id 2' as PeerID
 
       getMutableState(EngineState).userID.set(userID)
@@ -828,7 +804,7 @@ describe('EntityNetworkState', () => {
 
     const userID = 'user id' as UserID
     const userID2 = 'user id 2' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const peerID2 = 'peer id 2' as PeerID
 
     getMutableState(EngineState).userID.set(userID)
@@ -922,7 +898,7 @@ describe('EntityNetworkState', () => {
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
     const userId = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const peerID2 = 'peer id 2' as PeerID
 
     getMutableState(EngineState).userID.set(userId)
@@ -958,7 +934,7 @@ describe('EntityNetworkState', () => {
         parentUUID: UUIDComponent.join(parentUUID),
         ownerID: hostUserID, // from  host
         $topic: NetworkTopics.world,
-        $peer: Engine.instance.store.peerID,
+        $peer: HyperFlux.store.peerID,
         $user: hostUserID,
         entityID: 'id' as EntityID,
         entitySourceID: 'entity' as SourceID
@@ -1013,7 +989,7 @@ describe('EntityNetworkState', () => {
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
     const userId = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
 
     getMutableState(EngineState).userID.set(userId)
     const network = NetworkState.worldNetwork as Network
@@ -1149,7 +1125,7 @@ describe('EntityNetworkState', () => {
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
     const userId = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
 
     getMutableState(EngineState).userID.set(userId)
     const network = NetworkState.worldNetwork as Network
@@ -1227,7 +1203,7 @@ describe('EntityNetworkState', () => {
 
     const userId = 'user id' as UserID
     const peerID = 'peer id' as PeerID
-    const peerID2 = Engine.instance.store.peerID
+    const peerID2 = HyperFlux.store.peerID
 
     getMutableState(EngineState).userID.set(userId)
     const network = NetworkState.worldNetwork as Network
@@ -1306,7 +1282,7 @@ describe('EntityNetworkState', () => {
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
     const userId = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const userId2 = 'user id 2' as UserID
     const peerID2 = 'peer id 2' as PeerID
 
@@ -1387,7 +1363,7 @@ describe('EntityNetworkState', () => {
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
     const userId = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const userId2 = 'user id 2' as UserID
     const peerID2 = 'peer id 2' as PeerID
 
@@ -1471,7 +1447,7 @@ describe('EntityNetworkState', () => {
     createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
     const userId = 'user id' as UserID
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const peerID2 = 'peer id 2' as PeerID
 
     getMutableState(EngineState).userID.set(userId)
@@ -1511,7 +1487,7 @@ describe('EntityNetworkState', () => {
           parentUUID: UUIDComponent.join(parentUUID),
           ownerID: hostUserID, // from  host
           $topic: NetworkTopics.world,
-          $peer: Engine.instance.store.peerID,
+          $peer: HyperFlux.store.peerID,
           $user: hostUserID,
           entityID: 'id' as EntityID,
           entitySourceID: 'entity' as SourceID
@@ -1539,7 +1515,7 @@ describe('EntityNetworkState', () => {
         parentUUID: UUIDComponent.join(parentUUID),
         ownerID: hostUserID, // from  host
         $topic: NetworkTopics.world,
-        $peer: Engine.instance.store.peerID,
+        $peer: HyperFlux.store.peerID,
         $user: hostUserID,
         entityID: 'id' as EntityID,
         entitySourceID: 'entity' as SourceID

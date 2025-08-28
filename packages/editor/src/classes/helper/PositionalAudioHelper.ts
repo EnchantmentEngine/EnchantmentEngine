@@ -1,33 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useHookstate } from '@hookstate/core'
 import {
   createEntity,
   EntityTreeComponent,
-  getMutableComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   UndefinedEntity,
@@ -105,7 +80,7 @@ export const PositionalAudioHelperReactor: React.FC = (props: { parentEntity; ic
 
     const innerConeEntity = createEntity()
     const innerConeMesh = new Mesh(
-      createCone(audioComponent.coneInnerAngle.value, audioComponent.maxDistance.value),
+      createCone(audioComponent.coneInnerAngle, audioComponent.maxDistance),
       new MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.4, side: DoubleSide })
     )
     setComponent(innerConeEntity, VisibleComponent)
@@ -115,7 +90,7 @@ export const PositionalAudioHelperReactor: React.FC = (props: { parentEntity; ic
 
     const innerCapEntity = createEntity()
     const innerCapMesh = new Mesh(
-      createCap(audioComponent.coneInnerAngle.value, audioComponent.maxDistance.value),
+      createCap(audioComponent.coneInnerAngle, audioComponent.maxDistance),
       new MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.4, side: DoubleSide })
     )
     setComponent(innerCapEntity, VisibleComponent)
@@ -125,7 +100,7 @@ export const PositionalAudioHelperReactor: React.FC = (props: { parentEntity; ic
 
     const outerConeEntity = createEntity()
     const outerConeMesh = new Mesh(
-      createCone(audioComponent.coneOuterAngle.value, audioComponent.maxDistance.value),
+      createCone(audioComponent.coneOuterAngle, audioComponent.maxDistance),
       new MeshBasicMaterial({ color: 0x000080, wireframe: true, side: DoubleSide })
     )
     setComponent(outerConeEntity, VisibleComponent)
@@ -135,7 +110,7 @@ export const PositionalAudioHelperReactor: React.FC = (props: { parentEntity; ic
 
     const outerCapEntity = createEntity()
     const outerCapMesh = new Mesh(
-      createCap(audioComponent.coneOuterAngle.value, audioComponent.maxDistance.value),
+      createCap(audioComponent.coneOuterAngle, audioComponent.maxDistance),
       new MeshBasicMaterial({ color: 0x000080, wireframe: true, side: DoubleSide })
     )
     setComponent(outerCapEntity, VisibleComponent)
@@ -156,26 +131,34 @@ export const PositionalAudioHelperReactor: React.FC = (props: { parentEntity; ic
       removeEntity(helperEntities.outerConeEntity.value)
       removeEntity(helperEntities.outerCapEntity.value)
     }
-  }, [debugEnabled, mediaElement?.value.element])
+  }, [debugEnabled, mediaElement?.element])
 
   useEffect(() => {
-    const innerConeMesh = getMutableComponent(helperEntities.innerConeEntity.value, MeshComponent)
-    const innerCapMesh = getMutableComponent(helperEntities.innerCapEntity.value, MeshComponent)
+    const innerConeMesh = hasComponent(helperEntities.innerConeEntity.value, MeshComponent)
+    const innerCapMesh = hasComponent(helperEntities.innerCapEntity.value, MeshComponent)
 
     if (!innerConeMesh || !innerCapMesh) return
-    innerConeMesh.geometry.set(createCone(audioComponent.coneInnerAngle.value, audioComponent.maxDistance.value))
-    innerCapMesh.geometry.set(createCap(audioComponent.coneInnerAngle.value, audioComponent.maxDistance.value))
-  }, [audioComponent.coneInnerAngle.value, audioComponent.maxDistance.value])
+    setComponent(helperEntities.innerConeEntity.value, MeshComponent, {
+      geometry: createCone(audioComponent.coneInnerAngle, audioComponent.maxDistance)
+    })
+    setComponent(helperEntities.innerCapEntity.value, MeshComponent, {
+      geometry: createCap(audioComponent.coneInnerAngle, audioComponent.maxDistance)
+    })
+  }, [audioComponent.coneInnerAngle, audioComponent.maxDistance])
 
   useEffect(() => {
-    const outerConeMesh = getMutableComponent(helperEntities.outerConeEntity.value, MeshComponent)
-    const outerCapMesh = getMutableComponent(helperEntities.outerCapEntity.value, MeshComponent)
+    const outerConeMesh = hasComponent(helperEntities.outerConeEntity.value, MeshComponent)
+    const outerCapMesh = hasComponent(helperEntities.outerCapEntity.value, MeshComponent)
 
     if (!outerConeMesh || !outerCapMesh) return
 
-    outerConeMesh.geometry.set(createCone(audioComponent.coneOuterAngle.value, audioComponent.maxDistance.value))
-    outerCapMesh.geometry.set(createCap(audioComponent.coneOuterAngle.value, audioComponent.maxDistance.value))
-  }, [audioComponent.coneOuterAngle.value, audioComponent.maxDistance.value])
+    setComponent(helperEntities.outerConeEntity.value, MeshComponent, {
+      geometry: createCone(audioComponent.coneOuterAngle, audioComponent.maxDistance)
+    })
+    setComponent(helperEntities.outerCapEntity.value, MeshComponent, {
+      geometry: createCap(audioComponent.coneOuterAngle, audioComponent.maxDistance)
+    })
+  }, [audioComponent.coneOuterAngle, audioComponent.maxDistance])
 
   return null
 }

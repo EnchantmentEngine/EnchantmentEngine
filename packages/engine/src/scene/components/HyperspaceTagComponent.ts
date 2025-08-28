@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import {
   AmbientLight,
@@ -52,13 +27,11 @@ import {
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
@@ -75,10 +48,11 @@ import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/Vis
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { useTexture } from '../../assets/functions/resourceLoaderHooks'
-import { DomainConfigState } from '../../assets/state/DomainConfigState'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 import { teleportAvatar } from '../../avatar/functions/moveAvatar'
 import { PortalComponent, PortalEffects, PortalState } from './PortalComponent'
@@ -178,16 +152,16 @@ class PortalEffect extends Object3D {
 export const HyperspaceTagComponent = defineComponent({
   name: 'HyperspaceTagComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     // all internals
-    sceneVisible: S.Bool({ default: true }),
+    sceneVisible: Schema.Bool({ default: true }),
     transition: TransitionStateSchema(createTransitionState(0.5, 'OUT'))
   }),
 
   reactor: () => {
     const entity = useEntityContext()
     const [galaxyTexture] = useTexture(
-      `${getState(DomainConfigState).cloudDomain}/projects/ir-engine/default-project/assets/galaxyTexture.jpg`,
+      `${getState(DomainConfigState).cloudDomain}/projects/enchantmentengine/default-project/assets/galaxyTexture.jpg`,
       entity
     )
     const hyperspaceEffectEntityState = useHookstate(createEntity)
@@ -216,8 +190,8 @@ export const HyperspaceTagComponent = defineComponent({
       // TODO: add BPCEM of old and new scenes and fade them in and out too
       transition.setState('IN')
 
-      const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
-      const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
+      const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
       camera.layers.enable(ObjectLayers.Portal)
       camera.zoom = 1.5
 
@@ -249,8 +223,8 @@ export const HyperspaceTagComponent = defineComponent({
         const { transition } = getComponent(entity, HyperspaceTagComponent)
 
         const hyperspaceEffect = getComponent(hyperspaceEffectEntity, ObjectComponent) as any as PortalEffect
-        const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
-        const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+        const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
+        const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
         const ecsState = getState(ECSState)
 
         if (transition.alpha >= 1 && transition.state === 'IN') {
@@ -263,9 +237,9 @@ export const HyperspaceTagComponent = defineComponent({
           hyperspaceEffect.tubeMaterial.opacity = opacity
         })
 
-        const sceneVisible = getMutableComponent(entity, HyperspaceTagComponent).sceneVisible
+        const sceneVisible = getComponent(entity, HyperspaceTagComponent).sceneVisible
 
-        if (transition.state === 'IN' && transition.alpha >= 1 && sceneVisible.value) {
+        if (transition.state === 'IN' && transition.alpha >= 1 && sceneVisible) {
           /**
            * hide scene, render just the hyperspace effect and avatar
            */
@@ -274,11 +248,15 @@ export const HyperspaceTagComponent = defineComponent({
           // teleport player to where the portal spawn position is
           teleportAvatar(AvatarComponent.getSelfAvatarEntity(), activePortal!.remoteSpawnPosition, true)
           camera.layers.disable(ObjectLayers.Scene)
-          sceneVisible.set(false)
+          setComponent(entity, HyperspaceTagComponent, {
+            sceneVisible: false
+          })
         }
 
-        if (transition.state === 'OUT' && transition.alpha <= 0 && !sceneVisible.value) {
-          sceneVisible.set(true)
+        if (transition.state === 'OUT' && transition.alpha <= 0 && !sceneVisible) {
+          setComponent(entity, HyperspaceTagComponent, {
+            sceneVisible: true
+          })
           removeComponent(entity, HyperspaceTagComponent)
           getMutableState(PortalState).activePortalEntity.set(UndefinedEntity)
           getMutableState(PortalState).portalReady.set(false)

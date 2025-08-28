@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useHookstate } from '@hookstate/core'
 import {
   Easing,
@@ -30,7 +5,8 @@ import {
   EntityTreeComponent,
   UndefinedEntity,
   createEntity,
-  getMutableComponent,
+  getComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useComponent
@@ -133,12 +109,12 @@ export const SpotLightHelperReactor: React.FC = (props: { parentEntity; iconEnti
     const helperEntity = createEntity()
     setComponent(helperEntity, EntityTreeComponent, { parentEntity })
 
-    const gizmoGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle.value, spotLightComponent.range.value)
+    const gizmoGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle, spotLightComponent.range)
 
     setComponent(helperEntity, LineSegmentComponent, {
       name: 'spot-light-helper',
       geometry: gizmoGeometry?.clone(),
-      color: spotLightComponent.color.value,
+      color: spotLightComponent.color,
       opacity: 0
     })
 
@@ -167,17 +143,22 @@ export const SpotLightHelperReactor: React.FC = (props: { parentEntity; iconEnti
   useEffect(() => {
     if (spotLightHelperEntity.value === UndefinedEntity) return
 
-    const helper = getMutableComponent(spotLightHelperEntity.value, LineSegmentComponent)
-    if (!helper) return
+    if (!hasComponent(spotLightHelperEntity.value, LineSegmentComponent)) return
 
-    helper.color.set(hovered ? BOUNDING_BOX_COLORS.HOVERED : spotLightComponent.color.value)
-
-    const newGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle.value, spotLightComponent.range.value)
-
-    if (helper.geometry.value) {
-      helper.geometry.value.dispose()
+    const oldGeometry = getComponent(spotLightHelperEntity.value, LineSegmentComponent).geometry
+    if (oldGeometry) {
+      oldGeometry.dispose()
     }
-    helper.geometry.set(newGeometry)
+    setComponent(spotLightHelperEntity.value, LineSegmentComponent, {
+      color: hovered ? BOUNDING_BOX_COLORS.HOVERED : spotLightComponent.color
+    })
+
+    const newGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle, spotLightComponent.range)
+
+    if (oldGeometry) {
+      oldGeometry.dispose()
+    }
+    setComponent(spotLightHelperEntity.value, LineSegmentComponent, { geometry: newGeometry })
   }, [spotLightHelperEntity, spotLightComponent.color, spotLightComponent.angle, spotLightComponent.range, hovered])
 
   return null

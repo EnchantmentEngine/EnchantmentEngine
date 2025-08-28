@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   defineQuery,
   defineSystem,
@@ -135,21 +110,17 @@ const execute = () => {
     const head = AvatarIKTargetComponent.getTargetEntity(ownerID, ikTargets.head)
     const headTargetBlendWeight = AvatarIKTargetComponent.blendWeight[head]
 
-    const worldRotation = TransformComponent.getWorldRotation(entity, _worldRot)
+    const rotation = TransformComponent.getSceneRotation(entity, _worldRot)
 
     if (headTargetBlendWeight) {
       const headTransform = getComponent(head, TransformComponent)
       const hips = getComponent(rig.hips, TransformComponent)
 
-      hips.position.set(
-        headTransform.position.x,
-        headTransform.position.y - avatarComponent.torsoLength - 0.125,
-        headTransform.position.z
-      )
+      hips.position.y = headTransform.position.y - avatarComponent.torsoLength - 0.125
 
       //offset target forward to account for hips being behind the head
       hipsForward.set(0, 0, 1)
-      hipsForward.applyQuaternion(worldRotation)
+      hipsForward.applyQuaternion(rotation)
       hipsForward.multiplyScalar(0.125)
       hips.position.sub(hipsForward)
 
@@ -284,9 +255,9 @@ const SetupIkMatrices = () => {
   const entity = useEntityContext()
   const rigComponent = useComponent(entity, AvatarRigComponent)
   useEffect(() => {
-    if (!rigComponent.bonesToEntities.hips.value) return
+    if (!rigComponent.bonesToEntities.hips) return
 
-    const rig = rigComponent.bonesToEntities.value
+    const rig = rigComponent.bonesToEntities
 
     // get list of bone names for arms and legs
     const boneNames = VRMHumanBoneList.filter(

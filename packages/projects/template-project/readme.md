@@ -1,3 +1,3 @@
-### Napster Engine Project
+### Enchantment Engine Project
 
-This is an Napster Engine project.
+This is an Enchantment Engine project.

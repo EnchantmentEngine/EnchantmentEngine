@@ -1,44 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Quaternion, Vector3 } from 'three'
-import matches from 'ts-matches'
 
-import { defineAction, defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
+import { UndefinedEntity } from '@ir-engine/ecs'
 import { DepthDataTexture } from './DepthDataTexture'
-
-export class XRAction {
-  // todo, support more haptic formats other than just vibrating controllers
-  static vibrateController = defineAction({
-    type: 'xre.xr.vibrateController',
-    handedness: matches.literals('left', 'right'),
-    value: matches.number,
-    duration: matches.number
-  })
-}
 
 // TODO: divide this up into the systems that manage these states
 export const XRState = defineState({
@@ -59,6 +24,7 @@ export const XRState = defineState({
         'immersive-ar': false,
         'immersive-vr': false
       },
+      cameraAttachedEntity: UndefinedEntity,
       avatarCameraMode: 'auto' as 'auto' | 'attached' | 'detached',
       unassingedInputSources: [] as XRInputSource[],
       session: null as XRSession | null,
@@ -106,10 +72,11 @@ export const XRState = defineState({
   },
 
   /**
-   * Specifies that the camera is attached to the avatar if:
+   * Specifies that the camera should be attached to the controller if:
    * - in an immersion session and not in placement mode or miniature mode
+   * @todo rename this to 'shouldViewerFollowController' for clarity
    */
-  get isCameraAttachedToAvatar(): boolean {
+  get shouldViewerFollowController(): boolean {
     const { session, sceneScale, scenePlacementMode, avatarCameraMode } = getState(XRState)
     if (!session || scenePlacementMode === 'placing') return false
     if (avatarCameraMode === 'auto') {
@@ -118,7 +85,7 @@ export const XRState = defineState({
     return avatarCameraMode === 'attached'
   },
 
-  useCameraAttachedToAvatar: () => {
+  useShouldViewerFollowController: () => {
     const { session, sceneScale, scenePlacementMode, avatarCameraMode } = useMutableState(XRState).value
     if (!session || scenePlacementMode === 'placing') return false
     if (avatarCameraMode === 'auto') {

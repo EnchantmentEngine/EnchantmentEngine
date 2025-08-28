@@ -57,17 +57,6 @@ if (maybePosition) {
 }
 ```
 
-### getMutableComponent
-
-Returns a mutable state reference for the component that can be updated.
-
-```typescript
-import { getMutableComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-
-const mutablePosition = getMutableComponent(entity, PositionComponent)
-mutablePosition.x.set(15)
-```
-
 ### deserializeComponent
 
 Initializes or updates a component on an entity from serialized JSON data.

@@ -1,44 +1,19 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 
-import { Engine, useEntityContext } from '@ir-engine/ecs'
+import { Entity, useEntityContext } from '@ir-engine/ecs'
 import {
-  ComponentType,
   defineComponent,
   getComponent,
-  getMutableComponent,
   removeComponent,
   setComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { getState, State } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { hasComponent } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { AudioState } from '../../audio/AudioState'
 import { PlayMode } from '../constants/PlayMode'
 import { AudioNodeGroups, createAudioNodeGroup, getNextTrack, MediaElementComponent } from './MediaComponent'
@@ -46,17 +21,15 @@ import { ShadowComponent } from './ShadowComponent'
 import { UVOL1Component } from './UVOL1Component'
 import { UVOL2Component } from './UVOL2Component'
 
-export function handleAutoplay(
-  audioContext: AudioContext,
-  media: HTMLMediaElement,
-  volumetric: State<ComponentType<typeof LegacyVolumetricComponent>>
-) {
+export function handleAutoplay(audioContext: AudioContext, media: HTMLMediaElement, entity: Entity) {
   const attachEventListeners = () => {
-    const canvas = getComponent(Engine.instance.viewerEntity, RendererComponent).canvas!
+    const canvas = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).canvas!
     const playMedia = () => {
       media.play()
       audioContext.resume()
-      volumetric.paused.set(false)
+      if (hasComponent(entity, LegacyVolumetricComponent)) {
+        setComponent(entity, LegacyVolumetricComponent, { paused: false })
+      }
       window.removeEventListener('pointerdown', playMedia)
       window.removeEventListener('keypress', playMedia)
       window.removeEventListener('touchstart', playMedia)
@@ -79,7 +52,9 @@ export function handleAutoplay(
       }
     })
     .then(() => {
-      volumetric.paused.set(false)
+      if (hasComponent(entity, LegacyVolumetricComponent)) {
+        setComponent(entity, LegacyVolumetricComponent, { paused: false })
+      }
     })
 }
 
@@ -87,29 +62,29 @@ export const LegacyVolumetricComponent = defineComponent({
   name: 'Legacy Volumetric Component',
   jsonID: 'IR_volumetric_legacy',
 
-  schema: S.Object({
-    paths: S.Array(S.String()),
-    useLoadingEffect: S.Bool({ default: true }),
-    autoPauseWhenBuffering: S.Bool({ default: true }), // TODO: Implement this for UVOL1
-    autoplay: S.Bool({ default: true }),
-    paused: S.Bool({ default: true }),
-    initialBuffersLoaded: S.Bool({ default: false }),
-    hasAudio: S.Bool({ default: false }),
-    ended: S.Bool({ default: true }),
-    volume: S.Number({ default: 1 }),
-    playMode: S.Enum(PlayMode, {
+  schema: Schema.Object({
+    paths: Schema.Array(Schema.String()),
+    useLoadingEffect: Schema.Bool({ default: true }),
+    autoPauseWhenBuffering: Schema.Bool({ default: true }), // TODO: Implement this for UVOL1
+    autoplay: Schema.Bool({ default: true }),
+    paused: Schema.Bool({ default: true }),
+    initialBuffersLoaded: Schema.Bool({ default: false }),
+    hasAudio: Schema.Bool({ default: false }),
+    ended: Schema.Bool({ default: true }),
+    volume: Schema.Number({ default: 1 }),
+    playMode: Schema.Enum(PlayMode, {
       $comment: "A string enum, ie. one of the following values: 'single', 'random', 'loop', 'singleloop'",
       default: PlayMode.loop
     }),
-    track: S.Number({ default: -1 }),
-    forceChangeTrack: S.Bool({ default: false }),
-    currentTrackInfo: S.Object({
-      dontReset: S.Bool({ default: false }),
-      mediaStartTime: S.Number({ default: 0 }),
-      playbackStartDate: S.Number({ default: 0 }),
-      playbackRate: S.Number({ default: 1 }),
-      currentTime: S.Number({ default: 0 }),
-      duration: S.Number({ default: 0 })
+    track: Schema.Number({ default: -1 }),
+    forceChangeTrack: Schema.Bool({ default: false }),
+    currentTrackInfo: Schema.Object({
+      dontReset: Schema.Bool({ default: false }),
+      mediaStartTime: Schema.Number({ default: 0 }),
+      playbackStartDate: Schema.Number({ default: 0 }),
+      playbackRate: Schema.Number({ default: 1 }),
+      currentTime: Schema.Number({ default: 0 }),
+      duration: Schema.Number({ default: 0 })
     })
   }),
 
@@ -137,9 +112,9 @@ export function VolumetricReactor() {
       element: document.createElement('video') as HTMLMediaElement
     })
     setComponent(entity, ShadowComponent)
-    const videoElement = getMutableComponent(entity, MediaElementComponent)
-    const element = videoElement.element.value as HTMLVideoElement
-    element.playsInline = true
+    const videoElement = getComponent(entity, MediaElementComponent)
+    const element = videoElement.element
+    element.setAttribute('playsinline', 'true')
     element.preload = 'auto'
     element.crossOrigin = 'anonymous'
 
@@ -147,7 +122,7 @@ export function VolumetricReactor() {
       const source = audioContext.createMediaElementSource(element)
       const audioNodes = createAudioNodeGroup(element, source, gainNodeMixBuses.soundEffects)
 
-      audioNodes.gain.gain.setTargetAtTime(volumetric.volume.value, audioContext.currentTime, 0.1)
+      audioNodes.gain.gain.setTargetAtTime(volumetric.volume, audioContext.currentTime, 0.1)
     }
 
     return () => {
@@ -157,59 +132,61 @@ export function VolumetricReactor() {
   }, [])
 
   useEffect(() => {
-    if (!volumetric.ended.value) {
+    if (!volumetric.ended) {
       // If current track is not ended, don't change the track
       return
     }
 
-    const pathCount = volumetric.paths.value.length
+    const pathCount = volumetric.paths.length
 
-    let nextTrack = getNextTrack(volumetric.track.value, pathCount, volumetric.playMode.value)
+    let nextTrack = getNextTrack(volumetric.track, pathCount, volumetric.playMode)
     const ACCEPTED_TYPES = ['manifest', 'drcs', 'mp4', 'json']
 
     for (let i = 0; i <= pathCount; i++) {
-      const path = volumetric.paths.value[nextTrack]
+      const path = volumetric.paths[nextTrack]
       const extension = path ? path.split('.').pop()?.split('?').shift() : ''
       if (path && extension && ACCEPTED_TYPES.includes(extension)) {
         break
       } else {
-        if (nextTrack === volumetric.track.value) {
+        if (nextTrack === volumetric.track) {
           // If we've looped through all the tracks and none are valid, return
           return
         }
-        nextTrack = getNextTrack(nextTrack, pathCount, volumetric.playMode.value)
+        nextTrack = getNextTrack(nextTrack, pathCount, volumetric.playMode)
         if (nextTrack === -1) return
       }
     }
-    if (nextTrack === -1 || !volumetric.paths.value[nextTrack]) return
+    if (nextTrack === -1 || !volumetric.paths[nextTrack]) return
 
-    if (!volumetric.currentTrackInfo.dontReset.value) {
+    if (!volumetric.currentTrackInfo.dontReset) {
       resetTrack()
     }
-    volumetric.track.set(nextTrack)
-    volumetric.forceChangeTrack.set(!volumetric.forceChangeTrack.value)
+    volumetric.track = nextTrack
+    volumetric.forceChangeTrack = !volumetric.forceChangeTrack
+    setComponent(entity, LegacyVolumetricComponent)
   }, [volumetric.paths, volumetric.playMode, volumetric.ended])
 
   const resetTrack = () => {
     // Overwriting with setComponent doesn't cleanup the component
     removeComponent(entity, UVOL1Component)
     removeComponent(entity, UVOL2Component)
-    volumetric.initialBuffersLoaded.set(false)
-    volumetric.paused.set(true)
-    volumetric.currentTrackInfo.set({
+    volumetric.initialBuffersLoaded = false
+    volumetric.paused = true
+    volumetric.currentTrackInfo = {
       dontReset: false,
       mediaStartTime: 0,
       playbackStartDate: 0,
       playbackRate: 1,
       currentTime: 0,
       duration: 0
-    })
+    }
+    setComponent(entity, LegacyVolumetricComponent)
   }
 
   useEffect(() => {
-    if (volumetric.track.value === -1) return
-    volumetric.ended.set(false)
-    let manifestPath = volumetric.paths.value[volumetric.track.value]
+    if (volumetric.track === -1) return
+    setComponent(entity, LegacyVolumetricComponent, { ended: false })
+    let manifestPath = volumetric.paths[volumetric.track]
     if (manifestPath.endsWith('.mp4')) {
       // UVOL1
       manifestPath = manifestPath.replace('.mp4', '.manifest')
@@ -236,7 +213,7 @@ export function VolumetricReactor() {
   }, [volumetric.track, volumetric.forceChangeTrack])
 
   useEffect(() => {
-    const volume = volumetric.volume.value
+    const volume = volumetric.volume
     const element = getComponent(entity, MediaElementComponent).element as HTMLVideoElement
     const audioNodes = AudioNodeGroups.get(element)
     if (audioNodes) {

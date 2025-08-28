@@ -33,7 +33,7 @@ COPY patches/ ./patches/
 #RUN  npm ci --verbose  # we should make lockfile or shrinkwrap then use npm ci for predicatble builds
 
 ARG NODE_ENV
-RUN npm install --loglevel notice --legacy-peer-deps
+RUN npm install --loglevel notice
 
 COPY . .
 
@@ -122,7 +122,7 @@ ENV GCP_EDGE_CACHE_SERVICE=$GCP_EDGE_CACHE_SERVICE
 ENV GCP_URL_MAP=$GCP_URL_MAP
 
 ARG CACHE_DATE
-RUN npx ts-node --swc scripts/check-db-exists.ts
+RUN npx tsx scripts/check-db-exists.ts
 RUN npm run build-client
 
 RUN rm -r packages/client/public

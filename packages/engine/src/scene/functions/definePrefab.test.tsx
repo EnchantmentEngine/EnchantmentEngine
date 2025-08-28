@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -30,7 +5,6 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
-  Engine,
   Entity,
   EntityID,
   EntityTreeComponent,
@@ -42,7 +16,7 @@ import {
   SourceID,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { HyperFlux, Schema } from '@ir-engine/hyperflux'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
@@ -92,10 +66,10 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefab',
       jsonID: 'test-prefab',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' }),
-        isActive: S.Bool({ default: true })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' }),
+        isActive: Schema.Bool({ default: true })
       }),
       reactor: () => null
     })
@@ -126,9 +100,9 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabReactor',
       jsonID: 'test-prefab-reactor',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' })
       }),
       reactor: () => null
     })
@@ -144,9 +118,9 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabSpawn',
       jsonID: 'test-prefab-spawn',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' })
       }),
       reactor: () => null
     })
@@ -174,7 +148,7 @@ describe('definePrefab', () => {
 
     applyIncomingActions()
 
-    const actions = Engine.instance.store.actions.history
+    const actions = HyperFlux.store.actions.history
     expect(actions.length).toBe(2)
     expect(actions[0].type).toBe('ir.engine.prefab_TestPrefabSpawn')
     expect(actions[1].type).toStrictEqual(['ee.engine.world.SPAWN_OBJECT', 'ee.network.SPAWN_ENTITY'])
@@ -194,9 +168,9 @@ describe('definePrefab', () => {
     const TestPrefabComponent = definePrefab({
       name: 'TestPrefabSpawn2',
       jsonID: 'test-prefab-spawn-2',
-      schema: S.Object({
-        health: S.Number({ default: 100 }),
-        name: S.String({ default: 'Default' })
+      schema: Schema.Object({
+        health: Schema.Number({ default: 100 }),
+        name: Schema.String({ default: 'Default' })
       }),
       reactor: () => null
     })
@@ -243,7 +217,7 @@ describe('definePrefab', () => {
 
     applyIncomingActions()
 
-    const actions = Engine.instance.store.actions.history
+    const actions = HyperFlux.store.actions.history
     expect(actions.length).toBe(0)
   })
 })

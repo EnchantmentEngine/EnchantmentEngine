@@ -1,37 +1,7 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { MeshBasicMaterial, VideoTexture } from 'three'
 
-import {
-  getComponent,
-  getMutableComponent,
-  getOptionalComponent,
-  hasComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -40,7 +10,7 @@ import { StandardCallbacks, setCallback } from '@ir-engine/spatial/src/common/Ca
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { getAudioAsync } from '../../assets/functions/resourceLoaderHooks'
+import { getAudioAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { VideoComponent, VideoTexturePriorityQueueState } from '../../scene/components/VideoComponent'
 import { AudioState, useAudioState } from '../AudioState'
 import { PositionalAudioComponent } from '../components/PositionalAudioComponent'
@@ -124,21 +94,25 @@ const audioQuery = defineQuery([PositionalAudioComponent])
 
 const execute = () => {
   for (const entity of mediaQuery.enter()) {
-    const media = getMutableComponent(entity, MediaComponent)
-    setCallback(entity, StandardCallbacks.PLAY, () => media.paused.set(false))
-    setCallback(entity, StandardCallbacks.PAUSE, () => media.paused.set(true))
+    const media = getComponent(entity, MediaComponent)
+    setCallback(entity, StandardCallbacks.PLAY, () => {
+      setComponent(entity, MediaComponent, { paused: false })
+    })
+    setCallback(entity, StandardCallbacks.PAUSE, () => {
+      setComponent(entity, MediaComponent, { paused: true })
+    })
     setCallback(entity, StandardCallbacks.RESET, () => {
-      media.paused.set(!media.autoplay.value)
+      setComponent(entity, MediaComponent, { paused: !media.paused })
 
       //using to force the react to update the seek time if already set to 0
       //due to media's seekTime is not being updated with the media elements current time
-      let seekTime = media.seekTime.value
+      let seekTime = media.seekTime
       if (seekTime == 0) {
         seekTime = 0.000001
       } else {
         seekTime = 0
       }
-      media.seekTime.set(seekTime)
+      setComponent(entity, MediaComponent, { seekTime })
     })
   }
 

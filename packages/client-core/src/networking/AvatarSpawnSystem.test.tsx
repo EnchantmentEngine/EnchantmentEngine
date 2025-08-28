@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import sinon from 'sinon'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -33,7 +8,6 @@ import { Cache } from 'three'
 import { API } from '@ir-engine/common'
 import { avatarPath, staticResourcePath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import {
-  Engine,
   EngineState,
   Entity,
   EntityID,
@@ -52,6 +26,7 @@ import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/S
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import {
   EventDispatcher,
+  HyperFlux,
   NetworkActions,
   NetworkState,
   NetworkTopics,
@@ -68,7 +43,6 @@ import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { act, render } from '@testing-library/react'
 import { v4 } from 'uuid'
-import { SearchParamState } from '../common/services/RouterService'
 import { LocationState } from '../social/services/LocationService'
 import { AvatarSpawnSystem } from './AvatarSpawnSystem'
 
@@ -174,7 +148,7 @@ describe('AvatarSpawnSystem', async () => {
 
     createMockNetwork(NetworkTopics.world)
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     getMutableState(EngineState).userID.set(userID)
 
     const network = NetworkState.worldNetwork
@@ -201,9 +175,6 @@ describe('AvatarSpawnSystem', async () => {
   })
 
   it('should spawn an avatar when there is no spectate data', async () => {
-    // ensure no spectate data
-    getMutableState(SearchParamState).set({})
-
     startReactor(system.reactor!)
 
     await act(async () => render(null))
@@ -211,7 +182,7 @@ describe('AvatarSpawnSystem', async () => {
     applyIncomingActions()
 
     // should have spawn action
-    const spawnAction = Engine.instance.store.actions.history.findLast((action) =>
+    const spawnAction = HyperFlux.store.actions.history.findLast((action) =>
       AvatarNetworkAction.spawn.matches.test(action)
     ) as typeof AvatarNetworkAction.spawn.matches._TYPE
     assert.ok(spawnAction)
@@ -223,7 +194,7 @@ describe('AvatarSpawnSystem', async () => {
     assert.equal(spawnAction.entityID, 'avatar')
     assert.equal(spawnAction.entitySourceID, userID as string)
 
-    const avatarURLAction = Engine.instance.store.actions.history.findLast((action) =>
+    const avatarURLAction = HyperFlux.store.actions.history.findLast((action) =>
       AvatarNetworkAction.setAvatarURL.matches.test(action)
     ) as typeof AvatarNetworkAction.setAvatarURL.matches._TYPE
     assert.ok(avatarURLAction)
@@ -233,9 +204,6 @@ describe('AvatarSpawnSystem', async () => {
   })
 
   it('should enter spectate mode with freecam when empty spectate is in search state', async () => {
-    // ensure spectate data
-    getMutableState(SearchParamState).set({ spectate: '' })
-
     // add spectate to search
     const url = new URL(location.href)
     url.searchParams.set('spectate', '')
@@ -248,19 +216,16 @@ describe('AvatarSpawnSystem', async () => {
     applyIncomingActions()
 
     // should have spectate action
-    const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
+    const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
       SpectateActions.spectateEntity.matches.test(action)
     ) as typeof SpectateActions.spectateEntity.matches._TYPE
     assert.ok(spectateAction)
-    assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+    assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
     assert.equal(spectateAction.spectatingEntity, '')
   })
 
   it('should enter spectate mode when spectate specified user is in search state', async () => {
     const otherUserID = 'other user id' as EntityID
-
-    // ensure spectate data
-    getMutableState(SearchParamState).set({ spectate: otherUserID })
 
     // add spectate to search
     const url = new URL(location.href)
@@ -273,11 +238,11 @@ describe('AvatarSpawnSystem', async () => {
       applyIncomingActions()
 
       // should have spectate action
-      const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
+      const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
         SpectateActions.spectateEntity.matches.test(action)
       ) as typeof SpectateActions.spectateEntity.matches._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, otherUserID)
     })
   })
@@ -296,11 +261,11 @@ describe('AvatarSpawnSystem', async () => {
       applyIncomingActions()
 
       // should have spectate action
-      const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
+      const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
         SpectateActions.spectateEntity.matches.test(action)
       ) as typeof SpectateActions.spectateEntity.matches._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, spectateUUID)
     })
   })

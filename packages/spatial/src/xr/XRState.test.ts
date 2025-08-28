@@ -1,29 +1,4 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { createEngine, destroyEngine } from '@ir-engine/ecs'
+import { createEngine, destroyEngine, UndefinedEntity } from '@ir-engine/ecs'
 import { getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,7 +6,7 @@ import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/
 import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
 import { DepthDataTexture } from './DepthDataTexture'
 import { onSessionEnd } from './XRSessionFunctions'
-import { ReferenceSpace, XRAction, XRState } from './XRState'
+import { ReferenceSpace, XRState } from './XRState'
 
 type SessionModes = 'inline' | 'immersive-ar' | 'immersive-vr' | 'none'
 const SessionMode = {
@@ -41,7 +16,7 @@ const SessionMode = {
   immersiveVR: 'immersive-vr' as SessionModes
 }
 
-const XRStateDefaults = {
+const XRStateDefaults: typeof XRState._TYPE = {
   sessionActive: false,
   requestingSession: false,
   scenePosition: new Vector3(),
@@ -65,21 +40,14 @@ const XRStateDefaults = {
   viewerPose: null as XRViewerPose | null | undefined,
   userEyeHeight: 1.75,
   userHeightRatio: 1,
-  xrFrame: null as XRFrame | null
+  xrFrame: null as XRFrame | null,
+  cameraAttachedEntity: UndefinedEntity
 }
 
 /** @note Runs once on the `describe` implied by vitest for this file */
 beforeAll(() => {
   new CustomWebXRPolyfill()
 })
-
-describe('XRAction', () => {
-  describe('vibrateController', () => {
-    it('should initialize the .name field with the expected value', () => {
-      expect(XRAction.vibrateController.type).toBe('xre.xr.vibrateController')
-    })
-  }) //:: XRAction.vibrateController
-}) //:: XRAction
 
 describe('XRState', () => {
   describe('Fields', () => {
@@ -194,7 +162,7 @@ describe('XRState', () => {
     })
   }) //:: XRState.isMovementControlsEnabled.get
 
-  describe('isCameraAttachedToAvatar.get', () => {
+  describe('shouldViewerFollowController.get', () => {
     beforeEach(async () => {
       createEngine()
       await mockEmulatedXREngine()
@@ -214,7 +182,7 @@ describe('XRState', () => {
       expect(getState(XRState).session).toBeFalsy()
       expect(getState(XRState).scenePlacementMode).not.toBe(PlacementMode)
       // Run and Check the result
-      const result = XRState.isCameraAttachedToAvatar
+      const result = XRState.shouldViewerFollowController
       expect(result).toBe(Expected)
     })
 
@@ -227,7 +195,7 @@ describe('XRState', () => {
       expect(getState(XRState).session).toBeTruthy()
       expect(getState(XRState).scenePlacementMode).toBe(PlacementMode)
       // Run and Check the result
-      const result = XRState.isCameraAttachedToAvatar
+      const result = XRState.shouldViewerFollowController
       expect(result).toBe(Expected)
     })
 
@@ -241,7 +209,7 @@ describe('XRState', () => {
       expect(getState(XRState).avatarCameraMode).toBe(AvatarMode)
       expect(getState(XRState).sceneScale).toBe(1)
       // Run and Check the result
-      const result = XRState.isCameraAttachedToAvatar
+      const result = XRState.shouldViewerFollowController
       expect(result).toBe(Expected)
     })
 
@@ -259,7 +227,7 @@ describe('XRState', () => {
       expect(getState(XRState).sceneScale).not.toBe(1)
       expect(getState(XRState).sceneScale).toBe(Scale)
       // Run and Check the result
-      const result = XRState.isCameraAttachedToAvatar
+      const result = XRState.shouldViewerFollowController
       expect(result).toBe(Expected)
     })
 
@@ -275,7 +243,7 @@ describe('XRState', () => {
       expect(getState(XRState).avatarCameraMode).not.toBe('auto')
       expect(getState(XRState).avatarCameraMode).toBe(AvatarMode)
       // Run and Check the result
-      const result = XRState.isCameraAttachedToAvatar
+      const result = XRState.shouldViewerFollowController
       expect(result).toBe(Expected)
     })
 
@@ -291,10 +259,10 @@ describe('XRState', () => {
       expect(getState(XRState).avatarCameraMode).not.toBe('auto')
       expect(getState(XRState).avatarCameraMode).toBe(AvatarMode)
       // Run and Check the result
-      const result = XRState.isCameraAttachedToAvatar
+      const result = XRState.shouldViewerFollowController
       expect(result).toBe(Expected)
     })
-  }) //:: XRState.isCameraAttachedToAvatar.get
+  }) //:: XRState.shouldViewerFollowController.get
 
   describe('setTrackingSpace', () => {
     beforeEach(async () => {
@@ -472,7 +440,7 @@ describe('XRState', () => {
     })
   }) //:: XRState.useMovementControlsEnabled
 
-  describe('useCameraAttachedToAvatar', async () => {
+  describe('useShouldViewerFollowController', async () => {
     beforeEach(async () => {
       createEngine()
       await mockEmulatedXREngine()
@@ -488,7 +456,7 @@ describe('XRState', () => {
       // Set the data as expected
       let result: boolean = !Expected
       const Reactor = () => {
-        result = XRState.useCameraAttachedToAvatar()
+        result = XRState.useShouldViewerFollowController()
         return null
       }
       getMutableState(XRState).session.set(null)
@@ -506,7 +474,7 @@ describe('XRState', () => {
       // Set the data as expected
       let result: boolean = !Expected
       const Reactor = () => {
-        result = XRState.useCameraAttachedToAvatar()
+        result = XRState.useShouldViewerFollowController()
         return null
       }
       getMutableState(XRState).scenePlacementMode.set('placing')
@@ -525,7 +493,7 @@ describe('XRState', () => {
       // Set the data as expected
       let result: boolean = !Expected
       const Reactor = () => {
-        result = XRState.useCameraAttachedToAvatar()
+        result = XRState.useShouldViewerFollowController()
         return null
       }
       getMutableState(XRState).avatarCameraMode.set('auto')
@@ -548,7 +516,7 @@ describe('XRState', () => {
       // Set the data as expected
       let result: boolean = !Expected
       const Reactor = () => {
-        result = XRState.useCameraAttachedToAvatar()
+        result = XRState.useShouldViewerFollowController()
         return null
       }
       getMutableState(XRState).avatarCameraMode.set('auto')
@@ -572,7 +540,7 @@ describe('XRState', () => {
       // Set the data as expected
       let result: boolean = !Expected
       const Reactor = () => {
-        result = XRState.useCameraAttachedToAvatar()
+        result = XRState.useShouldViewerFollowController()
         return null
       }
       getMutableState(XRState).avatarCameraMode.set('attached')
@@ -595,7 +563,7 @@ describe('XRState', () => {
       // Set the data as expected
       let result: boolean = !Expected
       const Reactor = () => {
-        result = XRState.useCameraAttachedToAvatar()
+        result = XRState.useShouldViewerFollowController()
         return null
       }
       getMutableState(XRState).avatarCameraMode.set('detached')
@@ -611,5 +579,5 @@ describe('XRState', () => {
         expect(result).toBe(Expected)
       })
     })
-  }) //:: XRState.useCameraAttachedToAvatar
+  }) //:: XRState.useShouldViewerFollowController
 }) //:: XRState

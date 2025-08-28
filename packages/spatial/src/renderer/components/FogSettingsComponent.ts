@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { Fog, FogExp2 } from 'three'
 
@@ -36,19 +11,18 @@ import {
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { FogShaders } from '../FogSystem'
+import { Schema } from '@ir-engine/hyperflux'
 import { initBrownianMotionFogShader, initHeightFogShader, removeFogShader } from './FogShaders'
 import { FogComponent } from './SceneComponents'
 import { VisibleComponent } from './VisibleComponent'
 
 export const FogType = {
-  Disabled: 'disabled' as const,
-  Linear: 'linear' as const,
-  Exponential: 'exponential' as const,
-  Brownian: 'brownian' as const,
-  Height: 'height' as const
-}
+  Disabled: 'disabled',
+  Linear: 'linear',
+  Exponential: 'exponential',
+  Brownian: 'brownian',
+  Height: 'height'
+} as const
 
 export type FogType = (typeof FogType)[keyof typeof FogType]
 
@@ -56,18 +30,18 @@ export const FogSettingsComponent = defineComponent({
   name: 'FogSettingsComponent',
   jsonID: 'EE_fog',
 
-  schema: S.Object({
-    type: S.Enum(FogType, {
+  schema: Schema.Object({
+    type: Schema.Enum(FogType, {
       $comment:
         "A string enum, ie. one of the following values: 'disabled', 'linear', 'exponential', 'brownian', 'height'",
       default: FogType.Disabled
     }),
-    color: S.String({ default: '#FFFFFF' }),
-    density: S.Number({ default: 0.005 }),
-    near: S.Number({ default: 1 }),
-    far: S.Number({ default: 1000 }),
-    timeScale: S.Number({ default: 1 }),
-    height: S.Number({ default: 0.05 })
+    color: Schema.String({ default: '#FFFFFF' }),
+    density: Schema.Number({ default: 0.005 }),
+    near: Schema.Number({ default: 1 }),
+    far: Schema.Number({ default: 1000 }),
+    timeScale: Schema.Number({ default: 1 }),
+    height: Schema.Number({ default: 0.05 })
   }),
 
   reactor: () => {
@@ -78,25 +52,24 @@ export const FogSettingsComponent = defineComponent({
     useEffect(() => {
       if (!isVisible) return
 
-      const fogData = fog.value
-      switch (fogData.type) {
+      switch (fog.type) {
         case FogType.Linear:
-          setComponent(entity, FogComponent, new Fog(fogData.color, fogData.near, fogData.far))
+          setComponent(entity, FogComponent, new Fog(fog.color, fog.near, fog.far))
           removeFogShader()
           break
 
         case FogType.Exponential:
-          setComponent(entity, FogComponent, new FogExp2(fogData.color, fogData.density))
+          setComponent(entity, FogComponent, new FogExp2(fog.color, fog.density))
           removeFogShader()
           break
 
         case FogType.Brownian:
-          setComponent(entity, FogComponent, new FogExp2(fogData.color, fogData.density))
+          setComponent(entity, FogComponent, new FogExp2(fog.color, fog.density))
           initBrownianMotionFogShader()
           break
 
         case FogType.Height:
-          setComponent(entity, FogComponent, new FogExp2(fogData.color, fogData.density))
+          setComponent(entity, FogComponent, new FogExp2(fog.color, fog.density))
           initHeightFogShader()
           break
 
@@ -112,37 +85,23 @@ export const FogSettingsComponent = defineComponent({
     }, [fog.type, isVisible])
 
     useEffect(() => {
-      getOptionalComponent(entity, FogComponent)?.color.set(fog.color.value)
+      getOptionalComponent(entity, FogComponent)?.color.set(fog.color)
     }, [fog.color])
 
     useEffect(() => {
       const fogComponent = getOptionalComponent(entity, FogComponent)
-      if (fogComponent && fog.type.value !== FogType.Linear) (fogComponent as FogExp2).density = fog.density.value
+      if (fogComponent && fog.type !== FogType.Linear) (fogComponent as FogExp2).density = fog.density
     }, [fog.density])
 
     useEffect(() => {
       const fogComponent = getOptionalComponent(entity, FogComponent)
-      if (fogComponent) (fogComponent as Fog).near = fog.near.value
+      if (fogComponent) (fogComponent as Fog).near = fog.near
     }, [fog.near])
 
     useEffect(() => {
       const fogComponent = getOptionalComponent(entity, FogComponent)
-      if (fogComponent) (fogComponent as Fog).far = fog.far.value
+      if (fogComponent) (fogComponent as Fog).far = fog.far
     }, [fog.far])
-
-    useEffect(() => {
-      const fogComponent = getOptionalComponent(entity, FogComponent)
-      if (fogComponent && (fog.type.value === FogType.Brownian || fog.type.value === FogType.Height))
-        for (const s of FogShaders) s.uniforms.heightFactor.value = fog.height.value
-    }, [fog.height])
-
-    useEffect(() => {
-      const fogComponent = getOptionalComponent(entity, FogComponent)
-      if (fogComponent && fog.type.value === FogType.Brownian)
-        for (const s of FogShaders) {
-          s.uniforms.fogTimeScale.value = fog.timeScale.value
-        }
-    }, [fog.timeScale])
 
     return null
   }

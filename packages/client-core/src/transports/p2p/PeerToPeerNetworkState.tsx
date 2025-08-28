@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { API, useFind } from '@ir-engine/common'
 import { IceServer } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
 import {
@@ -34,10 +9,11 @@ import {
   instanceSignalingPath
 } from '@ir-engine/common/src/schema.type.module'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import {
   ErrorBoundary,
+  HyperFlux,
   MediaStreamState,
   MessageTypes,
   NetworkActions,
@@ -144,10 +120,10 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
       NetworkActions.peerJoined({
         $network: network.id,
         $topic: network.topic,
-        $to: Engine.instance.store.peerID,
-        peerID: Engine.instance.store.peerID,
+        $to: HyperFlux.store.peerID,
+        peerID: HyperFlux.store.peerID,
         peerIndex: joinResponse.value.index,
-        userID: Engine.instance.userID
+        userID: getState(EngineState).userID
       })
     )
 
@@ -157,9 +133,9 @@ const ConnectionReactor = (props: { instanceID: InstanceID; topic: Topic }) => {
         NetworkActions.peerLeft({
           $network: network.id,
           $topic: network.topic,
-          $to: Engine.instance.store.peerID,
-          peerID: Engine.instance.store.peerID,
-          userID: Engine.instance.userID
+          $to: HyperFlux.store.peerID,
+          peerID: HyperFlux.store.peerID,
+          userID: getState(EngineState).userID
         })
       )
       leaveNetwork(network)
@@ -199,7 +175,7 @@ const PeersReactor = (props: { instanceID: InstanceID }) => {
 
   useEffect(() => {
     if (instanceAttendanceQuery.status === 'success') {
-      otherPeers.set(instanceAttendanceQuery.data.filter((peer) => peer.peerId !== Engine.instance.store.peerID))
+      otherPeers.set(instanceAttendanceQuery.data.filter((peer) => peer.peerId !== HyperFlux.store.peerID))
     }
   }, [instanceAttendanceQuery.status])
 
@@ -237,7 +213,7 @@ const PeerReactor = (props: { peerID: PeerID; peerIndex: number; userID: UserID;
     API.instance.service(instanceSignalingPath).on('patched', (data) => {
       // need to ignore messages from self
       if (data.fromPeerID !== props.peerID) return
-      if (data.targetPeerID !== Engine.instance.store.peerID) return
+      if (data.targetPeerID !== HyperFlux.store.peerID) return
       if (data.instanceID !== network.id) return
 
       WebRTCTransportFunctions.onMessage(sendMessage, data.instanceID, props.peerID, data.message)

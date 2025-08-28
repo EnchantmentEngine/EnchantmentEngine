@@ -1,33 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createHookableFunction, getMutableState, getState } from '@ir-engine/hyperflux'
+import { createHookableFunction, getMutableState, getState, HyperFlux } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
-import { Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
+import { Q_Y_180, Vector3_One, Vector3_Zero } from '../common/constants/MathConstants'
 import { isSafari } from '../common/functions/isMobile'
 import { RendererComponent } from '../renderer/components/RendererComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -141,6 +116,14 @@ export const setupXRSession = async (requestedMode?: 'inline' | 'immersive-ar' |
 }
 
 export const getReferenceSpaces = (xrSession: XRSession) => {
+  const worldOriginTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
+  const cameraAttachedEntity = getState(XRState).cameraAttachedEntity || getState(ReferenceSpaceState).viewerEntity
+  const transform = getComponent(cameraAttachedEntity, TransformComponent)
+
+  /** since the world origin is based on gamepad movement, we need to transform it by the pose of the avatar */
+  worldOriginTransform.position.copy(transform.position)
+  worldOriginTransform.rotation.copy(transform.rotation).multiply(Q_Y_180)
+
   const onLocalFloorReset = (_ev: XRReferenceSpaceEvent) => {
     /** @todo ev.transform is not yet implemented on the Quest browser */
     // if (ev.transform) {
@@ -159,7 +142,9 @@ export const getReferenceSpaces = (xrSession: XRSession) => {
     computeAndUpdateWorldOrigin()
   })
 
-  xrSession.requestReferenceSpace('viewer').then((space) => (ReferenceSpace.viewer = space))
+  xrSession.requestReferenceSpace('viewer').then((space) => {
+    ReferenceSpace.viewer = space
+  })
 }
 
 /**
@@ -188,5 +173,14 @@ export const requestXRSession = createHookableFunction(
  * @returns
  */
 export const endXRSession = createHookableFunction(async () => {
-  await getMutableState(XRState).session.value?.end()
+  await getMutableState(XRState)
+    .session.value?.end()
+    .then(() => {
+      if (!HyperFlux.store) return // engine is destroyed
+      const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+      if (!viewerEntity) return // viewer entity is destroyed
+      const renderer = getComponent(viewerEntity, RendererComponent)
+      renderer.needsResize = true
+      // need this to reset the camera manually immediately as the session ends
+    })
 })

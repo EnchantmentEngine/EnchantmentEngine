@@ -1,42 +1,16 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { AnimationAction, Euler, Group, Matrix4, Object3D, Quaternion } from 'three'
 
-import { EntityTreeComponent, UUIDComponent, iterateEntityNode } from '@ir-engine/ecs'
+import { EntitySchema, EntityTreeComponent, UUIDComponent, iterateEntityNode } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   setComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
@@ -52,12 +26,12 @@ import { VRMHumanBones } from '../maps/VRMHumanBones'
 export const AvatarAnimationComponent = defineComponent({
   name: 'AvatarAnimationComponent',
 
-  schema: S.Object({
-    animationGraph: S.Object({
-      blendAnimation: S.Type<AnimationAction | undefined>(),
-      fadingOut: S.Bool(),
-      blendStrength: S.Number(),
-      layer: S.Number()
+  schema: Schema.Object({
+    animationGraph: Schema.Object({
+      blendAnimation: Schema.Type<AnimationAction | undefined>(),
+      fadingOut: Schema.Bool(),
+      blendStrength: Schema.Number(),
+      layer: Schema.Number()
     }),
     /** The input vector for 2D locomotion blending space */
     locomotion: T.Vec3()
@@ -66,25 +40,25 @@ export const AvatarAnimationComponent = defineComponent({
 
 export type Matrices = { local: Matrix4; world: Matrix4 }
 
-const HumanBonesSchema = S.LiteralUnion(VRMHumanBoneList)
+const HumanBonesSchema = Schema.LiteralUnion(VRMHumanBoneList)
 
 export const AvatarRigComponent = defineComponent({
   name: 'AvatarRigComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** maps human bones to entities */
-    bonesToEntities: S.Record(HumanBonesSchema, S.Entity()),
-    entitiesToBones: S.Record(S.Entity(), HumanBonesSchema),
+    bonesToEntities: Schema.Record(HumanBonesSchema, EntitySchema.Entity()),
+    entitiesToBones: Schema.Record(EntitySchema.Entity(), HumanBonesSchema),
     /** keeps track of initial rig pose data for rotation normalization */
-    parentWorldRotations: S.Record(HumanBonesSchema, S.Type<Quaternion>()),
-    parentWorldRotationInverses: S.Record(HumanBonesSchema, S.Type<Quaternion>()),
-    rotations: S.Record(HumanBonesSchema, S.Type<Quaternion>())
+    parentWorldRotations: Schema.Record(HumanBonesSchema, Schema.Type<Quaternion>()),
+    parentWorldRotationInverses: Schema.Record(HumanBonesSchema, Schema.Type<Quaternion>()),
+    rotations: Schema.Record(HumanBonesSchema, Schema.Type<Quaternion>())
   }),
 
   setBone: (toRigEntity: Entity, boneEntity: Entity, boneName: VRMHumanBoneName) => {
-    const rigComponent = getMutableComponent(toRigEntity, AvatarRigComponent)
-    rigComponent.bonesToEntities[boneName].set(boneEntity)
-    rigComponent.entitiesToBones[boneEntity].set(boneName)
+    const rigComponent = getComponent(toRigEntity, AvatarRigComponent)
+    rigComponent.bonesToEntities[boneName] = boneEntity
+    rigComponent.entitiesToBones[boneEntity] = boneName
   },
 
   setPose: (toRigEntity: Entity, boneEntity: Entity, boneName: VRMHumanBoneName) => {
@@ -93,12 +67,14 @@ export const AvatarRigComponent = defineComponent({
 
     const parent = entityTreeComponent.parentEntity
 
-    const rigComponent = getMutableComponent(toRigEntity, AvatarRigComponent)
-    rigComponent.parentWorldRotationInverses[boneName].set(
-      TransformComponent.getWorldRotation(parent, new Quaternion()).invert()
-    )
-    rigComponent.parentWorldRotations[boneName].set(TransformComponent.getWorldRotation(parent, new Quaternion()))
-    rigComponent.rotations[boneName].set(transformComponent.rotation.clone())
+    const rigComponent = getComponent(toRigEntity, AvatarRigComponent)
+    rigComponent.parentWorldRotationInverses[boneName] = TransformComponent.getWorldRotation(
+      parent,
+      new Quaternion()
+    ).invert()
+
+    rigComponent.parentWorldRotations[boneName] = TransformComponent.getWorldRotation(parent, new Quaternion())
+    rigComponent.rotations[boneName] = transformComponent.rotation.clone()
   },
 
   useAvatarLoaded: (entity: Entity) => {
@@ -131,14 +107,14 @@ export function createVRM(rootEntity: Entity) {
 
   //formats an object of human bones to be used in the VRM constructor
   const formatHumanBones = (humanBones: { [key: string]: { node: number } }) => {
-    const bones = [] as { bone: VRMHumanBoneName; node: number }[]
+    const bones = [] as Array<{ bone: VRMHumanBoneName; node: number }>
     for (const bone in humanBones) {
       bones.push({ bone: bone as VRMHumanBoneName, node: humanBones[bone].node })
     }
     return bones
   }
 
-  const vrmExtensionDefinition: any = gltf.extensions!.VRM ?? gltf.extensions.VRMC_vrm
+  const vrmExtensionDefinition = (gltf.extensions!.VRM as any) ?? (gltf.extensions.VRMC_vrm as any)
   const humanBonesArray = Array.isArray(vrmExtensionDefinition.humanoid?.humanBones)
     ? vrmExtensionDefinition.humanoid?.humanBones
     : formatHumanBones(vrmExtensionDefinition.humanoid!.humanBones as any)

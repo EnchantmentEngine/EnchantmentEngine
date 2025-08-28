@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -75,7 +50,7 @@ export const ImageNodeEditor: EditorComponentType = (props) => {
       Icon={ImageNodeEditor.iconComponent}
     >
       <InputGroup name="Image Url" label={t('editor:properties.image.lbl-imgURL')}>
-        <DroppableImageInput src={imageComponent.source.value} onBlur={commitProperty(ImageComponent, 'source')} />
+        <DroppableImageInput src={imageComponent.source} onBlur={commitProperty(ImageComponent, 'source')} />
       </InputGroup>
       {errors ? (
         Object.entries(errors).map(([err, message]) => (
@@ -94,21 +69,17 @@ export const ImageNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.image.lbl-fit')}
         info={t('editor:properties.image.lbl-fit-info')}
       >
-        <SelectInput
-          value={imageComponent.fit.value}
-          onChange={commitProperty(ImageComponent, 'fit')}
-          options={fitOptions}
-        />
+        <SelectInput value={imageComponent.fit} onChange={commitProperty(ImageComponent, 'fit')} options={fitOptions} />
       </InputGroup>
 
       <InputGroup name="Aspect Ratio" label={t('editor:properties.image.lbl-aspect-ratio')}>
         <button
           className={twMerge(
             'w-full flex-auto rounded-md  px-10 py-1 ',
-            imageComponent.source.value ? ' bg-surface-1 text-text-primary' : 'bg-surface-2 text-text-inactive'
+            imageComponent.source ? ' bg-surface-1 text-text-primary' : 'bg-surface-2 text-text-inactive'
           )}
           onClick={resizeImageToMatchAspectRatio}
-          disabled={!imageComponent.source.value}
+          disabled={!imageComponent.source}
         >
           {t('editor:properties.image.lbl-match-aspect-ratio')}
         </button>

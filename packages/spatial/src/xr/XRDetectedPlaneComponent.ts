@@ -1,49 +1,22 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, ShadowMaterial } from 'three'
 
 import {
-  Engine,
-  Entity,
-  EntityTreeComponent,
-  S,
   createEntity,
   defineComponent,
+  Entity,
+  EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   removeEntity,
   setComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
 
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 
 import { NameComponent } from '../common/NameComponent'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { MeshComponent } from '../renderer/components/MeshComponent'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -70,12 +43,12 @@ export const XRDetectedPlaneComponentState = defineComponent({
 export const XRDetectedPlaneComponent = defineComponent({
   name: 'XRDetectedPlaneComponent',
 
-  schema: S.Object({
-    plane: S.Type<XRPlane>(),
+  schema: Schema.Object({
+    plane: Schema.Type<XRPlane>(),
     // internal
-    shadowMesh: S.Type<Mesh>({ serialized: false }),
-    geometry: S.Type<BufferGeometry>({ serialized: false }),
-    placementHelper: S.Type<Mesh>({ serialized: false })
+    shadowMesh: Schema.Type<Mesh>({ serialized: false }),
+    geometry: Schema.Type<BufferGeometry>({ serialized: false }),
+    placementHelper: Schema.Type<Mesh>({ serialized: false })
   }),
 
   reactor: function () {
@@ -84,7 +57,7 @@ export const XRDetectedPlaneComponent = defineComponent({
 
     useEffect(() => {
       return () => {
-        component.geometry.value?.dispose()
+        component.geometry?.dispose()
       }
     }, [])
 
@@ -130,13 +103,13 @@ export const XRDetectedPlaneComponent = defineComponent({
     if (plane.lastChangedTime > lastKnownTime) {
       state.planesLastChangedTimes.set(plane, plane.lastChangedTime)
       const geometry = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
-      const planeComponent = getMutableComponent(entity, XRDetectedPlaneComponent)
-      planeComponent.geometry.value?.dispose()
-      planeComponent.shadowMesh.value?.geometry.dispose()
+      const planeComponent = getComponent(entity, XRDetectedPlaneComponent)
+      planeComponent.geometry?.dispose()
+      planeComponent.shadowMesh?.geometry.dispose()
       const mesh = new Mesh(geometry, shadowMaterial)
       setComponent(entity, MeshComponent, mesh)
-      planeComponent.geometry.set(geometry)
-      planeComponent.shadowMesh.set(mesh)
+      planeComponent.geometry = geometry
+      planeComponent.shadowMesh = mesh
     }
   },
 
@@ -159,7 +132,7 @@ export const XRDetectedPlaneComponent = defineComponent({
       return state.detectedPlanesMap.get(plane)!
     }
     const entity = createEntity()
-    setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     setComponent(entity, TransformComponent)
     setVisibleComponent(entity, true)
     setComponent(entity, XRDetectedPlaneComponent, { plane })

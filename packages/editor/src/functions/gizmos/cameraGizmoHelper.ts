@@ -1,35 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BufferGeometry, Color, Mesh, MeshBasicMaterial, Quaternion, Raycaster, Vector3 } from 'three'
 
 import {
   Entity,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   setComponent,
   UndefinedEntity
@@ -53,7 +27,7 @@ const _raycaster = new Raycaster()
 _raycaster.layers.enable(ObjectLayers.Gizmos)
 _raycaster.firstHitOnly = true
 
-export function cameraGizmoUpdate(gizmoEntity) {
+export function cameraGizmoUpdate(gizmoEntity: Entity) {
   const cameraGizmo = getComponent(gizmoEntity, CameraGizmoComponent)
   if (cameraGizmo === undefined) return
   if (cameraGizmo.visualEntity === UndefinedEntity) return
@@ -105,7 +79,7 @@ export function cameraGizmoUpdate(gizmoEntity) {
   }
 }
 
-export function controlUpdate(gizmoEntity) {
+export function controlUpdate(gizmoEntity: Entity) {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
   const sceneRot = getComponent(viewerEntity, TransformComponent).rotation
@@ -115,23 +89,23 @@ export function controlUpdate(gizmoEntity) {
   })
 }
 
-function pointerHover(gizmoEntity) {
-  const cameraGizmo = getMutableComponent(gizmoEntity, CameraGizmoComponent)
-  const panelInputPointerEntity = InputPointerComponent.getPointersForCamera(cameraGizmo.cameraEntity.value)[0]
+function pointerHover(gizmoEntity: Entity) {
+  const cameraGizmo = getComponent(gizmoEntity, CameraGizmoComponent)
+  const panelInputPointerEntity = InputPointerComponent.getPointersForCamera(cameraGizmo.cameraEntity)[0]
   if (!panelInputPointerEntity) return
-  if (cameraGizmo.cameraEntity.value === UndefinedEntity) return
+  if (cameraGizmo.cameraEntity === UndefinedEntity) return
 
   _raycaster.setFromCamera(
     getComponent(panelInputPointerEntity, InputPointerComponent).position,
-    getComponent(cameraGizmo.cameraEntity.value, CameraComponent)
+    getComponent(cameraGizmo.cameraEntity, CameraComponent)
   )
-  const gizmoVisual = getComponent(cameraGizmo.visualEntity.value, CameraGizmoVisualComponent)
+  const gizmoVisual = getComponent(cameraGizmo.visualEntity, CameraGizmoVisualComponent)
   const intersect = intersectObjectWithRay(getComponent(gizmoVisual.picker, ObjectComponent), _raycaster, true)
 
-  cameraGizmo.axis.set(((intersect as any)?.object?.name as any) ?? null)
+  setComponent(gizmoEntity, CameraGizmoComponent, { axis: ((intersect as any)?.object?.name as any) ?? null })
 }
 
-function pointerDown(gizmoEntity) {
+function pointerDown(gizmoEntity: Entity) {
   const cameraGizmoComponent = getComponent(gizmoEntity, CameraGizmoComponent)
   const inputPointerEntity = InputPointerComponent.getPointersForCamera(cameraGizmoComponent.cameraEntity)[0]
   if (!inputPointerEntity) return
@@ -155,7 +129,7 @@ function pointerDown(gizmoEntity) {
 
 /*function pointerMove(gizmoEntity) {
   // TODO support gizmos in multiple viewports
-  const inputPointerEntity = InputPointerComponent.getPointersForCamera(Engine.instance.viewerEntity)[0]
+  const inputPointerEntity = InputPointerComponent.getPointersForCamera(getState(ReferenceSpaceState).viewerEntity)[0]
   if (!inputPointerEntity) return
   const pointer = getComponent(inputPointerEntity, InputPointerComponent)
   const gizmoControlComponent = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
@@ -185,7 +159,7 @@ function pointerDown(gizmoEntity) {
   )
     return
 
-  const camera = getComponent(Engine.instance?.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   _raycaster.setFromCamera(pointer.position, camera)
 
   const planeIntersect = intersectObjectWithRay(plane, _raycaster, true)

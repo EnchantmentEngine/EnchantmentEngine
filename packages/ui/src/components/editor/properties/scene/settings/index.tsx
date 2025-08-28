@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import getImagePalette from 'image-palette-core'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -53,7 +28,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
   const sceneThumbnailState = getMutableState(SceneThumbnailState)
 
   const generateColors = () => {
-    const url = sceneThumbnailState.thumbnailURL.value ?? sceneSettingsComponent.thumbnailURL.value
+    const url = sceneThumbnailState.thumbnailURL.value ?? sceneSettingsComponent.thumbnailURL
     if (!url) return
     const image = new Image()
     image.crossOrigin = 'Anonymous'
@@ -70,7 +45,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
     image.src = url
   }
 
-  const useSpectatingEntity = useState(!!sceneSettingsComponent.spectateEntity.value)
+  const useSpectatingEntity = useState(!!sceneSettingsComponent.spectateEntity)
 
   return (
     <NodeEditor
@@ -142,9 +117,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
         className="w-auto"
       >
         <div>
-          <ImageLink
-            src={sceneThumbnailState.loadingScreenURL.value ?? sceneSettingsComponent.loadingScreenURL.value}
-          />
+          <ImageLink src={sceneThumbnailState.loadingScreenURL.value ?? sceneSettingsComponent.loadingScreenURL} />
           <Button onClick={SceneThumbnailState.createLoadingScreen} className="mt-2 w-full">
             {t('editor:properties.sceneSettings.generate')}
           </Button>
@@ -166,22 +139,22 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
       <InputGroup name="Primary Color" label={t('editor:properties.sceneSettings.lbl-colors')}>
         <div className="w-full space-y-2">
           <ColorInput
-            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL.value}
-            value={new Color(sceneSettingsComponent.primaryColor.value)}
+            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL}
+            value={new Color(sceneSettingsComponent.primaryColor)}
             onChange={(val) => updateProperty(SceneSettingsComponent, 'primaryColor')('#' + val.getHexString())}
             onRelease={(val) => commitProperty(SceneSettingsComponent, 'primaryColor')('#' + val.getHexString())}
             className="w-full"
           />
           <ColorInput
-            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL.value}
-            value={new Color(sceneSettingsComponent.backgroundColor.value)}
+            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL}
+            value={new Color(sceneSettingsComponent.backgroundColor)}
             onChange={(val) => updateProperty(SceneSettingsComponent, 'backgroundColor')('#' + val.getHexString())}
             onRelease={(val) => commitProperty(SceneSettingsComponent, 'backgroundColor')('#' + val.getHexString())}
             className="w-full"
           />
           <ColorInput
-            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL.value}
-            value={new Color(sceneSettingsComponent.alternativeColor.value)}
+            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL}
+            value={new Color(sceneSettingsComponent.alternativeColor)}
             onChange={(val) => updateProperty(SceneSettingsComponent, 'alternativeColor')('#' + val.getHexString())}
             onRelease={(val) => commitProperty(SceneSettingsComponent, 'alternativeColor')('#' + val.getHexString())}
             className="w-full"
@@ -193,7 +166,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
       </InputGroup>
       <InputGroup name="Kill Height" label={t('editor:properties.sceneSettings.lbl-killHeight')}>
         <NumericInput
-          value={sceneSettingsComponent.sceneKillHeight.value}
+          value={sceneSettingsComponent.sceneKillHeight}
           onChange={updateProperty(SceneSettingsComponent, 'sceneKillHeight')}
           onRelease={commitProperty(SceneSettingsComponent, 'sceneKillHeight')}
         />

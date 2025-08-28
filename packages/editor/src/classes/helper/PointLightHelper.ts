@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useHookstate } from '@hookstate/core'
 import {
   Easing,
@@ -30,7 +5,8 @@ import {
   EntityTreeComponent,
   UndefinedEntity,
   createEntity,
-  getMutableComponent,
+  getComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useComponent
@@ -131,8 +107,8 @@ export const PointLightHelperReactor: React.FC = (props: { parentEntity; iconEnt
     setComponent(helperEntity, EntityTreeComponent, { parentEntity })
     setComponent(helperEntity, LineSegmentComponent, {
       name: 'point-light-helper',
-      geometry: createPointLightGizmoGeometry(pointLight.range.value)?.clone(),
-      color: pointLight.color.value,
+      geometry: createPointLightGizmoGeometry(pointLight.range)?.clone(),
+      color: pointLight.color,
       opacity: 0
     })
     pointLightHelperEntity.set(helperEntity)
@@ -161,15 +137,20 @@ export const PointLightHelperReactor: React.FC = (props: { parentEntity; iconEnt
   useEffect(() => {
     if (pointLightHelperEntity.value === UndefinedEntity) return
 
-    const helper = getMutableComponent(pointLightHelperEntity.value, LineSegmentComponent)
-    helper.color.set(hovered ? BOUNDING_BOX_COLORS.HOVERED : pointLight.color.value)
+    if (!hasComponent(pointLightHelperEntity.value, LineSegmentComponent)) return
+    setComponent(pointLightHelperEntity.value, LineSegmentComponent, {
+      color: hovered ? BOUNDING_BOX_COLORS.HOVERED : pointLight.color
+    })
 
-    const newGeometry = createPointLightGizmoGeometry(pointLight.range.value)
-
-    if (newGeometry) {
-      helper.geometry.value?.dispose()
-      helper.geometry.set(newGeometry)
+    const oldGeometry = getComponent(pointLightHelperEntity.value, LineSegmentComponent).geometry
+    if (oldGeometry) {
+      oldGeometry?.dispose()
     }
+
+    const newGeometry = createPointLightGizmoGeometry(pointLight.range)
+    setComponent(pointLightHelperEntity.value, LineSegmentComponent, {
+      geometry: newGeometry
+    })
   }, [pointLightHelperEntity.value, pointLight.color, pointLight.range, hovered])
 
   return null

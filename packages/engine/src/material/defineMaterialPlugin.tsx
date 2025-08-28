@@ -1,49 +1,21 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   defineComponent,
   ECSState,
   Entity,
   getOptionalComponent,
   PresentationSystemGroup,
-  S,
-  Schema,
-  Static,
   useComponent
 } from '@ir-engine/ecs'
 import { SystemUUID, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, Schema, SchemaDefinition, State, Static, useHookstate } from '@ir-engine/hyperflux'
 import {
   MaterialPluginComponents,
   MaterialStateComponent
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { useEffect } from 'react'
-import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
-import { useTexture } from '../assets/functions/resourceLoaderHooks'
+import { Color, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
 
 /**
  * A JSON Schema for a texture uniform.
@@ -51,9 +23,12 @@ import { useTexture } from '../assets/functions/resourceLoaderHooks'
  * - `null` for no texture
  */
 export const TextureSchema = () =>
-  S.Union([S.String(), S.Null(), S.Type<Texture>()], { default: null, metadata: { $isTexture: true } })
+  Schema.Union([Schema.String(), Schema.Null(), Schema.Type<Texture>()], {
+    default: null,
+    metadata: { $isTexture: true }
+  }) // @todo replace $isTexture with $id
 
-const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
+export const isTextureUniform = (uniformSchema: SchemaDefinition) => !!uniformSchema.options?.metadata?.$isTexture
 
 /**
  *
@@ -92,7 +67,7 @@ export type ValidUniformTypes = boolean | number | string | Vector2 | Vector3 | 
 
 export type UniformRecord = Record<string, ValidUniformTypes>
 
-export const defineMaterialPlugin = <T extends Schema>({
+export const defineMaterialPlugin = <T extends SchemaDefinition>({
   name,
   jsonID,
   uniforms: uniformSchema,
@@ -105,7 +80,7 @@ export const defineMaterialPlugin = <T extends Schema>({
   uniforms: T
   onApply: (shader: Shader, renderer: WebGLRenderer) => void
   update?: (component: Static<T>, deltaSeconds: number) => void
-  reactor?: any
+  reactor?: (props: { entity: Entity; textureState: State<Record<string, Texture | null>> }) => any
 }) => {
   const PluginComponent = defineComponent({
     name,
@@ -116,15 +91,26 @@ export const defineMaterialPlugin = <T extends Schema>({
 
     reactor: ({ entity }) => {
       /** Suspend context until material exists */
-      const material = useComponent(entity, MaterialStateComponent).material.value as Material
+      const material = useComponent(entity, MaterialStateComponent).material
 
-      const pluginState = useComponent(entity, PluginComponent).get(NO_PROXY) as UniformRecord
+      const pluginState = useComponent(entity, PluginComponent) as UniformRecord
 
-      const textureUniforms = Object.fromEntries(
-        Object.entries(uniformSchema.properties!)
-          .filter(([key, value]) => isTextureUniform(value))
-          .map(([key, value]) => [key, new Uniform(null)])
-      ) as Record<keyof UniformRecord, Uniform<Texture | null>>
+      const textureUniformState = useHookstate(
+        () =>
+          Object.fromEntries(
+            Object.entries(uniformSchema.properties!)
+              .filter(([key, value]) => isTextureUniform(value))
+              .map(([key, value]) => [key, new Uniform(null)])
+          ) as Record<keyof UniformRecord, Uniform<Texture | null>>
+      )
+      const textureUniforms = textureUniformState.get(NO_PROXY) as Record<keyof UniformRecord, Uniform<Texture | null>>
+      const textureState = useHookstate(
+        () =>
+          Object.fromEntries(Object.keys(textureUniforms).map((key) => [key, null])) as Record<
+            keyof UniformRecord,
+            Texture | null
+          >
+      )
 
       const uniforms = useHookstate(
         () =>
@@ -139,7 +125,10 @@ export const defineMaterialPlugin = <T extends Schema>({
       for (const key in textureUniforms) {
         const src = pluginState[key]
         const [texture] = useTexture(typeof src === 'string' ? src : '', entity)
-        textureUniforms[key].value = texture
+        useEffect(() => {
+          textureUniformState[key].nested('value').set(texture)
+          textureState[key].set(texture)
+        }, [texture])
       }
 
       useEffect(() => {
@@ -168,7 +157,7 @@ export const defineMaterialPlugin = <T extends Schema>({
         { before: PresentationSystemGroup, uuid: makeMaterialPluginUpdateSystemID(name, entity) }
       )
 
-      return Reactor ? <Reactor entity={entity} /> : null
+      return Reactor ? <Reactor entity={entity} textureState={textureState} /> : null
     }
   })
 

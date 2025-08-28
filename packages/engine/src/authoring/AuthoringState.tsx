@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   ComponentJSONIDMap,
   deserializeComponent,
@@ -34,7 +9,6 @@ import {
   getAllComponents,
   getAuthoringCounterpart,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   LayerComponent,
@@ -70,13 +44,14 @@ import {
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import {
   MaterialPrototypeDefinitions,
-  MaterialStateComponent
+  MaterialStateComponent,
+  SerializedTexture
 } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { Suspense, useEffect } from 'react'
 import { applyPatch, createPatch, Operation, Patch } from 'rfc6902'
 import { AddOperation } from 'rfc6902/diff'
-import { Color, Material, SRGBColorSpace, Vector2, Vector3 } from 'three'
-import { getTextureAsync } from '../assets/functions/resourceLoaderHooks'
+import { Color, SRGBColorSpace, Vector2, Vector3 } from 'three'
 import { squashOperations } from './squashOperations'
 
 export type SourceData = Record<EntityID, object>
@@ -454,8 +429,8 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
         // annoying necessity to ensure ops from scene deltas get applied
         /** @todo this will be removed once material plugins handle all materials */
         if (Component === MaterialStateComponent) {
-          const materialComponent = getMutableComponent(entity, MaterialStateComponent)
-          const { material, parameters } = materialComponent.get(NO_PROXY)
+          const materialComponent = getComponent(entity, MaterialStateComponent)
+          const { material, parameters } = materialComponent
           const args = getState(MaterialPrototypeDefinitions)[material.type].arguments
           let asyncUpdateCount = 0
           for (const [key, val] of Object.entries(parameters)) {
@@ -464,24 +439,28 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
             if (args[key].type === 'texture') {
               if (!val || (material[key]?.isTexture && val === material[key].userData?.url)) continue
               asyncUpdateCount += 1
-              getTextureAsync(val).then(([texture]) => {
+              const textureData = val as SerializedTexture
+              getTextureAsync(textureData.source).then(([texture]) => {
                 asyncUpdateCount -= 1
                 if (texture?.isTexture) {
+                  texture.channel = textureData.channel
+                  if (textureData.repeat) texture.repeat.copy(textureData.repeat)
+                  if (textureData.offset) texture.offset.copy(textureData.offset)
                   texture.flipY = false
                   texture.needsUpdate = true
                   if (key !== 'normalMap') texture.colorSpace = SRGBColorSpace
-                  materialComponent.material[key].set(texture ?? null)
+                  materialComponent.material[key] = texture ?? null
                 }
-                if (!asyncUpdateCount) (materialComponent.material.get(NO_PROXY) as Material).needsUpdate = true
+                if (!asyncUpdateCount) materialComponent.material.needsUpdate = true
               })
             } else if (args[key].type === 'color') {
-              materialComponent.material[key].set(val.isColor ? val : new Color(val))
+              materialComponent.material[key] = val.isColor ? val : new Color(val)
             } else if (args[key].type === 'vec2') {
-              materialComponent.material[key].set(val.isVector2 ? val : new Vector2().fromArray(val))
+              materialComponent.material[key] = val.isVector2 ? val : new Vector2().fromArray(val)
             } else if (args[key].type === 'vec3') {
-              materialComponent.material[key].set(val.isVector3 ? val : new Vector3().fromArray(val))
+              materialComponent.material[key] = val.isVector3 ? val : new Vector3().fromArray(val)
             } else {
-              materialComponent.material[key].set(val)
+              materialComponent.material[key] = val
             }
           }
           for (const [key, val] of Object.entries(args)) {
@@ -489,16 +468,17 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
             if (key in parameters) continue
             const _default = args[key].default
             if (args[key].type === 'color') {
-              materialComponent.material[key].set(_default.isColor ? _default : new Color(_default))
+              materialComponent.material[key] = _default.isColor ? _default : new Color(_default)
             } else if (args[key].type === 'vec2') {
-              materialComponent.material[key].set(_default.isVector2 ? _default : new Vector2().fromArray(_default))
+              materialComponent.material[key] = _default.isVector2 ? _default : new Vector2().fromArray(_default)
             } else if (args[key].type === 'vec3') {
-              materialComponent.material[key].set(_default.isVector3 ? _default : new Vector3().fromArray(_default))
+              materialComponent.material[key] = _default.isVector3 ? _default : new Vector3().fromArray(_default)
             } else {
-              materialComponent.material[key].set(_default)
+              materialComponent.material[key] = _default
             }
           }
-          if (!asyncUpdateCount) (materialComponent.material.get(NO_PROXY) as Material).needsUpdate = true
+          setComponent(entity, MaterialStateComponent)
+          if (!asyncUpdateCount) materialComponent.material.needsUpdate = true
         }
       }
       if (currentState[nodeID]) {

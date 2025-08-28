@@ -31,12 +31,12 @@
     "node": ">= 22.11.0"
   },
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
-    "start": "cross-env APP_ENV=production ts-node --swc src/index.ts",
-    "start-channel": "cross-env APP_ENV=production INSTANCESERVER_PORT=3032 DEV_CHANNEL=true ts-node --swc src/index.ts",
-    "dev": "cross-env APP_ENV=development NODE_OPTIONS='--inspect=2995' ts-node --swc src/index.ts",
-    "dev-channel": " cross-env APP_ENV=development NODE_OPTIONS='--inspect=2996' DEV_CHANNEL=true INSTANCESERVER_PORT=3032 ts-node --swc src/index.ts",
-    "dev-nossl": "cross-env NOSSL=true ts-node --swc src/index.ts",
+    "check-errors": "tsc --noemit",
+    "start": "cross-env APP_ENV=production tsx src/index.ts",
+    "start-channel": "cross-env APP_ENV=production INSTANCESERVER_PORT=3032 DEV_CHANNEL=true tsx src/index.ts",
+    "dev": "cross-env APP_ENV=development NODE_OPTIONS='--inspect=2995' tsx src/index.ts",
+    "dev-channel": " cross-env APP_ENV=development NODE_OPTIONS='--inspect=2996' DEV_CHANNEL=true INSTANCESERVER_PORT=3032 tsx src/index.ts",
+    "dev-nossl": "cross-env NOSSL=true tsx src/index.ts",
     "test": "cross-env TEST=true vitest run --config=../../vitest.server.config.ts",
     "validate": "npm run build && npm run test"
   },
@@ -64,7 +64,7 @@
     "primus": "^8.0.7",
     "ps-list": "7.2.0",
     "trace-unhandled": "2.0.1",
-    "typescript": "5.6.3",
+    "typescript": "5.8.3",
     "uuid": "9.0.0"
   },
   "devDependencies": {

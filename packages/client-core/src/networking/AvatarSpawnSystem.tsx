@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 
 import { getSearchParamFromURL } from '@ir-engine/common/src/utils/getSearchParamFromURL'
@@ -68,7 +43,6 @@ import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { PoiCameraComponent } from '@ir-engine/spatial/src/camera/components/PoiCameraComponent'
 import { CameraMode, CameraModeType } from '@ir-engine/spatial/src/camera/types/CameraMode'
 import { iOS } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { SearchParamState } from '../common/services/RouterService'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
 import { LocationState } from '../social/services/LocationService'
 import { AuthState } from '../user/services/AuthService'
@@ -76,16 +50,16 @@ import { AuthState } from '../user/services/AuthService'
 export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   const userID = useMutableState(EngineState).userID.value
   const { sceneEntity } = props
-  const searchParams = useMutableState(SearchParamState)
+  const searchParamSpectate = getSearchParamFromURL('spectate') as EntityID
 
-  const spectateEntity = useHookstate(getSearchParamFromURL('spectate') as EntityID)
+  const spectateEntity = useHookstate(searchParamSpectate)
 
   const settingsQuery = useChildrenWithComponents(sceneEntity, [SceneSettingsComponent])
 
   useImmediateEffect(() => {
     const sceneSettingsSpectateEntity = getOptionalComponent(settingsQuery[0], SceneSettingsComponent)?.spectateEntity
-    spectateEntity.set(sceneSettingsSpectateEntity || (getSearchParamFromURL('spectate') as EntityID))
-  }, [settingsQuery[0], searchParams.value['spectate']])
+    spectateEntity.set(sceneSettingsSpectateEntity || searchParamSpectate)
+  }, [settingsQuery[0], searchParamSpectate])
 
   const isSpectating = typeof spectateEntity.value === 'string'
 
@@ -119,7 +93,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     const user = getState(AuthState).user
     /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
     const avatarURL = iOS
-      ? config.client.fileServer + '/projects/ir-engine/default-project/assets/avatars/irRobot.vrm'
+      ? config.client.fileServer + '/projects/enchantmentengine/default-project/assets/avatars/irRobot.vrm'
       : userAvatar.avatar.modelResource!.url
     spawnLocalAvatarInWorld({
       parentUUID: rootUUID,
@@ -164,7 +138,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
     if (isSpectating || !userAvatar) return
     /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
     const avatarURL = iOS
-      ? config.client.fileServer + '/projects/ir-engine/default-project/assets/avatars/irRobot.vrm'
+      ? config.client.fileServer + '/projects/enchantmentengine/default-project/assets/avatars/irRobot.vrm'
       : userAvatar.avatar.modelResource!.url
     dispatchAction(
       AvatarNetworkAction.setAvatarURL({
@@ -188,7 +162,7 @@ const CameraSettingsReactor = (props: {
 
   const cameraSettingsComponent = useOptionalComponent(cameraSettingsEntity ?? UndefinedEntity, CameraSettingsComponent)
 
-  const cameraMode = cameraSettingsComponent?.cameraMode.value ?? CameraMode.FOLLOW
+  const cameraMode = cameraSettingsComponent?.cameraMode ?? CameraMode.FOLLOW
 
   useEffect(() => {
     onCameraModeChange?.(cameraMode)

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { SMAAPreset } from 'postprocessing'
 import React, { useEffect } from 'react'
 import { ArrayCamera, Color, CubeTexture, Fog, FogExp2, Object3D, Scene, Texture } from 'three'
@@ -44,7 +19,7 @@ import {
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { getNestedChildren } from '@ir-engine/ecs'
-import { EffectPass, OutlineEffect } from 'postprocessing'
+import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { XRState } from '../xr/XRState'
 import { ObjectComponent } from './components/ObjectComponent'
@@ -60,19 +35,26 @@ import { changeRenderMode } from './functions/changeRenderMode'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
 
-declare module 'postprocessing' {
-  interface EffectComposer {
-    EffectPass: EffectPass
-    OutlineEffect: OutlineEffect
-  }
-  interface Effect {
-    isActive: boolean
+function renderWebGPUPostProcessing(renderer: ComponentType<typeof RendererComponent>): boolean {
+  const postProcessing = renderer.postProcessing
+  if (!postProcessing) return false
+  try {
+    postProcessing.render()
+    return true
+  } catch (error) {
+    console.warn('WebGPU PostProcessing render failed:', error)
+    return false
   }
 }
 
 /**
- * Executes the system. Called each frame by default from the Engine.instance.
+ * Renders the scene using either WebGL or WebGPU renderer, with optional post-processing.
+ * @param renderer The renderer component containing the renderer and settings.
+ * @param scene The scene to be rendered.
+ * @param camera The camera through which the scene is viewed.
  * @param delta Time since last frame.
+ * @param effectComposer Whether to use effect composer for post-processing.
+ * @param csm Optional CSM component for shadow mapping.
  */
 export const render = (
   renderer: ComponentType<typeof RendererComponent>,
@@ -104,7 +86,6 @@ export const render = (
       camera.aspect = width / height
       camera.updateProjectionMatrix()
     }
-
     if (state.useShadows && csm) {
       // Call the CSM updateFrustums function
       CSM.updateFrustums()
@@ -119,12 +100,20 @@ export const render = (
     renderer.needsResize = false
   }
 
+  renderer.renderer.shadowMap.enabled = true
+
   ObjectComponent.activeRender = true
 
-  /** Postprocessing does not support multipass yet, so just use basic renderer when in VR */
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
-  if (xrFrame || !effectComposer || !renderer.effectComposer) {
+  if (renderer.renderer instanceof WebGPURenderer) {
+    const webgpuRendered = renderWebGPUPostProcessing(renderer)
+
+    if (!webgpuRendered) {
+      renderer.renderer.clear()
+      renderer.renderer.render(scene, camera)
+    }
+  } else if (xrFrame || !effectComposer || !renderer.effectComposer) {
     renderer.renderer.clear()
     renderer.renderer.render(scene, camera)
   } else {
@@ -223,27 +212,27 @@ const rendererReactor = () => {
   }, [engineRendererSettings.qualityLevel, engineRendererSettings.automatic])
 
   useEffect(() => {
-    if (!renderer.renderer.value) return
-    renderer.renderer.value.setPixelRatio(window.devicePixelRatio * engineRendererSettings.renderScale.value)
-    renderer.needsResize.set(true)
-  }, [engineRendererSettings.renderScale, !!renderer.renderer.value])
+    if (!renderer.renderer) return
+    renderer.renderer.setPixelRatio(window.devicePixelRatio * engineRendererSettings.renderScale.value)
+    renderer.needsResize = true
+  }, [engineRendererSettings.renderScale, !!renderer.renderer])
 
   useEffect(() => {
     changeRenderMode(entity)
-  }, [engineRendererSettings.renderMode, renderer.effectComposer.value])
+  }, [engineRendererSettings.renderMode, renderer.effectComposer])
 
   return null
 }
 
 const cameraReactor = () => {
   const entity = useEntityContext()
-  const camera = useComponent(entity, CameraComponent).value
+  const camera = useComponent(entity, CameraComponent)
   const engineRendererSettings = useMutableState(RendererState)
 
-  useEffect(() => {
-    if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
-    else camera.layers.disable(ObjectLayers.PhysicsHelper)
-  }, [engineRendererSettings.physicsDebug])
+  // useEffect(() => {
+  //   if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
+  //   else camera.layers.disable(ObjectLayers.PhysicsHelper)
+  // }, [engineRendererSettings.physicsDebug])
 
   useEffect(() => {
     if (engineRendererSettings.avatarDebug.value) camera.layers.enable(ObjectLayers.AvatarHelper)

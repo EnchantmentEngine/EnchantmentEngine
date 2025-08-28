@@ -1,58 +1,16 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { useLayoutEffect } from 'react'
-
-import { OpaqueType, PeerID, UserID } from '@ir-engine/hyperflux'
+import { OpaqueType, PeerID, Schema, TTypedSchema, UserID } from '@ir-engine/hyperflux'
 import { createResizableTypeArray } from '../bitecsLegacy'
-import {
-  Component,
-  defineComponent,
-  getComponent,
-  hasComponent,
-  removeComponent,
-  setComponent,
-  useComponent,
-  useEntityContext
-} from '../ComponentFunctions'
-import { Engine } from '../Engine'
+import { Component, defineComponent, getComponent, hasComponent } from '../ComponentFunctions'
 import { Entity, UndefinedEntity } from '../Entity'
+import { proxySoAStore } from '../proxySoAStore'
 import { defineQuery } from '../QueryFunctions'
-import { S } from '../schemas/JSONSchemas'
-import { TTypedSchema } from '../schemas/JSONSchemaTypes'
-import { proxySoAStore } from '../schemas/proxySoAStore'
 
 export type NetworkId = OpaqueType<'networkId'> & number
-
-/** ID of last network created. */
-let availableNetworkId = 0 as NetworkId
 
 export const NetworkSchema = {
   /** NetworkID type schema helper, defaults to 0 */
   NetworkID: (options?: TTypedSchema<NetworkId>['options']) =>
-    S.Number({ ...options, id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
+    Schema.Number({ ...options, id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
 }
 
 const proxyNetworkId = proxySoAStore(() => NetworkObjectComponent.networkId)
@@ -60,14 +18,14 @@ const proxyNetworkId = proxySoAStore(() => NetworkObjectComponent.networkId)
 export const NetworkObjectComponent = defineComponent({
   name: 'NetworkObjectComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** The user who is authority over this object. */
-    ownerId: S.UserID(),
-    ownerPeer: S.PeerID(),
+    ownerId: Schema.UserID(),
+    ownerPeer: Schema.PeerID(),
     /** The peer who is authority over this object. */
-    authorityPeerID: S.PeerID(),
+    authorityPeerID: Schema.PeerID(),
     /** The network id for this object (this id is only unique per owner) */
-    networkId: S.Proxy(NetworkSchema.NetworkID())
+    networkId: Schema.Proxy(NetworkSchema.NetworkID())
   }),
 
   storage: {
@@ -77,24 +35,6 @@ export const NetworkObjectComponent = defineComponent({
   onInit(entity, initial) {
     proxyNetworkId(entity, 'networkId', initial)
     return initial
-  },
-
-  reactor: function () {
-    const entity = useEntityContext()
-    const networkObject = useComponent(entity, NetworkObjectComponent)
-
-    useLayoutEffect(() => {
-      if (networkObject.authorityPeerID.value === Engine.instance.store.peerID)
-        setComponent(entity, NetworkObjectAuthorityTag)
-      else removeComponent(entity, NetworkObjectAuthorityTag)
-    }, [networkObject.authorityPeerID])
-
-    useLayoutEffect(() => {
-      if (networkObject.ownerId.value === Engine.instance.userID) setComponent(entity, NetworkObjectOwnedTag)
-      else removeComponent(entity, NetworkObjectOwnedTag)
-    }, [networkObject.ownerId])
-
-    return null
   },
 
   /**
@@ -142,11 +82,6 @@ export const NetworkObjectComponent = defineComponent({
     return NetworkObjectComponent.getOwnedNetworkObjects(userId).filter((eid) => {
       return hasComponent(eid, component)
     })
-  },
-
-  /** Get next network id. */
-  createNetworkId(): NetworkId {
-    return ++availableNetworkId as NetworkId
   }
 })
 

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -115,7 +90,7 @@ export const PositionalAudioInput = ({ entity }: PositionalAudioInputProps) => {
         <>
           <InputGroup name="Distance Modal" label={t('editor:properties.audio.lbl-distanceModel')}>
             <SegmentedControlInput
-              value={positionalAudio.distanceModel.value}
+              value={positionalAudio.distanceModel}
               options={DistanceModelOptions}
               onChange={commitProperty(PositionalAudioComponent, 'distanceModel')}
             />
@@ -139,24 +114,12 @@ export const PositionalAudioInput = ({ entity }: PositionalAudioInputProps) => {
                 smallStep={0.1}
                 mediumStep={1}
                 largeStep={10}
-                value={positionalAudio.coneInnerAngle.value}
+                value={positionalAudio.coneInnerAngle}
                 onChange={(value) =>
-                  updateConeAngle(
-                    value,
-                    true,
-                    false,
-                    positionalAudio.coneInnerAngle.value,
-                    positionalAudio.coneOuterAngle.value
-                  )
+                  updateConeAngle(value, true, false, positionalAudio.coneInnerAngle, positionalAudio.coneOuterAngle)
                 }
                 onRelease={(value) =>
-                  updateConeAngle(
-                    value,
-                    true,
-                    true,
-                    positionalAudio.coneInnerAngle.value,
-                    positionalAudio.coneOuterAngle.value
-                  )
+                  updateConeAngle(value, true, true, positionalAudio.coneInnerAngle, positionalAudio.coneOuterAngle)
                 }
                 unit="°"
                 inputClassName="text-right"
@@ -174,24 +137,12 @@ export const PositionalAudioInput = ({ entity }: PositionalAudioInputProps) => {
                 smallStep={0.1}
                 mediumStep={1}
                 largeStep={10}
-                value={positionalAudio.coneOuterAngle.value}
+                value={positionalAudio.coneOuterAngle}
                 onChange={(value) =>
-                  updateConeAngle(
-                    value,
-                    false,
-                    false,
-                    positionalAudio.coneInnerAngle.value,
-                    positionalAudio.coneOuterAngle.value
-                  )
+                  updateConeAngle(value, false, false, positionalAudio.coneInnerAngle, positionalAudio.coneOuterAngle)
                 }
                 onRelease={(value) =>
-                  updateConeAngle(
-                    value,
-                    false,
-                    true,
-                    positionalAudio.coneInnerAngle.value,
-                    positionalAudio.coneOuterAngle.value
-                  )
+                  updateConeAngle(value, false, true, positionalAudio.coneInnerAngle, positionalAudio.coneOuterAngle)
                 }
                 unit="°"
                 inputClassName="text-right"
@@ -211,7 +162,7 @@ export const PositionalAudioInput = ({ entity }: PositionalAudioInputProps) => {
                 smallStep={0.1}
                 mediumStep={1}
                 largeStep={10}
-                value={positionalAudio.rolloffFactor.value}
+                value={positionalAudio.rolloffFactor}
                 onChange={updateProperty(PositionalAudioComponent, 'rolloffFactor')}
                 onRelease={commitProperty(PositionalAudioComponent, 'rolloffFactor')}
               />
@@ -219,22 +170,22 @@ export const PositionalAudioInput = ({ entity }: PositionalAudioInputProps) => {
 
             <InputGroup
               name="Max Distance"
-              disabled={positionalAudio.distanceModel.value !== DistanceModel.Linear}
+              disabled={positionalAudio.distanceModel !== DistanceModel.Linear}
               label={t('editor:properties.audio.lbl-maxDistance')}
               containerClassName="!pl-0 "
               info={
-                positionalAudio.distanceModel.value !== DistanceModel.Linear
+                positionalAudio.distanceModel !== DistanceModel.Linear
                   ? t('editor:properties.audio.info-maxDistanceDisabled')
                   : t('editor:properties.audio.info-maxDistance')
               }
             >
               <NumericScrubber
                 min={0.00001}
-                disabled={positionalAudio.distanceModel.value !== DistanceModel.Linear}
+                disabled={positionalAudio.distanceModel !== DistanceModel.Linear}
                 smallStep={0.1}
                 mediumStep={1}
                 largeStep={10}
-                value={positionalAudio.maxDistance.value}
+                value={positionalAudio.maxDistance}
                 onChange={updateProperty(PositionalAudioComponent, 'maxDistance')}
                 onRelease={commitProperty(PositionalAudioComponent, 'maxDistance')}
                 unit="m"
@@ -251,7 +202,7 @@ export const PositionalAudioInput = ({ entity }: PositionalAudioInputProps) => {
               min={0}
               max={1}
               step={0.01}
-              value={positionalAudio.coneOuterGain.value}
+              value={positionalAudio.coneOuterGain}
               onChange={updateProperty(PositionalAudioComponent, 'coneOuterGain')}
               onRelease={commitProperty(PositionalAudioComponent, 'coneOuterGain')}
             />

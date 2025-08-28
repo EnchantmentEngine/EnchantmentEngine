@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Paginated, RealTimeConnection } from '@feathersjs/feathers/lib'
 
 import '@feathersjs/transport-commons'
@@ -48,8 +23,7 @@ import {
   userPath,
   UserType
 } from '@ir-engine/common/src/schema.type.module'
-import { EntityUUID, getComponent, UUIDComponent } from '@ir-engine/ecs'
-import { Engine } from '@ir-engine/ecs/src/Engine'
+import { EntityID, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import {
@@ -206,14 +180,14 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
   initializeSpatialEngine()
 
   await setupIPs()
-  const network = await initializeNetwork(app, hostId, Engine.instance.store.peerID, topic)
+  const network = await initializeNetwork(app, hostId, HyperFlux.store.peerID, topic)
 
   dispatchAction(
     NetworkActions.peerJoined({
       $cache: true,
       $network: network.id,
       $topic: network.topic,
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       peerIndex: 0,
       userID: hostId
     })
@@ -238,12 +212,14 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
     const sceneUpdatedListener = async () => {
       const scene = await app.service(staticResourcePath).get(sceneId, { headers })
       if (unload) unload()
-      unload = SceneState.loadScene(scene.url, scene.id as EntityUUID)
-      const entity = UUIDComponent.getEntityByUUID(('root' + scene.id) as EntityUUID)
+      unload = SceneState.loadScene(scene.url, scene.id)
+      const entity = UUIDComponent.getEntityByUUID(
+        UUIDComponent.join({ entityID: scene.id as EntityID, entitySourceID: 'root' as SourceID })
+      )
       /** @todo - quick hack to wait until scene has loaded */
       await new Promise<void>((resolve) => {
         const interval = setInterval(() => {
-          if (getComponent(entity, GLTFComponent).progress === 100) {
+          if (GLTFComponent.isSceneLoaded(entity)) {
             clearInterval(interval)
             resolve()
           }

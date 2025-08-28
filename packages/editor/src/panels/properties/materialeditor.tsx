@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   Entity,
   getComponent,
@@ -33,8 +8,8 @@ import {
   useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { getTextureAsync } from '@ir-engine/engine/src/assets/functions/resourceLoaderHooks'
 import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
+import { getTextureAsync } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 
 import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -53,7 +28,7 @@ import { PanelDragContainer, PanelTitle } from '@ir-engine/ui/src/components/edi
 import ParameterInput from '@ir-engine/ui/src/components/editor/properties/parameter'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Material, Texture } from 'three'
+import { Texture } from 'three'
 import { commitProperty } from '../../components/properties/Util'
 
 type ThumbnailData = {
@@ -73,7 +48,7 @@ export function MaterialEditor(props: { entity: Entity }) {
   const { t } = useTranslation()
   const entity = props.entity
   const materialComponent = useComponent(entity, MaterialStateComponent)
-  const material = materialComponent.material.get(NO_PROXY) as Material
+  const material = materialComponent.material
 
   const thumbnails = useHookstate<Record<string, ThumbnailData>>({})
   const textureUnloadMap = useHookstate<Record<string, (() => void) | undefined>>({})
@@ -171,10 +146,9 @@ export function MaterialEditor(props: { entity: Entity }) {
     <div className="relative flex flex-col gap-2">
       <InputGroup name="Name" label={t('editor:properties.mesh.material.name')}>
         <StringInput
-          value={materialName?.value ?? ''}
+          value={materialName ?? ''}
           onChange={(name) => {
             setComponent(entity, NameComponent, name)
-            materialName?.set(name)
           }}
         />
       </InputGroup>
@@ -219,7 +193,7 @@ export function MaterialEditor(props: { entity: Entity }) {
             path={UUIDComponent.get(entity)}
             values={currentPlugin}
             onChange={(key) => commitProperty(MaterialPluginComponents[selectedPlugin.value], key)}
-            defaults={generateDefaults(currentPlugin)}
+            defaults={generateDefaults(currentPlugin, MaterialPluginComponents[selectedPlugin.value].schema)}
           />
           <Button
             variant="tertiary"

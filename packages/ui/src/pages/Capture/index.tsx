@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License") you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { DrawingUtils, FilesetResolver, NormalizedLandmark, PoseLandmarker } from '@mediapipe/tasks-vision'
 import React, { useEffect, useLayoutEffect, useRef } from 'react'
@@ -48,7 +23,6 @@ import {
   recordingPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import {
   MotionCaptureFunctions,
@@ -56,6 +30,7 @@ import {
   mocapDataChannelType
 } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
 import {
+  HyperFlux,
   MediaStreamState,
   NetworkState,
   defineState,
@@ -74,6 +49,7 @@ import RecordingsList from '@ir-engine/ui/src/components/tailwind/RecordingList'
 import Canvas from '@ir-engine/ui/src/primitives/tailwind/Canvas'
 import Video from '@ir-engine/ui/src/primitives/tailwind/Video'
 
+import { EngineState } from '@ir-engine/ecs'
 import { Slider } from '../../../editor'
 import Button from '../../primitives/tailwind/Button'
 
@@ -100,14 +76,14 @@ export const startPlayback = async (recordingID: RecordingID, twin = true, fromS
   // // Server playback
   // PlaybackState.startPlayback({
   //   recordingID,
-  //   targetUser: twin ? undefined : Engine.instance.userID
+  //   targetUser: twin ? undefined : getState(EngineState).userID
   // })
 
   // Client Playback
   dispatchAction(
     ECSRecordingActions.startPlayback({
       recordingID,
-      targetUser: Engine.instance.userID,
+      targetUser: getState(EngineState).userID,
       autoplay: false
     })
   )
@@ -127,7 +103,7 @@ const sendResults = (results: MotionCaptureResults) => {
   const network = NetworkState.worldNetwork as SocketWebRTCClientNetwork
   if (!network?.ready) return
   const data = MotionCaptureFunctions.sendResults(results)
-  network.bufferToAll(mocapDataChannelType, Engine.instance.store.peerID, data)
+  network.bufferToAll(mocapDataChannelType, HyperFlux.store.peerID, data)
 }
 
 export const CaptureState = defineState({
@@ -157,7 +133,7 @@ const CaptureMode = () => {
     } else {
       RecordingState.requestRecording({
         user: { Avatar: true },
-        peers: { [Engine.instance.store.peerID]: { Audio: true, Video: true, Mocap: true } }
+        peers: { [HyperFlux.store.peerID]: { Audio: true, Video: true, Mocap: true } }
       })
     }
   }

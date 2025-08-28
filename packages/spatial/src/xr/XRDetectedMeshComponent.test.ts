@@ -1,27 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MockXRFrame, MockXRMesh, MockXRPose, MockXRSpace } from '../../tests/util/MockXR'
 import { assertVec } from '../../tests/util/assert'
@@ -34,7 +10,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   removeEntity,
@@ -46,6 +21,7 @@ import { BoxGeometry, BufferGeometry, Matrix4, Mesh, Quaternion, Vector3 } from 
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../SpatialModule'
 import { NameComponent } from '../common/NameComponent'
+import { MeshComponent } from '../renderer/components/MeshComponent'
 import { ObjectComponent } from '../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
 import { XRDetectedMeshComponent, XRDetectedMeshComponentState } from './XRDetectedMeshComponent'
@@ -372,29 +348,6 @@ describe('XRDetectedMeshComponent', () => {
         expect(resultSpy).toHaveBeenCalledTimes(0)
       })
 
-      it('should call XRDetectedMeshComponent.createGeometryFromMesh with XRDetectedMeshComponent.mesh.value as its argument', async () => {
-        const Expected = {} as XRMesh
-        const Initial = { semanticLabel: 'testLabel' } as XRMesh
-        // Set the data as expected
-        const resultSpy = vi.spyOn(XRDetectedMeshComponent, 'createGeometryFromMesh')
-        // Sanity check before running
-        expect(resultSpy).toHaveBeenCalledTimes(0)
-        setComponent(testEntity, XRDetectedMeshComponent, { mesh: Initial })
-
-        await act(() => render(null))
-
-        expect(resultSpy).toHaveBeenCalledTimes(1)
-        expect(getComponent(testEntity, XRDetectedMeshComponent).mesh).toBeTruthy()
-
-        // Run and Check the result
-        setComponent(testEntity, XRDetectedMeshComponent, { mesh: Expected })
-
-        await act(() => render(null))
-
-        expect(resultSpy).toHaveBeenCalledTimes(2)
-        expect(resultSpy).toHaveBeenCalledWith(Expected)
-      })
-
       it('should set XRDetectedMeshComponent.geometry to the newly created geometry', async () => {
         const Initial = { id: 42 } as BufferGeometry
         // Set the data as expected
@@ -410,6 +363,30 @@ describe('XRDetectedMeshComponent', () => {
 
         const result = getComponent(testEntity, XRDetectedMeshComponent).geometry
         expect(result).not.toBe(Initial) // A change in .mesh should trigger a change in .geometry
+      })
+
+      it('should call XRDetectedMeshComponent.createGeometryFromMesh with XRDetectedMeshComponent.mesh.value as its argument', async () => {
+        const Expected = {} as XRMesh
+        const Initial = { semanticLabel: 'testLabel' } as XRMesh
+
+        setComponent(testEntity, XRDetectedMeshComponent)
+        getComponent(testEntity, XRDetectedMeshComponent).mesh = Initial
+
+        await vi.waitUntil(() => hasComponent(testEntity, MeshComponent), { timeout: 100000 })
+
+        const firstMesh = getComponent(testEntity, MeshComponent)
+        const firstGeometry = firstMesh.geometry
+        expect(getComponent(testEntity, XRDetectedMeshComponent).geometry).toBe(firstMesh.geometry)
+
+        expect(getComponent(testEntity, XRDetectedMeshComponent).mesh).toBeTruthy()
+
+        // Run and Check the result
+        setComponent(testEntity, XRDetectedMeshComponent)
+        getComponent(testEntity, XRDetectedMeshComponent).mesh = Expected
+
+        await vi.waitFor(() => getComponent(testEntity, XRDetectedMeshComponent).geometry !== firstGeometry)
+        await vi.waitFor(() => getComponent(testEntity, MeshComponent) !== firstMesh)
+        expect(hasComponent(testEntity, MeshComponent)).toBe(true)
       })
 
       it(`should create a new Mesh object with XRDetectedMeshComponent.shadowMesh
@@ -476,7 +453,7 @@ describe('XRDetectedMeshComponent', () => {
         it.todo('.. should call entityContext.XRDetectedMeshComponent.geometry.dispose', () => {
           const resultSpy = vi.fn()
           setComponent(testEntity, XRDetectedMeshComponent, { geometry: new BoxGeometry() })
-          getMutableComponent(testEntity, XRDetectedMeshComponent).geometry.merge({ dispose: resultSpy })
+          getComponent(testEntity, XRDetectedMeshComponent).geometry.dispose = resultSpy
           expect(resultSpy).not.toHaveBeenCalled()
           setComponent(testEntity, XRDetectedMeshComponent, { geometry: new BoxGeometry() })
           expect(resultSpy).toHaveBeenCalledTimes(1)

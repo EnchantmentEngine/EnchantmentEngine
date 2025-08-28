@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { MathUtils, MeshBasicMaterial, Vector3 } from 'three'
 
 import {
@@ -30,7 +5,6 @@ import {
   Entity,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   getSimulationCounterpart,
   removeComponent,
   removeEntity,
@@ -42,7 +16,6 @@ import {
 import {
   defineComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -59,9 +32,9 @@ import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/com
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 
-import { EngineState } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EngineState, EntitySchema } from '@ir-engine/ecs'
 import { useXRUIState } from '@ir-engine/engine/src/xrui/useXRUIState'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { inFrustum } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { smootheLerpAlpha } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
@@ -82,14 +55,18 @@ import { InteractiveModalState } from '../ui/InteractiveModalView'
  * NOTE - if more states are added we need to modify logic in InteractableSystem.ts for state other than "none"
  */
 export const XRUIVisibilityOverride = {
-  none: 0 as const,
-  on: 1 as const,
-  off: 2 as const
-}
+  none: 0,
+  on: 1,
+  off: 2
+} as const
+
+export type XRUIVisibilityOverrideType = (typeof XRUIVisibilityOverride)[keyof typeof XRUIVisibilityOverride]
 export const XRUIActivationType = {
-  proximity: 0 as const,
-  hover: 1 as const
-}
+  proximity: 0,
+  hover: 1
+} as const
+
+export type XRUIActivationTypeType = (typeof XRUIActivationType)[keyof typeof XRUIActivationType]
 
 const xrDistVec3 = new Vector3()
 
@@ -177,14 +154,14 @@ export const updateInteractableUI = (entity: Entity) => {
     } else {
       activateUI = interactable.uiVisibilityOverride !== XRUIVisibilityOverride.off //could be more explicit, needs to be if we add more enum options
     }
-    getMutableComponent(entity, InteractableComponent).canInteract.set(activateUI)
+    setComponent(entity, InteractableComponent, { canInteract: activateUI })
   }
 
   //highlight if hovering OR if closest, otherwise turn off highlight
-  const mutableInteractable = getMutableComponent(entity, InteractableComponent)
+  const mutableInteractable = getComponent(entity, InteractableComponent)
   const newHighlight = hovering || entity === getState(InteractableState).available[0]
-  if (mutableInteractable.highlighted.value !== newHighlight) {
-    mutableInteractable.highlighted.set(newHighlight)
+  if (mutableInteractable.highlighted !== newHighlight) {
+    setComponent(entity, InteractableComponent, { highlighted: newHighlight })
   }
 
   if (transition.state === 'OUT' && activateUI) {
@@ -222,7 +199,7 @@ const addInteractableUI = (entity: Entity) => {
     TransformComponent.getWorldPosition(entity, _center)
     uiTransform.position.copy(_center)
   }
-  getMutableComponent(entity, InteractableComponent).uiEntity.set(uiEntity)
+  setComponent(entity, InteractableComponent, { uiEntity })
   setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiEntity, ComputedTransformComponent, {
     referenceEntities: [entity, getState(ReferenceSpaceState).viewerEntity],
@@ -239,33 +216,33 @@ export const InteractableComponent = defineComponent({
   name: 'InteractableComponent',
   jsonID: 'EE_interactable',
 
-  schema: S.Object({
-    canInteract: S.Bool({ default: false, serialized: false }),
-    uiInteractable: S.Bool({ default: true, serialized: false }),
-    uiEntity: S.Entity({ serialized: false }),
-    label: S.String({ default: 'E' }),
-    uiVisibilityOverride: S.Enum(XRUIVisibilityOverride, {
+  schema: Schema.Object({
+    canInteract: Schema.Bool({ default: false, serialized: false }),
+    uiInteractable: Schema.Bool({ default: true, serialized: false }),
+    uiEntity: EntitySchema.Entity({ serialized: false }),
+    label: Schema.String({ default: 'E' }),
+    uiVisibilityOverride: Schema.Enum(XRUIVisibilityOverride, {
       $comment: "A number enum, where: 0 represents 'none', 1 represents 'on', 2 represents 'off'",
       default: XRUIVisibilityOverride.none,
       serialized: false
     }),
-    uiActivationType: S.Enum(XRUIActivationType, {
+    uiActivationType: Schema.Enum(XRUIActivationType, {
       $comment: "A number enum, where: 0 represents 'proximity', 1 represents 'hover'",
       default: XRUIActivationType.proximity
     }),
-    activationDistance: S.Number({ default: 2 }),
-    clickInteract: S.Bool({ default: false }),
-    highlighted: S.Bool({ default: false, serialized: false }),
-    callbacks: S.Array(
-      S.Object({
+    activationDistance: Schema.Number({ default: 2 }),
+    clickInteract: Schema.Bool({ default: false }),
+    highlighted: Schema.Bool({ default: false, serialized: false }),
+    callbacks: Schema.Array(
+      Schema.Object({
         /**
          * The function to call on the CallbackComponent of the targetEntity when the trigger volume is entered.
          */
-        callbackID: S.String(),
+        callbackID: Schema.String(),
         /**
          * empty string represents self
          */
-        target: S.EntityID()
+        target: EntitySchema.EntityID()
       })
     )
   }),
@@ -292,7 +269,7 @@ export const InteractableComponent = defineComponent({
 
     InputComponent.useExecuteWithInput(
       () => {
-        if (!interactableComponent.canInteract.value) return
+        if (!interactableComponent.canInteract) return
         const buttons = InputComponent.getButtons(entity)
 
         if (buttons.Interact?.up && !buttons.Interact?.dragging) {
@@ -308,11 +285,11 @@ export const InteractableComponent = defineComponent({
       if (!isEditing.value) {
         addInteractableUI(simulationEntity)
         return () => {
-          const interactableComponent = getOptionalMutableComponent(entity, InteractableComponent)
+          const interactableComponent = getOptionalComponent(entity, InteractableComponent)
           if (!interactableComponent) return
-          const uiEntity = interactableComponent.uiEntity.value
+          const uiEntity = interactableComponent.uiEntity
           if (uiEntity) {
-            interactableComponent.uiEntity.set(UndefinedEntity)
+            setComponent(uiEntity, InteractableComponent, { uiEntity: UndefinedEntity })
             removeEntity(uiEntity)
           }
         }
@@ -320,7 +297,7 @@ export const InteractableComponent = defineComponent({
     }, [isEditing.value])
 
     useEffect(() => {
-      const msg = interactableComponent.label?.value ?? ''
+      const msg = interactableComponent.label ?? ''
       modalState.interactMessage?.set(msg)
     }, [interactableComponent.label]) //TODO just nuke the whole XRUI and recreate....
     return null

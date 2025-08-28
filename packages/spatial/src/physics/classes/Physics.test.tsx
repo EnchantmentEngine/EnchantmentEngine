@@ -1,38 +1,12 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { RigidBodyType, ShapeType, TempContactForceEvent, Vector, World } from '@dimforge/rapier3d-compat'
 import assert from 'assert'
 import sinon from 'sinon'
-import { BoxGeometry, Mesh, Quaternion, SphereGeometry, Vector3 } from 'three'
+import { BoxGeometry, BufferGeometry, Float32BufferAttribute, Mesh, Quaternion, SphereGeometry, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { EntityID, SourceID, createEntity } from '@ir-engine/ecs'
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -64,7 +38,6 @@ import {
   removeEntity
 } from '@ir-engine/ecs'
 import { act, render } from '@testing-library/react'
-import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry'
 import { Epsilon, assertFloat, assertVec } from '../../../tests/util/assert'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
@@ -393,7 +366,7 @@ describe('Physics : Rapier->ECS API', () => {
       }
       /** @description Set the {@link RigidBodyComponent.targetKinematicLerpMultiplier} to 0 for all of the linear interpolation tests */
       beforeEach(() => {
-        getMutableComponent(testEntity, RigidBodyComponent).targetKinematicLerpMultiplier.set(0)
+        getComponent(testEntity, RigidBodyComponent).targetKinematicLerpMultiplier = 0
       })
 
       it('... should apply deterministic linear interpolation to the position of the KinematicBody of the given entity', () => {
@@ -475,7 +448,7 @@ describe('Physics : Rapier->ECS API', () => {
        *  @description Sets the entity's {@link RigidBodyComponent.targetKinematicLerpMultiplier} property to `@param mult`
        *  @returns The `@param mult` itself  */
       function setMultiplier(entity: Entity, mult: number): number {
-        getMutableComponent(entity, RigidBodyComponent).targetKinematicLerpMultiplier.set(mult)
+        getComponent(entity, RigidBodyComponent).targetKinematicLerpMultiplier = mult
         return mult
       }
       /**
@@ -2048,8 +2021,8 @@ describe('Physics : Rapier->ECS API', () => {
       })
 
       it('should encapsulate mesh with sphere when set to match mesh', () => {
-        const line = new LineGeometry()
-        line.setPositions([0, 0, 2, 0, 0, 6]) //line of length 4
+        const line = new BufferGeometry()
+        line.setAttribute('position', new Float32BufferAttribute([0, 0, 2, 0, 0, 6], 3))
         setComponent(testEntity, MeshComponent, new Mesh(line))
         setComponent(testEntity, ColliderComponent, { shape: Shapes.Sphere, matchMesh: true })
         const result = Physics.createColliderDesc(physicsWorld, testEntity, rootEntity)
@@ -2982,8 +2955,7 @@ describe('Physics : Rapier->ECS API', () => {
         function setDummyCollisionBetween(ent1: Entity, ent2: Entity, hit = DummyHit): void {
           const hits = new Map<Entity, ColliderHitEvent>()
           hits.set(ent2, hit)
-          setComponent(ent1, CollisionComponent)
-          getMutableComponent(ent1, CollisionComponent).set(hits)
+          setComponent(ent1, CollisionComponent, hits)
         }
 
         const ExpectedMaxForce = { x: 4, y: 5, z: 6 }

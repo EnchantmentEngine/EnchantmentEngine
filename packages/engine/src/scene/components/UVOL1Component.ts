@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect, useMemo, useRef } from 'react'
 import {
   BufferGeometry,
@@ -37,11 +12,10 @@ import {
   Vector3
 } from 'three'
 
-import { Engine, useEntityContext } from '@ir-engine/ecs'
+import { useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   setComponent,
@@ -57,10 +31,11 @@ import { useVideoFrameCallback } from '@ir-engine/spatial/src/common/functions/u
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
 import { CORTOLoader } from '../../assets/loaders/corto/CORTOLoader'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
-import { DomainConfigState } from '../../assets/state/DomainConfigState'
 import { AudioState } from '../../audio/AudioState'
 import { handleAutoplay, LegacyVolumetricComponent } from './LegacyVolumetricComponent'
 import { MediaElementComponent } from './MediaComponent'
@@ -94,29 +69,29 @@ interface ManifestSchema {
 export const UVOL1Component = defineComponent({
   name: 'UVOL1Component',
 
-  schema: S.Object({
-    manifestPath: S.String({ default: '' }),
-    data: S.Object(
+  schema: Schema.Object({
+    manifestPath: Schema.String({ default: '' }),
+    data: Schema.Object(
       {
-        maxVertices: S.Number(),
-        maxTriangles: S.Number(),
-        frameData: S.Array(
-          S.Object({
-            frameNumber: S.Number(),
-            keyframeNumber: S.Number(),
-            startBytePosition: S.Number(),
-            vertices: S.Number(),
-            faces: S.Number(),
-            meshLength: S.Number()
+        maxVertices: Schema.Number(),
+        maxTriangles: Schema.Number(),
+        frameData: Schema.Array(
+          Schema.Object({
+            frameNumber: Schema.Number(),
+            keyframeNumber: Schema.Number(),
+            startBytePosition: Schema.Number(),
+            vertices: Schema.Number(),
+            faces: Schema.Number(),
+            meshLength: Schema.Number()
           })
         ),
-        frameRate: S.Number()
+        frameRate: Schema.Number()
       },
       {}
     ),
-    firstGeometryFrameLoaded: S.Bool({ default: false }),
-    loadingEffectStarted: S.Bool({ default: false }),
-    loadingEffectEnded: S.Bool({ default: false })
+    firstGeometryFrameLoaded: Schema.Bool({ default: false }),
+    loadingEffectStarted: Schema.Bool({ default: false }),
+    loadingEffectEnded: Schema.Bool({ default: false })
   }),
 
   reactor: UVOL1Reactor
@@ -127,7 +102,7 @@ function UVOL1Reactor() {
   const volumetric = useComponent(entity, LegacyVolumetricComponent)
   const component = useComponent(entity, UVOL1Component)
   const shadow = useOptionalComponent(entity, ShadowComponent)
-  const videoElement = getMutableComponent(entity, MediaElementComponent).value
+  const videoElement = getComponent(entity, MediaElementComponent)
   const audioContext = getState(AudioState).audioContext
   const video = videoElement.element as HTMLVideoElement
 
@@ -171,22 +146,25 @@ function UVOL1Reactor() {
       const assetLoaderState = getMutableState(AssetLoaderState)
       assetLoaderState.cortoLoader.set(loader)
     }
-    if (volumetric.useLoadingEffect.value) {
+    if (volumetric.useLoadingEffect) {
       setComponent(entity, UVOLDissolveComponent)
     }
 
-    video.src = component.manifestPath.value.replace('.manifest', '.mp4')
+    video.src = component.manifestPath.replace('.manifest', '.mp4')
     video.load()
     video.addEventListener('ended', function setEnded() {
-      volumetric.ended.set(true)
+      setComponent(entity, LegacyVolumetricComponent, {
+        ended: true
+      })
       video.removeEventListener('ended', setEnded)
     })
-    volumetric.currentTrackInfo.duration.set(component.data.frameData.length / component.data.frameRate.value)
+    volumetric.currentTrackInfo.duration = component.data.frameData.length / component.data.frameRate
+    setComponent(entity, LegacyVolumetricComponent)
 
     return () => {
       removeComponent(entity, ObjectComponent)
       videoTexture.dispose()
-      const numberOfFrames = component.data.value.frameData.length
+      const numberOfFrames = component.data.frameData.length
       removePlayedBuffer(numberOfFrames)
       meshBuffer.clear()
       video.src = ''
@@ -195,24 +173,26 @@ function UVOL1Reactor() {
 
   useEffect(() => {
     if (shadow) {
-      shadow.cast.set(true)
-      shadow.receive.set(true)
+      setComponent(entity, ShadowComponent, {
+        cast: true,
+        receive: true
+      })
     }
   }, [shadow])
 
   useEffect(() => {
-    if (component.loadingEffectStarted.value && !component.loadingEffectEnded.value) {
+    if (component.loadingEffectStarted && !component.loadingEffectEnded) {
       // Loading effect in progress. Let it finish
       return
     }
     // If autoplay is enabled, play the video irrespective of paused state
-    if (volumetric.autoplay.value && volumetric.initialBuffersLoaded.value) {
-      handleAutoplay(audioContext, video, volumetric)
+    if (volumetric.autoplay && volumetric.initialBuffersLoaded) {
+      handleAutoplay(audioContext, video, entity)
     }
   }, [volumetric.autoplay, volumetric.initialBuffersLoaded, component.loadingEffectEnded])
 
   useEffect(() => {
-    if (volumetric.paused.value || !volumetric.initialBuffersLoaded.value) {
+    if (volumetric.paused || !volumetric.initialBuffersLoaded) {
       video.pause()
       return
     }
@@ -220,11 +200,11 @@ function UVOL1Reactor() {
       mesh.material = material
       mesh.material.needsUpdate = true
     }
-    handleAutoplay(audioContext, video, volumetric)
+    handleAutoplay(audioContext, video, entity)
   }, [volumetric.paused])
 
   useEffect(() => {
-    if (!component.firstGeometryFrameLoaded.value) return
+    if (!component.firstGeometryFrameLoaded) return
     let timer = -1
 
     const prepareMesh = () => {
@@ -240,13 +220,13 @@ function UVOL1Reactor() {
       mesh.geometry.attributes.position.needsUpdate = true
 
       videoTexture.needsUpdate = true
-      const renderer = getComponent(Engine.instance.viewerEntity, RendererComponent)
+      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
       renderer.renderer!.initTexture(videoTexture)
 
-      if (volumetric.useLoadingEffect.value) {
+      if (volumetric.useLoadingEffect) {
         mesh.material = UVOLDissolveComponent.createDissolveMaterial(mesh)
         mesh.material.needsUpdate = true
-        component.loadingEffectStarted.set(true)
+        setComponent(entity, UVOL1Component, { loadingEffectStarted: true })
       }
 
       setComponent(entity, ObjectComponent, mesh)
@@ -267,7 +247,7 @@ function UVOL1Reactor() {
         mesh.material.needsUpdate = true
         oldMaterial.dispose()
       }
-      volumetric.currentTrackInfo.currentTime.set(frameToPlay / component.data.frameRate.value)
+      volumetric.currentTrackInfo.currentTime = frameToPlay / component.data.frameRate
 
       if (meshBuffer.has(frameToPlay)) {
         // @ts-ignore: value cannot be anything else other than BufferGeometry
@@ -275,17 +255,17 @@ function UVOL1Reactor() {
         mesh.geometry.attributes.position.needsUpdate = true
 
         videoTexture.needsUpdate = true
-        getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.initTexture(videoTexture)
+        getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!.initTexture(videoTexture)
       }
       removePlayedBuffer(frameToPlay)
     }
 
-    const frameToPlay = Math.round(metadata.mediaTime * component.data.value.frameRate)
+    const frameToPlay = Math.round(metadata.mediaTime * component.data.frameRate)
     processFrame(frameToPlay)
   })
 
   useEffect(() => {
-    video.playbackRate = volumetric.currentTrackInfo.playbackRate.value
+    video.playbackRate = volumetric.currentTrackInfo.playbackRate
   }, [volumetric.currentTrackInfo.playbackRate])
 
   useExecute(
@@ -296,19 +276,19 @@ function UVOL1Reactor() {
       const delta = getState(ECSState).deltaSeconds
 
       if (
-        component.loadingEffectStarted.value &&
-        !component.loadingEffectEnded.value &&
+        component.loadingEffectStarted &&
+        !component.loadingEffectEnded &&
         // @ts-ignore
         UVOLDissolveComponent.updateDissolveEffect(entity, mesh, delta)
       ) {
         removeComponent(entity, UVOLDissolveComponent)
         mesh.material = material
         mesh.material.needsUpdate = true
-        component.loadingEffectEnded.set(true)
+        setComponent(entity, UVOL1Component, { loadingEffectEnded: true })
         return
       }
 
-      const numberOfFrames = component.data.value.frameData.length
+      const numberOfFrames = component.data.frameData.length
       if (nextFrameToRequest.current === numberOfFrames - 1) {
         // Fetched all frames
         return
@@ -321,9 +301,9 @@ function UVOL1Reactor() {
       if (pendingRequests.current == 0 && !meshBufferHasEnough) {
         const newLastFrame = Math.min(nextFrameToRequest.current + targetFramesToRequest - 1, numberOfFrames - 1)
         for (let i = nextFrameToRequest.current; i <= newLastFrame; i++) {
-          const meshFilePath = component.manifestPath.value.replace('.manifest', '.drcs')
-          const byteStart = component.data.value.frameData[i].startBytePosition
-          const byteEnd = byteStart + component.data.value.frameData[i].meshLength
+          const meshFilePath = component.manifestPath.replace('.manifest', '.drcs')
+          const byteStart = component.data.frameData[i].startBytePosition
+          const byteEnd = byteStart + component.data.frameData[i].meshLength
           pendingRequests.current += 1
           decodeCorto(meshFilePath, byteStart, byteEnd)
             .then((geometry) => {
@@ -336,7 +316,9 @@ function UVOL1Reactor() {
               pendingRequests.current -= 1
 
               if (i === 0) {
-                component.firstGeometryFrameLoaded.set(true)
+                setComponent(entity, UVOL1Component, {
+                  firstGeometryFrameLoaded: true
+                })
               }
             })
             .catch((e) => {
@@ -347,8 +329,10 @@ function UVOL1Reactor() {
           nextFrameToRequest.current = newLastFrame
         }
 
-        if (meshBufferHasEnoughToPlay && !volumetric.initialBuffersLoaded.value) {
-          volumetric.initialBuffersLoaded.set(true)
+        if (meshBufferHasEnoughToPlay && !volumetric.initialBuffersLoaded) {
+          setComponent(entity, LegacyVolumetricComponent, {
+            initialBuffersLoaded: true
+          })
         }
       }
     },

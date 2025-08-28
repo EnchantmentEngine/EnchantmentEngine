@@ -1,34 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { Color, PointLight } from 'three'
 
-import { S, defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { Schema, useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 
+import { EntitySchema } from '@ir-engine/ecs'
 import { T } from '../../../schema/schemaFunctions'
 import { isMobileXRHeadset } from '../../../xr/XRState'
 import { RendererState } from '../../RendererState'
@@ -39,15 +15,15 @@ export const PointLightComponent = defineComponent({
   name: 'PointLightComponent',
   jsonID: 'EE_point_light',
 
-  schema: S.Object({
+  schema: Schema.Object({
     color: T.Color(0xffffff),
-    intensity: S.Number({ default: 1 }),
-    range: S.Number({ default: 0 }),
-    decay: S.Number({ default: 2 }),
-    castShadow: S.Bool({ default: false }),
-    shadowBias: S.Number({ default: 0 }),
-    shadowRadius: S.Number({ default: 1 }),
-    helperEntity: S.Entity({ serialized: false })
+    intensity: Schema.Number({ default: 1 }),
+    range: Schema.Number({ default: 0 }),
+    decay: Schema.Number({ default: 2 }),
+    castShadow: Schema.Bool({ default: false }),
+    shadowBias: Schema.Number({ default: 0 }),
+    shadowRadius: Schema.Number({ default: 1 }),
+    helperEntity: EntitySchema.Entity({ serialized: false })
   }),
 
   reactor: function () {
@@ -67,31 +43,31 @@ export const PointLightComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      light.color = new Color(pointLightComponent.color.value)
+      light.color = new Color(pointLightComponent.color)
     }, [pointLightComponent.color])
 
     useEffect(() => {
-      light.intensity = pointLightComponent.intensity.value
+      light.intensity = pointLightComponent.intensity
     }, [pointLightComponent.intensity])
 
     useEffect(() => {
-      light.distance = pointLightComponent.range.value
+      light.distance = pointLightComponent.range
     }, [pointLightComponent.range])
 
     useEffect(() => {
-      light.decay = pointLightComponent.decay.value
+      light.decay = pointLightComponent.decay
     }, [pointLightComponent.decay])
 
     useEffect(() => {
-      light.castShadow = pointLightComponent.castShadow.value
+      light.castShadow = pointLightComponent.castShadow
     }, [pointLightComponent.castShadow])
 
     useEffect(() => {
-      light.shadow.bias = pointLightComponent.shadowBias.value
+      light.shadow.bias = pointLightComponent.shadowBias
     }, [pointLightComponent.shadowBias])
 
     useEffect(() => {
-      light.shadow.radius = pointLightComponent.shadowRadius.value
+      light.shadow.radius = pointLightComponent.shadowRadius
     }, [pointLightComponent.shadowRadius])
 
     useEffect(() => {

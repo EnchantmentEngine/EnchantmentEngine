@@ -1,38 +1,13 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useLayoutEffect } from 'react'
 
 import {
   createEntity,
-  Engine,
   EntityID,
   EntityTreeComponent,
   EntityUUID,
   EntityUUIDPair,
   getOptionalComponent,
+  removeComponent,
   removeEntity,
   setComponent,
   SourceID,
@@ -43,6 +18,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   NetworkPeerState,
   NetworkState,
   none,
@@ -53,7 +29,12 @@ import {
   UserID
 } from '@ir-engine/hyperflux'
 import { EngineState } from '../EngineState'
-import { NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
+import {
+  NetworkId,
+  NetworkObjectAuthorityTag,
+  NetworkObjectComponent,
+  NetworkObjectOwnedTag
+} from './NetworkObjectComponent'
 import { WorldNetworkAction } from './WorldNetworkAction'
 
 export const EntityNetworkState = defineState({
@@ -202,6 +183,18 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
     )
   }, [userConnected, state.requestingPeerId.value])
 
+  useLayoutEffect(() => {
+    const entity = UUIDComponent.getEntityByUUID(props.uuid)
+    if (state.authorityPeerId.value === HyperFlux.store.peerID) setComponent(entity, NetworkObjectAuthorityTag)
+    else removeComponent(entity, NetworkObjectAuthorityTag)
+  }, [state.authorityPeerId.value])
+
+  useLayoutEffect(() => {
+    const entity = UUIDComponent.getEntityByUUID(props.uuid)
+    if (state.ownerId.value === getState(EngineState).userID) setComponent(entity, NetworkObjectOwnedTag)
+    else removeComponent(entity, NetworkObjectOwnedTag)
+  }, [state.ownerId.value])
+
   const authorityPeer = state.authorityPeerId.value ?? state.ownerPeer.value
   const isAuthorInNetwork = !!(worldNetwork && networkPeerState[worldNetwork.id]?.peers[authorityPeer])
 
@@ -220,13 +213,13 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
       // Use the lowest peer as the new authority
       const lowestPeer = [...NetworkState.worldNetwork.users[userID]].sort((a, b) => (a > b ? 1 : -1))[0]
-      if (lowestPeer !== Engine.instance.store.peerID) return
+      if (lowestPeer !== HyperFlux.store.peerID) return
 
       dispatchAction(
         WorldNetworkAction.transferAuthorityOfObject({
           ownerID: state.ownerId.value,
           entityUUID: props.uuid,
-          newAuthority: Engine.instance.store.peerID
+          newAuthority: HyperFlux.store.peerID
         })
       )
     }
@@ -237,6 +230,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
 /**
  * Get a deterministic network ID scoped to each owner peer
+ * @todo this causes temporary desync when a new entity is spawned, as network IDs may change
  */
 const useNetworkID = (uuid: EntityUUID) => {
   const state = useMutableState(EntityNetworkState)

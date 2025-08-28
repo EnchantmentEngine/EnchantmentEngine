@@ -1,35 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { ComponentType, EngineState, entityExists, useEntityContext } from '@ir-engine/ecs'
+import { ComponentType, EngineState, entityExists, EntitySchema, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   removeComponent,
   setComponent,
@@ -37,20 +10,20 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NO_PROXY, State, getState, isClient, useMutableState } from '@ir-engine/hyperflux'
-import { StandardCallbacks, removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
+import { getState, isClient, Schema, useMutableState } from '@ir-engine/hyperflux'
+import { removeCallback, setCallback, StandardCallbacks } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
+import { FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
+import { getAbsolutePath } from '@ir-engine/spatial/src/resources/resourceLoaderFunctions'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import type Hls from 'hls.js'
 import { useEffect, useLayoutEffect } from 'react'
-import { AssetLoader } from '../../assets/classes/AssetLoader'
 import { AudioState } from '../../audio/AudioState'
 import { removePannerNode } from '../../audio/PositionalAudioFunctions'
-import { PlayMode } from '../constants/PlayMode'
+import { PlayMode, PlayModeType } from '../constants/PlayMode'
 import { addError, clearErrors, removeError } from '../functions/ErrorFunctions'
 import isHLS from '../functions/isHLS'
 
@@ -81,34 +54,32 @@ export const createAudioNodeGroup = (
 export const MediaElementComponent = defineComponent({
   name: 'MediaElement',
 
-  schema: S.Object({
-    element: S.Type<HTMLMediaElement>(),
-    hls: S.Type<Hls | undefined>(),
-    abortController: S.Class(() => new AbortController())
+  schema: Schema.Object({
+    element: Schema.Type<HTMLMediaElement>(),
+    hls: Schema.Type<Hls | undefined>(),
+    abortController: Schema.Class(() => new AbortController())
   }),
 
   onSet: (entity, component, json) => {
     if (!json) return
-    if (typeof json.element === 'object' && json.element !== component.element.get({ noproxy: true }))
-      component.element.set(json.element as HTMLMediaElement)
+    if (typeof json.element === 'object' && json.element !== component.element) component.element = json.element
   },
 
   onRemove: (entity, component) => {
     if (component.element) {
-      component.element.value.remove()
+      component.element.remove()
     }
   },
 
   reactor: () => {
     const entity = useEntityContext()
-    const mediaElementComponent = useComponent(entity, MediaElementComponent)
+    const mediaElement = useComponent(entity, MediaElementComponent)
 
     useLayoutEffect(() => {
-      const media = mediaElementComponent.get({ noproxy: true })
       return () => {
         if (!entityExists(entity) || !hasComponent(entity, MediaElementComponent)) {
-          const element = media.element as HTMLMediaElement
-          media.hls?.destroy()
+          const element = mediaElement.element as HTMLMediaElement
+          mediaElement.hls?.destroy()
           const audioNodeGroup = AudioNodeGroups.get(element)
           if (audioNodeGroup && audioNodeGroup.panner) removePannerNode(audioNodeGroup)
           AudioNodeGroups.delete(element)
@@ -116,10 +87,10 @@ export const MediaElementComponent = defineComponent({
           element.removeAttribute('src')
           element.load()
           element.remove()
-          media.abortController.abort()
+          mediaElement.abortController.abort()
         }
       }
-    }, [mediaElementComponent])
+    }, [mediaElement])
   },
 
   errors: ['MEDIA_ERROR', 'HLS_ERROR']
@@ -129,33 +100,33 @@ export const MediaComponent = defineComponent({
   name: 'MediaComponent',
   jsonID: 'EE_media',
 
-  schema: S.Object({
-    controls: S.Bool({ default: false }),
-    synchronize: S.Bool({ default: true }),
-    autoplay: S.Bool({ default: false }), //false = personal preference, this is super annoying when it just starts playing once added to a scene while editing
-    muteEditor: S.Bool({ default: false }), //false
+  schema: Schema.Object({
+    controls: Schema.Bool({ default: false }),
+    synchronize: Schema.Bool({ default: true }),
+    autoplay: Schema.Bool({ default: false }), //false = personal preference, this is super annoying when it just starts playing once added to a scene while editing
+    muteEditor: Schema.Bool({ default: false }), //false
     uiOffset: T.Vec3(),
-    volume: S.Number({ default: 1 }),
-    resources: S.Array(S.String()),
-    playMode: S.Enum(PlayMode, {
+    volume: Schema.Number({ default: 1 }),
+    resources: Schema.Array(Schema.String()),
+    playMode: Schema.Enum(PlayMode, {
       $comment: "A string enum, ie. one of the following values: 'single', 'random', 'loop', 'singleloop'",
       default: PlayMode.loop
     }),
-    isMusic: S.Bool({ default: false }),
-    seekTime: S.Number({ default: 0, serialized: false }),
+    isMusic: Schema.Bool({ default: false }),
+    seekTime: Schema.Number({ default: 0, serialized: false }),
     /**@deprecated */
-    paths: S.Array(S.String()),
+    paths: Schema.Array(Schema.String()),
     // runtime props
-    xruiEntity: S.Entity({ serialized: false }),
-    paused: S.Bool({ default: true, serialized: false }),
-    muted: S.Bool({ default: false, serialized: false }),
-    ended: S.Bool({ default: true, serialized: false }),
-    waiting: S.Bool({ default: false, serialized: false }),
-    track: S.Number({ default: -1, serialized: false }),
-    currentTrackTime: S.Number({ default: 0, serialized: false }),
-    currentTrackDuration: S.Number({ default: 0, serialized: false }),
-    isCurrentTrackLoaded: S.Bool({ default: false, serialized: false }),
-    externalMediaNodeID: S.EntityID()
+    xruiEntity: EntitySchema.Entity({ serialized: false }),
+    paused: Schema.Bool({ default: true, serialized: false }),
+    muted: Schema.Bool({ default: false, serialized: false }),
+    ended: Schema.Bool({ default: true, serialized: false }),
+    waiting: Schema.Bool({ default: false, serialized: false }),
+    track: Schema.Number({ default: -1, serialized: false }),
+    currentTrackTime: Schema.Number({ default: 0, serialized: false }),
+    currentTrackDuration: Schema.Number({ default: 0, serialized: false }),
+    isCurrentTrackLoaded: Schema.Bool({ default: false, serialized: false }),
+    externalMediaNodeID: EntitySchema.EntityID()
     /**
      * TODO: refactor this into a ScheduleComponent for invoking callbacks at scheduled times
      * The auto start time for the playlist, in Unix/Epoch time (milliseconds).
@@ -185,8 +156,8 @@ export function MediaReactor() {
   function validateTime() {
     if (!mediaElement) return
 
-    const element = mediaElement.element.value as HTMLMediaElement
-    let time = media.seekTime.value
+    const element = mediaElement.element
+    let time = media.seekTime
 
     if (time > element.duration) {
       time = element.duration
@@ -199,30 +170,32 @@ export function MediaReactor() {
 
   const getAutoPlay = () => {
     const isEditing = engineState.isEditing.value
-    return isEditing ? false : media.autoplay.value
+    return isEditing ? false : media.autoplay
   }
 
   const playTrack = () => {
-    let nextTrack = media.track.value
-    const path = nextTrack === -1 ? '' : media.resources.value[nextTrack]
+    let nextTrack = media.track
+    const path = nextTrack === -1 ? '' : media.resources[nextTrack]
 
     if (nextTrack !== -1 && nextTrack >= media.resources.length) {
       // we already remove the case where we dont have any track
       // if current path is null, we simply skip over and move to next proper track
       nextTrack = (nextTrack + 1) % media.resources.length
-      media.track.set(nextTrack)
+      setComponent(entity, MediaComponent, { track: nextTrack })
       return
     }
 
     if (path === '') {
-      media.isCurrentTrackLoaded.set(false)
-      media.currentTrackTime.set(0)
-      media.currentTrackDuration.set(0)
+      setComponent(entity, MediaComponent, {
+        isCurrentTrackLoaded: false,
+        currentTrackTime: 0,
+        currentTrackDuration: 0
+      })
       removeComponent(entity, MediaElementComponent)
       return
     }
 
-    const urlToPlay = encodeURI(AssetLoader.getAbsolutePath(path))
+    const urlToPlay = encodeURI(getAbsolutePath(path))
 
     const checkMediaElement = getOptionalComponent(entity, MediaElementComponent)
     /** do nothing if we are already playing this track */
@@ -230,14 +203,14 @@ export function MediaReactor() {
       return
     }
 
-    const assetClass = AssetLoader.getAssetClass(urlToPlay).toLowerCase()
+    const assetClass = FileToAssetType(urlToPlay).toLowerCase()
 
     if (assetClass !== 'audio' && assetClass !== 'video') {
       addError(entity, MediaComponent, 'UNSUPPORTED_ASSET_CLASS')
       return
     }
 
-    media.ended.set(false)
+    setComponent(entity, MediaComponent, { ended: false })
 
     if (
       !checkMediaElement ||
@@ -247,57 +220,65 @@ export function MediaReactor() {
       setUpMediaElement(entity, urlToPlay, media, audioContext, gainNodeMixBuses)
     }
 
-    const mutableMediaElement = getMutableComponent(entity, MediaElementComponent)
+    const mediaElement = getComponent(entity, MediaElementComponent)
 
-    if (mutableMediaElement.element.src.value === urlToPlay && media.isCurrentTrackLoaded.value) {
-      const duration = mutableMediaElement.element.duration.value
-      media.currentTrackDuration.set(duration)
+    if (mediaElement.element.src === urlToPlay && media.isCurrentTrackLoaded) {
+      const duration = mediaElement.element.duration
+      setComponent(entity, MediaComponent, { currentTrackDuration: duration })
       return
     }
 
-    mutableMediaElement.hls.value?.destroy()
-    mutableMediaElement.hls.set(undefined)
-    ;(mutableMediaElement.element.value as HTMLMediaElement).crossOrigin = 'anonymous'
-    ;(mutableMediaElement.element.value as HTMLMediaElement).ontimeupdate = (event) => {
-      const localMedia = getOptionalMutableComponent(entity, MediaComponent)
+    mediaElement.hls?.destroy()
+    setComponent(entity, MediaElementComponent, { hls: undefined })
+
+    mediaElement.element.crossOrigin = 'anonymous'
+    mediaElement.element.ontimeupdate = (event) => {
+      const localMedia = getOptionalComponent(entity, MediaComponent)
       if (!localMedia) return
       const localMediaElement = getOptionalComponent(entity, MediaElementComponent)
       if (!localMediaElement) return
       if (!localMediaElement.element) return
-      const time = (localMediaElement.element as HTMLMediaElement).currentTime
-      localMedia.currentTrackTime.set(time)
+      const time = localMediaElement.element.currentTime
+      setComponent(entity, MediaComponent, { currentTrackTime: time })
     }
-    media.isCurrentTrackLoaded.set(false)
-    ;(mutableMediaElement.element.value as HTMLMediaElement).onloadeddata = (event) => {
-      const localMedia = getMutableComponent(entity, MediaComponent)
+
+    setComponent(entity, MediaComponent, { isCurrentTrackLoaded: false })
+
+    mediaElement.element.onloadeddata = (event) => {
+      const localMedia = getComponent(entity, MediaComponent)
       const localMediaElement = getComponent(entity, MediaElementComponent)
       if (!localMedia) return
       if (!localMediaElement) return
       if (!localMediaElement.element) return
-      const time = (localMediaElement.element as HTMLMediaElement).duration
-      localMedia.currentTrackDuration.set(time)
-      localMedia.isCurrentTrackLoaded.set(true)
-    }
-    if (isHLS(urlToPlay)) {
-      setupHLS(entity, urlToPlay).then((hls) => {
-        mutableMediaElement.hls.set(hls)
-        mutableMediaElement.hls.value!.attachMedia(mutableMediaElement.element.value as HTMLMediaElement)
+      const time = localMediaElement.element.duration
+      setComponent(entity, MediaComponent, {
+        currentTrackDuration: time,
+        isCurrentTrackLoaded: true
       })
-    } else {
-      mutableMediaElement.element.src.set(urlToPlay)
     }
 
-    if (!media.paused.value) {
-      mutableMediaElement.value.element.play()
+    if (isHLS(urlToPlay)) {
+      setupHLS(entity, urlToPlay).then((hls) => {
+        setComponent(entity, MediaElementComponent, {
+          hls
+        })
+        hls.attachMedia(mediaElement.element)
+      })
+    } else {
+      mediaElement.element.src = urlToPlay
+    }
+
+    if (!media.paused) {
+      mediaElement.element.play()
     }
     validateTime()
   }
 
   useEffect(() => {
-    if (media.resources.length > 0 && media.track.value < 0) {
-      media.track.set(0)
+    if (media.resources.length > 0 && media.track < 0) {
+      setComponent(entity, MediaComponent, { track: 0 })
       if (getAutoPlay()) {
-        media.paused.set(false)
+        setComponent(entity, MediaComponent, { paused: false })
         playTrack()
       }
     }
@@ -306,7 +287,7 @@ export function MediaReactor() {
   useEffect(() => {
     if (!mediaElement) return
     const autoPlay = getAutoPlay()
-    media.paused.set(!autoPlay)
+    setComponent(entity, MediaComponent, { paused: !autoPlay })
     validateTime()
   }, [media.autoplay, !!mediaElement, engineState.isEditing])
 
@@ -322,14 +303,14 @@ export function MediaReactor() {
       const mediaComponent = getOptionalComponent(entity, MediaElementComponent)
 
       // handle when we dont have autoplay enabled but have programatically started playback
-      if (!getAutoPlay() && !media.paused.value) mediaComponent?.element.play()
+      if (!getAutoPlay() && !media.paused) mediaComponent?.element.play()
       // handle when we have autoplay enabled but have paused playback
-      if (getAutoPlay() && media.paused.value) media.paused.set(false)
+      if (getAutoPlay() && media.paused) setComponent(entity, MediaComponent, { paused: false })
       // handle when we have autoplay and mediaComponent is paused
-      if (getAutoPlay() && !media.paused.value && mediaComponent?.element.paused) {
+      if (getAutoPlay() && !media.paused && mediaComponent?.element.paused) {
         mediaComponent.element.play()
         const autoplay = getAutoPlay()
-        media.paused.set(!autoplay)
+        setComponent(entity, MediaComponent, { paused: !autoplay })
       }
       window.removeEventListener('pointerup', handleAutoplay)
       window.removeEventListener('keypress', handleAutoplay)
@@ -347,21 +328,21 @@ export function MediaReactor() {
     renderer.domElement.addEventListener('pointerup', handleAutoplay)
     renderer.domElement.addEventListener('touchend', handleAutoplay)
 
-    setCallback(entity, StandardCallbacks.PLAY, () => media.paused.set(false))
-    setCallback(entity, StandardCallbacks.PAUSE, () => media.paused.set(true))
+    setCallback(entity, StandardCallbacks.PLAY, () => setComponent(entity, MediaComponent, { paused: false }))
+    setCallback(entity, StandardCallbacks.PAUSE, () => setComponent(entity, MediaComponent, { paused: true }))
     setCallback(entity, StandardCallbacks.RESET, () => {
       const autoPlay = getAutoPlay()
-      media.paused.set(!autoPlay)
 
       //using to force the react to update the seek time if already set to 0
       //due to media's seekTime is not being updated with the media elements current time
-      let seekTime = media.seekTime.value
+      let seekTime = media.seekTime
       if (seekTime == 0) {
         seekTime = 0.000001
       } else {
         seekTime = 0
       }
-      media.seekTime.set(seekTime)
+
+      setComponent(entity, MediaComponent, { seekTime, paused: !autoPlay })
     })
 
     return () => {
@@ -385,14 +366,14 @@ export function MediaReactor() {
 
   useEffect(() => {
     if (!mediaElement) return
-    const element = mediaElement.element.value as HTMLMediaElement
+    const element = mediaElement.element
 
     const resetMuted = () => {
       element.muted = false
       document.removeEventListener('pointerdown', resetMuted)
     }
 
-    if (media.paused.value) {
+    if (media.paused) {
       element.pause()
     } else {
       element.play().catch((error) => {
@@ -415,14 +396,14 @@ export function MediaReactor() {
   useEffect(() => {
     if (!mediaElement) return
     const isEditing = getState(EngineState).isEditing
-    const isMuted = isEditing ? media.muteEditor.value : false
-    const htmlMedia = mediaElement.element.get(NO_PROXY) as HTMLMediaElement
+    const isMuted = isEditing ? media.muteEditor : false
+    const htmlMedia = mediaElement.element
     htmlMedia.muted = isMuted
   }, [media.muteEditor, mediaElement])
 
   useEffect(() => {
-    if (mediaElement && !mediaElement.element.paused.value) {
-      mediaElement.element.value.play() // if not paused, start play again
+    if (mediaElement && !mediaElement.element.paused) {
+      mediaElement.element.play() // if not paused, start play again
     }
   }, [mediaElement])
 
@@ -430,7 +411,7 @@ export function MediaReactor() {
     function updateTrackMetadata() {
       clearErrors(entity, MediaComponent)
 
-      const paths = media.resources.value
+      const paths = media.resources
 
       // If no paths or currently play path has been removed stop the track from playing
       // and signal to move to next track if one exists
@@ -441,14 +422,14 @@ export function MediaReactor() {
         mediaElement = getComponent(entity, MediaElementComponent).element
       }
 
-      if (mediaElement && (paths.length === 0 || media.track.value >= paths.length)) {
+      if (mediaElement && (paths.length === 0 || media.track >= paths.length)) {
         mediaElement.pause()
         mediaElement.src = ''
         mediaElement.load()
         removeComponent(entity, MediaElementComponent)
-        media.track.set(-1)
+        setComponent(entity, MediaComponent, { track: -1 })
       } else {
-        const currentSrc = paths[media.track.value]
+        const currentSrc = paths[media.track]
         //if the currently played track has been updated to a new src path
         if (!mediaElement || currentSrc !== mediaElement.src) {
           playTrack()
@@ -456,38 +437,38 @@ export function MediaReactor() {
       }
 
       for (const path of paths) {
-        const assetClass = AssetLoader.getAssetClass(path).toLowerCase()
+        const assetClass = FileToAssetType(path).toLowerCase()
         if (path !== '' && assetClass !== 'audio' && assetClass !== 'video') {
           return addError(entity, MediaComponent, 'UNSUPPORTED_ASSET_CLASS')
         }
       }
     },
-    [media.resources, media.resources[media.track.value]]
+    [media.resources, media.resources[media.track]]
   )
 
   useEffect(() => {
-    if (!media.ended.value) return // If current track is not ended, don't change the track
+    if (!media.ended) return // If current track is not ended, don't change the track
 
     if (!isClient) return
 
-    if (media.resources.value.every((resource) => !resource)) return // if all resources are empty, we dont move to next track
+    if (media.resources.every((resource) => !resource)) return // if all resources are empty, we dont move to next track
 
-    const track = media.track.value
-    const nextTrack = getNextTrack(track, media.resources.length, media.playMode.value)
+    const track = media.track
+    const nextTrack = getNextTrack(track, media.resources.length, media.playMode)
 
     //check if we haven't set up for single play yet, or if our sources don't match the new resources
     //** todo  make this more robust in a refactor, feels very error prone with edge cases */
     if (nextTrack === -1) {
-      media.paused.set(true)
+      setComponent(entity, MediaComponent, { paused: true })
       return
     }
-    media.ended.set(false)
-    if (media.track.value === nextTrack) {
-      if (!media.paused.value) {
-        mediaElement?.element.value.play()
+    setComponent(entity, MediaComponent, { ended: false })
+    if (media.track === nextTrack) {
+      if (!media.paused) {
+        mediaElement?.element.play()
       }
     } else {
-      media.track.set(nextTrack)
+      setComponent(entity, MediaComponent, { track: nextTrack })
     }
   }, [media.ended, media.playMode])
 
@@ -499,7 +480,7 @@ export function MediaReactor() {
 
   useEffect(
     function updateVolume() {
-      const volume = media.volume.value
+      const volume = media.volume
       const element = getOptionalComponent(entity, MediaElementComponent)?.element as HTMLMediaElement
       if (!element) return
       const audioNodes = AudioNodeGroups.get(element)
@@ -512,8 +493,7 @@ export function MediaReactor() {
 
   useEffect(() => {
     if (!mediaElement) return
-    const htmlMedia = mediaElement.element.get(NO_PROXY) as HTMLMediaElement
-    htmlMedia.muted = media.muted.value
+    mediaElement.element.muted = media.muted
   }, [media.muted, mediaElement])
 
   useEffect(
@@ -521,15 +501,10 @@ export function MediaReactor() {
       if (mediaElement == null) {
         return
       }
-      if (mediaElement.promised || mediaElement.value == null) {
-        return
-      }
-
-      const element = mediaElement.element.get({ noproxy: true }) as HTMLMediaElement
-      const audioNodes = AudioNodeGroups.get(element)
+      const audioNodes = AudioNodeGroups.get(mediaElement.element)
       if (audioNodes) {
         audioNodes.gain.disconnect(audioNodes.mixbus)
-        audioNodes.mixbus = media.isMusic.value ? gainNodeMixBuses.music : gainNodeMixBuses.soundEffects
+        audioNodes.mixbus = media.isMusic ? gainNodeMixBuses.music : gainNodeMixBuses.soundEffects
         audioNodes.gain.connect(audioNodes.mixbus)
       }
     },
@@ -546,7 +521,7 @@ export function MediaReactor() {
 const setUpMediaElement = (
   entity: Entity,
   path: string,
-  media: State<ComponentType<typeof MediaComponent>>,
+  media: ComponentType<typeof MediaComponent>,
   audioContext: AudioContext,
   gainNodeMixBuses: {
     mediaStreams: GainNode
@@ -555,7 +530,7 @@ const setUpMediaElement = (
     soundEffects: GainNode
   }
 ) => {
-  const assetClass = AssetLoader.getAssetClass(path).toLowerCase()
+  const assetClass = FileToAssetType(path).toLowerCase()
 
   const hasMediaElementComponent = hasComponent(entity, MediaElementComponent)
   let element: HTMLMediaElement | null = null
@@ -568,30 +543,35 @@ const setUpMediaElement = (
   setComponent(entity, MediaElementComponent, {
     element: element
   })
-  const mediaElementState = getMutableComponent(entity, MediaElementComponent)
+  const mediaElementState = getComponent(entity, MediaElementComponent)
 
   element.crossOrigin = 'anonymous'
   element.preload = 'auto'
   element.muted = false
   element.setAttribute('playsinline', 'true')
 
-  const signal = mediaElementState.abortController.signal.value
+  const signal = mediaElementState.abortController.signal
 
   element.addEventListener(
     'playing',
     () => {
-      media.waiting.set(false)
+      setComponent(entity, MediaComponent, { waiting: false })
       clearErrors(entity, MediaElementComponent)
     },
     { signal }
   )
-  element.addEventListener('waiting', () => media.waiting.set(true), { signal })
+  element.addEventListener(
+    'waiting',
+    () => {
+      setComponent(entity, MediaComponent, { waiting: true })
+    },
+    { signal }
+  )
   element.addEventListener(
     'error',
     (err) => {
       addError(entity, MediaElementComponent, 'MEDIA_ERROR', err.message)
-      media.ended.set(true)
-      media.waiting.set(false)
+      setComponent(entity, MediaComponent, { waiting: false, ended: true })
     },
     { signal }
   )
@@ -599,8 +579,7 @@ const setUpMediaElement = (
   element.addEventListener(
     'ended',
     () => {
-      media.ended.set(true)
-      media.waiting.set(false)
+      setComponent(entity, MediaComponent, { waiting: false, ended: true })
     },
     { signal }
   )
@@ -608,10 +587,10 @@ const setUpMediaElement = (
   const audioNodes = createAudioNodeGroup(
     element,
     audioContext.createMediaElementSource(element),
-    media.isMusic.value ? gainNodeMixBuses.music : gainNodeMixBuses.soundEffects
+    media.isMusic ? gainNodeMixBuses.music : gainNodeMixBuses.soundEffects
   )
 
-  audioNodes.gain.gain.setTargetAtTime(media.volume.value, audioContext.currentTime, 0.1)
+  audioNodes.gain.gain.setTargetAtTime(media.volume, audioContext.currentTime, 0.1)
 }
 
 export const setupHLS = async (entity: Entity, url: string): Promise<Hls> => {
@@ -650,12 +629,12 @@ export const setupHLS = async (entity: Entity, url: string): Promise<Hls> => {
   return hls
 }
 
-export function setTime(element: State<HTMLMediaElement>, time: number) {
-  if (!element.value || time < 0 || element.value.currentTime === time || time > element.value.duration) return
-  element.currentTime.set(time)
+export function setTime(element: HTMLMediaElement, time: number) {
+  if (!element || time < 0 || element.currentTime === time || time > element.duration) return
+  element.currentTime = time
 }
 
-export function getNextTrack(currentTrack: number, trackCount: number, currentMode: PlayMode) {
+export function getNextTrack(currentTrack: number, trackCount: number, currentMode: PlayModeType) {
   if (trackCount === 0) return -1
 
   let nextTrack = 0

@@ -1,35 +1,7 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useCallback } from 'react'
-
-import { State } from '@ir-engine/hyperflux'
 
 import {
   ColorGeneratorJSON,
-  ColorGeneratorJSONDefaults,
   ColorGradientJSON,
   ColorRangeJSON,
   ConstantColorJSON,
@@ -53,31 +25,27 @@ const colorOptions: OptionType[] = [
 
 type ColorGeneratorProps = Readonly<{
   path: string
-  scope: State<ColorGeneratorJSON>
   value: ColorGeneratorJSON
   onChange: (path: string) => (value: any) => void
 }>
-export default function ColorGenerator({ path, scope, value, onChange }: ColorGeneratorProps) {
+export default function ColorGenerator({ path, value, onChange }: ColorGeneratorProps) {
   const { t } = useTranslation()
 
   const onChangeType = useCallback(() => {
     const thisOnChange = onChange(path + '.type')
     return (type: typeof value.type) => {
-      scope.set(ColorGeneratorJSONDefaults[type])
       thisOnChange(type)
     }
   }, [])
 
   const ConstantColorInput = useCallback(() => {
-    const constantScope = scope as State<ConstantColorJSON>
-    const constant = constantScope.value
+    const constant = value as ConstantColorJSON
 
     return <ColorJSONInput value={constant.color} onChange={onChange(path + '.color')} />
-  }, [scope])
+  }, [value])
 
   const ColorRangeInput = useCallback(() => {
-    const rangeScope = scope as State<ColorRangeJSON>
-    const range = rangeScope.value
+    const range = value as ColorRangeJSON
 
     return (
       <>
@@ -89,11 +57,10 @@ export default function ColorGenerator({ path, scope, value, onChange }: ColorGe
         </InputGroup>
       </>
     )
-  }, [scope])
+  }, [value])
 
   const RandomColorInput = useCallback(() => {
-    const randomScope = scope as State<RandomColorJSON>
-    const random = randomScope.value
+    const random = value as RandomColorJSON
 
     return (
       <>
@@ -105,15 +72,13 @@ export default function ColorGenerator({ path, scope, value, onChange }: ColorGe
         </InputGroup>
       </>
     )
-  }, [scope])
+  }, [value])
 
   const GradientInput = useCallback(() => {
-    const gradientScope = scope as State<ColorGradientJSON>
-    const gradient = gradientScope.value
+    const gradient = value as ColorGradientJSON
 
     const handleAddGradient = () => {
-      const gradientState = scope as State<ColorGradientJSON>
-      gradientState.functions.set([
+      gradient.functions = [
         ...JSON.parse(JSON.stringify(gradient.functions)),
         {
           start: 0,
@@ -123,7 +88,7 @@ export default function ColorGenerator({ path, scope, value, onChange }: ColorGe
             b: { r: 1, g: 1, b: 1, a: 1 }
           }
         }
-      ])
+      ]
     }
 
     return (
@@ -131,11 +96,11 @@ export default function ColorGenerator({ path, scope, value, onChange }: ColorGe
         <Button onClick={handleAddGradient}>+</Button>
 
         {gradient.functions.map((item, index) => (
-          <GradientInputItem key={index} path={path} index={index} item={item} scope={scope} onChange={onChange} />
+          <GradientInputItem key={index} path={path} index={index} item={item} value={value} onChange={onChange} />
         ))}
       </div>
     )
-  }, [scope])
+  }, [value])
 
   const colorInputs = {
     ConstantColor: ConstantColorInput,

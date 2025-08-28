@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { ArrayCamera, PerspectiveCamera, Vector2, Vector3, Vector4 } from 'three'
 
 import { AnimationSystemGroup } from '@ir-engine/ecs'
@@ -34,7 +9,9 @@ import { useEffect } from 'react'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { Vector3_One } from '../common/constants/MathConstants'
+import { RendererState } from '../renderer/RendererState'
 import { RendererComponent } from '../renderer/components/RendererComponent'
+import { RenderBackends } from '../renderer/constants/RenderModes'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { XRRendererState } from './WebXRManager'
 import { ReferenceSpace, XRState } from './XRState'
@@ -219,7 +196,10 @@ export function updateXRCamera() {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
 
-  const renderer = getOptionalComponent(viewerEntity, RendererComponent)?.renderer
+  const rendererComp = getOptionalComponent(viewerEntity, RendererComponent)
+  const renderer = rendererComp?.renderer
+  const renderState = getState(RendererState)
+
   if (!renderer) return
 
   const camera = getComponent(viewerEntity, CameraComponent)
@@ -229,11 +209,16 @@ export function updateXRCamera() {
   if (session === null) {
     camera.cameras = [cameraL]
     cameraL.copy(camera, false)
+
+    // NOTE: Webgpu internally applies pixel ratio scaling. Use client width/height to not have it apply twice
     const size = renderer.getDrawingBufferSize(_vec)
+    const canvasParent = rendererComp?.canvas?.parentElement
     cameraL.viewport.x = 0
     cameraL.viewport.y = 0
-    cameraL.viewport.z = size.width
-    cameraL.viewport.w = size.height
+    cameraL.viewport.z =
+      renderState.backend === RenderBackends.WEBGPU ? canvasParent?.clientWidth ?? size.width : size.width
+    cameraL.viewport.w =
+      renderState.backend === RenderBackends.WEBGPU ? canvasParent?.clientHeight ?? size.height : size.height
     return
   }
 

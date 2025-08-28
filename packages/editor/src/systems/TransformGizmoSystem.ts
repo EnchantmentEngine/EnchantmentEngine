@@ -1,31 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 
-import { getComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, setComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -116,55 +91,88 @@ const useTransformGizmoControl = (entities: Entity[]) => {
   useImmediateEffect(() => {
     if (!gizmoControlComponent) return
     const mode = editorHelperState.transformMode.value
-    gizmoControlComponent.mode.set(mode)
+    setComponent(gizmoEntity, TransformGizmoControlComponent, { mode })
   }, [gizmoEntity, editorHelperState.transformMode])
 
   useImmediateEffect(() => {
     if (!gizmoControlComponent) return
     const space = editorHelperState.transformSpace.value
-    gizmoControlComponent.space.set(space)
+    setComponent(gizmoEntity, TransformGizmoControlComponent, { space })
   }, [gizmoEntity, editorHelperState.transformSpace])
 
   useImmediateEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.transformPivot.set(editorHelperState.transformPivot.value)
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      transformPivot: editorHelperState.transformPivot.value
+    })
   }, [gizmoEntity, editorHelperState.transformPivot])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
     switch (editorHelperState.gridSnap.value) {
       case SnapMode.Disabled: // continous update
-        gizmoControlComponent.translationSnap.set(0)
-        gizmoControlComponent.rotationSnap.set(0)
-        gizmoControlComponent.scaleSnap.set(0)
+        setComponent(gizmoEntity, TransformGizmoControlComponent, {
+          translationSnap: 0,
+          rotationSnap: 0,
+          scaleSnap: 0
+        })
         break
       case SnapMode.Grid:
-        gizmoControlComponent.translationSnap.set(editorHelperState.translationSnap.value)
-        gizmoControlComponent.rotationSnap.set(MathUtils.degToRad(editorHelperState.rotationSnap.value))
-        gizmoControlComponent.scaleSnap.set(editorHelperState.scaleSnap.value)
+        setComponent(gizmoEntity, TransformGizmoControlComponent, {
+          translationSnap: editorHelperState.translationSnap.value,
+          rotationSnap: MathUtils.degToRad(editorHelperState.rotationSnap.value),
+          scaleSnap: editorHelperState.scaleSnap.value
+        })
         break
     }
   }, [gizmoEntity, editorHelperState.gridSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.translationSnap.set(
-      editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.translationSnap.value : 0
-    )
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      translationSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.translationSnap.value : 0
+    })
   }, [gizmoEntity, editorHelperState.translationSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.rotationSnap.set(
-      editorHelperState.gridSnap.value === SnapMode.Grid ? MathUtils.degToRad(editorHelperState.rotationSnap.value) : 0
-    )
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      rotationSnap:
+        editorHelperState.gridSnap.value === SnapMode.Grid
+          ? MathUtils.degToRad(editorHelperState.rotationSnap.value)
+          : 0
+    })
   }, [gizmoEntity, editorHelperState.rotationSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.scaleSnap.set(
-      editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
-    )
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      scaleSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
+    })
+  }, [gizmoEntity, editorHelperState.scaleSnap])
+
+  useEffect(() => {
+    if (!gizmoControlComponent) return
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      rotationSnap:
+        editorHelperState.gridSnap.value === SnapMode.Grid
+          ? MathUtils.degToRad(editorHelperState.rotationSnap.value)
+          : 0
+    })
+  }, [gizmoEntity, editorHelperState.rotationSnap])
+
+  useEffect(() => {
+    if (!gizmoControlComponent) return
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      scaleSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
+    })
+  }, [gizmoEntity, editorHelperState.scaleSnap])
+
+  useEffect(() => {
+    if (!gizmoControlComponent) return
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      scaleSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
+    })
   }, [gizmoEntity, editorHelperState.scaleSnap])
 }
 

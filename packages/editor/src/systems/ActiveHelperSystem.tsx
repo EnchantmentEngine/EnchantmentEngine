@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { defineQuery, EngineState, Entity, entityExists, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
@@ -196,11 +171,11 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
 
     gizmoIconUpdate(entity, studioIconEntity, [...directionalEntitiesState.get(NO_PROXY_STEALTH)], iconSize.value)
 
-    iconSize.set((currentSize) => setIconSize(hovered.value, currentSize))
+    iconSize.set((currentSize) => setIconSize(hovered, currentSize))
 
     const isEditing = getState(EngineState).isEditing
     for (const lineEntity of lineEntitiesState.value) {
-      setVisibleComponent(lineEntity, hovered.value && isEditing)
+      setVisibleComponent(lineEntity, hovered && isEditing)
     }
 
     if (selected.value) {
@@ -224,7 +199,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
     editorHelperState.gizmoEnabled.value,
     directionalEntitiesState,
     iconSize,
-    hovered.value,
+    hovered,
     lineEntitiesState.value,
     selected.value
   ])
@@ -238,6 +213,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
       const entitiesToUpdate = [studioIconEntity, ...directionalEntitiesState.value, ...lineEntitiesState.value]
 
       for (const entityToUpdate of entitiesToUpdate) {
+        if (!entityExists(entityToUpdate)) continue
         setVisibleComponent(entityToUpdate, visible)
       }
     }
@@ -270,11 +246,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
           updateBoundingBox(entity)
         }
 
-        const color = selected.value
-          ? BOUNDING_BOX_COLORS.SELECTED
-          : hovered.value
-          ? BOUNDING_BOX_COLORS.HOVERED
-          : undefined
+        const color = selected.value ? BOUNDING_BOX_COLORS.SELECTED : hovered ? BOUNDING_BOX_COLORS.HOVERED : undefined
 
         if (color) {
           setComponent(entity, BoundingBoxComponent, { color })
@@ -283,7 +255,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
       }
 
       case VolumeVisibility.Auto:
-        if (selected.value || hovered.value) {
+        if (selected.value || hovered) {
           if (!hasPreexistingBoundingBoxComponent) {
             setComponent(entity, BoundingBoxComponent)
           } else {
@@ -318,12 +290,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
   }>
 
   return (
-    <ReactorComponent
-      parentEntity={entity}
-      iconEntity={studioIconEntity}
-      selected={selected.value}
-      hovered={hovered.value}
-    />
+    <ReactorComponent parentEntity={entity} iconEntity={studioIconEntity} selected={selected.value} hovered={hovered} />
   )
 }
 

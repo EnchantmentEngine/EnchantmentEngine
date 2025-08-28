@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   AnimationClip,
   BufferAttribute,
@@ -35,15 +10,14 @@ import {
   Mesh,
   Object3D,
   SkinnedMesh,
-  Texture
+  Texture,
+  WebGLRenderer
 } from 'three'
 
 import {
-  Engine,
   Entity,
   QueryReactor,
   UUIDComponent,
-  getAncestorWithComponents,
   getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
@@ -59,7 +33,6 @@ import React, { useEffect } from 'react'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Geometry } from '../common/constants/Geometry'
 import iterateObject3D from '../common/functions/iterateObject3D'
-import { ColliderComponent } from '../physics/components/ColliderComponent'
 import { PerformanceState } from '../renderer/PerformanceState'
 import { RendererComponent } from '../renderer/components/RendererComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
@@ -82,23 +55,25 @@ export interface DisposableObject {
 
 // Cache.enabled = true
 
-export enum ResourceType {
-  Mesh = 'Mesh',
-  SkinnedMesh = 'SkinnedMesh',
-  Texture = 'Texture',
-  Geometry = 'Geometry',
-  Material = 'Material',
-  AnimationClip = 'AnimationClip',
-  Line = 'Line',
-  Light = 'Light',
-  Audio = 'Audio',
-  File = 'File',
-  ArrayBuffer = 'ArrayBuffer',
-  BufferAttribute = 'BufferAttribute',
-  InterleavedBufferAttribute = 'InterleavedBufferAttribute',
-  Unknown = 'Unknown'
-  // ECSData = 'ECSData',
-}
+export const ResourceType = {
+  Mesh: 'Mesh',
+  SkinnedMesh: 'SkinnedMesh',
+  Texture: 'Texture',
+  Geometry: 'Geometry',
+  Material: 'Material',
+  AnimationClip: 'AnimationClip',
+  Line: 'Line',
+  Light: 'Light',
+  Audio: 'Audio',
+  File: 'File',
+  ArrayBuffer: 'ArrayBuffer',
+  BufferAttribute: 'BufferAttribute',
+  InterleavedBufferAttribute: 'InterleavedBufferAttribute',
+  Unknown: 'Unknown'
+  // ECSData: 'ECSData',
+} as const
+
+export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType]
 
 export type ResourceAssetType =
   | Texture
@@ -209,13 +184,13 @@ const useVisibleVertexCount = () => {
 }
 
 const getRendererInfo = () => {
-  const viewer = Engine?.instance?.viewerEntity as Entity | undefined
+  const viewer = getState(ReferenceSpaceState).viewerEntity
   if (!viewer) return {}
-  const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer
+  const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer as WebGLRenderer | undefined
   if (!renderer) return {}
   return {
     memory: renderer.info.memory,
-    programCount: renderer.info.programs?.length
+    programCount: renderer.info.render.calls
   }
 }
 
@@ -292,36 +267,38 @@ const resourceCallbacks = {
       asset.onUpdate = () => {
         if (!resource?.value?.metadata) return
         resource.metadata.merge({ onGPU: true, discarded: false })
-        setTimeout(() => {
-          const viewer = getState(ReferenceSpaceState).viewerEntity
-          const renderer = getComponent(viewer, RendererComponent)
-          const gl = renderer.renderContext as WebGL2RenderingContext
-          if (discardUponUpload && typeof gl.fenceSync === 'function') {
-            const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
-            if (sync) {
-              gl.flush()
-              let count = 0
-              const checkSync = () => {
-                const status = gl.clientWaitSync(sync, 0, 0)
-                if (status === gl.TIMEOUT_EXPIRED && count++ < 10) {
-                  setTimeout(checkSync)
-                } else {
-                  gl.deleteSync(sync)
-                  asset
-                    .offloadTextureData()
-                    .then(() => {
-                      if (!resource?.value?.metadata) return
-                      resource.metadata.merge({ onGPU: true, discarded: true })
-                    })
-                    .catch((err) => {
-                      console.error(err)
-                    })
-                }
+        if (!discardUponUpload) return
+
+        const viewer = getState(ReferenceSpaceState).viewerEntity
+        const renderer = getComponent(viewer, RendererComponent)
+        const gl = renderer.renderer?.getContext() as any as WebGL2RenderingContext | GPUCanvasContext | null
+        if (gl && 'fenceSync' in gl && typeof gl.fenceSync === 'function') {
+          const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
+          if (sync) {
+            gl.flush()
+            let count = 0
+            const checkSync = () => {
+              const status = gl.clientWaitSync(sync, 0, 0)
+              if (status === gl.TIMEOUT_EXPIRED && count++ < 10) {
+                setTimeout(checkSync)
+              } else {
+                gl.deleteSync(sync)
+                asset
+                  .offloadTextureData()
+                  .then(() => {
+                    resource.metadata.merge({ onGPU: true, discarded: true })
+                  })
+                  .catch((err) => {
+                    console.error(err)
+                  })
               }
               setTimeout(checkSync)
             }
           }
-        }, 1000)
+        } else {
+          // webgpu path
+          resource.metadata.merge({ onGPU: true, discarded: true })
+        }
       }
       //Compressed texture size
       if (asset.mipmaps![0]) {
@@ -625,8 +602,7 @@ const addEntityResource = (
 
   returnedResources.push(resource)
 
-  const entityHasAuthoringUpstream =
-    getAuthoringCounterpart(entity) || getAncestorWithComponents(entity, [ColliderComponent]) // collider component is a hack to prevent unloading of physics objects
+  const entityHasAuthoringUpstream = getAuthoringCounterpart(entity)
 
   const callbacks = resourceCallbacks[resourceType]
   if (callbacks?.onLoad)
@@ -693,16 +669,15 @@ const removeEntityResource = (resource: Resource) => {
   dispose(asset)
 }
 
-const useEntityResource = (entity: Entity, state: State<ResourceAssetType>) => {
+const useEntityResource = (entity: Entity, asset: ResourceAssetType) => {
   useEffect(() => {
-    const asset = state.get(NO_PROXY) as ResourceAssetType
     const resources = addEntityResource(entity, asset)
     if (!resources.length) return
 
     return () => {
       for (const resource of resources) removeEntityResource(resource)
     }
-  }, [state])
+  }, [asset])
 }
 
 const getAllResourcesOfType = (type: ResourceType) => {
@@ -761,6 +736,6 @@ export const ResourceState = defineState({
 
 const ObjectReactor = () => {
   const entity = useEntityContext()
-  ResourceState.useEntityResource(entity, useComponent(entity, ObjectComponent) as any as State<ResourceAssetType>)
+  ResourceState.useEntityResource(entity, useComponent(entity, ObjectComponent) as any as ResourceAssetType)
   return null
 }

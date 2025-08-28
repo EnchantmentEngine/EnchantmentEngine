@@ -1,62 +1,39 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 
 import { Entity, useAncestorWithComponents, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, hasComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { parseStorageProviderURLs } from '@ir-engine/engine/src/assets/functions/parseSceneJSON'
 import { useMutableState } from '@ir-engine/hyperflux'
 import { GraphJSON, IRegistry, VisualScriptState, defaultVisualScript } from '@ir-engine/visual-script'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
+import { parseStorageProviderURLs } from '@ir-engine/spatial/src/resources/parseSceneJSON'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { useVisualScriptRunner } from '../systems/useVisualScriptRunner'
 
 export const VisualScriptDomain = {
-  ECS: 'ECS' as const
-}
+  ECS: 'ECS'
+} as const
+
+export type VisualScriptDomainType = (typeof VisualScriptDomain)[keyof typeof VisualScriptDomain]
 
 export const VisualScriptComponent = defineComponent({
   name: 'VisualScriptComponent',
   jsonID: 'EE_visual_script',
 
-  schema: S.Object({
-    domain: S.Enum(VisualScriptDomain, {
+  schema: Schema.Object({
+    domain: Schema.Enum(VisualScriptDomain, {
       $comment: "A string enum, ie. one of the following values: 'ECS'",
       default: VisualScriptDomain.ECS
     }),
-    visualScript: S.Type<GraphJSON | null>({
+    visualScript: Schema.Type<GraphJSON | null>({
       default: () => parseStorageProviderURLs(defaultVisualScript),
       deserialize(curr, value) {
         if (!value) return value
         return parseStorageProviderURLs(value)
       }
     }),
-    run: S.Bool(),
-    disabled: S.Bool()
+    run: Schema.Bool(),
+    disabled: Schema.Bool()
   }),
 
   // we make reactor for each component handle the engine
@@ -64,24 +41,24 @@ export const VisualScriptComponent = defineComponent({
     const entity = useEntityContext()
     const visualScript = useComponent(entity, VisualScriptComponent)
     const visualScriptState = useMutableState(VisualScriptState)
-    const canPlay = visualScript.run.value && !visualScript.disabled.value
-    const registry = visualScriptState.registries[visualScript.domain.value].get({ noproxy: true }) as IRegistry
+    const canPlay = visualScript.run && !visualScript.disabled
+    const registry = visualScriptState.registries[visualScript.domain].get({ noproxy: true }) as IRegistry
     const gltfAncestor = useAncestorWithComponents(entity, [GLTFComponent])
 
     const visualScriptRunner = useVisualScriptRunner({
-      visualScriptJson: visualScript.visualScript.get({ noproxy: true }) as GraphJSON,
+      visualScriptJson: visualScript.visualScript,
       autoRun: canPlay,
       registry
     })
 
     useEffect(() => {
-      if (visualScript.disabled.value) return
-      visualScript.run.value ? visualScriptRunner.play() : visualScriptRunner.pause()
+      if (visualScript.disabled) return
+      visualScript.run ? visualScriptRunner.play() : visualScriptRunner.pause()
     }, [visualScript.run])
 
     useEffect(() => {
-      if (!visualScript.disabled.value) return
-      visualScript.run.set(false)
+      if (!visualScript.disabled) return
+      setComponent(entity, VisualScriptComponent, { run: false })
     }, [visualScript.disabled])
 
     if (!gltfAncestor) return null

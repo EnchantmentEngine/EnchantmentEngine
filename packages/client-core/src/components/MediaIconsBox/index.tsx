@@ -1,31 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
@@ -54,12 +29,11 @@ import {
   VideoRecorderOffMd
 } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import { MdFlipCameraAndroid } from 'react-icons/md'
+import { MdFlipCameraAndroid, MdOutlineViewInAr } from 'react-icons/md'
 import { VrIcon } from '../../common/components/Icons/VrIcon'
 import { RecordingUIState } from '../../systems/ui/RecordingsWidgetUI'
 import LocationIconButton from '../../user/components/LocationIconButton'
 import { clientContextParams } from '../../util/ClientContextState'
-import { useShelfStyles } from '../Shelves/useShelfStyles'
 
 const logger = multiLogger.child({ component: 'client-core:MediaIconsBox', modifier: clientContextParams })
 
@@ -67,9 +41,6 @@ export const MediaIconsBox = () => {
   const { t } = useTranslation()
   const playbackState = useMutableState(PlaybackState)
   const recordingState = useMutableState(RecordingState)
-
-  const location = useLocation()
-  const { topShelfStyle } = useShelfStyles()
 
   const currentLocation = useHookstate(getMutableState(LocationState).currentLocation.location)
   const networkState = useMutableState(NetworkState)
@@ -89,7 +60,7 @@ export const MediaIconsBox = () => {
   const numVideoDevices = mediaStreamState.availableVideoDevices.value.length
   const hasAudioDevice = mediaStreamState.availableAudioDevices.value.length > 0
   const hasVideoDevice = numVideoDevices > 0
-  const isMotionCaptureEnabled = mediaStreamState.faceTracking.value
+  // const isMotionCaptureEnabled = mediaStreamState.faceTracking.value
   const isCamVideoEnabled = !!mediaStreamState.webcamMediaStream.value && mediaStreamState.webcamEnabled.value
   const isCamAudioEnabled = !!mediaStreamState.microphoneMediaStream.value && mediaStreamState.microphoneEnabled.value
   const isScreenVideoEnabled =
@@ -242,7 +213,7 @@ export const MediaIconsBox = () => {
           }}
         />
       )}
-      {/* {supportsAR && xrEnabled && (
+      {supportsAR && xrEnabled && (
         <LocationIconButton
           id="UserAR"
           tooltip={{
@@ -253,7 +224,7 @@ export const MediaIconsBox = () => {
           }}
           icon={MdOutlineViewInAr}
         />
-      )} */}
+      )}
       {spectating && (
         <button
           type="button"

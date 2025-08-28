@@ -1,33 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { Engine, getChildrenWithComponents, getComponent } from '@ir-engine/ecs'
-import { ImmutableArray, State, getState } from '@ir-engine/hyperflux'
+import { Entity, getChildrenWithComponents, getComponent, setComponent } from '@ir-engine/ecs'
+import { ImmutableArray, getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
+import { KTX2LoaderState } from '@ir-engine/spatial/src/resources/loaders/ktx2/KTX2LoaderState'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import {
   BufferGeometry,
@@ -43,6 +20,7 @@ import {
 } from 'three'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
 import { AssetState } from '../../gltf/GLTFState'
+import { PlaylistComponent } from '../components/PlaylistComponent'
 import {
   ASTCTextureTarget,
   AudioFileFormat,
@@ -210,7 +188,7 @@ export const loadGLTF = (url: string) => {
 }
 
 export const loadKTX2 = (url: string, _repeat?: Vector2, _offset?: Vector2) => {
-  const ktx2Loader = getState(AssetLoaderState).ktx2Loader
+  const ktx2Loader = getState(KTX2LoaderState)
   if (!ktx2Loader) {
     throw new Error('loadKTX2:KTX2Loader is not available')
   }
@@ -338,14 +316,14 @@ out vec2 custom_vUv;`,
 
       '#include <begin_vertex>': `
       vec3 transformed = vec3(position);
-      transformed.x += mix(keyframeAPosition.x, keyframeBPosition.x, mixRatio); 
+      transformed.x += mix(keyframeAPosition.x, keyframeBPosition.x, mixRatio);
       transformed.y += mix(keyframeAPosition.y, keyframeBPosition.y, mixRatio);
       transformed.z += mix(keyframeAPosition.z, keyframeBPosition.z, mixRatio);
-      
+
       #ifdef USE_ALPHAHASH
-      
+
         vPosition = vec3( transformed );
-      
+
       #endif`,
 
       '#include <beginnormal_vertex>': `
@@ -468,14 +446,14 @@ export const getResourceURL = (props: GetResourceURLProps) => {
         throw new Error('getResourceURL:Invalid manifest path for Corto geometry')
       }
     } else {
-      const absolutePlaceholderPath = combineURLs(props.manifestPath, props.path)
+      const absolutePlaceholderPath = combineURLs(props.manifestPath, (props as GetResourceURLNewGeometryProps).path)
       const padLength = countHashes(absolutePlaceholderPath)
       const paddedString = '[' + '#'.repeat(padLength) + ']'
-      const paddedIndex = props.index.toString().padStart(padLength, '0')
+      const paddedIndex = (props as GetResourceURLNewGeometryProps).index.toString().padStart(padLength, '0')
 
       const absolutePath = replaceSubstrings(absolutePlaceholderPath, {
-        '[ext]': FORMAT_TO_EXTENSION[props.format],
-        '[target]': props.target,
+        '[ext]': FORMAT_TO_EXTENSION[(props as GetResourceURLNewGeometryProps).format],
+        '[target]': (props as GetResourceURLNewGeometryProps).target,
         [paddedString]: paddedIndex
       })
 
@@ -647,16 +625,17 @@ export const getTexture = ({
 interface HandleAutoplayProps {
   audioContext: AudioContext
   media: HTMLMediaElement
-  paused: State<boolean>
+  entity: Entity
 }
 
-export const handleMediaAutoplay = ({ audioContext, media, paused }: HandleAutoplayProps) => {
+export const handleMediaAutoplay = ({ audioContext, media, entity }: HandleAutoplayProps) => {
   const attachEventListeners = () => {
-    const canvas = getComponent(Engine.instance.viewerEntity, RendererComponent).canvas!
+    const canvas = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).canvas!
     const playMedia = () => {
       media.play()
       audioContext.resume()
-      paused.set(false)
+      setComponent(entity, PlaylistComponent, { paused: false })
+      setComponent
       window.removeEventListener('pointerdown', playMedia)
       window.removeEventListener('keypress', playMedia)
       window.removeEventListener('touchstart', playMedia)
@@ -681,6 +660,6 @@ export const handleMediaAutoplay = ({ audioContext, media, paused }: HandleAutop
     })
     .then(() => {
       console.log('Media playback started by handleAutoplay')
-      paused.set(false)
+      setComponent(entity, PlaylistComponent, { paused: false })
     })
 }

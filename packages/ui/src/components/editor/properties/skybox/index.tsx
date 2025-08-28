@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiCloud } from 'react-icons/fi'
@@ -79,14 +54,14 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
   const skyboxComponent = useComponent(entity, SkyboxComponent)
 
   const onChangeEquirectangularPathOption = (equirectangularPath) => {
-    if (equirectangularPath !== skyboxComponent.equirectangularPath.value) {
+    if (equirectangularPath !== skyboxComponent.equirectangularPath) {
       commitProperties(SkyboxComponent, { equirectangularPath })
     }
   }
 
   const onChangeCubemapPathOption = (path: string) => {
     const directory = path[path.length - 1] === '/' ? path.substring(0, path.length - 1) : path
-    if (directory !== skyboxComponent.cubemapPath.value) {
+    if (directory !== skyboxComponent.cubemapPath) {
       commitProperties(SkyboxComponent, { cubemapPath: directory })
     }
   }
@@ -100,7 +75,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
           largeStep={1}
           min={0}
           max={24}
-          value={radiansToHours(skyboxComponent.skyboxProps.azimuth.value)}
+          value={radiansToHours(skyboxComponent.skyboxProps.azimuth)}
           onChange={(value) => updateProperty(SkyboxComponent, 'skyboxProps.azimuth' as any)(hoursToRadians(value))}
           onRelease={(value) => commitProperty(SkyboxComponent, 'skyboxProps.azimuth' as any)(hoursToRadians(value))}
           unit="h"
@@ -113,7 +88,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
           smallStep={0.1}
           mediumStep={0.5}
           largeStep={1}
-          value={skyboxComponent.skyboxProps.inclination.value}
+          value={skyboxComponent.skyboxProps.inclination}
           onChange={updateProperty(SkyboxComponent, 'skyboxProps.inclination' as any)}
           onRelease={commitProperty(SkyboxComponent, 'skyboxProps.inclination' as any)}
         />
@@ -122,7 +97,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
         min={0.001}
         max={1}
         step={0.001}
-        value={skyboxComponent.skyboxProps.luminance.value}
+        value={skyboxComponent.skyboxProps.luminance}
         onChange={updateProperty(SkyboxComponent, 'skyboxProps.luminance' as any)}
         onRelease={commitProperty(SkyboxComponent, 'skyboxProps.luminance' as any)}
         aria-label="Luminance"
@@ -134,7 +109,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
         min={0}
         max={0.1}
         step={0.001}
-        value={skyboxComponent.skyboxProps.mieCoefficient.value}
+        value={skyboxComponent.skyboxProps.mieCoefficient}
         onChange={updateProperty(SkyboxComponent, 'skyboxProps.mieCoefficient' as any)}
         onRelease={commitProperty(SkyboxComponent, 'skyboxProps.mieCoefficient' as any)}
       />
@@ -142,7 +117,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
         min={0}
         max={1}
         step={0.001}
-        value={skyboxComponent.skyboxProps.mieDirectionalG.value}
+        value={skyboxComponent.skyboxProps.mieDirectionalG}
         onChange={updateProperty(SkyboxComponent, 'skyboxProps.mieDirectionalG' as any)}
         onRelease={commitProperty(SkyboxComponent, 'skyboxProps.mieDirectionalG' as any)}
         aria-label="Scattering Distance"
@@ -151,7 +126,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
       <Slider
         min={1}
         max={20}
-        value={skyboxComponent.skyboxProps.turbidity.value}
+        value={skyboxComponent.skyboxProps.turbidity}
         onChange={updateProperty(SkyboxComponent, 'skyboxProps.turbidity' as any)}
         onRelease={commitProperty(SkyboxComponent, 'skyboxProps.turbidity' as any)}
         aria-label="Horizon Start"
@@ -160,7 +135,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
       <Slider
         min={0}
         max={4}
-        value={skyboxComponent.skyboxProps.rayleigh.value}
+        value={skyboxComponent.skyboxProps.rayleigh}
         onChange={updateProperty(SkyboxComponent, 'skyboxProps.rayleigh' as any)}
         onRelease={commitProperty(SkyboxComponent, 'skyboxProps.rayleigh' as any)}
         aria-label="Horizon End"
@@ -172,7 +147,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
   // creating editor view for equirectangular Settings
   const renderEquirectangularSettings = () => (
     <InputGroup name="Texture" label={t('editor:properties.skybox.lbl-texture')}>
-      <DroppableImageInput src={skyboxComponent.equirectangularPath.value} onBlur={onChangeEquirectangularPathOption} />
+      <DroppableImageInput src={skyboxComponent.equirectangularPath} onBlur={onChangeEquirectangularPathOption} />
       {hasError && <div style={{ marginTop: 2, color: '#FF8C00' }}>{t('editor:properties.skybox.error-url')}</div>}
     </InputGroup>
   )
@@ -180,7 +155,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
   // creating editor view for cubemap Settings
   const renderCubemapSettings = () => (
     <InputGroup name="Texture" label={t('editor:properties.skybox.lbl-texture')}>
-      <FolderInput value={skyboxComponent.cubemapPath.value} onRelease={onChangeCubemapPathOption} />
+      <FolderInput value={skyboxComponent.cubemapPath} onRelease={onChangeCubemapPathOption} />
       {hasError && <div style={{ marginTop: 2, color: '#FF8C00' }}>{t('editor:properties.skybox.error-url')}</div>}
     </InputGroup>
   )
@@ -189,7 +164,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
   const renderColorSettings = () => (
     <InputGroup name="Color" label={t('editor:properties.skybox.lbl-color')}>
       <ColorInput
-        value={skyboxComponent.backgroundColor.value}
+        value={skyboxComponent.backgroundColor}
         onChange={updateProperty(SkyboxComponent, 'backgroundColor')}
         onRelease={commitProperty(SkyboxComponent, 'backgroundColor')}
       />
@@ -198,7 +173,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
 
   // creating editor view for skybox Properties
   const renderSkyBoxProps = () => {
-    switch (skyboxComponent.backgroundType.value) {
+    switch (skyboxComponent.backgroundType) {
       case SkyTypeEnum.equirectangular:
         return renderEquirectangularSettings()
       case SkyTypeEnum.cubemap:
@@ -221,7 +196,7 @@ export const SkyboxNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={SkyOptions}
-          value={skyboxComponent.backgroundType.value.toString()}
+          value={skyboxComponent.backgroundType.toString()}
           onChange={(value) => commitProperty(SkyboxComponent, 'backgroundType')(parseInt(value as string, 10))}
         />
       </InputGroup>

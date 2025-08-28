@@ -29,19 +29,19 @@
     "@types/react-reconciler": "^0.28.2",
     "cross-env": "^7.0.3",
     "ts-matches": "5.3.0",
-    "typescript": "5.6.3",
+    "typescript": "5.8.3",
     "vite": "5.4.8",
     "vite-plugin-dts": "^3.9.1",
     "vite-plugin-externalize-deps": "^0.8.0",
     "vite-plugin-static-copy": "^1.0.6"
   },
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
+    "check-errors": "tsc --noemit",
     "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts",
     "test-coverage": "npm run test-coverage-generate ; npm run test-coverage-launch",
     "test-coverage-generate": "npm run test -- --coverage --silent",
     "test-coverage-launch": "vite preview --open --outDir coverage",
-    "build": "ts-node --swc build.ts",
+    "build": "tsx build.ts",
     "build-publish": "npm run build && cd dist && npm publish --access public --dry-run"
   },
   "overrides": {

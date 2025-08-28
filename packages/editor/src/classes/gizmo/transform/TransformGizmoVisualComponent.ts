@@ -1,42 +1,16 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 
 import {
   createEntity,
   defineComponent,
   Entity,
+  EntitySchema,
   EntityTreeComponent,
   removeEntityNodeRecursively,
   setComponent,
-  useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { Schema, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
@@ -54,15 +28,14 @@ import { EditorHelperState } from '../../../services/EditorHelperState'
 export const TransformGizmoVisualComponent = defineComponent({
   name: 'TransformGizmoVisualComponent',
 
-  schema: S.Object({
-    gizmo: S.Entity(),
-    picker: S.Entity(),
-    helper: S.Entity()
+  schema: Schema.Object({
+    gizmo: EntitySchema.Entity(),
+    picker: EntitySchema.Entity(),
+    helper: EntitySchema.Entity()
   }),
 
   reactor: function () {
     const gizmoVisualEntity = useEntityContext()
-    const visualComponent = useComponent(gizmoVisualEntity, TransformGizmoVisualComponent)
     const mode = useMutableState(EditorHelperState).transformMode.value
 
     useEffect(() => {
@@ -77,7 +50,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(gizmoEntity, VisibleComponent)
       setupGizmo(gizmoEntity, gizmo[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(gizmoEntity, ObjectLayers.TransformGizmo)
-      visualComponent.gizmo.set(gizmoEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { gizmo: gizmoEntity })
       entities.push(gizmoEntity)
 
       const helperEntity = createEntity()
@@ -89,7 +62,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(helperEntity, TransformComponent)
       setupGizmo(helperEntity, helper[mode], ObjectLayers.TransformGizmo)
       setupGizmo(helperEntity, iconGizmoHelper, ObjectLayers.NodeHelper)
-      visualComponent.helper.set(helperEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { helper: helperEntity })
       entities.push(helperEntity)
 
       const pickerEntity = createEntity()
@@ -102,7 +75,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(pickerEntity, InputComponent)
       setupGizmo(pickerEntity, picker[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(pickerEntity, ObjectLayers.TransformGizmo)
-      visualComponent.picker.set(pickerEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { picker: pickerEntity })
       entities.push(pickerEntity)
 
       return () => {

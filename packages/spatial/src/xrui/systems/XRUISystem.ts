@@ -1,33 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { BufferGeometry, Color, Mesh, MeshBasicMaterial, Ray, Vector3 } from 'three'
 
 import { removeEntity } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -78,9 +53,9 @@ const redirectDOMEvent = (evt: PointerEvent) => {
 }
 
 const updateControllerRayInteraction = (entity: Entity, xruiEntities: Entity[]) => {
-  const pointerComponentState = getMutableComponent(entity, PointerComponent)
-  const pointer = pointerComponentState.pointer.value as PointerObject
-  const cursor = pointerComponentState.cursor.value as Mesh<BufferGeometry, MeshBasicMaterial>
+  const pointerComponentState = getComponent(entity, PointerComponent)
+  const pointer = pointerComponentState.pointer as PointerObject
+  const cursor = pointerComponentState.cursor as Mesh<BufferGeometry, MeshBasicMaterial>
 
   let hit = null! as ReturnType<typeof WebContainer3D.prototype.hitTest>
 
@@ -97,7 +72,7 @@ const updateControllerRayInteraction = (entity: Entity, xruiEntities: Entity[]) 
     if (layerHit && (!hit || layerHit.intersection.distance < hit.intersection.distance)) hit = layerHit
   }
 
-  pointerComponentState.lastHit.set(hit)
+  pointerComponentState.lastHit = hit
 
   if (hit) {
     const interactable = window.getComputedStyle(hit.target).cursor === 'pointer'
@@ -122,8 +97,8 @@ const updateControllerRayInteraction = (entity: Entity, xruiEntities: Entity[]) 
 }
 
 const updateClickEventsForController = (entity: Entity) => {
-  const pointerComponentState = getMutableComponent(entity, PointerComponent)
-  const hit = pointerComponentState.lastHit.value
+  const pointerComponentState = getComponent(entity, PointerComponent)
+  const hit = pointerComponentState.lastHit
   if (hit && hit.intersection.object.visible) {
     hit.target.dispatchEvent(new PointerEvent('click', { bubbles: true }))
     hit.target.focus()
@@ -132,42 +107,6 @@ const updateClickEventsForController = (entity: Entity) => {
 
 const execute = () => {
   if (!isClient) return
-
-  const interactableXRUIEntities = visibleInteractableXRUIQuery()
-
-  const inputSourceEntities = inputSourceQuery()
-
-  /** do intersection tests */
-  for (const inputSourceEntity of inputSourceEntities) {
-    const inputSourceComponent = getComponent(inputSourceEntity, InputSourceComponent)
-    const inputSource = inputSourceComponent.source
-    const buttons = inputSourceComponent.buttons
-
-    if (inputSource.targetRayMode !== 'tracked-pointer') continue
-    if (!PointerComponent.pointers.has(inputSource)) {
-      PointerComponent.addPointer(inputSourceEntity)
-    }
-
-    const pointerEntity = PointerComponent.pointers.get(inputSource)
-    if (!pointerEntity) continue
-
-    const pointer = getComponent(pointerEntity, PointerComponent).pointer
-    if (!pointer) continue
-
-    if (
-      buttons.XRStandardGamepadTrigger?.down &&
-      (inputSource.handedness === 'left' || inputSource.handedness === 'right')
-    )
-      updateClickEventsForController(pointerEntity)
-
-    updateControllerRayInteraction(pointerEntity, interactableXRUIEntities)
-  }
-
-  for (const [pointerSource, entity] of PointerComponent.pointers) {
-    if (!inputSourceEntities.find((entity) => getComponent(entity, InputSourceComponent).source === pointerSource)) {
-      removeEntity(entity)
-    }
-  }
 
   /** only update visible XRUI */
 
@@ -185,7 +124,7 @@ const execute = () => {
     xrui.matrixAutoUpdate = visible
   }
 
-  // xrui.layoutSystem.viewFrustum.setFromPerspectiveProjectionMatrix(getComponent(Engine.instance.cameraEntity, CameraComponent).projectionMatrix)
+  // xrui.layoutSystem.viewFrustum.setFromPerspectiveProjectionMatrix(getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent).projectionMatrix)
   // EngineRenderer.instance.renderer.getSize(xrui.layoutSystem.viewResolution)
   // xrui.layoutSystem.update(world.delta, world.elapsedTime)
 }
@@ -264,6 +203,42 @@ export const XRUIInputSystem = defineSystem({
     const interactionRays = inputSourceQuery().map(getIntersectionRays)
     for (const xrui of visibleXRUIQuery()) {
       getComponent(xrui, XRUIComponent).interactionRays = interactionRays
+    }
+
+    const interactableXRUIEntities = visibleInteractableXRUIQuery()
+
+    const inputSourceEntities = inputSourceQuery()
+
+    /** do intersection tests */
+    for (const inputSourceEntity of inputSourceEntities) {
+      const inputSourceComponent = getComponent(inputSourceEntity, InputSourceComponent)
+      const inputSource = inputSourceComponent.source
+      const buttons = inputSourceComponent.buttons
+
+      if (inputSource.targetRayMode !== 'tracked-pointer') continue
+      if (!PointerComponent.pointers.has(inputSource)) {
+        PointerComponent.addPointer(inputSourceEntity)
+      }
+
+      const pointerEntity = PointerComponent.pointers.get(inputSource)
+      if (!pointerEntity) continue
+
+      const pointer = getComponent(pointerEntity, PointerComponent).pointer
+      if (!pointer) continue
+
+      if (
+        buttons.XRStandardGamepadTrigger?.down &&
+        (inputSource.handedness === 'left' || inputSource.handedness === 'right')
+      )
+        updateClickEventsForController(pointerEntity)
+
+      updateControllerRayInteraction(pointerEntity, interactableXRUIEntities)
+    }
+
+    for (const [pointerSource, entity] of PointerComponent.pointers) {
+      if (!inputSourceEntities.find((entity) => getComponent(entity, InputSourceComponent).source === pointerSource)) {
+        removeEntity(entity)
+      }
     }
   },
   reactor: () => {

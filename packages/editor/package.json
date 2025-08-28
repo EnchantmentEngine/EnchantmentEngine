@@ -16,7 +16,7 @@
   },
   "npmClient": "npm",
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
+    "check-errors": "tsc --noemit",
     "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts"
   },
   "resolutions": {
@@ -25,7 +25,8 @@
   },
   "peerDependencies": {
     "@types/react": "18.2.0",
-    "react": "18.2.0"
+    "react": "18.2.0",
+    "xatlasjs": "0.2.0"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.11.2",
@@ -35,9 +36,9 @@
     "@ir-engine/hyperflux": "^1.0.3",
     "@ir-engine/ui": "^1.0.3",
     "@ir-engine/visual-script": "^1.0.3",
+    "@microlink/react-json-view": "^1.26.1",
     "i18next": "21.6.16",
     "lodash": "4.17.21",
-    "potpack": "^2.0.0",
     "postprocessing": "6.37.3",
     "rc-dock": "3.2.18",
     "react": "18.2.0",
@@ -46,12 +47,12 @@
     "react-dom": "18.2.0",
     "react-hotkeys-hook": "4.3.8",
     "react-i18next": "11.16.6",
-    "react-json-view": "^1.21.3",
     "react-router-dom": "6.9.0",
     "react-window": "1.8.8",
     "reactflow": "^11.10.1",
-    "typescript": "5.6.3",
-    "uuid": "9.0.0"
+    "typescript": "5.8.3",
+    "uuid": "9.0.0",
+    "xatlas-three": "^0.2.1"
   },
   "devDependencies": {
     "@types/node": "18.15.5",

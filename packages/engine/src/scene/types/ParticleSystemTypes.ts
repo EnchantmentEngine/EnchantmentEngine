@@ -1,31 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Entity } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineState } from '@ir-engine/hyperflux'
+import { defineState, Schema } from '@ir-engine/hyperflux'
 import {
   AdditiveBlending,
   BufferGeometry,
@@ -618,129 +592,129 @@ export const ParticleState = defineState({
   })
 })
 
-const BlendingSchema = S.LiteralUnion(
+const BlendingSchema = Schema.LiteralUnion(
   [NoBlending, NormalBlending, AdditiveBlending, SubtractiveBlending, MultiplyBlending, CustomBlending],
   { default: AdditiveBlending }
 )
 
 export const DEFAULT_EMISSION_OVER_TIME = 400
 
-export const DEFAULT_PARTICLE_SYSTEM_PARAMETERS = S.Object({
-  version: S.String({ default: '1.0' }),
-  autoDestroy: S.Bool({ default: false }),
-  looping: S.Bool({ default: true }),
-  prewarm: S.Bool({ default: false }),
-  material: S.String({ default: '' }),
-  transparent: S.Optional(S.Bool()),
-  duration: S.Number({ default: 5 }),
-  shape: S.Object({
-    type: S.String({ default: 'point' }),
-    mesh: S.Optional(S.String()),
-    geometry: S.Optional(S.String())
+export const DEFAULT_PARTICLE_SYSTEM_PARAMETERS = Schema.Object({
+  version: Schema.String({ default: '1.0' }),
+  autoDestroy: Schema.Bool({ default: false }),
+  looping: Schema.Bool({ default: true }),
+  prewarm: Schema.Bool({ default: false }),
+  material: Schema.String({ default: '' }),
+  transparent: Schema.Optional(Schema.Bool()),
+  duration: Schema.Number({ default: 5 }),
+  shape: Schema.Object({
+    type: Schema.String({ default: 'point' }),
+    mesh: Schema.Optional(Schema.String()),
+    geometry: Schema.Optional(Schema.String())
   }),
-  startLife: S.Object({
-    type: S.String({ default: 'IntervalValue' }),
-    a: S.Number({ default: 1 }),
-    b: S.Number({ default: 2 }),
-    value: S.Number({ default: 1 }),
-    functions: S.Array(S.Type<BezierFunctionJSON>())
+  startLife: Schema.Object({
+    type: Schema.String({ default: 'IntervalValue' }),
+    a: Schema.Number({ default: 1 }),
+    b: Schema.Number({ default: 2 }),
+    value: Schema.Number({ default: 1 }),
+    functions: Schema.Array(Schema.Type<BezierFunctionJSON>())
   }),
-  startSpeed: S.Object({
-    type: S.String({ default: 'IntervalValue' }),
-    a: S.Number({ default: 0.1 }),
-    b: S.Number({ default: 5 }),
-    value: S.Number({ default: 1 }),
-    functions: S.Array(S.Type<BezierFunctionJSON>())
+  startSpeed: Schema.Object({
+    type: Schema.String({ default: 'IntervalValue' }),
+    a: Schema.Number({ default: 0.1 }),
+    b: Schema.Number({ default: 5 }),
+    value: Schema.Number({ default: 1 }),
+    functions: Schema.Array(Schema.Type<BezierFunctionJSON>())
   }),
-  startRotation: S.Object({
-    type: S.String({ default: 'IntervalValue' }),
-    a: S.Number({ default: 0 }),
-    b: S.Number({ default: 300 }),
-    value: S.Number({ default: 1 }),
-    functions: S.Array(S.Type<BezierFunctionJSON>())
+  startRotation: Schema.Object({
+    type: Schema.String({ default: 'IntervalValue' }),
+    a: Schema.Number({ default: 0 }),
+    b: Schema.Number({ default: 300 }),
+    value: Schema.Number({ default: 1 }),
+    functions: Schema.Array(Schema.Type<BezierFunctionJSON>())
   }),
-  startSize: S.Object({
-    type: S.String({ default: 'IntervalValue' }),
-    a: S.Number({ default: 0.025 }),
-    b: S.Number({ default: 0.45 }),
-    value: S.Number({ default: 1 }),
-    functions: S.Array(S.Type<BezierFunctionJSON>())
+  startSize: Schema.Object({
+    type: Schema.String({ default: 'IntervalValue' }),
+    a: Schema.Number({ default: 0.025 }),
+    b: Schema.Number({ default: 0.45 }),
+    value: Schema.Number({ default: 1 }),
+    functions: Schema.Array(Schema.Type<BezierFunctionJSON>())
   }),
-  startColor: S.Object({
-    type: S.String({ default: 'ConstantColor' }),
-    color: S.Object({
-      r: S.Number({ default: 1 }),
-      g: S.Number({ default: 1 }),
-      b: S.Number({ default: 1 }),
-      a: S.Number({ default: 0.1 })
+  startColor: Schema.Object({
+    type: Schema.String({ default: 'ConstantColor' }),
+    color: Schema.Object({
+      r: Schema.Number({ default: 1 }),
+      g: Schema.Number({ default: 1 }),
+      b: Schema.Number({ default: 1 }),
+      a: Schema.Number({ default: 0.1 })
     }),
-    a: S.Object({
-      r: S.Number({ default: 1 }),
-      g: S.Number({ default: 1 }),
-      b: S.Number({ default: 1 }),
-      a: S.Number({ default: 1 })
+    a: Schema.Object({
+      r: Schema.Number({ default: 1 }),
+      g: Schema.Number({ default: 1 }),
+      b: Schema.Number({ default: 1 }),
+      a: Schema.Number({ default: 1 })
     }),
-    b: S.Object({
-      r: S.Number({ default: 1 }),
-      g: S.Number({ default: 1 }),
-      b: S.Number({ default: 1 }),
-      a: S.Number({ default: 1 })
+    b: Schema.Object({
+      r: Schema.Number({ default: 1 }),
+      g: Schema.Number({ default: 1 }),
+      b: Schema.Number({ default: 1 }),
+      a: Schema.Number({ default: 1 })
     }),
-    functions: S.Array(S.Type<ColorGradientFunctionJSON>())
+    functions: Schema.Array(Schema.Type<ColorGradientFunctionJSON>())
   }),
-  emissionOverTime: S.Object({
-    type: S.String({ default: 'ConstantValue' }),
-    value: S.Number({ default: DEFAULT_EMISSION_OVER_TIME }),
-    a: S.Number({ default: 0 }),
-    b: S.Number({ default: 1 }),
-    functions: S.Array(S.Type<BezierFunctionJSON>())
+  emissionOverTime: Schema.Object({
+    type: Schema.String({ default: 'ConstantValue' }),
+    value: Schema.Number({ default: DEFAULT_EMISSION_OVER_TIME }),
+    a: Schema.Number({ default: 0 }),
+    b: Schema.Number({ default: 1 }),
+    functions: Schema.Array(Schema.Type<BezierFunctionJSON>())
   }),
-  emissionOverDistance: S.Object({
-    type: S.String({ default: 'ConstantValue' }),
-    value: S.Number({ default: 0 }),
-    a: S.Number({ default: 0 }),
-    b: S.Number({ default: 1 }),
-    functions: S.Array(S.Type<BezierFunctionJSON>())
+  emissionOverDistance: Schema.Object({
+    type: Schema.String({ default: 'ConstantValue' }),
+    value: Schema.Number({ default: 0 }),
+    a: Schema.Number({ default: 0 }),
+    b: Schema.Number({ default: 1 }),
+    functions: Schema.Array(Schema.Type<BezierFunctionJSON>())
   }),
-  emissionBursts: S.Array(
-    S.Object({
-      time: S.Number(),
-      count: S.Number(),
-      cycle: S.Number(),
-      interval: S.Number(),
-      probability: S.Number()
+  emissionBursts: Schema.Array(
+    Schema.Object({
+      time: Schema.Number(),
+      count: Schema.Number(),
+      cycle: Schema.Number(),
+      interval: Schema.Number(),
+      probability: Schema.Number()
     })
   ),
-  onlyUsedByOther: S.Bool({ default: false }),
-  rendererEmitterSettings: S.Optional(
-    S.Object({
-      startLength: S.Optional(S.Type<ValueGeneratorJSON>()),
-      followLocalOrigin: S.Optional(S.Bool({ default: false })),
+  onlyUsedByOther: Schema.Bool({ default: false }),
+  rendererEmitterSettings: Schema.Optional(
+    Schema.Object({
+      startLength: Schema.Optional(Schema.Type<ValueGeneratorJSON>()),
+      followLocalOrigin: Schema.Optional(Schema.Bool({ default: false })),
 
-      speedFactor: S.Optional(S.Number({ default: 1 })),
-      lengthFactor: S.Optional(S.Number({ default: 1 }))
+      speedFactor: Schema.Optional(Schema.Number({ default: 1 })),
+      lengthFactor: Schema.Optional(Schema.Number({ default: 1 }))
     })
   ),
-  renderMode: S.LiteralUnion(Object.values(RenderMode), {
+  renderMode: Schema.LiteralUnion(Object.values(RenderMode), {
     $comment:
       "A number enum, where: 0 represents 'BillBoard', 1 represents 'StretchedBillBoard', 2 represents 'Mesh', 3 represents 'Trail'",
     default: RenderMode.BillBoard
   }),
-  texture: S.String({ default: '' }),
+  texture: Schema.String({ default: '' }),
   /**
    * particle mesh geometry
    */
-  instancingGeometry: S.String({ default: '' }),
-  startTileIndex: S.Object({
-    type: S.String({ default: 'ConstantValue' }),
-    value: S.Number({ default: 0 }),
-    a: S.Number({ default: 0 }),
-    b: S.Number({ default: 1 }),
-    functions: S.Array(S.Type<BezierFunctionJSON>())
+  instancingGeometry: Schema.String({ default: '' }),
+  startTileIndex: Schema.Object({
+    type: Schema.String({ default: 'ConstantValue' }),
+    value: Schema.Number({ default: 0 }),
+    a: Schema.Number({ default: 0 }),
+    b: Schema.Number({ default: 1 }),
+    functions: Schema.Array(Schema.Type<BezierFunctionJSON>())
   }),
-  uTileCount: S.Number({ default: 1 }),
-  vTileCount: S.Number({ default: 1 }),
+  uTileCount: Schema.Number({ default: 1 }),
+  vTileCount: Schema.Number({ default: 1 }),
   blending: BlendingSchema,
-  behaviors: S.Array(S.Type<BehaviorJSON>()),
-  worldSpace: S.Bool({ default: true })
+  behaviors: Schema.Array(Schema.Type<BehaviorJSON>()),
+  worldSpace: Schema.Bool({ default: true })
 })

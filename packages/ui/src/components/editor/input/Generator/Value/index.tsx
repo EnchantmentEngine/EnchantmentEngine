@@ -1,37 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2025
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   BezierFunctionJSON,
   ConstantValueJSON,
   IntervalValueJSON,
   PiecewiseBezierValueJSON,
-  ValueGeneratorJSON,
-  ValueGeneratorJSONDefaults
+  ValueGeneratorJSON
 } from '@ir-engine/engine/src/scene/types/ParticleSystemTypes'
-import { State } from '@ir-engine/hyperflux'
 import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import Button from '../../../../../primitives/tailwind/Button'
@@ -42,25 +15,23 @@ import SelectInput from '../../Select'
 
 type ValueGeneratorProps = Readonly<{
   path: string
-  scope: State<ValueGeneratorJSON>
   value: ValueGeneratorJSON
   onChange: (path: string) => (value: any) => void
 }>
-export default function ValueGenerator({ path, scope, value, onChange }: ValueGeneratorProps) {
+export default function ValueGenerator({ path, value, onChange }: ValueGeneratorProps) {
   const { t } = useTranslation()
   const onChangeType = useCallback(() => {
     const thisOnChange = onChange(`${path}.type`)
     return (type: typeof value.type) => {
-      scope.set(JSON.parse(JSON.stringify(ValueGeneratorJSONDefaults[type])))
       thisOnChange(type)
     }
-  }, [scope, onChange])
+  }, [value, onChange])
 
   const onAddBezier = useCallback(() => {
     const thisOnChange = onChange(path + '.functions')
     return () => {
       const bezierJson = value as PiecewiseBezierValueJSON
-      const nuFunctions = [
+      const newFunctions = [
         ...JSON.parse(JSON.stringify(bezierJson.functions)),
         {
           function: {
@@ -72,26 +43,24 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
           start: 0
         } as BezierFunctionJSON
       ]
-      thisOnChange(nuFunctions)
+      thisOnChange(newFunctions)
     }
-  }, [scope, onChange])
+  }, [value, onChange])
 
   const onRemoveBezier = useCallback(
-    (element: State<BezierFunctionJSON>) => {
-      const bezierScope = scope as State<PiecewiseBezierValueJSON>
-      const bezier = bezierScope.value
+    (element: BezierFunctionJSON) => {
+      const bezier = value as PiecewiseBezierValueJSON
       const thisOnChange = onChange(path + '.functions')
       return () => {
-        const nuFunctions = bezier.functions.filter((f) => f !== element.value)
+        const nuFunctions = bezier.functions.filter((f) => f !== element)
         thisOnChange(JSON.parse(JSON.stringify(nuFunctions)))
       }
     },
-    [scope, onChange]
+    [value, onChange]
   )
 
   const ConstantInput = useCallback(() => {
-    const constantScope = scope as State<ConstantValueJSON>
-    const constant = constantScope.value
+    const constant = value as ConstantValueJSON
     return (
       <>
         <InputGroup
@@ -103,11 +72,10 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
         </InputGroup>
       </>
     )
-  }, [scope, onChange])
+  }, [value, onChange])
 
   const IntervalInput = useCallback(() => {
-    const intervalScope = scope as State<IntervalValueJSON>
-    const interval = intervalScope.value
+    const interval = value as IntervalValueJSON
     return (
       <>
         <InputGroup
@@ -126,24 +94,24 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
         </InputGroup>
       </>
     )
-  }, [scope, onChange])
+  }, [value, onChange])
 
   const BezierInput = useCallback(() => {
-    const bezierScope = scope as State<PiecewiseBezierValueJSON>
+    const bezier = value as PiecewiseBezierValueJSON
     return (
       <div>
         <Button onClick={onAddBezier()}>{t('editor:properties.particle-system.valueGenerator.addBezier')}</Button>
         {
           <PaginatedList // we still need to make paginated list in tailwind
-            list={bezierScope.functions}
-            element={(element: State<BezierFunctionJSON>, index: number) => (
+            list={bezier.functions}
+            element={(element: BezierFunctionJSON, index: number) => (
               <div className="m-8 rounded-2xl border border-white p-8">
                 <InputGroup
                   label={t('editor:properties.particle-system.valueGenerator.pIndex', { index: 0 })}
                   containerClassName="pl-0"
                 >
                   <NumericInput
-                    value={element.function.p0.value}
+                    value={element.function.p0}
                     onChange={onChange(path + '.functions.' + index + '.function.p0')}
                   />
                 </InputGroup>
@@ -152,7 +120,7 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
                   containerClassName="pl-0"
                 >
                   <NumericInput
-                    value={element.function.p1.value}
+                    value={element.function.p1}
                     onChange={onChange(path + '.functions.' + index + '.function.p1')}
                   />
                 </InputGroup>
@@ -161,7 +129,7 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
                   containerClassName="pl-0"
                 >
                   <NumericInput
-                    value={element.function.p2.value}
+                    value={element.function.p2}
                     onChange={onChange(path + '.functions.' + index + '.function.p2')}
                   />
                 </InputGroup>
@@ -170,7 +138,7 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
                   containerClassName="pl-0"
                 >
                   <NumericInput
-                    value={element.function.p3.value}
+                    value={element.function.p3}
                     onChange={onChange(path + '.functions.' + index + '.function.p3')}
                   />
                 </InputGroup>
@@ -181,10 +149,7 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
                   label={t('editor:properties.particle-system.valueGenerator.start')}
                   containerClassName="pl-0"
                 >
-                  <NumericInput
-                    value={element.start.value}
-                    onChange={onChange(path + '.functions.' + index + '.start')}
-                  />
+                  <NumericInput value={element.start} onChange={onChange(path + '.functions.' + index + '.start')} />
                 </InputGroup>
                 <br />
                 <Button onClick={onRemoveBezier(element)}>
@@ -196,7 +161,7 @@ export default function ValueGenerator({ path, scope, value, onChange }: ValueGe
         }
       </div>
     )
-  }, [scope, onChange])
+  }, [value, onChange])
 
   const valueInputs = {
     ConstantValue: ConstantInput,
