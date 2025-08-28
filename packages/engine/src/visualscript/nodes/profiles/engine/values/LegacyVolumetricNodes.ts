@@ -1,7 +1,7 @@
 import { Tween } from '@tweenjs/tween.js'
 
 import { createEntity, removeEntity } from '@ir-engine/ecs'
-import { getMutableComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { LegacyVolumetricComponent } from '@ir-engine/engine/src/scene/components/LegacyVolumetricComponent'
 import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
@@ -24,8 +24,9 @@ export const playVolumetric = makeFlowNodeDefinition({
   triggered: ({ read, commit }) => {
     const entity = read<Entity>('entity')
     const play = read<boolean>('play')
-    const volumetricComponent = getMutableComponent(entity, LegacyVolumetricComponent)
-    volumetricComponent.paused.set(!play)
+    const volumetricComponent = getComponent(entity, LegacyVolumetricComponent)
+    volumetricComponent.paused = !play
+    setComponent(entity, LegacyVolumetricComponent)
     commit('flow')
   }
 })
@@ -47,8 +48,9 @@ export const setVolumetricTime = makeFlowNodeDefinition({
   triggered: ({ read, commit }) => {
     const entity = read<Entity>('entity')
     const time = read<number>('time')
-    const volumetricComponent = getMutableComponent(entity, LegacyVolumetricComponent)
-    volumetricComponent.currentTrackInfo.currentTime.set(time)
+    const volumetricComponent = getComponent(entity, LegacyVolumetricComponent)
+    volumetricComponent.currentTrackInfo.currentTime = time
+    setComponent(entity, LegacyVolumetricComponent)
     commit('flow')
   }
 })
@@ -73,13 +75,13 @@ export const fadeVolumetricAudioVolume = makeFlowNodeDefinition({
     const targetVolume = read<number>('targetVolume')
     const duration = read<number>('duration')
 
-    const volumetricComponent = getMutableComponent(entity, LegacyVolumetricComponent)
+    const volumetricComponent = getComponent(entity, LegacyVolumetricComponent)
     const volumeSlider: any = {}
 
     Object.defineProperty(volumeSlider, 'volume', {
-      get: () => volumetricComponent.volume.value,
+      get: () => volumetricComponent.volume,
       set: (value) => {
-        volumetricComponent.volume.set(value)
+        volumetricComponent.volume = value
       }
     })
     const tweenEntity = createEntity()

@@ -12,7 +12,7 @@ import {
   useComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { BoundingBoxComponent } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
@@ -25,8 +25,8 @@ export const LightmapComponent = defineComponent({
   name: 'LightmapComponent',
   jsonID: 'IR_lightmap',
 
-  schema: S.Object({
-    atlasSrc: S.String({ default: '' })
+  schema: Schema.Object({
+    atlasSrc: Schema.String({ default: '' })
   }),
 
   reactor: ({ entity }) => {
@@ -42,9 +42,9 @@ export const LightmapComponent = defineComponent({
     const sceneLoaded = GLTFComponent.useSceneLoaded(LayerFunctions.getAuthoringCounterpart(sceneEntity) || sceneEntity)
 
     useEffect(() => {
-      if (!lightmapComponent.atlasSrc.value) return
+      if (!lightmapComponent.atlasSrc) return
 
-      AssetState.loadAsync(lightmapComponent.atlasSrc.value, false, UUIDComponent.generate()).then((atlasEntity) => {
+      AssetState.loadAsync(lightmapComponent.atlasSrc, false, UUIDComponent.generate()).then((atlasEntity) => {
         const sceneUUID = UUIDComponent.get(getAncestorWithComponents(entity, [SceneComponent]))
         for (const atlasedChildEntity of getChildrenWithComponents(atlasEntity, [MeshComponent])) {
           const correspondingEntity = UUIDComponent.getEntityByUUID(

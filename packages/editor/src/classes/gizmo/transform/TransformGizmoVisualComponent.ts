@@ -4,14 +4,13 @@ import {
   createEntity,
   defineComponent,
   Entity,
+  EntitySchema,
   EntityTreeComponent,
   removeEntityNodeRecursively,
   setComponent,
-  useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { Schema, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
@@ -29,15 +28,14 @@ import { EditorHelperState } from '../../../services/EditorHelperState'
 export const TransformGizmoVisualComponent = defineComponent({
   name: 'TransformGizmoVisualComponent',
 
-  schema: S.Object({
-    gizmo: S.Entity(),
-    picker: S.Entity(),
-    helper: S.Entity()
+  schema: Schema.Object({
+    gizmo: EntitySchema.Entity(),
+    picker: EntitySchema.Entity(),
+    helper: EntitySchema.Entity()
   }),
 
   reactor: function () {
     const gizmoVisualEntity = useEntityContext()
-    const visualComponent = useComponent(gizmoVisualEntity, TransformGizmoVisualComponent)
     const mode = useMutableState(EditorHelperState).transformMode.value
 
     useEffect(() => {
@@ -52,7 +50,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(gizmoEntity, VisibleComponent)
       setupGizmo(gizmoEntity, gizmo[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(gizmoEntity, ObjectLayers.TransformGizmo)
-      visualComponent.gizmo.set(gizmoEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { gizmo: gizmoEntity })
       entities.push(gizmoEntity)
 
       const helperEntity = createEntity()
@@ -64,7 +62,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(helperEntity, TransformComponent)
       setupGizmo(helperEntity, helper[mode], ObjectLayers.TransformGizmo)
       setupGizmo(helperEntity, iconGizmoHelper, ObjectLayers.NodeHelper)
-      visualComponent.helper.set(helperEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { helper: helperEntity })
       entities.push(helperEntity)
 
       const pickerEntity = createEntity()
@@ -77,7 +75,7 @@ export const TransformGizmoVisualComponent = defineComponent({
       setComponent(pickerEntity, InputComponent)
       setupGizmo(pickerEntity, picker[mode], ObjectLayers.TransformGizmo)
       ObjectLayerMaskComponent.setLayer(pickerEntity, ObjectLayers.TransformGizmo)
-      visualComponent.picker.set(pickerEntity)
+      setComponent(gizmoVisualEntity, TransformGizmoVisualComponent, { picker: pickerEntity })
       entities.push(pickerEntity)
 
       return () => {

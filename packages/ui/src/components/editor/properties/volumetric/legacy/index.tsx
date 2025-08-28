@@ -2,8 +2,9 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  getOptionalMutableComponent,
+  getOptionalComponent,
   hasComponent,
+  setComponent,
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
@@ -66,7 +67,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
   const volumetricComponent = useComponent(props.entity, LegacyVolumetricComponent)
 
   const toggle = () => {
-    volumetricComponent.paused.set(!volumetricComponent.paused.value)
+    setComponent(props.entity, LegacyVolumetricComponent, { paused: !volumetricComponent.paused })
   }
 
   const [trackLabels, setTrackLabels] = React.useState(
@@ -77,7 +78,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
   )
 
   useEffect(() => {
-    const tracks = volumetricComponent.paths.value
+    const tracks = volumetricComponent.paths
     if (tracks.length === 0) {
       return
     }
@@ -139,7 +140,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
         label: 'auto',
         value: -1
       })
-      uvol2.geometryInfo.targets.value.forEach((target, index) => {
+      uvol2.geometryInfo.targets.forEach((target, index) => {
         _geometryTargets.push({
           label: target,
           value: index
@@ -154,7 +155,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
     if (!uvol2) {
       return
     }
-    const textureTypes = uvol2.textureInfo.textureTypes.value
+    const textureTypes = uvol2.textureInfo.textureTypes
     const _textureTargets = {} as TextureTargetLabelsType
     textureTypes.forEach((textureType) => {
       _textureTargets[textureType] = [] as {
@@ -165,7 +166,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
         label: 'auto',
         value: -1
       })
-      uvol2.textureInfo[textureType].targets.value.forEach((target, index) => {
+      uvol2.textureInfo[textureType].targets.forEach((target, index) => {
         _textureTargets[textureType].push({
           label: target,
           value: index
@@ -192,7 +193,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="useLoadingEffect" label={t('editor:properties.volumetric.lbl-useLoadingEffect')}>
         <Checkbox
           onChange={commitProperty(LegacyVolumetricComponent, 'useLoadingEffect')}
-          checked={volumetricComponent.useLoadingEffect.value}
+          checked={volumetricComponent.useLoadingEffect}
         />
       </InputGroup>
 
@@ -203,7 +204,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
       >
         <Checkbox
           onChange={commitProperty(LegacyVolumetricComponent, 'autoplay')}
-          checked={volumetricComponent.autoplay.value}
+          checked={volumetricComponent.autoplay}
         />
       </InputGroup>
 
@@ -212,7 +213,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
           min={0}
           max={1}
           step={0.01}
-          value={volumetricComponent.volume.value}
+          value={volumetricComponent.volume}
           onChange={updateProperty(LegacyVolumetricComponent, 'volume')}
           onRelease={commitProperty(LegacyVolumetricComponent, 'volume')}
           aria-label="Volume"
@@ -223,7 +224,7 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
       <ArrayInputGroup
         name="Source Paths"
         //prefix="Content"
-        values={volumetricComponent.paths.value as string[]}
+        values={volumetricComponent.paths as string[]}
         //onRelease={commitProperty(LegacyVolumetricComponent, 'paths')}
         onChange={updateProperty(LegacyVolumetricComponent, 'paths')}
         //acceptFileTypes={VolumetricFileTypes}
@@ -236,12 +237,13 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
 
       <div className="w-auto">
         <Slider
-          value={volumetricComponent.currentTrackInfo.playbackRate.value}
+          value={volumetricComponent.currentTrackInfo.playbackRate}
           min={0.5}
           max={4}
           step={0.1}
           onChange={(value: number) => {
-            volumetricComponent.currentTrackInfo.playbackRate.set(value)
+            volumetricComponent.currentTrackInfo.playbackRate = value
+            setComponent(props.entity, LegacyVolumetricComponent)
           }}
           onRelease={() => {}}
           aria-label="Playback Rate"
@@ -253,12 +255,12 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={PlayModeOptions}
-          value={volumetricComponent.playMode.value}
+          value={volumetricComponent.playMode}
           onChange={commitProperty(LegacyVolumetricComponent, 'playMode')}
         />
         {volumetricComponent.paths && volumetricComponent.paths.length > 0 && volumetricComponent.paths[0] && (
           <button style={{ marginLeft: '5px', width: '60px' }} type="submit" onClick={toggle}>
-            {volumetricComponent.paused.value
+            {volumetricComponent.paused
               ? t('editor:properties.media.playtitle')
               : t('editor:properties.media.pausetitle')}
           </button>
@@ -271,10 +273,11 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
             <SelectInput
               key={props.entity}
               options={geometryTargets}
-              value={uvol2?.geometryInfo.userTarget.value}
+              value={uvol2?.geometryInfo.userTarget}
               onChange={(value: number) => {
                 if (uvol2) {
-                  uvol2.geometryInfo.userTarget.set(value)
+                  uvol2.geometryInfo.userTarget = value
+                  setComponent(props.entity, UVOL2Component)
                 }
               }}
             />
@@ -302,9 +305,10 @@ export const LegacyVolumetricNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={trackLabels}
-          value={trackLabels.length ? volumetricComponent.track.value : ''}
+          value={trackLabels.length ? volumetricComponent.track : ''}
           onChange={(value: number) => {
-            volumetricComponent.track.set(value)
+            volumetricComponent.track = value
+            setComponent(props.entity, LegacyVolumetricComponent)
           }}
         />
       </InputGroup>
@@ -323,18 +327,18 @@ function VolumetricCurrentTimeScrubber(props: { entity: Entity }) {
     <InputGroup name="CurrentTime" label={t('editor:properties.media.lbl-currentTime')}>
       <Scrubber
         min={0}
-        max={volumetricComponent.currentTrackInfo.duration.value}
-        value={volumetricComponent.currentTrackInfo.currentTime.value}
+        max={volumetricComponent.currentTrackInfo.duration}
+        value={volumetricComponent.currentTrackInfo.currentTime}
         onScrubStart={() => {
           setIsChanging(true)
         }}
         onScrubEnd={(value) => {
           if (!isChanging) return
-          const uvol2Component = getOptionalMutableComponent(props.entity, UVOL2Component)
+          const uvol2Component = getOptionalComponent(props.entity, UVOL2Component)
           if (
             uvol2Component &&
-            volumetricComponent.currentTrackInfo.currentTime.value < value &&
-            value < uvol2Component.bufferedUntil.value
+            volumetricComponent.currentTrackInfo.currentTime < value &&
+            value < uvol2Component.bufferedUntil
           ) {
             const engineState = getState(ECSState)
             UVOL2Component.setStartAndPlaybackTime(props.entity, value, engineState.elapsedSeconds)
@@ -347,7 +351,7 @@ function VolumetricCurrentTimeScrubber(props: { entity: Entity }) {
         }}
         {...(hasComponent(props.entity, UVOL2Component)
           ? {
-              bufferPosition: uvol2Component?.bufferedUntil.value
+              bufferPosition: uvol2Component?.bufferedUntil
             }
           : {})}
       />

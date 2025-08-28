@@ -10,8 +10,7 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getMutableState, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, isClient, Schema, useHookstate } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -21,8 +20,8 @@ export const ScenePreviewCameraComponent = defineComponent({
   name: 'EE_scenePreviewCamera',
   jsonID: 'EE_scene_preview_camera',
 
-  schema: S.Object({
-    camera: S.Class(() => new PerspectiveCamera(80, 16 / 9, 0.2, 8000), { serialized: false })
+  schema: Schema.Object({
+    camera: Schema.Class(() => new PerspectiveCamera(80, 16 / 9, 0.2, 8000), { serialized: false })
   }),
 
   reactor: function () {
@@ -40,7 +39,7 @@ export const ScenePreviewCameraComponent = defineComponent({
       const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
       cameraTransform.position.copy(transform.position)
       cameraTransform.rotation.copy(transform.rotation)
-      const camera = previewCamera.camera.value as PerspectiveCamera
+      const camera = previewCamera.camera
       setComponent(entity, ObjectComponent, camera)
 
       return () => {
@@ -59,8 +58,8 @@ export const ScenePreviewCameraComponent = defineComponent({
 
     useLayoutEffect(() => {
       if (!engineCameraTransform) return
-      previewCamera.camera.value.position.copy(previewCameraTransform.position.value)
-      previewCamera.camera.value.quaternion.copy(previewCameraTransform.rotation.value)
+      previewCamera.camera.position.copy(previewCameraTransform.position)
+      previewCamera.camera.quaternion.copy(previewCameraTransform.rotation)
     }, [previewCameraTransform])
 
     return null

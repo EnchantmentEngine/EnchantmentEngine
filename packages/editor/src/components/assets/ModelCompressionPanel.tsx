@@ -2,10 +2,6 @@ import React, { useEffect } from 'react'
 import { LoaderUtils } from 'three'
 
 import {
-  transformModel as clientSideTransformModel,
-  ModelTransformStatus
-} from '@ir-engine/common/src/model/ModelTransformFunctions'
-import {
   Entity,
   getAncestorWithComponents,
   iterateEntityNode,
@@ -13,6 +9,7 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { ModelTransformStatus, transformModel } from '@ir-engine/editor/src/optimize/ModelTransformFunctions'
 import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
@@ -64,7 +61,7 @@ const createLODVariants = async (
   }))
 
   const transformMetadata: Record<string, any>[] = []
-  await clientSideTransformModel(
+  await transformModel(
     srcURL,
     lodVariantParams,
     (i, key, data) => {

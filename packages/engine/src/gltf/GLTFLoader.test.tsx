@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { GLTF } from '@gltf-transform/core/dist/types/gltf'
+import { GLTF } from '@gltf-transform/core'
 import {
   createEntity,
   Entity,
@@ -65,12 +65,12 @@ const collider_gltf = base_url + '/physics/ColliderOnly.gltf'
 
 const waitForScene = (entity: Entity) => vi.waitUntil(() => GLTFComponent.isSceneLoaded(entity), { timeout: 10000 })
 
-const setupEntity = () => {
+const setupEntity = (entityID = 'parent' as EntityID) => {
   const parent = createEntity()
   setComponent(parent, SceneComponent)
   setComponent(parent, EntityTreeComponent)
   const uuid = 'source' as SourceID
-  setComponent(parent, UUIDComponent, { entitySourceID: uuid, entityID: 'test' as EntityID })
+  setComponent(parent, UUIDComponent, { entitySourceID: uuid, entityID })
 
   const entity = createEntity()
   setComponent(entity, EntityTreeComponent, { parentEntity: parent })
@@ -82,7 +82,7 @@ const setupPhysicsEntity = () => {
   setComponent(parent, SceneComponent)
   setComponent(parent, EntityTreeComponent)
   const uuid = 'source' as SourceID
-  setComponent(parent, UUIDComponent, { entitySourceID: uuid, entityID: 'test' as EntityID })
+  setComponent(parent, UUIDComponent, { entitySourceID: uuid, entityID: 'physics' as EntityID })
   setComponent(parent, TransformComponent)
   Physics.createWorld(parent)
   const entity = createEntity()
@@ -577,7 +577,6 @@ describe('GLTF Loader', async () => {
 
     // Create two separate entities with different source IDs
     const entity = setupEntity()
-    const entity2 = setupEntity()
 
     // Set up the first entity with a unique source ID
     setComponent(entity, UUIDComponent, { entitySourceID: 'source1' as SourceID, entityID: 'test' as EntityID })
@@ -589,6 +588,7 @@ describe('GLTF Loader', async () => {
     // Verify the first entity is fully loaded
     expect(GLTFComponent.isSceneLoaded(entity)).toBeTruthy()
 
+    const entity2 = setupEntity('parent2' as EntityID)
     // Set up the second entity with a different source ID
     setComponent(entity2, UUIDComponent, { entitySourceID: 'source2' as SourceID, entityID: 'test' as EntityID })
     setComponent(entity2, GLTFComponent, { src: duck_gltf })

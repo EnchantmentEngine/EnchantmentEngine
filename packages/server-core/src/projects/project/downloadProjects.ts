@@ -50,7 +50,7 @@ export const download = async (projectName: string, storageProviderName?: string
     logger.info(`[ProjectLoader]: Successfully downloaded and mounted project "${projectName}".`)
     // if (projectName !== 'enchantmentengine/default-project') {
     //   const npmInstallPromise = new Promise<void>((resolve) => {
-    //     const npmInstallProcess = spawn('npm', ['install', '--legacy-peer-deps'], { cwd: localProjectDirectory })
+    //     const npmInstallProcess = spawn('npm', ['install'], { cwd: localProjectDirectory })
     //     npmInstallProcess.once('exit', () => {
     //       logger.info('Finished npm installing %s', projectName)
     //       resolve()

@@ -12,9 +12,10 @@ import {
 } from '@ir-engine/ecs'
 import { defineComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import {
+  HyperFlux,
   Network,
   NetworkActions,
   NetworkState,
@@ -995,7 +996,7 @@ describe('DataReader', () => {
   //     network.userIDToUserIndex.set(userId, userIndex)
   //   })
 
-  //   const packet = write(network, Engine.instance.userID, peerID, entities)
+  //   const packet = write(network, getState(EngineState).userID, peerID, entities)
 
   //   strictEqual(packet.byteLength, 376)
   // })
@@ -1006,7 +1007,7 @@ describe('DataReader', () => {
     const network = NetworkState.worldNetwork as Network
     const engineState = getMutableState(ECSState)
     engineState.simulationTime.set(1)
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
 
     const n = 10
     const entities: Entity[] = Array(n)
@@ -1038,7 +1039,7 @@ describe('DataReader', () => {
       })
     })
 
-    let packet = write(network, Engine.instance.store.peerID, entities)
+    let packet = write(network, HyperFlux.store.peerID, entities)
 
     strictEqual(packet.byteLength, 0)
 

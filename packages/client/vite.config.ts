@@ -12,6 +12,7 @@ import svgr from 'vite-plugin-svgr'
 
 import { EngineSettingType } from '@ir-engine/common/src/schema.type.module'
 import appRootPath from 'app-root-path'
+import { nodeModulesPolyfillPlugin } from 'esbuild-plugins-node-modules-polyfill'
 import { EngineSettings } from '../common/src/constants/EngineSettings'
 import manifest from './manifest.default.json'
 import packageJson from './package.json'
@@ -226,9 +227,21 @@ export default defineConfig(async () => {
     optimizeDeps: {
       entries: ['./src/main.tsx'],
       include: ['@reactflow/core', '@reactflow/minimap', '@reactflow/controls', '@reactflow/background'],
+
       esbuildOptions: {
-        target: 'es2020'
+        target: 'es2020',
+        plugins: [
+          nodeModulesPolyfillPlugin({
+            globals: {
+              Buffer: true,
+              process: true
+            }
+          }) as any
+        ]
       }
+    },
+    worker: {
+      format: 'es'
     },
     plugins: [
       svgr(),
@@ -237,7 +250,7 @@ export default defineConfig(async () => {
       process.env.VITE_PWA_ENABLED === 'true' ? PWA(clientSetting) : undefined,
       ViteEjsPlugin({
         ...manifest,
-        title: clientSetting.title || 'Napster Engine',
+        title: clientSetting.title || 'Enchantment Engine',
         description: clientSetting?.siteDescription || 'Connected Worlds for Everyone',
         // short_name: clientSetting?.shortName || 'EE',
         // theme_color: clientSetting?.themeColor || '#ffffff',
@@ -276,7 +289,12 @@ export default defineConfig(async () => {
     ].filter(Boolean),
     resolve: {
       alias: {
-        'react-json-tree': 'react-json-tree/lib/umd/react-json-tree'
+        'react-json-tree': 'react-json-tree/lib/umd/react-json-tree',
+        buffer: 'buffer',
+        process: 'process/browser',
+        stream: 'stream-browserify',
+        crypto: 'crypto-browserify',
+        util: 'util'
       }
     },
     build: {

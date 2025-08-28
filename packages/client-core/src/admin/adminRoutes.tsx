@@ -14,7 +14,7 @@ import { HiMiniMoon, HiMiniSun } from 'react-icons/hi2'
 
 import { useFind } from '@ir-engine/common'
 import { identityProviderPath, scopePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { Button, Tooltip } from '@ir-engine/ui'
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
 import { twMerge } from 'tailwind-merge'
@@ -43,7 +43,7 @@ const AdminTopBar = () => {
       <a href="/">
         <img
           src="static/app_logo.svg"
-          alt="Napster Engine Logo"
+          alt="Enchantment Engine Logo"
           className={`h-7 w-7${theme.value === 'light' ? ' invert' : ''}`}
         />
       </a>
@@ -103,7 +103,7 @@ const AdminSideBar = () => {
 
 const AdminRoutes = () => {
   const location = useLocation()
-  const scopeQuery = useFind(scopePath, { query: { userId: Engine.instance.userID, paginate: false } })
+  const scopeQuery = useFind(scopePath, { query: { userId: getState(EngineState).userID, paginate: false } })
 
   const allowedRoutes = useMutableState(AllowedAdminRoutesState)
 

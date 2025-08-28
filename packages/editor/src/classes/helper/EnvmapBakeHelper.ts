@@ -31,7 +31,7 @@ export const EnvmapBakeHelperReactor: React.FC = (props: { parentEntity; iconEnt
 
   // Box projection visual helper
   useEffect(() => {
-    if (!debugEnabled || !bakeComponent.boxProjection.value || !transformComponent) return
+    if (!debugEnabled || !bakeComponent.boxProjection || !transformComponent) return
 
     const boxProjectionHelper = new Box3Helper(new Box3(), 'cyan')
     const boundsHelperEntity = createEntity()
@@ -42,8 +42,8 @@ export const EnvmapBakeHelperReactor: React.FC = (props: { parentEntity; iconEnt
     ObjectLayerMaskComponent.setLayer(boundsHelperEntity, ObjectLayers.NodeHelper)
 
     const helperTransform = getComponent(boundsHelperEntity, TransformComponent)
-    helperTransform.position.copy(bakeComponent.bakePositionOffset.value)
-    boxProjectionHelper.box.setFromCenterAndSize(bakeComponent.bakePositionOffset.value, bakeComponent.bakeScale.value)
+    helperTransform.position.copy(bakeComponent.bakePositionOffset)
+    boxProjectionHelper.box.setFromCenterAndSize(bakeComponent.bakePositionOffset, bakeComponent.bakeScale)
     boxProjectionHelper.updateMatrixWorld(true)
 
     return () => {
@@ -51,10 +51,10 @@ export const EnvmapBakeHelperReactor: React.FC = (props: { parentEntity; iconEnt
     }
   }, [
     debugEnabled,
-    bakeComponent.boxProjection.value,
-    bakeComponent.bakePositionOffset.value,
-    bakeComponent.bakeScale.value,
-    transformComponent?.position.value
+    bakeComponent.boxProjection,
+    bakeComponent.bakePositionOffset,
+    bakeComponent.bakeScale,
+    transformComponent?.position
   ])
   return null
 }

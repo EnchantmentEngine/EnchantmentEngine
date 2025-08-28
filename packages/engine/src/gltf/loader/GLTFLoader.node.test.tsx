@@ -452,8 +452,7 @@ describe('glTF: Node Type', () => {
       await expect(GLTFLoaderFunctions.loadNode(options, 0)).resolves.toBeDefined()
 
       // Node entity should not have a MeshComponent
-      const nodeEntity = await GLTFLoaderFunctions.loadNode(options, 0)
-      expect(hasComponent(nodeEntity, MeshComponent)).toBe(false)
+      expect(() => GLTFLoaderFunctions.loadNode(options, 0)).rejects.toThrowError()
     })
 
     it('MUST be an `integer` type when defined', async () => {

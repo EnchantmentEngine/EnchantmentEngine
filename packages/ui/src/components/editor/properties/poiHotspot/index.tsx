@@ -23,7 +23,7 @@ export const PoiHotspotNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="title" label={t('editor:properties.poiHotspot.lbl-title', 'Title')}>
         <StringInput
-          value={hotspotComponent.title.value}
+          value={hotspotComponent.title}
           onChange={updateProperty(PoiHotspotComponent, 'title')}
           onRelease={commitProperty(PoiHotspotComponent, 'title')}
         />
@@ -31,7 +31,7 @@ export const PoiHotspotNodeEditor: EditorComponentType = (props) => {
 
       <InputGroup name="description" label={t('editor:properties.poiHotspot.lbl-description', 'Description')}>
         <StringInput
-          value={hotspotComponent.description.value}
+          value={hotspotComponent.description}
           onChange={updateProperty(PoiHotspotComponent, 'description')}
           onRelease={commitProperty(PoiHotspotComponent, 'description')}
         />

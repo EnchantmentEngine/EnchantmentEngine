@@ -1,7 +1,7 @@
 import { useClickOutside } from '@ir-engine/common/src/utils/useClickOutside'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import {
+  HyperFlux,
   MediaChannelState,
   PeerID,
   getMutableState,
@@ -25,7 +25,7 @@ export const VolumeContextMenu: React.FC<VolumeContextMenuProps> = ({ peerID, ty
   const audioState = useHookstate(getMutableState(AudioState))
 
   // Determine if this is the local user
-  const isSelf = peerID === Engine.instance.store.peerID || peerID === 'self'
+  const isSelf = peerID === HyperFlux.store.peerID || peerID === 'self'
 
   // Get the peer media channel state
   const audioMediaChannelState = useHookstate(getMutableState(MediaChannelState)[peerID][webcamAudioMediaChannelType])

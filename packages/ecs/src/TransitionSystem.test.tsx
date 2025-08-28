@@ -1,25 +1,24 @@
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, Schema } from '@ir-engine/hyperflux'
 import { Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { TransitionComponent, createEntity, defineComponent, getComponent, setComponent } from './ComponentFunctions'
+import { createEntity, defineComponent, getComponent, setComponent, TransitionComponent } from './ComponentFunctions'
 import { ECSState } from './ECSState'
 import { Easing } from './EasingFunctions'
 import { createEngine, destroyEngine } from './Engine'
 import { executeSystems } from './EngineFunctions'
 import { Entity } from './Entity'
 import './TransitionSystem'
-import { S } from './schemas/JSONSchemas'
 
 describe('TransitionSystem', () => {
   const TestComponent = defineComponent({
     name: 'TestComponent',
     jsonID: 'EE_test',
-    schema: S.Object({
-      position: S.SerializedClass(
+    schema: Schema.Object({
+      position: Schema.SerializedClass(
         {
-          x: S.Number(),
-          y: S.Number(),
-          z: S.Number()
+          x: Schema.Number(),
+          y: Schema.Number(),
+          z: Schema.Number()
         },
         {
           deserialize: (curr, value) => curr.copy(value),
@@ -27,7 +26,7 @@ describe('TransitionSystem', () => {
           id: 'Vec3'
         }
       ),
-      number: S.Number()
+      number: Schema.Number()
     })
   })
 

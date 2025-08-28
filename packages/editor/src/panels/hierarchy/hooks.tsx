@@ -2,7 +2,6 @@ import { NotificationService } from '@ir-engine/client-core/src/common/services/
 import { VALID_HEIRARCHY_SEARCH_REGEX } from '@ir-engine/common/src/regex'
 import {
   Entity,
-  EntityArrayBoundary,
   EntityTreeComponent,
   getAncestorWithComponents,
   getChildrenWithComponents,
@@ -10,6 +9,7 @@ import {
   hasComponent,
   isAncestor,
   Layers,
+  QueryReactor,
   traverseEntityNode,
   UndefinedEntity,
   useOptionalComponent,
@@ -118,29 +118,28 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   const entities = useQuery([UUIDComponent], Layers.Authoring)
   const showGlbChildren = useMutableState(EditorHelperState).showGlbChildren
 
-  const childEntities = useQuery([EntityTreeComponent], Layers.Authoring)
   const reparentRefresh = useHookstate(0)
   const childIndexRefresh = useHookstate(0)
 
   const ChildEntityReactor = (props: { entity: Entity }) => {
     const entity = props.entity
     const entityTreeComponent = useOptionalComponent(entity, EntityTreeComponent)
-    const parentEntity = useHookstate(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
-    const childIndex = useHookstate(entityTreeComponent?.childIndex.value ?? undefined)
+    const parentEntity = useHookstate(entityTreeComponent?.parentEntity ?? UndefinedEntity)
+    const childIndex = useHookstate(entityTreeComponent?.childIndex ?? undefined)
 
     useEffect(() => {
-      if (entityTreeComponent?.parentEntity.value !== parentEntity.value) {
-        parentEntity.set(entityTreeComponent?.parentEntity.value ?? UndefinedEntity)
+      if (entityTreeComponent?.parentEntity !== parentEntity.value) {
+        parentEntity.set(entityTreeComponent?.parentEntity ?? UndefinedEntity)
         reparentRefresh.set((reparentRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent?.parentEntity.value])
+    }, [entityTreeComponent?.parentEntity])
 
     useEffect(() => {
-      if (entityTreeComponent?.childIndex.value !== childIndex.value) {
-        childIndex.set(entityTreeComponent?.childIndex.value)
+      if (entityTreeComponent?.childIndex !== childIndex.value) {
+        childIndex.set(entityTreeComponent?.childIndex)
         childIndexRefresh.set((childIndexRefresh.value + 1) % 1000)
       }
-    }, [entityTreeComponent?.childIndex.value])
+    }, [entityTreeComponent?.childIndex])
     return null
   }
 
@@ -151,7 +150,6 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
       selectionState.selectedEntities,
       showGlbChildren,
       entities,
-      childEntities,
       reparentRefresh,
       childIndexRefresh,
       rootEntity
@@ -184,7 +182,11 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
 
   return (
     <>
-      <EntityArrayBoundary entities={childEntities} ChildEntityReactor={ChildEntityReactor} />
+      <QueryReactor
+        Components={[EntityTreeComponent]}
+        layer={Layers.Authoring}
+        ChildEntityReactor={ChildEntityReactor}
+      />
       <HierarchyTreeContext.Provider
         value={{
           nodes: displayedNodes,

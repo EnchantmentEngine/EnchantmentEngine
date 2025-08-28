@@ -23,7 +23,7 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
  */
 const SourcedEntityReactor = () => {
   const entity = useEntityContext()
-  const parentEntity = useComponent(entity, EntityTreeComponent).parentEntity.value
+  const parentEntity = useComponent(entity, EntityTreeComponent).parentEntity
   const parentUUID = UUIDComponent.use(parentEntity)
 
   useEffect(() => {

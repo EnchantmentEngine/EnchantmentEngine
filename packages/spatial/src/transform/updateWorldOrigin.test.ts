@@ -6,7 +6,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
@@ -39,7 +38,7 @@ describe('updateWorldOriginFromScenePlacement', () => {
       children[id] = createEntity()
       setComponent(children[id], TransformComponent)
     }
-    getMutableComponent(localFloorEntity, EntityTreeComponent).children.set(children)
+    getComponent(localFloorEntity, EntityTreeComponent).children = children
   })
 
   afterEach(() => {
@@ -88,7 +87,7 @@ describe('updateWorldOriginFromScenePlacement', () => {
     const scale = Vector3_One.clone()
     const Initial = new Matrix4().compose(position, rotation, scale).invert()
     // Set the data as expected
-    getMutableComponent(localFloorEntity, TransformComponent).matrixWorld.set(Initial)
+    getComponent(localFloorEntity, TransformComponent).matrixWorld = Initial
     // Sanity check before running
     const before = getComponent(localFloorEntity, TransformComponent)
     assertArray.allNotEq(before.matrix.elements, before.matrixWorld.elements)

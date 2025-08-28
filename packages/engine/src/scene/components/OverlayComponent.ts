@@ -5,7 +5,7 @@ import { defineComponent, getComponent, setComponent, useComponent } from '@ir-e
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { addError, clearErrors } from '../functions/ErrorFunctions'
 
 const interactMessage = 'Click'
@@ -20,11 +20,11 @@ export const OverlayComponent = defineComponent({
   name: 'OverlayComponent',
   jsonID: 'IR_overlay_component',
 
-  schema: S.Object({
-    src: S.String({ default: '' }),
-    type: S.String({ default: '' }),
-    isOpen: S.Bool({ default: false, serialized: false }),
-    props: S.Any()
+  schema: Schema.Object({
+    src: Schema.String({ default: '' }),
+    type: Schema.String({ default: '' }),
+    isOpen: Schema.Bool({ default: false, serialized: false }),
+    props: Schema.Any()
   }),
 
   overlayCallbackName,
@@ -39,10 +39,10 @@ export const OverlayComponent = defineComponent({
 
     useEffect(() => {
       clearErrors(entity, OverlayComponent)
-      if (overlayComponent.src.value) return
-      if (overlayComponent.type.value !== 'iframe') return
+      if (overlayComponent.src) return
+      if (overlayComponent.type !== 'iframe') return
       try {
-        new URL(overlayComponent.src.value)
+        new URL(overlayComponent.src)
       } catch {
         return addError(entity, OverlayComponent, 'INVALID_URL', 'Please enter a valid URL.')
       }

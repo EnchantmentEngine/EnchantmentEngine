@@ -22,7 +22,7 @@ export const useVisualScriptRunner = ({
   autoRun = false,
   registry
 }: {
-  visualScriptJson: GraphJSON | undefined
+  visualScriptJson: GraphJSON | null
   autoRun?: boolean
   registry: IRegistry
 }) => {

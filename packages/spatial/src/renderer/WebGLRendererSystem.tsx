@@ -19,7 +19,7 @@ import {
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { getNestedChildren } from '@ir-engine/ecs'
-import { EffectPass, OutlineEffect } from 'postprocessing'
+import { WebGPURenderer } from 'three/webgpu'
 import { CameraComponent } from '../camera/components/CameraComponent'
 import { XRState } from '../xr/XRState'
 import { ObjectComponent } from './components/ObjectComponent'
@@ -35,19 +35,26 @@ import { changeRenderMode } from './functions/changeRenderMode'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
 
-declare module 'postprocessing' {
-  interface EffectComposer {
-    EffectPass: EffectPass
-    OutlineEffect: OutlineEffect
-  }
-  interface Effect {
-    isActive: boolean
+function renderWebGPUPostProcessing(renderer: ComponentType<typeof RendererComponent>): boolean {
+  const postProcessing = renderer.postProcessing
+  if (!postProcessing) return false
+  try {
+    postProcessing.render()
+    return true
+  } catch (error) {
+    console.warn('WebGPU PostProcessing render failed:', error)
+    return false
   }
 }
 
 /**
- * Executes the system. Called each frame by default from the Engine.instance.
+ * Renders the scene using either WebGL or WebGPU renderer, with optional post-processing.
+ * @param renderer The renderer component containing the renderer and settings.
+ * @param scene The scene to be rendered.
+ * @param camera The camera through which the scene is viewed.
  * @param delta Time since last frame.
+ * @param effectComposer Whether to use effect composer for post-processing.
+ * @param csm Optional CSM component for shadow mapping.
  */
 export const render = (
   renderer: ComponentType<typeof RendererComponent>,
@@ -79,7 +86,6 @@ export const render = (
       camera.aspect = width / height
       camera.updateProjectionMatrix()
     }
-
     if (state.useShadows && csm) {
       // Call the CSM updateFrustums function
       CSM.updateFrustums()
@@ -94,12 +100,20 @@ export const render = (
     renderer.needsResize = false
   }
 
+  renderer.renderer.shadowMap.enabled = true
+
   ObjectComponent.activeRender = true
 
-  /** Postprocessing does not support multipass yet, so just use basic renderer when in VR */
   for (const c of camera.cameras) c.layers.mask = camera.layers.mask
 
-  if (xrFrame || !effectComposer || !renderer.effectComposer) {
+  if (renderer.renderer instanceof WebGPURenderer) {
+    const webgpuRendered = renderWebGPUPostProcessing(renderer)
+
+    if (!webgpuRendered) {
+      renderer.renderer.clear()
+      renderer.renderer.render(scene, camera)
+    }
+  } else if (xrFrame || !effectComposer || !renderer.effectComposer) {
     renderer.renderer.clear()
     renderer.renderer.render(scene, camera)
   } else {
@@ -198,27 +212,27 @@ const rendererReactor = () => {
   }, [engineRendererSettings.qualityLevel, engineRendererSettings.automatic])
 
   useEffect(() => {
-    if (!renderer.renderer.value) return
-    renderer.renderer.value.setPixelRatio(window.devicePixelRatio * engineRendererSettings.renderScale.value)
-    renderer.needsResize.set(true)
-  }, [engineRendererSettings.renderScale, !!renderer.renderer.value])
+    if (!renderer.renderer) return
+    renderer.renderer.setPixelRatio(window.devicePixelRatio * engineRendererSettings.renderScale.value)
+    renderer.needsResize = true
+  }, [engineRendererSettings.renderScale, !!renderer.renderer])
 
   useEffect(() => {
     changeRenderMode(entity)
-  }, [engineRendererSettings.renderMode, renderer.effectComposer.value])
+  }, [engineRendererSettings.renderMode, renderer.effectComposer])
 
   return null
 }
 
 const cameraReactor = () => {
   const entity = useEntityContext()
-  const camera = useComponent(entity, CameraComponent).value
+  const camera = useComponent(entity, CameraComponent)
   const engineRendererSettings = useMutableState(RendererState)
 
-  useEffect(() => {
-    if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
-    else camera.layers.disable(ObjectLayers.PhysicsHelper)
-  }, [engineRendererSettings.physicsDebug])
+  // useEffect(() => {
+  //   if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
+  //   else camera.layers.disable(ObjectLayers.PhysicsHelper)
+  // }, [engineRendererSettings.physicsDebug])
 
   useEffect(() => {
     if (engineRendererSettings.avatarDebug.value) camera.layers.enable(ObjectLayers.AvatarHelper)

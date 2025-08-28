@@ -3,7 +3,6 @@ import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 import { NetworkObjectAuthorityTag, UUIDComponent } from '@ir-engine/ecs'
 import { ComponentType, getComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { dispatchAction, getState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -20,6 +19,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { computeAndUpdateWorldOrigin, updateWorldOrigin } from '@ir-engine/spatial/src/transform/updateWorldOrigin'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { SpawnPoseState } from '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { preloadedAnimations } from '../animation/Util'
 import { AvatarComponent } from '../components/AvatarComponent'
@@ -66,13 +66,13 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
   const rigidbody = getComponent(entity, RigidBodyComponent)
   const controller = getComponent(entity, AvatarControllerComponent)
   const eyeHeight = getComponent(entity, AvatarComponent).eyeHeight
-  const originTransform = getComponent(Engine.instance.localFloorEntity, TransformComponent)
+  const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   desiredMovement.copy(Vector3_Zero)
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
   const isMovementControlsEnabled = XRState.isMovementControlsEnabled
 
-  if (isCameraAttachedToAvatar) {
+  if (shouldViewerFollowController) {
     const viewerPose = xrState.viewerPose
     /** move head position forward a bit to not be inside the avatar's body */
     avatarHeadPosition
@@ -158,20 +158,20 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
         )
       }
       beganFalling = false
-      if (isCameraAttachedToAvatar) originTransform.position.y = hit.position.y
+      if (shouldViewerFollowController) originTransform.position.y = hit.position.y
       /** @todo after a physical jump, only apply viewer vertical movement once the user is back on the virtual ground */
     }
   }
 
   if (!controller.isInAir) controller.verticalVelocity = 0
 
-  if (isCameraAttachedToAvatar)
+  if (shouldViewerFollowController)
     updateReferenceSpaceFromAvatarMovement(entity, finalAvatarMovement.subVectors(computedMovement, viewerMovement))
   else updateLocalAvatarPosition(entity)
 }
 
 export const updateReferenceSpaceFromAvatarMovement = (entity: Entity, movement: Vector3) => {
-  const originTransform = getComponent(Engine.instance.localFloorEntity, TransformComponent)
+  const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   originTransform.position.add(movement)
   computeAndUpdateWorldOrigin()
   updateLocalAvatarPosition(entity)
@@ -233,7 +233,7 @@ export const applyAutopilotInput = (entity: Entity) => {
 export const applyGamepadInput = (entity: Entity) => {
   if (!entity) return
 
-  const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   const deltaSeconds = getState(ECSState).simulationTimestep / 1000
   const controller = getComponent(entity, AvatarControllerComponent)
 
@@ -328,10 +328,10 @@ export const translateAndRotateAvatar = (entity: Entity, translation: Vector3, r
   rigidBody.targetKinematicPosition.add(translation)
   rigidBody.targetKinematicRotation.multiply(rotation)
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
-  if (isCameraAttachedToAvatar) {
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
+  if (shouldViewerFollowController) {
     const avatarTransform = getComponent(entity, TransformComponent)
-    const originTransform = getComponent(Engine.instance.localFloorEntity, TransformComponent)
+    const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
 
     originRelativeToAvatarMatrix.copy(avatarTransform.matrix).invert().multiply(originTransform.matrix)
     desiredAvatarMatrix.compose(
@@ -378,7 +378,7 @@ const _updateLocalAvatarRotationAttachedMode = (entity: Entity) => {
 
   if (!viewerPose) return
 
-  const originTransform = getComponent(Engine.instance.localFloorEntity, TransformComponent)
+  const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   const viewerOrientation = viewerPose.transform.orientation
 
   //if angle between rigidbody forward and viewer forward is greater than 15 degrees, rotate rigidbody to viewer forward
@@ -401,7 +401,7 @@ const _updateLocalAvatarRotationAttachedMode = (entity: Entity) => {
 }
 
 export const updateLocalAvatarRotation = (entity: Entity) => {
-  if (XRState.isCameraAttachedToAvatar) {
+  if (XRState.shouldViewerFollowController) {
     _updateLocalAvatarRotationAttachedMode(entity)
   } else {
     const deltaSeconds = getState(ECSState).deltaSeconds
@@ -438,8 +438,8 @@ export const teleportAvatar = (entity: Entity, targetPosition: Vector3, force = 
     const newPosition = raycastHit ? (raycastHit.position as Vector3) : targetPosition
     rigidbody.targetKinematicPosition.copy(newPosition)
     rigidbody.position.copy(newPosition)
-    const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
-    if (isCameraAttachedToAvatar)
+    const shouldViewerFollowController = XRState.shouldViewerFollowController
+    if (shouldViewerFollowController)
       updateReferenceSpaceFromAvatarMovement(entity, new Vector3().subVectors(newPosition, transform.position))
   } else {
     // console.log('invalid position', targetPosition, raycastHit)
@@ -456,7 +456,7 @@ const _slerpBodyTowardsCameraDirection = (entity: Entity, alpha: number) => {
   const rigidbody = getComponent(entity, RigidBodyComponent)
   if (!rigidbody) return
 
-  const cameraRotation = getComponent(Engine.instance.cameraEntity, TransformComponent).rotation
+  const cameraRotation = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).rotation
   const direction = _cameraDirection.set(0, 0, 1).applyQuaternion(cameraRotation).setComponent(1, 0)
   targetOrientation.setFromRotationMatrix(_mat.lookAt(Vector3_Zero, direction, Vector3_Up))
   rigidbody.targetKinematicRotation.slerp(targetOrientation, alpha)

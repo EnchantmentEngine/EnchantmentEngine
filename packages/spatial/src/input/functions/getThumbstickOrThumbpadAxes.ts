@@ -4,7 +4,11 @@
  */
 export function getThumbstickOrThumbpadAxes(inputSource: XRInputSource, handedness: XRHandedness, deadZone = 0.05) {
   const gamepad = inputSource.gamepad
-  const axes = gamepad!.axes
+  if (!gamepad?.axes || gamepad.axes.length < 4) {
+    // inline session or no gamepad axes available
+    return [0, 0] as [number, number]
+  }
+  const axes = gamepad.axes
   const axesIndex = inputSource.gamepad?.mapping === 'xr-standard' || handedness === 'right' ? 2 : 0
   const xAxis = Math.abs(axes[axesIndex]) > deadZone ? axes[axesIndex] : 0
   const zAxis = Math.abs(axes[axesIndex + 1]) > deadZone ? axes[axesIndex + 1] : 0

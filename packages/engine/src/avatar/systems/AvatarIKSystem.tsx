@@ -110,21 +110,17 @@ const execute = () => {
     const head = AvatarIKTargetComponent.getTargetEntity(ownerID, ikTargets.head)
     const headTargetBlendWeight = AvatarIKTargetComponent.blendWeight[head]
 
-    const worldRotation = TransformComponent.getWorldRotation(entity, _worldRot)
+    const rotation = TransformComponent.getSceneRotation(entity, _worldRot)
 
     if (headTargetBlendWeight) {
       const headTransform = getComponent(head, TransformComponent)
       const hips = getComponent(rig.hips, TransformComponent)
 
-      hips.position.set(
-        headTransform.position.x,
-        headTransform.position.y - avatarComponent.torsoLength - 0.125,
-        headTransform.position.z
-      )
+      hips.position.y = headTransform.position.y - avatarComponent.torsoLength - 0.125
 
       //offset target forward to account for hips being behind the head
       hipsForward.set(0, 0, 1)
-      hipsForward.applyQuaternion(worldRotation)
+      hipsForward.applyQuaternion(rotation)
       hipsForward.multiplyScalar(0.125)
       hips.position.sub(hipsForward)
 
@@ -259,9 +255,9 @@ const SetupIkMatrices = () => {
   const entity = useEntityContext()
   const rigComponent = useComponent(entity, AvatarRigComponent)
   useEffect(() => {
-    if (!rigComponent.bonesToEntities.hips.value) return
+    if (!rigComponent.bonesToEntities.hips) return
 
-    const rig = rigComponent.bonesToEntities.value
+    const rig = rigComponent.bonesToEntities
 
     // get list of bone names for arms and legs
     const boneNames = VRMHumanBoneList.filter(

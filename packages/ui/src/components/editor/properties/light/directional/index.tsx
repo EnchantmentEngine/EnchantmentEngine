@@ -18,7 +18,7 @@ import LightShadowProperties from '../shadowProperties'
  */
 export const DirectionalLightNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
-  const lightComponent = useComponent(props.entity, DirectionalLightComponent).value
+  const lightComponent = useComponent(props.entity, DirectionalLightComponent)
 
   return (
     <NodeEditor

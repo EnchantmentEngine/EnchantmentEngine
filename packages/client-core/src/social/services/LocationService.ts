@@ -128,7 +128,7 @@ export const LocationService = {
         // if (
         //   locationResult.data[0].locationSetting?.locationType === 'private' &&
         //   !locationResult.data[0].locationAuthorizedUsers?.find(
-        //     (authUser) => authUser.userId === Engine.instance.userID
+        //     (authUser) => authUser.userId === getState(EngineState).userID
         //   )
         // ) {
         //   LocationState.socialLocationNotAuthorized()

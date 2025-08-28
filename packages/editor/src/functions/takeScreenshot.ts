@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Vector2 } from 'three'
+import { PerspectiveCamera, Vector2, WebGLRenderer } from 'three'
 
 import { getCanvasBlob } from '@ir-engine/client-core/src/common/utils'
 import { Entity } from '@ir-engine/ecs'
@@ -52,8 +52,8 @@ export async function takeScreenshot(
   scenePreviewCamera.layers.set(ObjectLayers.Scene)
 
   const rendererComponent = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
-  const renderer = rendererComponent.renderer!
-  const renderContext = rendererComponent.renderContext!
+  const renderer = rendererComponent.renderer! as WebGLRenderer
+  const renderContext = rendererComponent.renderContext! as WebGL2RenderingContext
   const effectComposer = rendererComponent.effectComposer!
 
   if (hideHelpers) {

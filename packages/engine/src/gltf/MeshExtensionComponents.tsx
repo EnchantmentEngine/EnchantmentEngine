@@ -7,13 +7,13 @@ import {
   getAncestorWithComponents,
   getComponent,
   removeComponent,
-  S,
   setComponent,
   useComponent,
   useEntityContext,
   useOptionalComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { DirectionalLightComponent, PointLightComponent, SpotLightComponent } from '@ir-engine/spatial'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { useEffect } from 'react'
@@ -37,8 +37,8 @@ export type KHRPunctualLight = {
 export const KHRLightsPunctualComponent = defineComponent({
   name: 'KHRLightsPunctualComponent',
   jsonID: 'KHR_lights_punctual',
-  schema: S.Object({
-    light: S.Optional(S.Number())
+  schema: Schema.Object({
+    light: Schema.Optional(Schema.Number())
   }),
 
   /** @todo need to refactor this into whatever API three uses, as we clean up the buffers before it can be loaded */
@@ -49,12 +49,12 @@ export const KHRLightsPunctualComponent = defineComponent({
 
     const gltfEntity = getAncestorWithComponents(entity, [GLTFComponent])
     const gltfComponent = useOptionalComponent(gltfEntity, GLTFComponent)
-    const json = gltfComponent?.document.value
+    const json = gltfComponent?.document
     const extensions: {
       lights?: KHRPunctualLight[]
     } = (json?.extensions && json.extensions[KHRLightsPunctualComponent.jsonID]) || {}
     const lightDefs = extensions.lights
-    const lightDef = lightDefs && component.light.value !== undefined ? lightDefs[component.light.value] : undefined
+    const lightDef = lightDefs && component.light !== undefined ? lightDefs[component.light] : undefined
 
     useEffect(() => {
       return () => {
@@ -140,8 +140,8 @@ export const KHRLightsPunctualComponent = defineComponent({
 export const EXTMeshGPUInstancingComponent = defineComponent({
   name: 'EXTMeshGPUInstancingComponent',
   jsonID: 'EXT_mesh_gpu_instancing',
-  schema: S.Object({
-    attributes: S.Record(S.String(), S.Number())
+  schema: Schema.Object({
+    attributes: Schema.Record(Schema.String(), Schema.Number())
   }),
 
   loadNode: async (options: GLTFParserOptions, nodeIndex: number) => {

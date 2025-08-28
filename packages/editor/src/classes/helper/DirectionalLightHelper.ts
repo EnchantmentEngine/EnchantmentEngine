@@ -4,7 +4,7 @@ import {
   Easing,
   Entity,
   EntityTreeComponent,
-  getMutableComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   UndefinedEntity,
@@ -87,7 +87,7 @@ export const DirectionalLightHelperReactor: React.FC = (props: { parentEntity; i
     setComponent(helperEntity, LineSegmentComponent, {
       name: 'directional-light-helper',
       geometry: mergedGeometry?.clone(),
-      color: directionalLight.color.value,
+      color: directionalLight.color,
       opacity: 0
     })
     // @ts-ignore causes issues with the type system value inferred as never
@@ -117,9 +117,11 @@ export const DirectionalLightHelperReactor: React.FC = (props: { parentEntity; i
 
   useEffect(() => {
     if (directionalLightHelperEntity.value === UndefinedEntity) return
-    const helper = getMutableComponent(directionalLightHelperEntity.value, LineSegmentComponent)
-    if (!helper) return
-    helper.color.set(hovered ? BOUNDING_BOX_COLORS.HOVERED : directionalLight.color.value)
+    if (!hasComponent(directionalLightHelperEntity.value, LineSegmentComponent)) return
+    setComponent(directionalLightHelperEntity.value, LineSegmentComponent, {
+      geometry: mergedGeometry!,
+      color: hovered ? BOUNDING_BOX_COLORS.HOVERED : directionalLight.color
+    })
   }, [directionalLightHelperEntity, directionalLight.color, hovered])
 
   return null

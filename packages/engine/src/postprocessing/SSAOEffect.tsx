@@ -1,6 +1,7 @@
-import { Entity, getComponent } from '@ir-engine/ecs'
-import { getMutableState, getState, none } from '@ir-engine/hyperflux'
+import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs'
+import { getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { EffectReactorProps, PostProcessingEffectState } from '@ir-engine/spatial/src/renderer/effects/EffectRegistry'
 import { BlendFunction, DepthDownsamplingPass, KernelSize, Resolution, SSAOEffect } from 'postprocessing'
@@ -17,28 +18,18 @@ declare module 'postprocessing' {
 
 const effectKey = 'SSAOEffect'
 
-export const SSAOEffectProcessReactor: React.FC<EffectReactorProps> = (props: {
-  isActive
-  rendererEntity: Entity
-  effectData
-  effects
-  scene
-  passes
-}) => {
-  const { isActive, rendererEntity, effectData, effects, scene, passes } = props
+export const SSAOEffectProcessReactor: React.FC<EffectReactorProps> = (props) => {
+  const { isActive, entity, rendererEntity, effectData, effects, scene, passes } = props
   const effectState = getState(PostProcessingEffectState)
 
   useEffect(() => {
-    if (effectData[effectKey].value) return
-    effectData[effectKey].set(effectState[effectKey].defaultValues)
-  }, [])
-
-  useEffect(() => {
-    if (!isActive?.value) {
-      if (effects[effectKey].value) effects[effectKey].set(none)
+    if (!effectData[effectKey]) {
+      effectData[effectKey] = effectState[effectKey].defaultValues
+      setComponent(entity, PostProcessingComponent)
       return
     }
 
+    if (!isActive) return
     const camera = getComponent(rendererEntity, CameraComponent)
 
     const customNormalPass = RendererComponent.registerPass(rendererEntity, CustomNormalPass, (rendererEntity) => {
@@ -59,12 +50,15 @@ export const SSAOEffectProcessReactor: React.FC<EffectReactorProps> = (props: {
     )
 
     const eff = new SSAOEffect(camera as ArrayCamera, customNormalPass.texture, {
-      ...effectData[effectKey].value,
+      ...effectData[effectKey],
       normalDepthBuffer: depthDownSamplingPass.texture
     })
-    effects[effectKey].set(eff)
+    effects[effectKey] = eff
+    setComponent(rendererEntity, RendererComponent)
     return () => {
-      effects[effectKey].set(none)
+      delete effects[effectKey]
+      if (!hasComponent(rendererEntity, RendererComponent)) return
+      setComponent(rendererEntity, RendererComponent)
       RendererComponent.unregisterPass(rendererEntity, DepthDownsamplingPass)
       RendererComponent.unregisterPass(rendererEntity, CustomNormalPass)
     }

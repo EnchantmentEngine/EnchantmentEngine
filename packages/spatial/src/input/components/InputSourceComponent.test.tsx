@@ -5,7 +5,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeComponent,
   removeEntity,
@@ -43,7 +42,7 @@ describe.skip('InputSourceComponent', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   setComponent(entity, InputSourceComponent, { source: mockXRInputSource })
   //   assert(hasComponent(entity, InputSourceComponent))
   //   const inputSourceComponent = getComponent(entity, InputSourceComponent)
@@ -71,7 +70,7 @@ describe.skip('InputSourceComponent', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   setComponent(entity, InputSourceComponent, { source: mockXRInputSource })
   //   const hands = ['left', 'right', 'none']
   //   const state = getMutableState(InputSourceCaptureState)
@@ -519,7 +518,7 @@ describe('InputSourceComponent', () => {
       // @note The default value for InputSourceComponent.source.handedness is 'none'
       const Handness = 'left'
       getMutableState(InputState).preferredHand.set(Handness)
-      // getMutableComponent(testEntity, InputSourceComponent).source.handedness.set(Handness as XRHandedness)
+      // getComponent(testEntity, InputSourceComponent).source.handedness.set(Handness as XRHandedness)
       getMutableState(XRState).sessionActive.set(true)
       const result = InputSourceComponent.getPreferredInputSource()
       assert.equal(result, null)
@@ -529,12 +528,14 @@ describe('InputSourceComponent', () => {
       it('... should return the source that has the same source.handedness as the one set in InputState.preferredHand', () => {
         const Handness = 'left'
         getMutableState(InputState).preferredHand.set(Handness)
-        getMutableComponent(testEntity, InputSourceComponent).source.handedness.set(Handness as XRHandedness)
+        // @ts-expect-error
+        getComponent(testEntity, InputSourceComponent).source.handedness = Handness as XRHandedness
         getMutableState(XRState).sessionActive.set(true)
         const OtherHandness = 'right'
         const otherEntity = createEntity()
         setComponent(otherEntity, InputSourceComponent)
-        getMutableComponent(otherEntity, InputSourceComponent).source.handedness.set(OtherHandness as XRHandedness)
+        // @ts-expect-error
+        getComponent(otherEntity, InputSourceComponent).source.handedness = OtherHandness as XRHandedness
         // Run and Check the result
         const result = InputSourceComponent.getPreferredInputSource()
         assert.ok(result)
@@ -546,12 +547,14 @@ describe('InputSourceComponent', () => {
       it('... should return the source that has the same source.handedness as the one set in InputState.preferredHand', () => {
         const Handness = 'left'
         getMutableState(InputState).preferredHand.set(Handness)
-        getMutableComponent(testEntity, InputSourceComponent).source.handedness.set(Handness as XRHandedness)
+        // @ts-expect-error
+        getComponent(testEntity, InputSourceComponent).source.handedness = Handness as XRHandedness
         getMutableState(XRState).sessionActive.set(true)
         const OtherHandness = 'right'
         const otherEntity = createEntity()
         setComponent(otherEntity, InputSourceComponent)
-        getMutableComponent(otherEntity, InputSourceComponent).source.handedness.set(OtherHandness as XRHandedness)
+        // @ts-expect-error
+        getComponent(otherEntity, InputSourceComponent).source.handedness = OtherHandness as XRHandedness
         // Run and Check the result
         const result = InputSourceComponent.getPreferredInputSource()
         assert.ok(result)
@@ -564,16 +567,19 @@ describe('InputSourceComponent', () => {
       it('... should return the first source that does not have the same source.handedness as the one set in InputState.preferredHand', () => {
         const Handness = 'left'
         getMutableState(InputState).preferredHand.set(Handness)
-        getMutableComponent(testEntity, InputSourceComponent).source.handedness.set(Handness as XRHandedness)
+        // @ts-expect-error
+        getComponent(testEntity, InputSourceComponent).source.handedness = Handness as XRHandedness
         getMutableState(XRState).sessionActive.set(true)
         const OneHandness = 'right'
         const TwoHandness = 'none'
         const oneEntity = createEntity()
         setComponent(oneEntity, InputSourceComponent)
-        getMutableComponent(oneEntity, InputSourceComponent).source.handedness.set(OneHandness as XRHandedness)
+        // @ts-expect-error
+        getComponent(oneEntity, InputSourceComponent).source.handedness = OneHandness as XRHandedness
         const twoEntity = createEntity()
         setComponent(twoEntity, InputSourceComponent)
-        getMutableComponent(twoEntity, InputSourceComponent).source.handedness.set(TwoHandness as XRHandedness)
+        // @ts-expect-error
+        getComponent(twoEntity, InputSourceComponent).source.handedness = TwoHandness as XRHandedness
         // Run and Check the result
         const result = InputSourceComponent.getPreferredInputSource()
         assert.ok(result)
@@ -603,7 +609,7 @@ describe('InputSourceComponent', () => {
         { entity: createEntity(), distance: 10_000 },
         { entity: createEntity(), distance: 46 & 2 }
       ] as IntersectionList
-      getMutableComponent(testEntity, InputSourceComponent).intersections.set(Expected)
+      getComponent(testEntity, InputSourceComponent).intersections = Expected
       const result = InputSourceComponent.getClosestIntersectedEntity(testEntity)
       assert.equal(result, Expected[0].entity)
     })
@@ -628,7 +634,7 @@ describe('InputSourceComponent', () => {
         { entity: createEntity(), distance: 10_000 },
         { entity: createEntity(), distance: 46 & 2 }
       ] as IntersectionList
-      getMutableComponent(testEntity, InputSourceComponent).intersections.set(Expected)
+      getComponent(testEntity, InputSourceComponent).intersections = Expected
       const result = InputSourceComponent.getClosestIntersection(testEntity)
       assert.deepEqual(result, Expected[0])
     })

@@ -13,14 +13,14 @@ import {
   useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
@@ -33,17 +33,17 @@ export const eyeOffset = 0.25
 export const AvatarControllerComponent = defineComponent({
   name: 'AvatarControllerComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** The camera entity that should be updated by this controller */
-    cameraEntity: S.Entity(),
-    movementCaptured: S.Array(S.Entity()),
-    isJumping: S.Bool(),
-    isWalking: S.Bool(),
-    isInAir: S.Bool(),
+    cameraEntity: EntitySchema.Entity(),
+    movementCaptured: Schema.Array(EntitySchema.Entity()),
+    isJumping: Schema.Bool(),
+    isWalking: Schema.Bool(),
+    isInAir: Schema.Bool(),
     /** velocity along the Y axis */
-    verticalVelocity: S.Number(),
+    verticalVelocity: Schema.Number(),
     /** Is the gamepad-driven jump active */
-    gamepadJumpActive: S.Bool(),
+    gamepadJumpActive: Schema.Bool(),
     /** gamepad-driven input, in the local XZ plane */
     gamepadLocalInput: T.Vec3(),
     /** gamepad-driven movement, in the world XZ plane */
@@ -66,51 +66,52 @@ export const AvatarControllerComponent = defineComponent({
     const entity = useEntityContext()
     const avatarComponent = useOptionalComponent(entity, AvatarComponent)
     const avatarControllerComponent = useComponent(entity, AvatarControllerComponent)
-    const isCameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
-    const camera = useComponent(Engine.instance.cameraEntity, CameraComponent)
+    const shouldCameraAttachToController = XRState.useShouldViewerFollowController()
+    const hasSession = !!useMutableState(XRState).session.value
+    const camera = useComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const world = Physics.useWorld(entity)
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
     const cameraHasTargetRotation = useHasComponent(
-      avatarControllerComponent.cameraEntity.value,
+      avatarControllerComponent.cameraEntity,
       TargetCameraRotationComponent
     )
 
     useImmediateEffect(() => {
-      avatarControllerComponent.cameraEntity.set(getState(ReferenceSpaceState).viewerEntity || UndefinedEntity)
+      setComponent(entity, AvatarControllerComponent, {
+        cameraEntity: getState(ReferenceSpaceState).viewerEntity || UndefinedEntity
+      })
     }, [])
 
     useEffect(() => {
       if (!gltfComponent) return
 
-      if (gltfComponent.progress.value !== 100) {
+      if (gltfComponent.progress !== 100) {
         AvatarControllerComponent.captureMovement(entity, entity)
       } else {
         AvatarControllerComponent.releaseMovement(entity, entity)
       }
-    }, [gltfComponent?.progress?.value])
+    }, [gltfComponent?.progress])
 
     useEffect(() => {
       if (!world) return
       Physics.createCharacterController(world, entity, {})
-      world.cameraAttachedRigidbodyEntity = entity
       return () => {
-        world.cameraAttachedRigidbodyEntity = UndefinedEntity
         Physics.removeCharacterController(world, entity)
       }
     }, [world])
 
     useEffect(() => {
       if (!avatarComponent) return
-      const cameraEntity = avatarControllerComponent.cameraEntity.value
+      const cameraEntity = avatarControllerComponent.cameraEntity
       if (cameraEntity && entityExists(cameraEntity) && hasComponent(cameraEntity, FollowCameraComponent)) {
         const cameraComponent = getComponent(cameraEntity, FollowCameraComponent)
-        cameraComponent.firstPersonOffset.set(0, avatarComponent.eyeHeight.value, eyeOffset)
-        cameraComponent.thirdPersonOffset.set(0, avatarComponent.eyeHeight.value, 0)
+        cameraComponent.firstPersonOffset.set(0, avatarComponent.eyeHeight, eyeOffset)
+        cameraComponent.thirdPersonOffset.set(0, avatarComponent.eyeHeight, 0)
       }
     }, [avatarComponent?.avatarHeight, camera.near])
 
     useEffect(() => {
-      if (!avatarComponent || isCameraAttachedToAvatar || !cameraHasTargetRotation) return
+      if (!avatarComponent || shouldCameraAttachToController || !cameraHasTargetRotation) return
 
       const controller = getComponent(entity, AvatarControllerComponent)
       const targetCameraRotation = getComponent(controller.cameraEntity, TargetCameraRotationComponent)
@@ -118,14 +119,27 @@ export const AvatarControllerComponent = defineComponent({
         targetEntity: entity,
         phi: targetCameraRotation.phi,
         theta: targetCameraRotation.theta,
-        firstPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, eyeOffset),
-        thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight.value, 0)
+        firstPersonOffset: new Vector3(0, avatarComponent.eyeHeight, eyeOffset),
+        thirdPersonOffset: new Vector3(0, avatarComponent.eyeHeight, 0)
       })
 
       return () => {
         if (entityExists(controller.cameraEntity)) removeComponent(controller.cameraEntity, FollowCameraComponent)
       }
-    }, [isCameraAttachedToAvatar, avatarComponent, cameraHasTargetRotation])
+    }, [shouldCameraAttachToController, avatarComponent, cameraHasTargetRotation])
+
+    // Determine if the camera should be attached to the controller
+    const cameraAttached = !hasSession || shouldCameraAttachToController
+
+    useEffect(() => {
+      if (!cameraAttached) return
+
+      getMutableState(XRState).cameraAttachedEntity.set(entity)
+
+      return () => {
+        getMutableState(XRState).cameraAttachedEntity.set(UndefinedEntity)
+      }
+    }, [cameraAttached])
 
     return null
   }
@@ -133,7 +147,7 @@ export const AvatarControllerComponent = defineComponent({
 
 export const AvatarColliderComponent = defineComponent({
   name: 'AvatarColliderComponent',
-  schema: S.Object({ colliderEntity: S.Entity() }),
+  schema: Schema.Object({ colliderEntity: EntitySchema.Entity() }),
 
   reactor({ entity }) {
     useEffect(() => {

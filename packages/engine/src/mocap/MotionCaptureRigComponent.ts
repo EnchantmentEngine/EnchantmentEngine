@@ -1,14 +1,18 @@
-import { S } from '@ir-engine/ecs'
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
+import { Schema } from '@ir-engine/hyperflux'
 import { VRMHumanBoneList } from '../avatar/maps/VRMHumanBoneList'
 
 export const MotionCaptureRigComponent = defineComponent({
   name: 'MotionCaptureRigComponent',
 
-  schema: S.Object({
-    prevWorldLandmarks: S.Array(S.Object({ x: S.Number(), y: S.Number(), z: S.Number(), visibility: S.Number() })),
-    prevScreenLandmarks: S.Array(S.Object({ x: S.Number(), y: S.Number(), z: S.Number(), visibility: S.Number() }))
+  schema: Schema.Object({
+    prevWorldLandmarks: Schema.Array(
+      Schema.Object({ x: Schema.Number(), y: Schema.Number(), z: Schema.Number(), visibility: Schema.Number() })
+    ),
+    prevScreenLandmarks: Schema.Array(
+      Schema.Object({ x: Schema.Number(), y: Schema.Number(), z: Schema.Number(), visibility: Schema.Number() })
+    )
   }),
 
   storage: {

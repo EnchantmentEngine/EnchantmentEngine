@@ -15,7 +15,7 @@ import CaptureUI from '@ir-engine/ui/src/pages/Capture'
 
 import '@ir-engine/client-core/src/world/ClientNetworkModule'
 
-import { getMutableComponent, hasComponent, useQuery } from '@ir-engine/ecs'
+import { hasComponent, setComponent, useQuery } from '@ir-engine/ecs'
 
 import '@ir-engine/engine/src/EngineModule'
 
@@ -55,7 +55,7 @@ export const CaptureLocation = () => {
   useEffect(() => {
     //removeComponent(avatarQuery[0], AvatarControllerComponent)
     if (hasComponent(avatarQuery[0], RigidBodyComponent))
-      getMutableComponent(avatarQuery[0], RigidBodyComponent).type.set('fixed')
+      setComponent(avatarQuery[0], RigidBodyComponent, { type: 'fixed' })
   }, [avatarQuery])
 
   useNetwork({ online: !!locationName })

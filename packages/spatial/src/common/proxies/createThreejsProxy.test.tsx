@@ -1,6 +1,7 @@
-import { createEntity, defineComponent, destroyEngine, Entity, getComponent, S, setComponent } from '@ir-engine/ecs'
+import { createEntity, defineComponent, destroyEngine, Entity, getComponent, setComponent } from '@ir-engine/ecs'
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
+import { Schema } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -21,7 +22,7 @@ describe('createThreejsProxy', () => {
 
     const Vector3Component = defineComponent({
       name: 'Vector3Component',
-      schema: S.Object({
+      schema: Schema.Object({
         position: T.Vec3()
       }),
       storage: {

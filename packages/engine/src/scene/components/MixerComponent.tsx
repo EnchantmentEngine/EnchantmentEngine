@@ -18,13 +18,13 @@ import {
   defineComponent,
   Entity,
   EntityID,
+  EntitySchema,
   getComponent,
-  S,
   setComponent,
   useComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { Kind } from '@ir-engine/ecs/src/schemas/JSONSchemaTypes'
+import { Kind, Schema } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { Color, Quaternion, Vector2, Vector3, Vector4 } from 'three'
 
@@ -264,26 +264,26 @@ const createProperty = (
 /**
  * Schema definition for the MixerComponent
  */
-const schema = S.Object({
-  coord: S.Number(), // Current coordinate position
-  properties: S.Array(
-    S.Object({
-      entityID: S.EntityID(),
-      componentID: S.String(),
-      propertyPath: S.String(),
-      type: S.Union([
-        S.Literal('number'),
-        S.Literal('Vector2'),
-        S.Literal('Vector3'),
-        S.Literal('Vector4'),
-        S.Literal('Color'),
-        S.Literal('Quaternion')
+const schema = Schema.Object({
+  coord: Schema.Number(), // Current coordinate position
+  properties: Schema.Array(
+    Schema.Object({
+      entityID: EntitySchema.EntityID(),
+      componentID: Schema.String(),
+      propertyPath: Schema.String(),
+      type: Schema.Union([
+        Schema.Literal('number'),
+        Schema.Literal('Vector2'),
+        Schema.Literal('Vector3'),
+        Schema.Literal('Vector4'),
+        Schema.Literal('Color'),
+        Schema.Literal('Quaternion')
       ]),
-      address: S.String()
+      address: Schema.String()
     })
   ),
-  entries: S.Array(S.Tuple([S.Number(), S.Record(S.String(), S.Array(S.Number()))])), // Array of [coord, entry] tuples
-  initialized: S.Bool({ default: false, serialized: false })
+  entries: Schema.Array(Schema.Tuple([Schema.Number(), Schema.Record(Schema.String(), Schema.Array(Schema.Number()))])), // Array of [coord, entry] tuples
+  initialized: Schema.Bool({ default: false, serialized: false })
 })
 
 /**
@@ -308,7 +308,6 @@ export const MixerComponent = defineComponent({
 
     // Initialize component state on first render
     useEffect(() => {
-      const mixerComp = getComponent(entity, MixerComponent)
       if (mixerComp.initialized) return
 
       setComponent(entity, MixerComponent, {

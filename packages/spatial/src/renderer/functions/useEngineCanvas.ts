@@ -1,5 +1,5 @@
-import { Engine, getComponent, getOptionalMutableComponent, hasComponent } from '@ir-engine/ecs'
-import { getState, none, useMutableState } from '@ir-engine/hyperflux'
+import { getComponent, getOptionalComponent, hasComponent, setComponent } from '@ir-engine/ecs'
+import { getState, HyperFlux, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { destroySpatialViewer, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { useEffect, useRef } from 'react'
@@ -40,7 +40,7 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
     canvasRef.current = canvas
     initializeSpatialViewer(canvas)
     return () => {
-      if (!Engine.instance) return
+      if (!HyperFlux.store) return
       canvasRef.current = null
       destroySpatialViewer()
     }
@@ -55,32 +55,36 @@ export const useEngineCanvas = (ref: React.RefObject<HTMLElement> | null) => {
   useEffect(() => {
     if (!viewerEntity || !originEntity) return
 
-    const rendererComponent = getOptionalMutableComponent(viewerEntity, RendererComponent)
+    const rendererComponent = getOptionalComponent(viewerEntity, RendererComponent)
     if (!rendererComponent) return
 
-    rendererComponent.scenes.merge([originEntity])
+    rendererComponent.scenes.push(originEntity)
+    setComponent(viewerEntity, RendererComponent)
 
     return () => {
-      if (!Engine.instance) return
+      if (!HyperFlux.store) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
-      const index = rendererComponent.scenes.value.indexOf(originEntity)
-      rendererComponent.scenes[index].set(none)
+      const index = rendererComponent.scenes.indexOf(originEntity)
+      rendererComponent.scenes.splice(index, 1)
+      setComponent(viewerEntity, RendererComponent)
     }
   }, [viewerEntity, originEntity])
 
   useEffect(() => {
     if (!viewerEntity || !localFloorEntity) return
 
-    const rendererComponent = getOptionalMutableComponent(viewerEntity, RendererComponent)
+    const rendererComponent = getOptionalComponent(viewerEntity, RendererComponent)
     if (!rendererComponent) return
 
-    rendererComponent.scenes.merge([localFloorEntity])
+    rendererComponent.scenes.push(localFloorEntity)
+    setComponent(viewerEntity, RendererComponent)
 
     return () => {
-      if (!Engine.instance) return
+      if (!HyperFlux.store) return
       if (!hasComponent(viewerEntity, RendererComponent)) return
-      const index = rendererComponent.scenes.value.indexOf(localFloorEntity)
-      rendererComponent.scenes[index].set(none)
+      const index = rendererComponent.scenes.indexOf(localFloorEntity)
+      rendererComponent.scenes.splice(index, 1)
+      setComponent(viewerEntity, RendererComponent)
     }
   }, [viewerEntity, localFloorEntity])
 }

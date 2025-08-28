@@ -6,14 +6,12 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
-  Engine,
   EngineState,
   Entity,
   EntityID,
   EntityTreeComponent,
   EntityUUID,
   EntityUUIDPair,
-  getMutableComponent,
   removeEntity,
   setComponent,
   SourceID,
@@ -111,9 +109,8 @@ describe('ClientInputHeuristics', () => {
         const box = new Box3(boxMin, boxMax)
 
         setComponent(testEntity, VisibleComponent)
-        setComponent(testEntity, BoundingBoxComponent)
+        setComponent(testEntity, BoundingBoxComponent, { box })
         setComponent(testEntity, InputComponent)
-        getMutableComponent(testEntity, BoundingBoxComponent).box.set(box)
 
         const rayOrigin = new Vector3(0, 2, 2)
         const rayDirection = new Vector3(1, 0, 0).normalize()
@@ -146,9 +143,8 @@ describe('ClientInputHeuristics', () => {
 
         for (const box of boxes) {
           setComponent(box.entity, VisibleComponent)
-          setComponent(box.entity, BoundingBoxComponent)
+          setComponent(box.entity, BoundingBoxComponent, { box: box.box })
           setComponent(box.entity, InputComponent)
-          getMutableComponent(box.entity, BoundingBoxComponent).box.set(box.box)
         }
 
         const rayOrigin = new Vector3()
@@ -268,15 +264,15 @@ describe('ClientInputHeuristics', () => {
       return destroyEngine()
     })
 
-    describe('when both XRState.isCameraAttachedToAvatar and `@param isSpatialInput` are truthy ...', () => {
-      const isCameraAttachedToAvatar = true
+    describe('when both XRState.shouldViewerFollowController and `@param isSpatialInput` are truthy ...', () => {
+      const shouldViewerFollowController = true
       const isSpatialInput = true
-      const avatarCameraMode = isCameraAttachedToAvatar ? 'attached' : 'auto'
+      const avatarCameraMode = shouldViewerFollowController ? 'attached' : 'auto'
 
       it('... should store the inputEntity and its distanceSquared to the inputSourceEntity into the `@param intersectionData` for every spatialInputObjectQuery entity that is within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -295,9 +291,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it("... should not store the User's avatar entity into the `@param intersectionData` set, even when there is an inputSourceEntity that is within the proximity threshold", () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -320,9 +316,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not find any intersections when `@param sourceEid` entity is undefined ', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = UndefinedEntity
@@ -335,9 +331,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should add the entity found to the first element of `@param sortedEntities` when there is only one entity within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -356,9 +352,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not add anything to `@param sortedEntities` if no entities were found within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -384,9 +380,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should sort the entities by distance and add the closest entity found to the first element of `@param sortedEntities` when there is more than one entity within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -409,9 +405,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should only add one entity to the `@param sortedEntities` list when multiple entities are found within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -434,15 +430,15 @@ describe('ClientInputHeuristics', () => {
       })
     })
 
-    describe('when XRControlsState.isCameraAttachedToAvatar is truthy and `@param isSpatialInput` is falsy ...', () => {
-      const isCameraAttachedToAvatar = true
+    describe('when XRControlsState.shouldViewerFollowController is truthy and `@param isSpatialInput` is falsy ...', () => {
+      const shouldViewerFollowController = true
       const isSpatialInput = false
-      const avatarCameraMode = isCameraAttachedToAvatar ? 'attached' : 'auto'
+      const avatarCameraMode = shouldViewerFollowController ? 'attached' : 'auto'
 
       it('... should not store the avatarEntity into the `@param intersectionData`', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -469,9 +465,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it("... should not store the User's avatar entity into the `@param intersectionData` set, even when there is an inputSourceEntity that is within the proximity threshold", () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -498,9 +494,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not find any intersections when selfAvatarEntity entity is undefined', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -514,9 +510,9 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Do not make the testEntity an Avatar entity, so that it is undefined
         // getMutableState(EngineState).userID.set("testUserID" as UserID)
-        // const UUID = Engine.instance.userID + '_avatar' as EntityUUID
+        // const UUID = getState(EngineState).userID + '_avatar' as EntityUUID
         // setComponent(testEntity, UUIDComponent, UUID)
-        const selfAvatarEntity = UUIDComponent.getEntityByUUID((Engine.instance.userID + 'avatar') as EntityUUID)
+        const selfAvatarEntity = UUIDComponent.getEntityByUUID((getState(EngineState).userID + 'avatar') as EntityUUID)
         assert.equal(selfAvatarEntity, UndefinedEntity)
 
         // Run and Check the result
@@ -525,15 +521,15 @@ describe('ClientInputHeuristics', () => {
       })
     })
 
-    describe('when XRControlsState.isCameraAttachedToAvatar is falsy and `@param isSpatialInput` is truthy ...', () => {
-      const isCameraAttachedToAvatar = false
+    describe('when XRControlsState.shouldViewerFollowController is falsy and `@param isSpatialInput` is truthy ...', () => {
+      const shouldViewerFollowController = false
       const isSpatialInput = true
-      const avatarCameraMode = isCameraAttachedToAvatar ? 'attached' : 'auto'
+      const avatarCameraMode = shouldViewerFollowController ? 'attached' : 'auto'
 
       it('... should not store the avatarEntity into the `@param intersectionData`', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -560,9 +556,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it("... should not store the User's avatar entity into the `@param intersectionData` set, even when there is an inputSourceEntity that is within the proximity threshold", () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -587,9 +583,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not find any intersections when selfAvatarEntity entity is undefined', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -603,9 +599,9 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Do not make the testEntity an Avatar entity, so that it is undefined
         // getMutableState(EngineState).userID.set("testUserID" as UserID)
-        // const UUID = Engine.instance.userID + '_avatar' as EntityUUID
+        // const UUID = getState(EngineState).userID + '_avatar' as EntityUUID
         // setComponent(testEntity, UUIDComponent, UUID)
-        const selfAvatarEntity = UUIDComponent.getEntityByUUID((Engine.instance.userID + '_avatar') as EntityUUID)
+        const selfAvatarEntity = UUIDComponent.getEntityByUUID((getState(EngineState).userID + '_avatar') as EntityUUID)
         assert.equal(selfAvatarEntity, UndefinedEntity)
 
         // Run and Check the result

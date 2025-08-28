@@ -1,21 +1,21 @@
 import {
-  EngineState,
-  Entity,
-  EntityTreeComponent,
-  S,
-  UndefinedEntity,
   createEntity,
   defineComponent,
+  EngineState,
+  Entity,
+  EntitySchema,
+  EntityTreeComponent,
   getComponent,
   hasComponent,
   iterateEntityNode,
   removeComponent,
   removeEntity,
   setComponent,
+  UndefinedEntity,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { getMutableState, useDidMount, useHookstate, useState } from '@ir-engine/hyperflux'
+import { getMutableState, Schema, useDidMount, useHookstate, useState } from '@ir-engine/hyperflux'
 import { Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { LineSegmentComponent } from '@ir-engine/spatial/src/renderer/components/LineSegmentComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
@@ -84,12 +84,12 @@ function createBBoxGridGeometry(matrixWorld: Matrix4, bbox: Box3, density: numbe
 export const BoundingBoxHelperComponent = defineComponent({
   name: 'BoundingBoxHelperComponent',
 
-  schema: S.Object({
-    bbox: S.Type<Box3>({ required: true }),
-    density: S.Number({ default: 2 }),
+  schema: Schema.Object({
+    bbox: Schema.Type<Box3>({ required: true }),
+    density: Schema.Number({ default: 2 }),
     color: T.Color(0xff0000),
-    layerMask: S.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper }),
-    helperEntity: S.Entity()
+    layerMask: Schema.Type<ObjectLayerMask>({ default: ObjectLayerMasks.NodeHelper }),
+    helperEntity: EntitySchema.Entity()
   }),
 
   reactor: function () {
@@ -98,15 +98,17 @@ export const BoundingBoxHelperComponent = defineComponent({
 
     const lineSegmentedEntity = useHookstate(() => {
       const helperEntity = createEntity()
-      const bbox = component.bbox.value
-      const density = component.density.value
+      const bbox = component.bbox
+      const density = component.density
       setComponent(helperEntity, LineSegmentComponent, {
         name: 'bbox-line-segment-' + entity,
         geometry: createBBoxGridGeometry(new Matrix4().identity(), bbox, density),
-        material: new LineBasicMaterial({ color: component.color.value }),
-        layerMask: component.layerMask.value
+        material: new LineBasicMaterial({ color: component.color }),
+        layerMask: component.layerMask
       })
-      component.helperEntity.set(helperEntity)
+      setComponent(entity, BoundingBoxHelperComponent, {
+        helperEntity: helperEntity
+      })
       return helperEntity
     }).value
     const lineSegment = useComponent(lineSegmentedEntity, LineSegmentComponent)
@@ -118,17 +120,23 @@ export const BoundingBoxHelperComponent = defineComponent({
     }, [])
 
     useDidMount(() => {
-      const bbox = component.bbox.value
-      const density = component.density.value
-      lineSegment.geometry.set(createBBoxGridGeometry(new Matrix4().identity(), bbox, density))
+      const bbox = component.bbox
+      const density = component.density
+      setComponent(lineSegmentedEntity, LineSegmentComponent, {
+        geometry: createBBoxGridGeometry(new Matrix4().identity(), bbox, density)
+      })
     }, [component.bbox])
 
     useEffect(() => {
-      lineSegment.color.set(component.color.value)
+      setComponent(lineSegmentedEntity, LineSegmentComponent, {
+        color: component.color
+      })
     }, [component.color, lineSegment])
 
     useEffect(() => {
-      lineSegment.layerMask.set(component.layerMask.value)
+      setComponent(lineSegmentedEntity, LineSegmentComponent, {
+        layerMask: component.layerMask
+      })
     }, [component.layerMask, lineSegment])
 
     return null
@@ -143,8 +151,8 @@ const originalScale = new Vector3()
 export const ObjectGridSnapComponent = defineComponent({
   name: 'ObjectGridSnapComponent',
 
-  schema: S.Object({
-    bbox: S.Class(() => new Box3())
+  schema: Schema.Object({
+    bbox: Schema.Class(() => new Box3())
   }),
 
   reactor: () => {
@@ -178,7 +186,7 @@ export const ObjectGridSnapComponent = defineComponent({
       })
 
       //compute bounding box
-      const bbox = snapComponent.bbox.value.makeEmpty()
+      const bbox = snapComponent.bbox.makeEmpty()
       if (meshes.length > 0) {
         for (let i = 0; i < meshes.length; i++) {
           bbox.expandByObject(meshes[i])
@@ -199,13 +207,12 @@ export const ObjectGridSnapComponent = defineComponent({
         hasComponent(childEntity, TransformComponent)
       )
 
-      //set bounding box in component
-      snapComponent.bbox.set(bbox)
+      setComponent(entity, ObjectGridSnapComponent, { bbox })
     }, [gltfLoaded])
 
     useEffect(() => {
       if (!engineState.isEditing.value) return
-      const bbox = snapComponent.bbox.value
+      const bbox = snapComponent.bbox
       setComponent(entity, BoundingBoxHelperComponent, { bbox })
 
       return () => {

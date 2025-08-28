@@ -4,13 +4,10 @@ import {
   Entity,
   getOptionalComponent,
   PresentationSystemGroup,
-  S,
-  Schema,
-  Static,
   useComponent
 } from '@ir-engine/ecs'
 import { SystemUUID, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { getState, NO_PROXY, State, useHookstate } from '@ir-engine/hyperflux'
+import { getState, NO_PROXY, Schema, SchemaDefinition, State, Static, useHookstate } from '@ir-engine/hyperflux'
 import {
   MaterialPluginComponents,
   MaterialStateComponent
@@ -18,7 +15,7 @@ import {
 import { removePlugin, setPlugin } from '@ir-engine/spatial/src/renderer/materials/materialFunctions'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import React, { useEffect } from 'react'
-import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
+import { Color, Shader, Texture, Uniform, Vector2, Vector3, Vector4, WebGLRenderer } from 'three'
 
 /**
  * A JSON Schema for a texture uniform.
@@ -26,9 +23,12 @@ import { Color, Material, Shader, Texture, Uniform, Vector2, Vector3, Vector4, W
  * - `null` for no texture
  */
 export const TextureSchema = () =>
-  S.Union([S.String(), S.Null(), S.Type<Texture>()], { default: null, metadata: { $isTexture: true } }) // @todo replace $isTexture with $id
+  Schema.Union([Schema.String(), Schema.Null(), Schema.Type<Texture>()], {
+    default: null,
+    metadata: { $isTexture: true }
+  }) // @todo replace $isTexture with $id
 
-export const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
+export const isTextureUniform = (uniformSchema: SchemaDefinition) => !!uniformSchema.options?.metadata?.$isTexture
 
 /**
  *
@@ -67,7 +67,7 @@ export type ValidUniformTypes = boolean | number | string | Vector2 | Vector3 | 
 
 export type UniformRecord = Record<string, ValidUniformTypes>
 
-export const defineMaterialPlugin = <T extends Schema>({
+export const defineMaterialPlugin = <T extends SchemaDefinition>({
   name,
   jsonID,
   uniforms: uniformSchema,
@@ -91,9 +91,9 @@ export const defineMaterialPlugin = <T extends Schema>({
 
     reactor: ({ entity }) => {
       /** Suspend context until material exists */
-      const material = useComponent(entity, MaterialStateComponent).material.value as Material
+      const material = useComponent(entity, MaterialStateComponent).material
 
-      const pluginState = useComponent(entity, PluginComponent).get(NO_PROXY) as UniformRecord
+      const pluginState = useComponent(entity, PluginComponent) as UniformRecord
 
       const textureUniformState = useHookstate(
         () =>

@@ -86,7 +86,7 @@ function createWireframeBoxGeometry(box: Box3): BufferGeometry {
 }
 
 export const OrientedBoundingBoxSystem = defineSystem({
-  uuid: 'napster.engine.OrientedBoundingBoxSystem',
+  uuid: 'ee.engine.OrientedBoundingBoxSystem',
   insert: { after: TransformSystem },
   reactor: () => {
     return (
@@ -108,7 +108,7 @@ const OrientedBoundingBoxReactor = (props: { entity: Entity }) => {
 
   useEffect(() => {
     if (!loaded) return
-    if (gltf.src.value) {
+    if (gltf.src) {
       setComponent(entity, OrientedBoundingBoxComponent)
       updateBoundingBox(entity)
       const helperEntity = createSceneEntity('OrientedBoundingBoxHelper', entity)

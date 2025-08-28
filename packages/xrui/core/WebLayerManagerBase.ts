@@ -155,6 +155,69 @@ export class WebLayerManagerBase {
     this.store = new LayerStore(name)
   }
 
+  /**
+   * Revoke an object URL safely.
+   */
+  private _revokeUrl(url?: string) {
+    if (!url) return
+    try {
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      // ignore revoke errors
+    }
+  }
+
+  /**
+   * Dispose all resources managed by this instance to prevent memory leaks.
+   * - Revokes any active object URLs
+   * - Clears any retained canvases
+   * - Disposes the KTX2 encoder workers
+   * - Empties internal caches/queues
+   */
+  dispose() {
+    // Revoke all texture URLs and drop canvases
+    for (const tex of this._textureData.values()) {
+      if (tex.ktx2Url) this._revokeUrl(tex.ktx2Url)
+      tex.ktx2Url = undefined
+      this.clearTextureCanvas(tex)
+    }
+    // Clear state references
+    for (const state of this._stateData.values()) {
+      state.texture = undefined
+    }
+    this._unsavedTextureData.clear()
+    this._statesRequestedFromStore.clear()
+    this._texturesRequestedFromStore.clear()
+    this.serializeQueue.length = 0
+    this.rasterizeQueue.length = 0
+    this.optimizeQueue.length = 0
+    this._imagePool.length = 0
+    // Stop autosave timer
+    if (this._autosaveTimer) clearTimeout(this._autosaveTimer)
+    this._autosaveTimer = undefined
+    // Dispose encoder workers
+    try {
+      this.ktx2Encoder.pool.dispose()
+    } catch (e) {
+      // ignore dispose errors
+    }
+  }
+
+  /**
+   * Clear and release the CPU-side canvas backing a texture.
+   */
+  clearTextureCanvas(texture: TextureData | undefined) {
+    if (!texture || !texture.canvas) return
+    try {
+      // Shrink the canvas to release pixel memory immediately
+      texture.canvas.width = 0
+      texture.canvas.height = 0
+    } catch (e) {
+      // ignore canvas resize errors
+    }
+    texture.canvas = undefined
+  }
+
   saveStore() {
     const stateData = Array.from(this._stateData.entries())
       .filter(([k, v]) => typeof k === 'string')
@@ -245,8 +308,11 @@ export class WebLayerManagerBase {
         canvas: undefined,
         ktx2Url: undefined
       }
-      if (!texture.ktx2Url && t.texture)
+      if (t.texture) {
+        // Replace any existing URL to avoid leaking object URLs
+        if (texture.ktx2Url) this._revokeUrl(texture.ktx2Url)
         texture.ktx2Url = URL.createObjectURL(new Blob([t.texture], { type: 'image/ktx2' }))
+      }
     }
     // load into this._stateData
     for (const s of data.stateData) {
@@ -334,6 +400,8 @@ export class WebLayerManagerBase {
           // In TypeScript 5.8.3, ArrayBufferLike is not assignable to BlobPart
           // We need to ensure we're using a proper ArrayBuffer by creating a new Uint8Array
           const uint8Array = new Uint8Array(data.buffer)
+          // Replace any existing URL to avoid leaking object URLs
+          if (textureData.ktx2Url) this._revokeUrl(textureData.ktx2Url)
           textureData.ktx2Url = URL.createObjectURL(new Blob([uint8Array], { type: 'image/ktx2' }))
         }
       }
@@ -368,6 +436,8 @@ export class WebLayerManagerBase {
       timestamp: Date.now(),
       texture: undefined
     }
+    // Replace any existing URL to avoid leaking object URLs
+    if (data.ktx2Url) this._revokeUrl(data.ktx2Url)
     data.ktx2Url = URL.createObjectURL(new Blob([ktx2Texture], { type: 'image/ktx2' }))
     const bufferData = await new Promise<Uint8Array>((resolve, reject) => {
       compress(new Uint8Array(ktx2Texture), { consume: true }, (err, bufferData) => {
@@ -579,6 +649,13 @@ export class WebLayerManagerBase {
     const hashData = this.getImageData(hashCanvas)
     const textureHashBuffer = await crypto.subtle.digest('SHA-1', hashData.data)
     const textureHash = bufferToHex(textureHashBuffer) + '?w=' + textureWidth + ';h=' + textureHeight
+    // Clear the temporary hash canvas to release memory immediately
+    try {
+      hashCanvas.width = 0
+      hashCanvas.height = 0
+    } catch (e) {
+      // ignore
+    }
 
     const previousCanvasHash = stateData.texture?.hash
     // stateData.texture.hash = textureHash

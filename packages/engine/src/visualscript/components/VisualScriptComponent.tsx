@@ -5,7 +5,7 @@ import { defineComponent, hasComponent, setComponent, useComponent } from '@ir-e
 import { useMutableState } from '@ir-engine/hyperflux'
 import { GraphJSON, IRegistry, VisualScriptState, defaultVisualScript } from '@ir-engine/visual-script'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { parseStorageProviderURLs } from '@ir-engine/spatial/src/resources/parseSceneJSON'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { useVisualScriptRunner } from '../systems/useVisualScriptRunner'
@@ -20,20 +20,20 @@ export const VisualScriptComponent = defineComponent({
   name: 'VisualScriptComponent',
   jsonID: 'EE_visual_script',
 
-  schema: S.Object({
-    domain: S.Enum(VisualScriptDomain, {
+  schema: Schema.Object({
+    domain: Schema.Enum(VisualScriptDomain, {
       $comment: "A string enum, ie. one of the following values: 'ECS'",
       default: VisualScriptDomain.ECS
     }),
-    visualScript: S.Type<GraphJSON | null>({
+    visualScript: Schema.Type<GraphJSON | null>({
       default: () => parseStorageProviderURLs(defaultVisualScript),
       deserialize(curr, value) {
         if (!value) return value
         return parseStorageProviderURLs(value)
       }
     }),
-    run: S.Bool(),
-    disabled: S.Bool()
+    run: Schema.Bool(),
+    disabled: Schema.Bool()
   }),
 
   // we make reactor for each component handle the engine
@@ -41,24 +41,24 @@ export const VisualScriptComponent = defineComponent({
     const entity = useEntityContext()
     const visualScript = useComponent(entity, VisualScriptComponent)
     const visualScriptState = useMutableState(VisualScriptState)
-    const canPlay = visualScript.run.value && !visualScript.disabled.value
-    const registry = visualScriptState.registries[visualScript.domain.value].get({ noproxy: true }) as IRegistry
+    const canPlay = visualScript.run && !visualScript.disabled
+    const registry = visualScriptState.registries[visualScript.domain].get({ noproxy: true }) as IRegistry
     const gltfAncestor = useAncestorWithComponents(entity, [GLTFComponent])
 
     const visualScriptRunner = useVisualScriptRunner({
-      visualScriptJson: visualScript.visualScript.get({ noproxy: true }) as GraphJSON,
+      visualScriptJson: visualScript.visualScript,
       autoRun: canPlay,
       registry
     })
 
     useEffect(() => {
-      if (visualScript.disabled.value) return
-      visualScript.run.value ? visualScriptRunner.play() : visualScriptRunner.pause()
+      if (visualScript.disabled) return
+      visualScript.run ? visualScriptRunner.play() : visualScriptRunner.pause()
     }, [visualScript.run])
 
     useEffect(() => {
-      if (!visualScript.disabled.value) return
-      visualScript.run.set(false)
+      if (!visualScript.disabled) return
+      setComponent(entity, VisualScriptComponent, { run: false })
     }, [visualScript.disabled])
 
     if (!gltfAncestor) return null

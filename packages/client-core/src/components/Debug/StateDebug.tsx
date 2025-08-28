@@ -2,10 +2,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONTree } from 'react-json-tree'
 
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
   defineState,
   getMutableState,
+  HyperFlux,
   NetworkState,
   NO_PROXY,
   NO_PROXY_STEALTH,
@@ -68,15 +68,15 @@ export function StateDebug() {
 
   const state =
     stateSearch.value === ''
-      ? Engine.instance.store.stateMap
+      ? HyperFlux.store.stateMap
       : Object.fromEntries(
-          Object.entries(Engine.instance.store.stateMap)
+          Object.entries(HyperFlux.store.stateMap)
             .filter(([key]) => key.toLowerCase().includes(stateSearch.value.toLowerCase()))
             .map(([key, value]) => [key, value.get(NO_PROXY_STEALTH)])
         )
 
-  const actionHistory = [...Engine.instance.store.actions.history].sort((a, b) => a.$time - b.$time)
-  const cachedHistory = [...Engine.instance.store.actions.cached].sort((a, b) => a.$time - b.$time)
+  const actionHistory = [...HyperFlux.store.actions.history].sort((a, b) => a.$time - b.$time)
+  const cachedHistory = [...HyperFlux.store.actions.cached].sort((a, b) => a.$time - b.$time)
   const eventSourcedHistory = Object.fromEntries(
     [...StateDefinitions.entries()]
       .filter(([name, state]) => state.receptorActionQueue)

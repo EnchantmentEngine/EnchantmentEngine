@@ -7,8 +7,16 @@ import '../state/AvatarNetworkState'
 
 import { Entity, UUIDComponent } from '@ir-engine/ecs'
 import { hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine, createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { NetworkTopics, UserID, applyIncomingActions, dispatchAction, getMutableState } from '@ir-engine/hyperflux'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
+import {
+  HyperFlux,
+  NetworkTopics,
+  UserID,
+  applyIncomingActions,
+  dispatchAction,
+  getMutableState,
+  getState
+} from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
@@ -42,11 +50,11 @@ describe('spawnAvatarReceptor', () => {
     const physicsWorld = Physics.createWorld(sceneEntity)
     physicsWorld.timestep = 1 / 60
 
-    createMockNetwork(NetworkTopics.world, Engine.instance.store.peerID, Engine.instance.userID)
+    createMockNetwork(NetworkTopics.world, HyperFlux.store.peerID, getState(EngineState).userID)
 
     dispatchAction(
       AvatarNetworkAction.spawn({
-        $peer: Engine.instance.store.peerID,
+        $peer: HyperFlux.store.peerID,
         parentUUID: UUIDComponent.get(sceneEntity),
         position: new Vector3(),
         rotation: new Quaternion(),

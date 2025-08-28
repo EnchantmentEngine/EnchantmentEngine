@@ -101,7 +101,7 @@ describe('WebXRManagerFunctions', () => {
     beforeEach(async () => {
       createEngine()
       await mockEmulatedXREngine()
-      renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer
+      renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer as WebGLRenderer
     })
 
     afterEach(() => {
@@ -281,7 +281,7 @@ describe('WebXRManagerFunctions', () => {
     beforeEach(async () => {
       createEngine()
       await mockEmulatedXREngine()
-      renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer
+      renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer as WebGLRenderer
     })
 
     afterEach(() => {
@@ -1911,7 +1911,7 @@ describe('createWebXRManager', () => {
   beforeEach(async () => {
     createEngine()
     await mockEmulatedXREngine()
-    renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer
+    renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer as WebGLRenderer
   })
 
   afterEach(() => {

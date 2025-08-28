@@ -5,7 +5,6 @@ import {
   EntityID,
   EntityTreeComponent,
   EntityUUIDPair,
-  Static,
   UUIDComponent,
   UndefinedEntity,
   createEntity,
@@ -16,14 +15,12 @@ import {
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
   removeComponent,
   setComponent,
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useHookstate } from '@ir-engine/hyperflux'
+import { Schema, Static, useHookstate } from '@ir-engine/hyperflux'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -60,13 +57,13 @@ export const Devices = {
 
 export type DevicesType = (typeof Devices)[keyof typeof Devices]
 
-export const distanceMetadataSchema = S.Object({
-  minDistance: S.Union([S.Number(), S.Undefined()], { default: undefined }),
-  maxDistance: S.Union([S.Number(), S.Undefined()], { default: undefined })
+export const distanceMetadataSchema = Schema.Object({
+  minDistance: Schema.Optional(Schema.Number()),
+  maxDistance: Schema.Optional(Schema.Number())
 })
 
-export const deviceMetadataSchema = S.Object({
-  device: S.Enum(Devices, {
+export const deviceMetadataSchema = Schema.Object({
+  device: Schema.Enum(Devices, {
     $comment: "A string enum, ie. one of the following values: 'DESKTOP', 'MOBILE', 'XR'",
     default: Devices.DESKTOP
   })
@@ -78,18 +75,18 @@ export const VariantComponent = defineComponent({
   name: 'VariantComponent',
   jsonID: 'EE_variant',
 
-  schema: S.Object({
-    levels: S.Array(
-      S.Object({
-        src: S.String(),
-        metadata: S.Union([distanceMetadataSchema, deviceMetadataSchema])
+  schema: Schema.Object({
+    levels: Schema.Array(
+      Schema.Object({
+        src: Schema.String(),
+        metadata: Schema.Union([distanceMetadataSchema, deviceMetadataSchema])
       })
     ),
-    heuristic: S.Enum(Heuristic, {
+    heuristic: Schema.Enum(Heuristic, {
       $comment: "A string enum, ie. one of the following values: 'DISTANCE', 'MANUAL', 'DEVICE'",
       default: Heuristic.MANUAL
     }),
-    currentLevel: S.Number({ default: 0, serialized: false })
+    currentLevel: Schema.Number({ default: 0, serialized: false })
   }),
 
   setDistanceLevel: (entity: Entity) => {
@@ -102,7 +99,7 @@ export const VariantComponent = defineComponent({
       const minDistance = Math.pow(level.metadata['minDistance'], 2)
       const maxDistance = Math.pow(level.metadata['maxDistance'], 2)
       if (minDistance <= distance && distance <= maxDistance) {
-        getMutableComponent(entity, VariantComponent).currentLevel.set(i)
+        setComponent(entity, VariantComponent, { currentLevel: i })
         break
       }
     }
@@ -137,26 +134,26 @@ export const VariantComponent = defineComponent({
     useEffect(() => {
       if (!variantComponent.levels.length) return
 
-      const heuristic = variantComponent.heuristic.value
+      const heuristic = variantComponent.heuristic
       if (heuristic === Heuristic.DEVICE) {
         const targetDevice = isMobile || isMobileXRHeadset ? Devices.MOBILE : Devices.DESKTOP
-        const levelIndex = variantComponent.levels.value.findIndex((level) => level.metadata['device'] === targetDevice)
+        const levelIndex = variantComponent.levels.findIndex((level) => level.metadata['device'] === targetDevice)
         if (levelIndex < 0) {
           console.warn('VariantComponent: No asset found for target device')
           return
         }
-        variantComponent.currentLevel.set(levelIndex)
+        setComponent(entity, VariantComponent, { currentLevel: levelIndex })
       } else if (heuristic === Heuristic.DISTANCE) {
         setComponent(entity, DistanceFromCameraComponent)
         VariantComponent.setDistanceLevel(entity)
       }
-    }, [variantComponent.heuristic.value, variantComponent.levels])
+    }, [variantComponent.heuristic, variantComponent.levels])
 
     useEffect(() => {
       if (!variantComponent.levels.length || !childEntity.value) return
 
-      const currentLevel = variantComponent.currentLevel.value
-      const src = variantComponent.levels[currentLevel].src.value
+      const currentLevel = variantComponent.currentLevel
+      const src = variantComponent.levels[currentLevel].src
       if (!src) return
       setComponent(childEntity.value, GLTFComponent, { src: src })
     }, [childEntity, variantComponent.currentLevel, variantComponent.levels])
@@ -165,7 +162,7 @@ export const VariantComponent = defineComponent({
       const levels = variantComponent.levels.length
       for (let level = 0; level < levels; level++) {
         setCallback(entity, `variantLevel${level}`, () => {
-          variantComponent.currentLevel.set(level)
+          setComponent(entity, VariantComponent, { currentLevel: level })
         })
       }
       return () => {
@@ -184,9 +181,9 @@ export const VariantComponent = defineComponent({
 export const InstanceVariantMaterialPluginComponent = defineMaterialPlugin({
   name: 'InstanceVariantMaterialPluginComponent',
   jsonID: 'IR_instance_variant_material',
-  uniforms: S.Object({
-    minDistance: S.Number(),
-    maxDistance: S.Number()
+  uniforms: Schema.Object({
+    minDistance: Schema.Number(),
+    maxDistance: Schema.Number()
   }),
   onApply: (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -224,7 +221,7 @@ const InstancingVariantReactor = (props: { entity: Entity }) => {
 const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) => {
   const variantComponent = useComponent(props.entity, VariantComponent)
 
-  const level = variantComponent.levels[props.level].value
+  const level = variantComponent.levels[props.level]
 
   const modelEntity = useHookstate(() => {
     const entity = createEntity()
@@ -291,10 +288,10 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
   }, [])
 
   const materialEntities = useComponent(props.meshEntity, MaterialInstanceComponent).entities
-  const level = useComponent(props.variantEntity, VariantComponent).levels[props.level].value
+  const level = useComponent(props.variantEntity, VariantComponent).levels[props.level]
 
   useEffect(() => {
-    const entities = [...materialEntities.value]
+    const entities = [...materialEntities]
     for (const materialEntity of entities) {
       setComponent(materialEntity, InstanceVariantMaterialPluginComponent)
     }
@@ -306,10 +303,9 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
   }, [materialEntities])
 
   useEffect(() => {
-    const entities = materialEntities.value
     const minDistance = level.metadata['minDistance']
     const maxDistance = level.metadata['maxDistance']
-    for (const materialEntity of entities) {
+    for (const materialEntity of materialEntities) {
       setComponent(materialEntity, InstanceVariantMaterialPluginComponent, {
         minDistance: minDistance,
         maxDistance: maxDistance

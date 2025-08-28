@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { Color, CubeTexture, LightProbe, Vector3, WebGLCubeRenderTarget } from 'three'
+import { Color, CubeTexture, LightProbe, Vector3, WebGLCubeRenderTarget, WebGLRenderer } from 'three'
 
-import { Engine, createEntity } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { createEntity } from '@ir-engine/ecs'
+import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
@@ -58,9 +58,9 @@ const updateReflection = () => {
 
   if (!xrLightProbeState.environment || !xrLightProbeState.xrWebGLBinding || !xrLightProbeState.probe) return
 
-  const textureProperties = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.properties.get(
-    xrLightProbeState.environment
-  ) as any
+  const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+    .renderer! as WebGLRenderer
+  const textureProperties = renderer.properties.get(xrLightProbeState.environment) as any
 
   if (textureProperties) {
     const cubeMap = xrLightProbeState.xrWebGLBinding!.getReflectionCubeMap?.(xrLightProbeState.probe)
@@ -103,19 +103,15 @@ const execute = () => {
       )
     )
 
-    const directionalLightState = getMutableComponent(
-      xrLightProbeState.directionalLightEntity,
-      DirectionalLightComponent
+    const directionalLightState = getComponent(xrLightProbeState.directionalLightEntity, DirectionalLightComponent)
+
+    directionalLightState.color = new Color(
+      lightEstimate.primaryLightIntensity.x / intensityScalar,
+      lightEstimate.primaryLightIntensity.y / intensityScalar,
+      lightEstimate.primaryLightIntensity.z / intensityScalar
     )
 
-    directionalLightState.color.set(
-      new Color(
-        lightEstimate.primaryLightIntensity.x / intensityScalar,
-        lightEstimate.primaryLightIntensity.y / intensityScalar,
-        lightEstimate.primaryLightIntensity.z / intensityScalar
-      )
-    )
-    directionalLightState.intensity.set(intensityScalar)
+    directionalLightState.intensity = intensityScalar
 
     getComponent(xrLightProbeState.directionalLightEntity, TransformComponent).rotation.setFromUnitVectors(
       Vector3_Zero,
@@ -194,7 +190,9 @@ const reactor = () => {
       const cubeRenderTarget = new WebGLCubeRenderTarget(16)
       xrLightProbeState.environment.set(cubeRenderTarget.texture)
 
-      const gl = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!.getContext()
+      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+        .renderer as WebGLRenderer
+      const gl = renderer.getContext()
 
       // Ensure that we have any extensions needed to use the preferred cube map format.
       switch (session.preferredReflectionFormat) {

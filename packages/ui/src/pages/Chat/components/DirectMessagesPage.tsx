@@ -2,8 +2,8 @@ import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUser
 import { ChannelService } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { FriendService, FriendState } from '@ir-engine/client-core/src/social/services/FriendService'
 import { UserID } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { getState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { HiSearch, HiX } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
@@ -41,7 +41,7 @@ const NewMessageModal: React.FC<NewMessageModalProps> = ({ onClose }) => {
   const selectedFriends = useHookstate<UserID[]>([])
 
   useEffect(() => {
-    FriendService.getUserRelationship(Engine.instance.userID as UserID)
+    FriendService.getUserRelationship(getState(EngineState).userID as UserID)
   }, [])
 
   const friends = friendState.relationships.value

@@ -10,7 +10,7 @@ import {
   useEntityContext
 } from '@ir-engine/ecs'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
 import { FogSettingsComponent, FogType } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
@@ -22,10 +22,10 @@ export const FogShaderPluginComponent = defineMaterialPlugin({
 
   jsonID: 'IR_fog_shader',
 
-  uniforms: S.Object({
-    fogTime: S.Number(),
-    fogTimeScale: S.Number({ default: 1 }),
-    heightFactor: S.Number({ default: 0.05 })
+  uniforms: Schema.Object({
+    fogTime: Schema.Number(),
+    fogTimeScale: Schema.Number({ default: 1 }),
+    heightFactor: Schema.Number({ default: 0.05 })
   }),
 
   onApply(shader) {},
@@ -47,12 +47,12 @@ function FogGroupReactor(props: { fogEntity: Entity }) {
   }, [])
 
   useEffect(() => {
-    setComponent(entity, FogShaderPluginComponent, { heightFactor: fogSettings.height.value })
-  }, [fogSettings.height.value])
+    setComponent(entity, FogShaderPluginComponent, { heightFactor: fogSettings.height })
+  }, [fogSettings.height])
 
   useEffect(() => {
-    setComponent(entity, FogShaderPluginComponent, { fogTimeScale: fogSettings.timeScale.value })
-  }, [fogSettings.timeScale.value])
+    setComponent(entity, FogShaderPluginComponent, { fogTimeScale: fogSettings.timeScale })
+  }, [fogSettings.timeScale])
 
   return null
 }
@@ -60,7 +60,7 @@ function FogGroupReactor(props: { fogEntity: Entity }) {
 const FogReactor = () => {
   const entity = useEntityContext()
   const fogComponent = useComponent(entity, FogSettingsComponent)
-  if (fogComponent.type.value !== FogType.Brownian && fogComponent.type.value !== FogType.Height) return null
+  if (fogComponent.type !== FogType.Brownian && fogComponent.type !== FogType.Height) return null
   return (
     <QueryReactor
       ChildEntityReactor={FogGroupReactor}

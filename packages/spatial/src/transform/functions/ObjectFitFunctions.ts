@@ -4,8 +4,7 @@ import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import type { WebContainer3D } from '@ir-engine/xrui'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
@@ -22,7 +21,7 @@ const SCREEN_SIZE = new Vector2()
 
 export type ContentFitType = 'cover' | 'contain' | 'stretch' | 'vertical' | 'horizontal'
 export const ContentFitTypeSchema = (init?: ContentFitType) =>
-  S.LiteralUnion(['stretch', 'cover', 'contain', 'vertical', 'horizontal'], { default: init ?? 'contain' })
+  Schema.LiteralUnion(['stretch', 'cover', 'contain', 'vertical', 'horizontal'], { default: init ?? 'contain' })
 
 // yes, multiple by the same direction twice, as the local coordinate changes with each rotation
 const _handRotation = new Quaternion()

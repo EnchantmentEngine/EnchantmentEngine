@@ -29,7 +29,7 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Color" label={t('editor:properties.spotLight.lbl-color')}>
         <ColorInput
-          value={lightComponent.color.value}
+          value={lightComponent.color}
           onChange={updateProperty(SpotLightComponent, 'color')}
           onRelease={commitProperty(SpotLightComponent, 'color')}
         />
@@ -40,7 +40,7 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
           smallStep={0.001}
           mediumStep={0.01}
           largeStep={0.1}
-          value={lightComponent.intensity.value}
+          value={lightComponent.intensity}
           onChange={updateProperty(SpotLightComponent, 'intensity')}
           onRelease={commitProperty(SpotLightComponent, 'intensity')}
         />
@@ -51,7 +51,7 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
           max={1}
           smallStep={0.01}
           mediumStep={0.1}
-          value={lightComponent.penumbra.value}
+          value={lightComponent.penumbra}
           onChange={updateProperty(SpotLightComponent, 'penumbra')}
           onRelease={commitProperty(SpotLightComponent, 'penumbra')}
         />
@@ -63,7 +63,7 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
           smallStep={0.1}
           mediumStep={1}
           largeStep={10}
-          value={_Math.radToDeg(lightComponent.angle.value)}
+          value={_Math.radToDeg(lightComponent.angle)}
           onChange={(value) => updateProperty(SpotLightComponent, 'angle')(_Math.degToRad(value))}
           onRelease={(value) => commitProperty(SpotLightComponent, 'angle')(_Math.degToRad(value))}
           unit="°"
@@ -75,7 +75,7 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
           smallStep={0.1}
           mediumStep={1}
           largeStep={10}
-          value={lightComponent.range.value}
+          value={lightComponent.range}
           onChange={updateProperty(SpotLightComponent, 'range')}
           onRelease={commitProperty(SpotLightComponent, 'range')}
           unit="m"
@@ -87,16 +87,13 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
           max={10}
           smallStep={0.1}
           mediumStep={1}
-          value={lightComponent.decay.value}
+          value={lightComponent.decay}
           onChange={updateProperty(SpotLightComponent, 'decay')}
           onRelease={commitProperty(SpotLightComponent, 'decay')}
         />
       </InputGroup>
       <InputGroup name="castShadow" label={t('editor:properties.spotLight.lbl-castShadow')}>
-        <Checkbox
-          onChange={commitProperty(SpotLightComponent, 'castShadow')}
-          checked={lightComponent.castShadow.value}
-        />
+        <Checkbox onChange={commitProperty(SpotLightComponent, 'castShadow')} checked={lightComponent.castShadow} />
       </InputGroup>
       <InputGroup name="ShadowBias" label={t('editor:properties.spotLight.lbl-shadowBias')}>
         <NumericInput
@@ -104,7 +101,7 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
           max={1}
           smallStep={0.00001}
           mediumStep={0.001}
-          value={lightComponent.shadowBias.value}
+          value={lightComponent.shadowBias}
           onChange={updateProperty(SpotLightComponent, 'shadowBias')}
           onRelease={commitProperty(SpotLightComponent, 'shadowBias')}
         />
@@ -113,7 +110,7 @@ export const SpotLightNodeEditor: EditorComponentType = (props) => {
         <NumericInput
           smallStep={0.1}
           mediumStep={1}
-          value={lightComponent.shadowRadius.value}
+          value={lightComponent.shadowRadius}
           onChange={updateProperty(SpotLightComponent, 'shadowRadius')}
           onRelease={commitProperty(SpotLightComponent, 'shadowRadius')}
         />

@@ -9,7 +9,6 @@ import {
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -103,7 +102,7 @@ describe('HighlightSystem', () => {
       list.forEach((value, _) => assert.equal(Expected.includes(value.name), true))
     })
 
-    it('should not do anything if the Engine.instance.viewerEntity does not have a RendererComponent', async () => {
+    it('should not do anything if the getState(ReferenceSpaceState).viewerEntity does not have a RendererComponent', async () => {
       const entity1 = createOutlineEntity('entity1')
       const entity2 = createOutlineEntity('entity2')
       const entity3 = createOutlineEntity('entity3')
@@ -230,7 +229,7 @@ describe('HighlightSystem', () => {
       testEntity = createEntity()
       getMutableState(RendererState).usePostProcessing.set(true)
       setComponent(testEntity, SceneComponent)
-      getMutableComponent(rootEntity, RendererComponent).scenes.merge([testEntity])
+      getComponent(rootEntity, RendererComponent).scenes.push(testEntity)
       setComponent(testEntity, PostProcessingComponent, { enabled: true })
       setComponent(testEntity, EntityTreeComponent)
     })

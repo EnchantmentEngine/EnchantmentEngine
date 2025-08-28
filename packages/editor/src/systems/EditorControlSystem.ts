@@ -41,7 +41,6 @@ import {
   toggleTransformPivot,
   toggleTransformSpace
 } from '../functions/transformFunctions'
-import { EditorErrorState } from '../services/EditorErrorServices'
 
 import { EditorHelperState, PlacementMode, PlacementModeType } from '../services/EditorHelperState'
 
@@ -62,15 +61,11 @@ import { ClickPlacementState } from './ClickPlacementSystem'
 import { ObjectGridSnapState } from './ObjectGridSnapSystem'
 
 export const EditorButtonBindings = {
-  Undo: [[usesCtrlKey() ? KeyboardButton.ControlLeft : KeyboardButton.MetaLeft, KeyboardButton.KeyZ]],
+  Undo: [[KeyboardButton.ControlLeft, KeyboardButton.KeyZ]], // do not use Meta key, see https://stackoverflow.com/a/57153300
   Redo: [
     /** @todo this is bugged */
-    // [
-    //   usesCtrlKey() ? KeyboardButton.ControlLeft : KeyboardButton.MetaLeft,
-    //   KeyboardButton.ShiftLeft,
-    //   KeyboardButton.KeyZ
-    // ],
-    [usesCtrlKey() ? KeyboardButton.ControlLeft : KeyboardButton.MetaLeft, KeyboardButton.KeyY]
+    // [KeyboardButton.ControlLeft, KeyboardButton.ShiftLeft, KeyboardButton.KeyZ ],
+    [KeyboardButton.ControlLeft, KeyboardButton.KeyY]
   ],
   ObjectGridSnap: [KeyboardButton.KeyB],
   TransformModeTranslate: [KeyboardButton.KeyW],
@@ -253,7 +248,9 @@ function paste(event) {
   } else if ((data = event.clipboardData.getData('text')) !== '') {
     try {
       const url = new URL(data)
-      addMediaNode(url.href).catch((error) => getMutableState(EditorErrorState).error.set(error))
+      addMediaNode(url.href).catch((error) => {
+        console.error(error)
+      })
     } catch (e) {
       console.warn('Clipboard contents did not contain a valid url')
     }

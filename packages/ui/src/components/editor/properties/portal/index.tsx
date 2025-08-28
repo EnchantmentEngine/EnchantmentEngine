@@ -57,9 +57,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
 
   const updateCubeMapBake = async () => {
     const imageData = await generateEnvmapBake({
-      position: transformComponent.value.position
-        .clone()
-        .add(new Vector3(0, 2, 0).multiply(transformComponent.scale.value))
+      position: transformComponent.position.clone().add(new Vector3(0, 2, 0).multiply(transformComponent.scale))
     })
     const blob = await imageDataToBlob(imageData)
     state.previewImageData.set(imageData)
@@ -110,7 +108,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Location" label={t('editor:properties.portal.lbl-locationName')}>
         <StringInput
-          value={portalComponent.location.value}
+          value={portalComponent.location}
           onChange={updateProperty(PortalComponent, 'location')}
           onRelease={commitProperty(PortalComponent, 'location')}
         />
@@ -119,12 +117,12 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={state.portals.get(NO_PROXY) as PortalOptions[]}
-          value={portalComponent.linkedPortalId.value}
+          value={portalComponent.linkedPortalId}
           onChange={commitProperty(PortalComponent, 'linkedPortalId')}
         />
       </InputGroup>
       <InputGroup name="Portal" label={t('editor:properties.portal.lbl-redirect')}>
-        <Checkbox onChange={commitProperty(PortalComponent, 'redirect')} checked={portalComponent.redirect.value} />
+        <Checkbox onChange={commitProperty(PortalComponent, 'redirect')} checked={portalComponent.redirect} />
       </InputGroup>
       <InputGroup name="Effect Type" label={t('editor:properties.portal.lbl-effectType')}>
         <SelectInput
@@ -132,7 +130,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
           options={Array.from(PortalEffects.keys()).map((val) => {
             return { value: val, label: val }
           })}
-          value={portalComponent.effectType.value}
+          value={portalComponent.effectType}
           onChange={commitProperty(PortalComponent, 'effectType')}
         />
       </InputGroup>
@@ -142,13 +140,13 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
           options={Array.from(PortalPreviewTypes.values()).map((val) => {
             return { value: val, label: val }
           })}
-          value={portalComponent.previewType.value}
+          value={portalComponent.previewType}
           onChange={changePreviewType}
         />
       </InputGroup>
       <InputGroup name="Saved Image URL" label={t('editor:properties.portal.lbl-savedImageURL')}>
         <ControlledStringInput
-          value={portalComponent.previewImageURL.value}
+          value={portalComponent.previewImageURL}
           onChange={updateProperty(PortalComponent, 'previewImageURL')}
           onRelease={commitProperty(PortalComponent, 'previewImageURL')}
         />
@@ -175,17 +173,17 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
           </div>
         </div>
       </InputGroup>
-      <ImageLink src={state.previewImageURL.value ?? portalComponent.previewImageURL.value} />
+      <ImageLink src={state.previewImageURL.value ?? portalComponent.previewImageURL} />
       <InputGroup name="Spawn Position" label={t('editor:properties.portal.lbl-spawnPosition')} className="w-auto">
         <Vector3Input
-          value={portalComponent.spawnPosition.value}
+          value={portalComponent.spawnPosition}
           onChange={updateProperty(PortalComponent, 'spawnPosition')}
           onRelease={commitProperty(PortalComponent, 'spawnPosition')}
         />
       </InputGroup>
       <InputGroup name="Spawn Rotation" label={t('editor:properties.portal.lbl-spawnRotation')} className="w-auto">
         <EulerInput
-          quaternion={portalComponent.spawnRotation.value}
+          quaternion={portalComponent.spawnRotation}
           onChange={changeSpawnRotation}
           onRelease={() =>
             commitProperty(PortalComponent, 'spawnRotation')(getComponent(props.entity, PortalComponent).spawnRotation)
