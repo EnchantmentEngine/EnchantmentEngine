@@ -17,6 +17,7 @@ import { LegacyVolumetricComponent } from '@ir-engine/engine/src/scene/component
 import { LinkComponent } from '@ir-engine/engine/src/scene/components/LinkComponent'
 import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
+import { MediaSettingsComponent } from '@ir-engine/engine/src/scene/components/MediaSettingsComponent'
 import { MixerComponent } from '@ir-engine/engine/src/scene/components/MixerComponent'
 import { MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
 import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
@@ -66,7 +67,13 @@ export const ComponentShelfCategoriesState = defineState({
         MountPointComponent,
         InteractableComponent,
         InputComponent,
-        OverlayComponent
+        OverlayComponent,
+        SplineComponent,
+        GrabbableComponent,
+        LegacyVolumetricComponent,
+        VolumetricComponent,
+        AudioAnalysisComponent,
+        ScreenshareTargetComponent
       ],
       Lighting: [
         AmbientLightComponent,
@@ -84,12 +91,7 @@ export const ComponentShelfCategoriesState = defineState({
         MixerComponent
       ],
       Scripting: [],
-      Settings: [
-        SceneSettingsComponent,
-        RenderSettingsComponent,
-        // MediaSettingsComponent
-        CameraSettingsComponent
-      ],
+      Settings: [SceneSettingsComponent, RenderSettingsComponent, MediaSettingsComponent, CameraSettingsComponent],
       Visual: [
         EnvMapBakeComponent,
         ScenePreviewCameraComponent,
@@ -129,32 +131,6 @@ export const ComponentShelfCategoriesState = defineState({
         }
       }
     }, [visualScriptEnabled])
-
-    useEffect(() => {
-      cShelfState.Interaction.merge([
-        SplineComponent,
-        GrabbableComponent,
-        LegacyVolumetricComponent,
-        VolumetricComponent,
-        AudioAnalysisComponent,
-        ScreenshareTargetComponent
-      ])
-      return () => {
-        cShelfState.Interaction.set((curr) => {
-          return curr.splice(
-            curr.findIndex(
-              (item) =>
-                item.name == SplineComponent.name ||
-                item.name == GrabbableComponent.name ||
-                item.name == LegacyVolumetricComponent.name ||
-                item.name == VolumetricComponent.name ||
-                item.name == AudioAnalysisComponent.name ||
-                item.name == ScreenshareTargetComponent.name
-            )
-          )
-        })
-      }
-    }, [])
 
     return null
   }
