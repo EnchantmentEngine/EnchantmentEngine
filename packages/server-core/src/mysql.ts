@@ -1,33 +1,7 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import knex, { Knex } from 'knex'
 
 import { isDev } from '@ir-engine/common/src/config'
 import appConfig from '@ir-engine/server-core/src/appconfig'
-import { delay } from '@ir-engine/spatial/src/common/functions/delay'
 
 import { Application } from '../declarations'
 import { seeder } from './seeder'
@@ -47,7 +21,13 @@ const checkLock = async (knexClient: Knex, delayInMs: number) => {
 
     if (existingData.length > 0 && existingData[0].is_locked === 1) {
       logger.info(`Knex migrations are locked. Waiting for ${delayInMs / 1000} seconds to check again.`)
-      await delay(delayInMs)
+
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve()
+        }, delayInMs)
+      })
+
       const existingData = await trx('knex_migrations_lock').select()
 
       if (existingData.length > 0 && existingData[0].is_locked === 1) {
@@ -76,7 +56,7 @@ export default (app: Application): void => {
             enableColors: true
           }
         : undefined,
-      client: 'mysql',
+      client: 'mysql2',
       connection: {
         user: appConfig.db.username,
         password: appConfig.db.password,

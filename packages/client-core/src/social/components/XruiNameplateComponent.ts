@@ -1,41 +1,17 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useGet } from '@ir-engine/common'
 import { userPath } from '@ir-engine/common/src/schema.type.module'
 import {
   defineComponent,
   ECSState,
   Entity,
+  EntitySchema,
+  EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
+  NetworkObjectComponent,
   removeComponent,
   removeEntity,
-  S,
   setComponent,
   UndefinedEntity,
   useComponent,
@@ -43,21 +19,18 @@ import {
 } from '@ir-engine/ecs'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { createUI } from '@ir-engine/engine/src/interaction/functions/createUI'
-import { getState } from '@ir-engine/hyperflux'
-import { NetworkObjectComponent } from '@ir-engine/network'
-import { TransformComponent } from '@ir-engine/spatial'
+import { getState, Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { inFrustum } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { smootheLerpAlpha } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 import { useEffect } from 'react'
-import { MathUtils, Vector3 } from 'three'
+import { MathUtils, MeshBasicMaterial, Vector3 } from 'three'
 import { XruiNameplateState } from '../XruiNameplateState'
 
 const _vec3 = new Vector3()
@@ -72,9 +45,9 @@ function getSelfAvatarHeadPosition(selfAvatarEntity: Entity, vec3: Vector3): voi
 
 export const XruiNameplateComponent = defineComponent({
   name: 'XruiNameplateComponent',
-  schema: S.Object({
-    uiEntity: S.Entity(),
-    nameLabel: S.String('')
+  schema: Schema.Object({
+    uiEntity: EntitySchema.Entity(),
+    nameLabel: Schema.String()
   }),
 
   Transitions: new Map<Entity, ReturnType<typeof createTransitionState>>(),
@@ -82,9 +55,11 @@ export const XruiNameplateComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const networkObject = useComponent(entity, NetworkObjectComponent)
-    const user = useGet(userPath, networkObject.ownerId.value)
+    const user = useGet(userPath, networkObject.ownerId)
 
     useEffect(() => {
+      if (!user.data?.name || getState(XruiNameplateState).isVisible === false) return
+
       const userName = user.data?.name ?? 'A User'
       addNameplateUI(entity, userName)
 
@@ -115,13 +90,11 @@ const addNameplateUI = (entity: Entity, username: string) => {
   const avatar = getOptionalComponent(entity, AvatarComponent)
 
   uiTransform.position.set(0, avatar?.avatarHeight ?? xruiNamePlateParams.defaultNamePlateHeight, 0)
-  const nameplateComponent = getMutableComponent(entity, XruiNameplateComponent)
+  setComponent(entity, XruiNameplateComponent, { uiEntity })
 
-  nameplateComponent.uiEntity.set(uiEntity)
-
-  setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(EngineState).originEntity })
+  setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiEntity, ComputedTransformComponent, {
-    referenceEntities: [entity, getState(EngineState).viewerEntity],
+    referenceEntities: [entity, getState(ReferenceSpaceState).viewerEntity],
     computeFunction: () => updateNameplateUI(entity)
   })
 
@@ -148,7 +121,7 @@ export const updateNameplateUI = (entity: Entity) => {
   if (!xrui || !xruiTransform) return
 
   const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
-  const fromEntity = selfAvatarEntity ?? getState(EngineState).viewerEntity
+  const fromEntity = selfAvatarEntity ?? getState(ReferenceSpaceState).viewerEntity
   if (!fromEntity) return
 
   getSelfAvatarHeadPosition(fromEntity, _vec3)
@@ -170,7 +143,7 @@ export const updateNameplateUI = (entity: Entity) => {
       avatarTransform?.matrix.elements[14] ?? 0
     )
 
-    const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+    const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
     xruiTransform.rotation.copy(cameraTransform.rotation)
   }
 
@@ -199,7 +172,7 @@ export const updateNameplateUI = (entity: Entity) => {
         xruiTransform.scale.setScalar(MathUtils.clamp(opacity * opacity * 1.2, 0.01, 1)) //scale changes slightly faster than f(n^2)
       }
       xrui.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
-        const mat = layer.contentMesh.material as THREE.MeshBasicMaterial
+        const mat = layer.contentMesh.material as MeshBasicMaterial
         mat.opacity = opacity
       })
     })

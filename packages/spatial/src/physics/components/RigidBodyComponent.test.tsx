@@ -1,39 +1,14 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { act, render } from '@testing-library/react'
-import assert from 'assert'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, assert, beforeEach, describe, it } from 'vitest'
 
 import { RigidBodyType } from '@dimforge/rapier3d-compat'
 import {
+  EntityTreeComponent,
   SystemDefinitions,
-  UUIDComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
+  deserializeComponent,
   destroyEngine,
   getComponent,
   hasComponent,
@@ -42,12 +17,10 @@ import {
   serializeComponent,
   setComponent
 } from '@ir-engine/ecs'
-import React from 'react'
 import { Vector3 } from 'three'
 import { assertArray, assertFloat, assertVec } from '../../../tests/util/assert'
 import { Vector3_Zero } from '../../common/constants/MathConstants'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
-import { EntityTreeComponent } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { Physics, PhysicsWorld } from '../classes/Physics'
 import { PhysicsSystem } from '../systems/PhysicsSystem'
@@ -68,14 +41,6 @@ const RigidBodyComponentDefaults = {
   enabledRotations: [true, true, true] as [boolean, boolean, boolean],
   canSleep: true,
   gravityScale: 1,
-  previousPosition: 3,
-  previousRotation: 4,
-  position: 3,
-  rotation: 4,
-  targetKinematicPosition: 3,
-  targetKinematicRotation: 4,
-  linearVelocity: 3,
-  angularVelocity: 3,
   targetKinematicLerpMultiplier: 0
 }
 
@@ -174,9 +139,9 @@ describe('RigidBodyComponent', () => {
       assert.equal(after.enabledRotations[2], Expected.enabledRotations[2])
     })
 
-    it('should not change values of an initialized RigidBodyComponent when the data passed had incorrect types', () => {
+    it('should not change values of an initialized RigidBodyComponent when deserialized incorrect types', () => {
       const Incorrect = {
-        type: 1,
+        type: BodyTypes.Fixed,
         ccd: 'ccd',
         allowRolling: 2,
         canSleep: 3,
@@ -187,7 +152,7 @@ describe('RigidBodyComponent', () => {
       assertRigidBodyComponentEqual(before, RigidBodyComponentDefaults)
 
       // @ts-ignore    Pass an incorrect type to setComponent
-      setComponent(testEntity, RigidBodyComponent, Incorrect)
+      deserializeComponent(testEntity, RigidBodyComponent, Incorrect)
       const after = getComponent(testEntity, RigidBodyComponent)
       assertRigidBodyComponentEqual(after, RigidBodyComponentDefaults)
     })
@@ -232,11 +197,11 @@ describe('RigidBodyComponent', () => {
       createEngine()
       await Physics.load()
       physicsWorldEntity = createEntity()
-      setComponent(physicsWorldEntity, UUIDComponent, UUIDComponent.generateUUID())
+
       setComponent(physicsWorldEntity, SceneComponent)
       setComponent(physicsWorldEntity, TransformComponent)
       setComponent(physicsWorldEntity, EntityTreeComponent)
-      physicsWorld = Physics.createWorld(getComponent(physicsWorldEntity, UUIDComponent))
+      physicsWorld = Physics.createWorld(physicsWorldEntity)
       physicsWorld!.timestep = 1 / 60
 
       testEntity = createEntity()
@@ -244,6 +209,7 @@ describe('RigidBodyComponent', () => {
       setComponent(testEntity, TransformComponent)
       setComponent(testEntity, RigidBodyComponent)
       setComponent(testEntity, ColliderComponent)
+      await act(() => render(null))
     })
 
     afterEach(() => {
@@ -256,79 +222,81 @@ describe('RigidBodyComponent', () => {
     const physicsSystemExecute = SystemDefinitions.get(PhysicsSystem)!.execute
 
     it('should create a RigidBody for the entity in the new physicsWorld when the world is changed', async () => {
-      assert.ok(RigidBodyComponent.reactorMap.get(testEntity)!.isRunning)
       const before = physicsWorld.Rigidbodies.get(testEntity)!.handle
       assert.ok(physicsWorld!.bodies.contains(before))
 
       const newPhysicsEntity = createEntity()
-      setComponent(newPhysicsEntity, UUIDComponent, UUIDComponent.generateUUID())
       setComponent(newPhysicsEntity, SceneComponent)
       setComponent(newPhysicsEntity, TransformComponent)
       setComponent(newPhysicsEntity, EntityTreeComponent)
-      newPhysicsWorld = Physics.createWorld(getComponent(newPhysicsEntity, UUIDComponent))
+      newPhysicsWorld = Physics.createWorld(newPhysicsEntity)
       newPhysicsWorld!.timestep = 1 / 60
 
       // Change the world
       setComponent(testEntity, EntityTreeComponent, { parentEntity: newPhysicsEntity })
 
-      // Force react lifecycle to update Physics.useWorld
-      const { rerender, unmount } = render(<></>)
-      await act(() => rerender(<></>))
+      await act(() => render(null))
 
       // Check the changes
-      RigidBodyComponent.reactorMap.get(testEntity)!.run() // Reactor is already running. But force-run it so changes are applied immediately
       const after = newPhysicsWorld.Rigidbodies.get(testEntity)!.handle
       assert.ok(newPhysicsWorld!.bodies.contains(after))
     })
 
-    it('should set the correct RigidBody type on the API data when component.type changes', () => {
-      assert.ok(RigidBodyComponent.reactorMap.get(testEntity)!.isRunning)
+    it('should set the correct RigidBody type on the API data when component.type changes', async () => {
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+      await act(() => render(null))
       const one = physicsWorld.Rigidbodies.get(testEntity)!.bodyType()
       assert.equal(one, RigidBodyType.Dynamic)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
+      await act(() => render(null))
       const two = physicsWorld.Rigidbodies.get(testEntity)!.bodyType()
       assert.equal(two, RigidBodyType.Fixed)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Kinematic })
+      await act(() => render(null))
       const three = physicsWorld.Rigidbodies.get(testEntity)!.bodyType()
       assert.equal(three, RigidBodyType.KinematicPositionBased)
     })
 
-    it('should set and remove a RigidBodyDynamicTagComponent on the entity when the component.type changes to dynamic', () => {
-      assert.ok(RigidBodyComponent.reactorMap.get(testEntity)!.isRunning)
+    it('should set and remove a RigidBodyDynamicTagComponent on the entity when the component.type changes to dynamic', async () => {
       const tag = RigidBodyDynamicTagComponent
       removeComponent(testEntity, RigidBodyComponent)
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), false)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), true)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), false)
     })
 
-    it('should set and remove a RigidBodyFixedTagComponent on the entity when the component.type changes to fixed', () => {
-      assert.ok(RigidBodyComponent.reactorMap.get(testEntity)!.isRunning)
+    it('should set and remove a RigidBodyFixedTagComponent on the entity when the component.type changes to fixed', async () => {
       const tag = RigidBodyFixedTagComponent
       removeComponent(testEntity, RigidBodyComponent)
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), false)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), true)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), false)
     })
 
-    it('should set and remove a RigidBodyKinematicTagComponent on the entity when the component.type changes to kinematic', () => {
-      assert.ok(RigidBodyComponent.reactorMap.get(testEntity)!.isRunning)
+    it('should set and remove a RigidBodyKinematicTagComponent on the entity when the component.type changes to kinematic', async () => {
       const tag = RigidBodyKinematicTagComponent
       removeComponent(testEntity, RigidBodyComponent)
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), false)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Kinematic })
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), true)
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
+      await act(() => render(null))
       assert.equal(hasComponent(testEntity, tag), false)
     })
 
-    it('should enable CCD for the RigidBody on the API data when component.ccd changes', () => {
-      assert.ok(RigidBodyComponent.reactorMap.get(testEntity)!.isRunning)
+    it('should enable CCD for the RigidBody on the API data when component.ccd changes', async () => {
       const Expected = !RigidBodyComponentDefaults.ccd
       const beforeBody = physicsWorld.Rigidbodies.get(testEntity)!
       assert.ok(beforeBody)
@@ -338,6 +306,7 @@ describe('RigidBodyComponent', () => {
       assert.equal(beforeECS, RigidBodyComponentDefaults.ccd)
 
       setComponent(testEntity, RigidBodyComponent, { ccd: Expected })
+      await act(() => render(null))
       const afterBody = physicsWorld.Rigidbodies.get(testEntity)!
       assert.ok(afterBody)
       const afterAPI = afterBody.isCcdEnabled()
@@ -346,10 +315,10 @@ describe('RigidBodyComponent', () => {
       assert.equal(afterECS, Expected)
     })
 
-    it('should lock/unlock rotations for the RigidBody on the API data when component.allowRolling changes', () => {
+    it('should lock/unlock rotations for the RigidBody on the API data when component.allowRolling changes', async () => {
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+      await act(() => render(null))
 
-      assert.ok(RigidBodyComponent.reactorMap.get(testEntity)!.isRunning)
       const TorqueImpulse = new Vector3(10, 20, 30)
       const body = physicsWorld.Rigidbodies.get(testEntity)!
 
@@ -362,6 +331,7 @@ describe('RigidBodyComponent', () => {
 
       // Locked
       setComponent(testEntity, RigidBodyComponent, { allowRolling: Expected })
+      await act(() => render(null))
       assert.equal(getComponent(testEntity, RigidBodyComponent).allowRolling, Expected)
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()
@@ -371,6 +341,7 @@ describe('RigidBodyComponent', () => {
 
       // Unlocked
       setComponent(testEntity, RigidBodyComponent, { allowRolling: !Expected })
+      await act(() => render(null))
       assert.equal(getComponent(testEntity, RigidBodyComponent).allowRolling, !Expected)
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()
@@ -379,11 +350,9 @@ describe('RigidBodyComponent', () => {
       assertVec.allApproxNotEq(before, unlocked, 3)
     })
 
-    it('should enable/disable rotations for each axis for the RigidBody on the API data when component.enabledRotations changes', () => {
+    it('should enable/disable rotations for each axis for the RigidBody on the API data when component.enabledRotations changes', async () => {
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
 
-      const reactor = RigidBodyComponent.reactorMap.get(testEntity)!
-      assert.ok(reactor.isRunning)
       const TorqueImpulse = new Vector3(10, 20, 30)
       const body = physicsWorld.Rigidbodies.get(testEntity)!
 
@@ -397,8 +366,9 @@ describe('RigidBodyComponent', () => {
       const AllLocked = [false, false, false] as [boolean, boolean, boolean]
       assertArray.allNotEq(getComponent(testEntity, RigidBodyComponent).enabledRotations, AllLocked) // Should still be the default
       setComponent(testEntity, RigidBodyComponent, { enabledRotations: AllLocked })
+      await act(() => render(null))
       assertArray.eq(getComponent(testEntity, RigidBodyComponent).enabledRotations, AllLocked)
-      reactor.run()
+
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()
       const two = getComponent(testEntity, RigidBodyComponent).angularVelocity.clone()
@@ -409,6 +379,7 @@ describe('RigidBodyComponent', () => {
       // Unlock X
       const XUnlocked = [true, false, false] as [boolean, boolean, boolean]
       setComponent(testEntity, RigidBodyComponent, { enabledRotations: XUnlocked })
+      await act(() => render(null))
       assertArray.eq(getComponent(testEntity, RigidBodyComponent).enabledRotations, XUnlocked)
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()
@@ -420,6 +391,7 @@ describe('RigidBodyComponent', () => {
       // Unlock Y
       const YUnlocked = [false, true, false] as [boolean, boolean, boolean]
       setComponent(testEntity, RigidBodyComponent, { enabledRotations: YUnlocked })
+      await act(() => render(null))
       assertArray.eq(getComponent(testEntity, RigidBodyComponent).enabledRotations, YUnlocked)
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()
@@ -431,6 +403,7 @@ describe('RigidBodyComponent', () => {
       // Unlock Z
       const ZUnlocked = [false, false, true] as [boolean, boolean, boolean]
       setComponent(testEntity, RigidBodyComponent, { enabledRotations: ZUnlocked })
+      await act(() => render(null))
       assertArray.eq(getComponent(testEntity, RigidBodyComponent).enabledRotations, ZUnlocked)
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()
@@ -442,6 +415,7 @@ describe('RigidBodyComponent', () => {
       // Unlock All
       const AllUnlocked = [true, true, true] as [boolean, boolean, boolean]
       setComponent(testEntity, RigidBodyComponent, { enabledRotations: AllUnlocked })
+      await act(() => render(null))
       assertArray.eq(getComponent(testEntity, RigidBodyComponent).enabledRotations, AllUnlocked)
       body.applyTorqueImpulse(TorqueImpulse, false)
       physicsSystemExecute()
@@ -466,18 +440,21 @@ describe('RigidBodyComponent', () => {
       return destroyEngine()
     })
 
-    it('should return the expected tag components', () => {
+    it('should return the expected tag components', async () => {
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+      await act(() => render(null))
       assert.equal(
         getTagComponentForRigidBody(getComponent(testEntity, RigidBodyComponent).type),
         RigidBodyDynamicTagComponent
       )
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Fixed })
+      await act(() => render(null))
       assert.equal(
         getTagComponentForRigidBody(getComponent(testEntity, RigidBodyComponent).type),
         RigidBodyFixedTagComponent
       )
       setComponent(testEntity, RigidBodyComponent, { type: BodyTypes.Kinematic })
+      await act(() => render(null))
       assert.equal(
         getTagComponentForRigidBody(getComponent(testEntity, RigidBodyComponent).type),
         RigidBodyKinematicTagComponent

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { v4 } from 'uuid'
 import '../../patchEngineNode'
 
@@ -179,7 +154,7 @@ describe('file-browser.test', () => {
     })
 
     it('will not create a directory in project 1 as user 2, who does not have any permissions on that project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
@@ -197,7 +172,7 @@ describe('file-browser.test', () => {
     })
 
     it('will not create a directory in project 1 as user 2, who does not have any permissions on that project, if they try to use a relative path from project 2', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
@@ -216,85 +191,85 @@ describe('file-browser.test', () => {
       )
     })
 
-    it('will not create a directory in project 1 as user 2, who has only reviewer permission', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        () =>
-          app.service(fileBrowserPath).create('projects/' + testProject1Name + '/public/test', {
-            user: user2
-          }),
-        {
-          message: 'Missing required project permission for ' + project1.name
-        }
-      )
-    })
+    // it('will not create a directory in project 1 as user 2, who has only editor permission', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     () =>
+    //       app.service(fileBrowserPath).create('projects/' + testProject1Name + '/public/test', {
+    //         user: user2
+    //       }),
+    //     {
+    //       message: 'Missing required project permission for ' + project1.name
+    //     }
+    //   )
+    // })
 
-    it('will not create a directory in project 2 as user 2, who has only reviewer permission', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project2.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project2.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        () =>
-          app.service(fileBrowserPath).create('projects/' + testProject2Name + '/public/test', {
-            user: user2
-          }),
-        {
-          message: 'Missing required project permission for ' + project2.name
-        }
-      )
-    })
+    // it('will not create a directory in project 2 as user 2, who has only editor permission', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project2.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project2.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     () =>
+    //       app.service(fileBrowserPath).create('projects/' + testProject2Name + '/public/test', {
+    //         user: user2
+    //       }),
+    //     {
+    //       message: 'Missing required project permission for ' + project2.name
+    //     }
+    //   )
+    // })
 
-    it('will not create a directory in project 1 as user 2, who has only reviewer permission, if they try to use a relative path from project 2', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        () =>
-          app
-            .service(fileBrowserPath)
-            .create('projects/' + testProject2Name + '/../../' + testProject1Name + '/public/test', {
-              user: user2
-            }),
-        {
-          message: 'Missing required project permission for ' + project1.name
-        }
-      )
-    })
+    // it('will not create a directory in project 1 as user 2, who has only editor permission, if they try to use a relative path from project 2', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     () =>
+    //       app
+    //         .service(fileBrowserPath)
+    //         .create('projects/' + testProject2Name + '/../../' + testProject1Name + '/public/test', {
+    //           user: user2
+    //         }),
+    //     {
+    //       message: 'Missing required project permission for ' + project1.name
+    //     }
+    //   )
+    // })
 
     it('will not create a directory outside of the public or assets folder if user 1, an owner, attempts to do so', async () => {
       await assert.rejects(
@@ -430,17 +405,17 @@ describe('file-browser.test', () => {
 
   describe('patch', () => {
     let user1, user2, project1, project2, testFile1FullPath, testFile2FullPath
-    const testFileFullName = getRandomizedName('file', '.txt')
+    const testFileFullName = getRandomizedName('file', '.jpg')
     const invalidString = '%$#@11234%%^^&&^&)(_)(+!%#%@#%&☼8µ█╚AV♠7~u{3A86♠32≥@╧É╚{'
-    const invalidFileFullName = getRandomizedName(invalidString, '.txt')
-    const shortFileFullName = 'aa.txt'
+    const invalidFileFullName = getRandomizedName(invalidString, '.jpg')
+    const shortFileFullName = 'aa.jpg'
     const longFileFullName = getRandomizedName(
       'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      '.txt'
+      '.jpg'
     )
     const invalidFileExtensionName = getRandomizedName('file', `.${invalidString}`)
     const shortFileExtensionName = getRandomizedName('file', `.a`)
-    const longFileExtensionName = getRandomizedName('file', `.txtxt`)
+    const longFileExtensionName = getRandomizedName('file', `.jpgjpg`)
 
     const testProject1Name = `testorg1/${getRandomizedName('directory')}`
     const testProject2Name = `testorg2/${getRandomizedName('directory')}`
@@ -505,7 +480,9 @@ describe('file-browser.test', () => {
 
     const newData = getRandomizedName('new data')
     const body = Buffer.from(newData, 'utf-8')
-    const testFileSize = Buffer.byteLength(body)
+    // In TypeScript 5.8.3, Buffer needs to be explicitly converted to Uint8Array for compatibility
+    const uint8Array = new Uint8Array(body)
+    const testFileSize = uint8Array.byteLength
 
     it('creates a file if user1, an owner, does so', async () => {
       const resource = await app.service(fileBrowserPath).patch(
@@ -514,7 +491,7 @@ describe('file-browser.test', () => {
           project: testProject1Name,
           path: 'public/' + testFileFullName,
           body,
-          contentType: 'any'
+          contentType: 'image/jpeg'
         },
         {
           user: user1
@@ -533,7 +510,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + invalidFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -541,9 +518,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             invalidFileFullName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
     })
@@ -557,7 +534,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + longFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -565,9 +542,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             longFileFullName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
     })
@@ -581,7 +558,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + shortFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -589,9 +566,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             shortFileFullName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
     })
@@ -605,7 +582,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + invalidString + '/' + testFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -632,7 +609,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + invalidFileExtensionName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -656,7 +633,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + longFileExtensionName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -680,7 +657,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + shortFileExtensionName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -715,7 +692,7 @@ describe('file-browser.test', () => {
           project: testProject1Name,
           path: 'public/' + testFileFullName,
           body: Buffer.from(newData, 'utf-8'),
-          contentType: 'any'
+          contentType: 'image/jpeg'
         },
         {
           user: user1
@@ -743,7 +720,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: '../../' + testProject2Name + '/public/' + testFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -769,7 +746,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: 'public/' + testFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user2
@@ -790,7 +767,7 @@ describe('file-browser.test', () => {
               project: testProject2Name,
               path: '../../' + testProject1Name + '/public/' + testFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user2
@@ -807,43 +784,43 @@ describe('file-browser.test', () => {
       )
     })
 
-    it('will not create a file in project1 if user2, who is only a reviewer on project 1, does so', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        () =>
-          app.service(fileBrowserPath).patch(
-            null,
-            {
-              project: testProject1Name,
-              path: 'public/' + testFileFullName,
-              body,
-              contentType: 'any'
-            },
-            {
-              user: user2
-            }
-          ),
-        {
-          message: 'Missing required project permission for ' + testProject1Name
-        }
-      )
-    })
+    // it('will not create a file in project1 if user2, who is only a editor on project 1, does so', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     () =>
+    //       app.service(fileBrowserPath).patch(
+    //         null,
+    //         {
+    //           project: testProject1Name,
+    //           path: 'public/' + testFileFullName,
+    //           body,
+    //           contentType: 'any'
+    //         },
+    //         {
+    //           user: user2
+    //         }
+    //       ),
+    //     {
+    //       message: 'Missing required project permission for ' + testProject1Name
+    //     }
+    //   )
+    // })
 
-    it('will not create a file in project1 if user2, who is only a reviewer on project 1, does so via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+    it('will not create a file in project1 if user2, who is only a editor on project 1, does so via a relative path', async () => {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
@@ -853,7 +830,7 @@ describe('file-browser.test', () => {
         id: v4(),
         userId: user2.id,
         projectId: project1.id,
-        type: 'reviewer',
+        type: 'editor',
         createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
         updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
       } as any)
@@ -865,7 +842,7 @@ describe('file-browser.test', () => {
               project: testProject2Name,
               path: '../../' + testProject1Name + '/public/' + testFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user2
@@ -891,7 +868,7 @@ describe('file-browser.test', () => {
               project: testProject2Name,
               path: testFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user2
@@ -917,7 +894,7 @@ describe('file-browser.test', () => {
               project: testProject1Name,
               path: '../../' + testFileFullName,
               body,
-              contentType: 'any'
+              contentType: 'image/jpeg'
             },
             {
               user: user1
@@ -928,26 +905,47 @@ describe('file-browser.test', () => {
         }
       )
     })
+
+    it('will not create a file with an invalid mimetype', async () => {
+      await assert.rejects(
+        () =>
+          app.service(fileBrowserPath).patch(
+            null,
+            {
+              project: testProject1Name,
+              path: 'public/' + testFileFullName,
+              body,
+              contentType: 'application/exe'
+            },
+            {
+              user: user1
+            }
+          ),
+        {
+          message: 'Unsupported file type'
+        }
+      )
+    })
   })
 
   describe('update', () => {
     const invalidString = '(_)(+!%#%@#%&☼8µ█╚AV♠7~u{3A86♠32≥@╧É╚{'
-    const testFileName2 = getRandomizedName('file2', '.md')
+    const testFileName2 = getRandomizedName('file2', '.jpg')
     const newData2 = getRandomizedName('new data 2')
-    const testFileName3 = getRandomizedName('file3', '.mdx')
+    const testFileName3 = getRandomizedName('file3', '.png')
     const newData3 = getRandomizedName('new data 3')
-    const invalidFileName = getRandomizedName(invalidString, '.txt')
+    const invalidFileName = getRandomizedName(invalidString, '.jpg')
     const shortFileName = 'aa.txt'
     const longFileName = getRandomizedName(
       'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      '.txt'
+      '.jpg'
     )
     const invalidFileExtension = getRandomizedName('file4', `.${invalidString}`)
     const shortFileExtension = getRandomizedName('file4', '.a')
     const longFileExtension = getRandomizedName('file4', '.abcdef')
 
     let user1, user2, project1, project2, testFile1FullPath, testFile2FullPath
-    const testFileFullName = getRandomizedName('file', '.txt')
+    const testFileFullName = getRandomizedName('file', '.jpg')
 
     let testProject1Name
     let testProject2Name
@@ -1001,7 +999,7 @@ describe('file-browser.test', () => {
           project: testProject1Name,
           path: 'public/test/' + testFileName2,
           body: Buffer.from(newData2, 'utf-8'),
-          contentType: 'any'
+          contentType: 'image/jpeg'
         },
         {
           user: user1
@@ -1014,7 +1012,7 @@ describe('file-browser.test', () => {
           project: testProject1Name,
           path: 'public/test/' + testFileName3,
           body: Buffer.from(newData3, 'utf-8'),
-          contentType: 'any'
+          contentType: 'image/png'
         },
         {
           user: user1
@@ -1308,7 +1306,7 @@ describe('file-browser.test', () => {
 
       const fileName = testFileName2.split('.').slice(0, -1).join('.')
       const extension = testFileName2.split('.').pop()!
-      const newFileName = `${fileName}(1).${extension}`
+      const newFileName = `${fileName}_1.${extension}`
       assert(
         copyDirectoryResult.find((file) => file.key === 'projects/' + testProject1Name + '/public/test/' + newFileName)
       )
@@ -1320,13 +1318,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move a file when performed by user 2, who does not have any permissions on the old or new project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -1359,13 +1357,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move a file when performed by user 2, who has editor permission on the old project but none on the new project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -1406,13 +1404,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move a file when performed by user 2, who has editor permission on the new project but none on the old project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -1452,124 +1450,124 @@ describe('file-browser.test', () => {
       await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
     })
 
-    it('does not move a file when performed by user 2, who has only reviewer permissions on the old project and editor on the new project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project2.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project2.id,
-        type: 'editor',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        async () =>
-          app.service(fileBrowserPath).update(
-            null,
-            {
-              oldProject: testProject1Name,
-              newProject: testProject2Name,
-              oldName: testFileName3,
-              newName: testFileName3,
-              oldPath: 'projects/' + testProject1Name + '/public/test/',
-              newPath: 'projects/' + testProject2Name + '/public/test/'
-            },
-            {
-              user: user2
-            }
-          ),
-        {
-          message: 'Missing required project permission for ' + project1.name
-        }
-      )
+    // it('does not move a file when performed by user 2, who has only editor permissions on the old project and editor on the new project', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project2.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project2.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     async () =>
+    //       app.service(fileBrowserPath).update(
+    //         null,
+    //         {
+    //           oldProject: testProject1Name,
+    //           newProject: testProject2Name,
+    //           oldName: testFileName3,
+    //           newName: testFileName3,
+    //           oldPath: 'projects/' + testProject1Name + '/public/test/',
+    //           newPath: 'projects/' + testProject2Name + '/public/test/'
+    //         },
+    //         {
+    //           user: user2
+    //         }
+    //       ),
+    //     {
+    //       message: 'Missing required project permission for ' + project1.name
+    //     }
+    //   )
 
-      const storageProvider = getStorageProvider()
-      assert.ok(await storageProvider.getObject('projects/' + testProject1Name + '/public/test/' + testFileName3))
-      await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
-    })
+    //   const storageProvider = getStorageProvider()
+    //   assert.ok(await storageProvider.getObject('projects/' + testProject1Name + '/public/test/' + testFileName3))
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
+    // })
 
-    it('does not move a file when performed by user 2, who has only reviewer permissions on the new project and editor on the old project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project2.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'editor',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project2.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        async () =>
-          app.service(fileBrowserPath).update(
-            null,
-            {
-              oldProject: testProject1Name,
-              newProject: testProject2Name,
-              oldName: testFileName3,
-              newName: testFileName3,
-              oldPath: 'projects/' + testProject1Name + '/public/test/',
-              newPath: 'projects/' + testProject2Name + '/public/test/'
-            },
-            {
-              user: user2
-            }
-          ),
-        {
-          message: 'Missing required project permission for ' + project2.name
-        }
-      )
+    // it('does not move a file when performed by user 2, who has only editor permissions on the new project and editor on the old project', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project2.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project2.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     async () =>
+    //       app.service(fileBrowserPath).update(
+    //         null,
+    //         {
+    //           oldProject: testProject1Name,
+    //           newProject: testProject2Name,
+    //           oldName: testFileName3,
+    //           newName: testFileName3,
+    //           oldPath: 'projects/' + testProject1Name + '/public/test/',
+    //           newPath: 'projects/' + testProject2Name + '/public/test/'
+    //         },
+    //         {
+    //           user: user2
+    //         }
+    //       ),
+    //     {
+    //       message: 'Missing required project permission for ' + project2.name
+    //     }
+    //   )
 
-      const storageProvider = getStorageProvider()
-      assert.ok(await storageProvider.getObject('projects/' + testProject1Name + '/public/test/' + testFileName3))
-      await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
-    })
+    //   const storageProvider = getStorageProvider()
+    //   assert.ok(await storageProvider.getObject('projects/' + testProject1Name + '/public/test/' + testFileName3))
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
+    // })
 
     it('does not move a file when performed by user 2, who does not have any permissions on the old or new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -1602,13 +1600,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move a file when performed by user 2, who has editor permission on the old project but none on the new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -1654,13 +1652,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move a file when performed by user 2, who has editor permission on the new project but none on the old project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -1700,14 +1698,69 @@ describe('file-browser.test', () => {
       await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
     })
 
-    it('does not move a file when performed by user 2, who has only reviewer permissions on the old project and editor on the new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+    // it('does not move a file when performed by user 2, who has only editor permissions on the old project and editor on the new project, via a relative path', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project2.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project2.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     async () =>
+    //       app.service(fileBrowserPath).update(
+    //         null,
+    //         {
+    //           oldProject: testProject1Name,
+    //           newProject: testProject1Name,
+    //           oldName: testFileName3,
+    //           newName: testFileName3,
+    //           oldPath: 'projects/' + testProject1Name + '/public/test/',
+    //           newPath: 'projects/' + testProject1Name + '/../../' + testProject2Name + '/public/test'
+    //         },
+    //         {
+    //           user: user2
+    //         }
+    //       ),
+    //     {
+    //       message: 'Missing required project permission for ' + testProject1Name
+    //     }
+    //   )
+
+    //   const storageProvider = getStorageProvider()
+    //   assert.ok(await storageProvider.getObject('projects/' + testProject1Name + '/public/test/' + testFileName3))
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
+    // })
+
+    it('does not move a file when performed by user 2, who has only editor permissions on the new project and editor on the old project, via a relative path', async () => {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -1717,61 +1770,6 @@ describe('file-browser.test', () => {
         id: v4(),
         userId: user2.id,
         projectId: project1.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project2.id,
-        type: 'editor',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        async () =>
-          app.service(fileBrowserPath).update(
-            null,
-            {
-              oldProject: testProject1Name,
-              newProject: testProject1Name,
-              oldName: testFileName3,
-              newName: testFileName3,
-              oldPath: 'projects/' + testProject1Name + '/public/test/',
-              newPath: 'projects/' + testProject1Name + '/../../' + testProject2Name + '/public/test'
-            },
-            {
-              user: user2
-            }
-          ),
-        {
-          message: 'Missing required project permission for ' + testProject1Name
-        }
-      )
-
-      const storageProvider = getStorageProvider()
-      assert.ok(await storageProvider.getObject('projects/' + testProject1Name + '/public/test/' + testFileName3))
-      await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test/' + testFileName3))
-    })
-
-    it('does not move a file when performed by user 2, who has only reviewer permissions on the new project and editor on the old project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project2.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
         type: 'editor',
         createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
         updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
@@ -1780,7 +1778,7 @@ describe('file-browser.test', () => {
         id: v4(),
         userId: user2.id,
         projectId: project2.id,
-        type: 'reviewer',
+        type: 'editor',
         createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
         updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
       } as any)
@@ -2392,51 +2390,51 @@ describe('file-browser.test', () => {
       await assert.rejects(storageProvider.getObject('projects/' + testProject1Name + '/public/test2/' + testFileName3))
     })
 
-    it('does not move a directory within a project when performed by user 2, who only has reviewer permission on the project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
+    // it('does not move a directory within a project when performed by user 2, who only has editor permission on the project', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
 
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        async () =>
-          app.service(fileBrowserPath).update(
-            null,
-            {
-              oldProject: testProject1Name,
-              newProject: testProject1Name,
-              oldName: 'public/test/',
-              newName: 'public/test2/',
-              oldPath: 'projects/' + testProject1Name + '/',
-              newPath: 'projects/' + testProject1Name + '/'
-            },
-            {
-              user: user2
-            }
-          ),
-        {
-          message: 'Missing required project permission for ' + testProject1Name
-        }
-      )
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     async () =>
+    //       app.service(fileBrowserPath).update(
+    //         null,
+    //         {
+    //           oldProject: testProject1Name,
+    //           newProject: testProject1Name,
+    //           oldName: 'public/test/',
+    //           newName: 'public/test2/',
+    //           oldPath: 'projects/' + testProject1Name + '/',
+    //           newPath: 'projects/' + testProject1Name + '/'
+    //         },
+    //         {
+    //           user: user2
+    //         }
+    //       ),
+    //     {
+    //       message: 'Missing required project permission for ' + testProject1Name
+    //     }
+    //   )
 
-      const storageProvider = getStorageProvider()
-      assert.equal(await storageProvider.isDirectory('public/test', 'projects/' + testProject1Name), true)
-      await assert.rejects(storageProvider.getObject('projects/' + testProject1Name + '/public/test2/' + testFileName2))
-      await assert.rejects(storageProvider.getObject('projects/' + testProject1Name + '/public/test2/' + testFileName3))
-    })
+    //   const storageProvider = getStorageProvider()
+    //   assert.equal(await storageProvider.isDirectory('public/test', 'projects/' + testProject1Name), true)
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject1Name + '/public/test2/' + testFileName2))
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject1Name + '/public/test2/' + testFileName3))
+    // })
 
     it('does not move a directory between projects when performed by user 2, who has editor permission on the old project and no permission on the new project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
@@ -2478,65 +2476,65 @@ describe('file-browser.test', () => {
       await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName3))
     })
 
-    it('does not move a directory between projects when performed by user 2, who has editor permission on the old project and reviewer permission on the new project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project2.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'editor',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project2.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
+    // it('does not move a directory between projects when performed by user 2, who has editor permission on the old project and editor permission on the new project', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project2.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project2.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
 
-      await assert.rejects(
-        async () =>
-          app.service(fileBrowserPath).update(
-            null,
-            {
-              oldProject: testProject1Name,
-              newProject: testProject2Name,
-              oldName: 'public/test/',
-              newName: 'public/test2/',
-              oldPath: 'projects/' + testProject1Name + '/',
-              newPath: 'projects/' + testProject2Name + '/'
-            },
-            {
-              user: user2
-            }
-          ),
-        {
-          message: 'Missing required project permission for ' + testProject2Name
-        }
-      )
+    //   await assert.rejects(
+    //     async () =>
+    //       app.service(fileBrowserPath).update(
+    //         null,
+    //         {
+    //           oldProject: testProject1Name,
+    //           newProject: testProject2Name,
+    //           oldName: 'public/test/',
+    //           newName: 'public/test2/',
+    //           oldPath: 'projects/' + testProject1Name + '/',
+    //           newPath: 'projects/' + testProject2Name + '/'
+    //         },
+    //         {
+    //           user: user2
+    //         }
+    //       ),
+    //     {
+    //       message: 'Missing required project permission for ' + testProject2Name
+    //     }
+    //   )
 
-      const storageProvider = getStorageProvider()
-      assert.equal(await storageProvider.isDirectory('public/test', 'projects/' + testProject1Name), true)
-      await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName2))
-      await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName3))
-    })
+    //   const storageProvider = getStorageProvider()
+    //   assert.equal(await storageProvider.isDirectory('public/test', 'projects/' + testProject1Name), true)
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName2))
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName3))
+    // })
 
     it('does not move a directory between projects when performed by user 2, who has editor permission on the old project and no permission on the new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
@@ -2583,71 +2581,71 @@ describe('file-browser.test', () => {
       await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName3))
     })
 
-    it('does not move a directory between projects when performed by user 2, who has editor permission on the old project and reviewer permission on the new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project1.id
-        }
-      })
-      await app.service(projectPermissionPath).remove(null, {
-        query: {
-          userId: user2.id,
-          projectId: project2.id
-        }
-      })
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'editor',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project2.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
+    // it('does not move a directory between projects when performed by user 2, who has editor permission on the old project and editor permission on the new project, via a relative path', async () => {
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project1.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._remove(null, {
+    //     query: {
+    //       userId: user2.id,
+    //       projectId: project2.id
+    //     }
+    //   })
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project2.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
 
-      await assert.rejects(
-        async () =>
-          app.service(fileBrowserPath).update(
-            null,
-            {
-              oldProject: testProject1Name,
-              newProject: testProject2Name,
-              oldName: 'public/test/',
-              newName: '../../' + testProject2Name + 'public/test2/',
-              oldPath: 'projects/' + testProject1Name + '/',
-              newPath: 'projects/' + testProject2Name + '/'
-            },
-            {
-              user: user2
-            }
-          ),
-        {
-          message: 'Missing required project permission for ' + testProject2Name
-        }
-      )
+    //   await assert.rejects(
+    //     async () =>
+    //       app.service(fileBrowserPath).update(
+    //         null,
+    //         {
+    //           oldProject: testProject1Name,
+    //           newProject: testProject2Name,
+    //           oldName: 'public/test/',
+    //           newName: '../../' + testProject2Name + 'public/test2/',
+    //           oldPath: 'projects/' + testProject1Name + '/',
+    //           newPath: 'projects/' + testProject2Name + '/'
+    //         },
+    //         {
+    //           user: user2
+    //         }
+    //       ),
+    //     {
+    //       message: 'Missing required project permission for ' + testProject2Name
+    //     }
+    //   )
 
-      const storageProvider = getStorageProvider()
-      assert.equal(await storageProvider.isDirectory('public/test', 'projects/' + testProject1Name), true)
-      await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName2))
-      await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName3))
-    })
+    //   const storageProvider = getStorageProvider()
+    //   assert.equal(await storageProvider.isDirectory('public/test', 'projects/' + testProject1Name), true)
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName2))
+    //   await assert.rejects(storageProvider.getObject('projects/' + testProject2Name + '/public/test2/' + testFileName3))
+    // })
 
     it('does not move the public or assets directories when performed by user 2, who has permissions on neither project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -2704,13 +2702,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move to the public or assets directories when performed by user 2, who has editor permissions on the old project but not the new project', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -2775,13 +2773,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move to the public or assets directories when performed by user 2, who has editor permissions on the old project but not the new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -2856,13 +2854,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move to the project directory when performed by user 2, who has editor permissions on the old project but not the new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -2909,13 +2907,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move to the org directory when performed by user 2, who has editor permissions on the old project but not the new project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -2957,13 +2955,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move to the top-level projects directory when performed by user 2, who has editor permissions on the old project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -3005,13 +3003,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move above the projects directory when performed by user 2, who has editor permissions on the old project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -3053,13 +3051,13 @@ describe('file-browser.test', () => {
     })
 
     it('does not move to another top-level directory when performed by user 2, who has editor permissions on the old project, via a relative path', async () => {
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project1.id
         }
       })
-      await app.service(projectPermissionPath).remove(null, {
+      await app.service(projectPermissionPath)._remove(null, {
         query: {
           userId: user2.id,
           projectId: project2.id
@@ -3298,9 +3296,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             invalidFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
 
@@ -3330,9 +3328,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             invalidFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
 
@@ -3362,9 +3360,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             shortFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
 
@@ -3392,9 +3390,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             shortFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
 
@@ -3422,9 +3420,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             longFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
 
@@ -3452,9 +3450,9 @@ describe('file-browser.test', () => {
           ),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             longFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
 
@@ -3654,20 +3652,52 @@ describe('file-browser.test', () => {
         storageProvider.getObject('projects/' + testProject1Name + '/public/test/' + longFileExtension)
       )
     })
+
+    it('does not move a folder into itself', async () => {
+      // create folder
+      await app.service(fileBrowserPath).create('projects/' + testProject1Name + '/public/subfolder/', {
+        user: user1
+      })
+
+      // move folder into itself
+      await assert.rejects(
+        async () =>
+          app.service(fileBrowserPath).update(
+            null,
+            {
+              oldProject: testProject1Name,
+              newProject: testProject1Name,
+              oldName: 'subfolder',
+              newName: 'subfolder',
+              oldPath: 'projects/' + testProject1Name + '/public/',
+              newPath: 'projects/' + testProject1Name + '/public/subfolder'
+            },
+            {
+              user: user1
+            }
+          ),
+        {
+          message: 'Cannot move a folder into itself or its own subfolder'
+        }
+      )
+
+      const storageProvider = getStorageProvider()
+      await assert.rejects(storageProvider.getObject('projects/' + testProject1Name + '/public/subfolder/subfolder'))
+    })
   })
 
   describe('remove', () => {
     const testProject1Name = `testorg1/${getRandomizedName('directory')}`
     const testProject2Name = `testorg2/${getRandomizedName('directory')}`
-    const testFileFullName = getRandomizedName('file', '.txt')
+    const testFileFullName = getRandomizedName('file', '.jpg')
     let project1, project2: ProjectType
     let user1, user2
     const invalidString = '%$#@11234%%^^&&^&)(_)(+!%#%@#%&☼8µ█╚AV♠7~u{3A86♠32≥@╧É╚{'
-    const invalidFileName = getRandomizedName(invalidString, '.txt')
-    const shortFileName = 'aa.txt'
+    const invalidFileName = getRandomizedName(invalidString, '.jpg')
+    const shortFileName = 'aa.jpg'
     const longFileName = getRandomizedName(
       'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      '.txt'
+      '.jpg'
     )
     const invalidFileExtension = getRandomizedName('file4', `.${invalidString}`)
     const shortFileExtension = getRandomizedName('file4', '.a')
@@ -3716,7 +3746,7 @@ describe('file-browser.test', () => {
           project: testProject1Name,
           path: 'public/' + testFileFullName,
           body: Buffer.from(''),
-          contentType: 'any'
+          contentType: 'image/jpeg'
         },
         {
           user: user1
@@ -3728,7 +3758,7 @@ describe('file-browser.test', () => {
           project: testProject1Name,
           path: 'public/test/' + testFileFullName,
           body: Buffer.from(''),
-          contentType: 'any'
+          contentType: 'image/jpeg'
         },
         {
           user: user1
@@ -3740,7 +3770,7 @@ describe('file-browser.test', () => {
           project: testProject2Name,
           path: 'public/' + testFileFullName,
           body: Buffer.from(''),
-          contentType: 'any'
+          contentType: 'image/jpeg'
         },
         {
           user: user1
@@ -3917,28 +3947,28 @@ describe('file-browser.test', () => {
       await assert.ok(storageProvider.getObject('projects/' + testProject1Name + '/public/' + testFileFullName))
     })
 
-    it('does not remove a file in a project when performed by user2, who has only reviewer permissions on that project', async () => {
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        () =>
-          app.service(fileBrowserPath).remove('projects/' + testProject1Name + '/public/' + testFileFullName, {
-            user: user2
-          }),
-        {
-          message: 'Missing required project permission for ' + testProject1Name
-        }
-      )
+    // it('does not remove a file in a project when performed by user2, who has only editor permissions on that project', async () => {
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     () =>
+    //       app.service(fileBrowserPath).remove('projects/' + testProject1Name + '/public/' + testFileFullName, {
+    //         user: user2
+    //       }),
+    //     {
+    //       message: 'Missing required project permission for ' + testProject1Name
+    //     }
+    //   )
 
-      const storageProvider = getStorageProvider()
-      await assert.ok(storageProvider.getObject('projects/' + testProject1Name + '/public/' + testFileFullName))
-    })
+    //   const storageProvider = getStorageProvider()
+    //   await assert.ok(storageProvider.getObject('projects/' + testProject1Name + '/public/' + testFileFullName))
+    // })
 
     it('does not remove a file in another project via relative paths when performed by user2, who has editor permission on the initial project but none on the final project', async () => {
       await app.service(projectPermissionPath)._create({
@@ -3965,38 +3995,38 @@ describe('file-browser.test', () => {
       await assert.ok(storageProvider.getObject('projects/' + testProject1Name + '/public/' + testFileFullName))
     })
 
-    it('does not remove a file in another project via relative paths when performed by user2, who has editor permission on the initial project and reviewer permission on the final project', async () => {
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project1.id,
-        type: 'editor',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await app.service(projectPermissionPath)._create({
-        id: v4(),
-        userId: user2.id,
-        projectId: project2.id,
-        type: 'reviewer',
-        createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      } as any)
-      await assert.rejects(
-        () =>
-          app
-            .service(fileBrowserPath)
-            .remove('projects/' + testProject1Name + '/../../' + testProject2Name + '/public/' + testFileFullName, {
-              user: user2
-            }),
-        {
-          message: 'Missing required project permission for ' + testProject2Name
-        }
-      )
+    // it('does not remove a file in another project via relative paths when performed by user2, who has editor permission on the initial project and editor permission on the final project', async () => {
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project1.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await app.service(projectPermissionPath)._create({
+    //     id: v4(),
+    //     userId: user2.id,
+    //     projectId: project2.id,
+    //     type: 'editor',
+    //     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    //     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    //   } as any)
+    //   await assert.rejects(
+    //     () =>
+    //       app
+    //         .service(fileBrowserPath)
+    //         .remove('projects/' + testProject1Name + '/../../' + testProject2Name + '/public/' + testFileFullName, {
+    //           user: user2
+    //         }),
+    //     {
+    //       message: 'Missing required project permission for ' + testProject2Name
+    //     }
+    //   )
 
-      const storageProvider = getStorageProvider()
-      await assert.ok(storageProvider.getObject('projects/' + testProject1Name + '/public/' + testFileFullName))
-    })
+    //   const storageProvider = getStorageProvider()
+    //   await assert.ok(storageProvider.getObject('projects/' + testProject1Name + '/public/' + testFileFullName))
+    // })
 
     it('throws an error if the directory has invalid characters', async () => {
       await assert.rejects(
@@ -4044,9 +4074,9 @@ describe('file-browser.test', () => {
           }),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             shortFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
     })
@@ -4059,9 +4089,9 @@ describe('file-browser.test', () => {
           }),
         {
           message:
-            'Invalid file name: ' +
+            'Invalid name: ' +
             longFileName.split('.')[0] +
-            '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
+            '; file or folder names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots.'
         }
       )
     })

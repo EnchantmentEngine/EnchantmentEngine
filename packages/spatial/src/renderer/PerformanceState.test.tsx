@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import React, { useEffect } from 'react'
@@ -32,15 +7,39 @@ import { DoneCallback, afterAll, afterEach, beforeAll, beforeEach, describe, it 
 import { ComponentType, destroyEngine } from '@ir-engine/ecs'
 import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 
+import { EngineState } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
-import { EngineState } from '../EngineState'
 import { initializeSpatialEngine } from '../initializeEngine'
+import { RendererComponent } from './components/RendererComponent'
 import { PerformanceManager, PerformanceState } from './PerformanceState'
 import { RendererState } from './RendererState'
-import { RenderSettingsState, RendererComponent } from './WebGLRendererSystem'
+import { RenderSettingsState } from './WebGLRendererSystem'
 
 describe('PerformanceState', () => {
   const mockRenderer = {
+    renderer: {
+      getContext: (context: string) => {
+        return mockRenderer.renderContext as WebGLRenderingContext
+      },
+      getContextAttributes: () => {
+        return {
+          alpha: true,
+          antialias: true,
+          depth: true,
+          desynchronized: false,
+          failIfMajorPerformanceCaveat: false,
+          powerPreference: 'default',
+          premultipliedAlpha: true,
+          preserveDrawingBuffer: false,
+          stencil: true
+        }
+      }
+    },
+    canvas: {
+      getContext: (context: string) => {
+        return mockRenderer.renderContext as WebGLRenderingContext
+      }
+    },
     renderContext: {
       getParameter: (param: number): number => {
         return param
@@ -76,7 +75,7 @@ describe('PerformanceState', () => {
     createEngine()
     initializeSpatialEngine()
     getMutableState(EngineState).isEditing.set(false)
-    getMutableState(RendererState).automatic.set(true)
+    getMutableState(RendererState).merge({ automatic: true, backend: 'Webgl' })
     getMutableState(PerformanceState).merge({
       initialized: true,
       enabled: true

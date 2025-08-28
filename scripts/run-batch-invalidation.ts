@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 // This must always be imported first
 import '@ir-engine/server-core/src/patchEngineNode'
 
@@ -31,6 +6,7 @@ import cli from 'cli'
 import dotenv from 'dotenv-flow'
 
 import { invalidationPath } from '@ir-engine/common/src/schema.type.module'
+import appconfig from '@ir-engine/server-core/src/appconfig'
 import { createFeathersKoaApp, serverJobPipe } from '@ir-engine/server-core/src/createApp'
 import { getStorageProvider } from '@ir-engine/server-core/src/media/storageprovider/storageprovider'
 import { ServerMode } from '@ir-engine/server-core/src/ServerState'
@@ -86,9 +62,11 @@ cli.main(async () => {
   try {
     const app = await createFeathersKoaApp(ServerMode.API, serverJobPipe)
     await app.setup()
+    const storageProviderName = appconfig.server.storageProvider
+    const limit = storageProviderName === 's3' ? 3000 : storageProviderName === 'gcs' ? 500 : 100
     const invalidations = await app.service(invalidationPath).find({
       query: {
-        $limit: 3000,
+        $limit: limit,
         $sort: {
           createdAt: 1
         }
@@ -102,7 +80,7 @@ cli.main(async () => {
 
       for (let invalidation of invalidations) {
         const isWildcard = invalidation.path.match(/\*/)
-        if (isWildcard && numWildcards > 5) continue
+        if (storageProviderName === 's3' && isWildcard && numWildcards > 5) continue
         pathArray.push(encodeCloudfrontInvalidation(invalidation.path))
         idArray.push(invalidation.id)
         if (isWildcard) numWildcards++
@@ -110,7 +88,8 @@ cli.main(async () => {
 
       pathArray = [...new Set(pathArray)]
       const storageProvider = getStorageProvider()
-      await storageProvider.createInvalidation(pathArray)
+      if (storageProviderName === 'gcs') await storageProvider.createInvalidation(pathArray, true)
+      else await storageProvider.createInvalidation(pathArray)
       await app.service(invalidationPath).remove(null, {
         query: {
           id: {

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Ethereal Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Ethereal Engine team.
-
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2023
-Ethereal Engine. All Rights Reserved.
-*/
-
 import {
   UndefinedEntity,
   createEngine,
@@ -32,9 +7,8 @@ import {
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
-import { ImmutableObject } from '@ir-engine/hyperflux'
 import assert from 'assert'
-import { Color, CubeTexture, FogBase, Texture } from 'three'
+import { Color, CubeTexture, Fog, FogExp2, Texture } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { BackgroundComponent, EnvironmentMapComponent, FogComponent, SceneComponent } from './SceneComponents'
 
@@ -46,7 +20,7 @@ describe('SceneComponent', () => {
   }) //:: IDs
 })
 
-type BackgroundComponentData = ImmutableObject<Color> | ImmutableObject<Texture> | ImmutableObject<CubeTexture>
+type BackgroundComponentData = Color | Texture | CubeTexture
 const BackgroundComponentDefaults = undefined! as BackgroundComponentData
 
 function assertBackgroundComponentEq(A: BackgroundComponentData, B: BackgroundComponentData) {
@@ -80,7 +54,7 @@ describe('BackgroundComponent', () => {
     })
 
     it('should initialize the component with the expected default values', () => {
-      const data = getComponent(testEntity, BackgroundComponent)
+      const data = getComponent(testEntity, BackgroundComponent as any) as Color | Texture | CubeTexture
       assertBackgroundComponentEq(data, BackgroundComponentDefaults)
     })
   }) //:: onInit
@@ -100,9 +74,9 @@ describe('BackgroundComponent', () => {
     })
 
     it('should change the values of an initialized BackgroundComponent', () => {
-      const before = getComponent(testEntity, BackgroundComponent)
+      const before = getComponent(testEntity, BackgroundComponent as any) as Color | Texture | CubeTexture
       setComponent(testEntity, BackgroundComponent, new Color('#123456'))
-      const after = getComponent(testEntity, BackgroundComponent)
+      const after = getComponent(testEntity, BackgroundComponent as any) as Color | Texture | CubeTexture
       assertBackgroundComponentNotEq(before, after)
     })
   }) //:: onSet
@@ -168,7 +142,7 @@ describe('EnvironmentMapComponent', () => {
   }) //:: onSet
 }) //:: EnvironmentMapComponent
 
-type FogData = FogBase
+type FogData = Fog | FogExp2
 const FogComponentDefaults = undefined! as FogData
 
 function assertFogComponentEq(A: FogData, B: FogData) {

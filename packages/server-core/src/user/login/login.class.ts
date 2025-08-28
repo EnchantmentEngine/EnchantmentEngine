@@ -1,38 +1,12 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Id, Paginated, ServiceInterface } from '@feathersjs/feathers'
 import { KnexAdapterParams } from '@feathersjs/knex'
-
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { loginTokenPath } from '@ir-engine/common/src/schemas/user/login-token.schema'
 import { userApiKeyPath, UserApiKeyType } from '@ir-engine/common/src/schemas/user/user-api-key.schema'
-import { UserID, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
-
 import { userLoginPath } from '@ir-engine/common/src/schemas/user/user-login.schema'
+import { UserID, UserName, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import moment from 'moment'
 import { Application } from '../../../declarations'
 import logger from '../../ServerLogger'
@@ -48,6 +22,33 @@ export class LoginService implements ServiceInterface {
 
   constructor(app: Application) {
     this.app = app
+  }
+
+  /**
+   * Filters existing identity providers to exclude those associated with deactivated users
+   * @param existingIdentityProviders Array of identity providers to filter
+   * @returns Array of identity providers with active users only
+   */
+  private async filterActiveIdentityProviders(existingIdentityProviders: any[]): Promise<any[]> {
+    if (!existingIdentityProviders || existingIdentityProviders.length === 0) {
+      return []
+    }
+
+    const activeProviders: any[] = []
+    for (const provider of existingIdentityProviders) {
+      try {
+        const user = await this.app.service(userPath).get(provider.userId)
+        if (!user.isDeactivated) {
+          activeProviders.push(provider)
+        }
+      } catch (error) {
+        if (error.code !== 404) {
+          logger.error('Error checking user deactivation status for identity provider:', error)
+        }
+        // Skip providers with missing or errored users
+      }
+    }
+    return activeProviders
   }
 
   /**
@@ -89,7 +90,7 @@ export class LoginService implements ServiceInterface {
       }
       if (new Date() > new Date(loginToken.expiresAt)) {
         logger.info('Login Token has expired')
-        await this.app.service(loginTokenPath).remove(loginToken.id)
+        if (isValidId(loginToken.id)) await this.app.service(loginTokenPath).remove(loginToken.id)
         return { error: 'Login link has expired' }
       }
       const identityProvider = await this.app.service(identityProviderPath).get(loginToken.identityProviderId)
@@ -132,17 +133,22 @@ export class LoginService implements ServiceInterface {
           }
         })
         if (existingIdentityProviders.total > 0) {
-          const loginToken = await this.app.service(loginTokenPath).create({
-            identityProviderId: identityProvider.id,
-            associateUserId: existingIdentityProviders.data[0].userId,
-            expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
-          })
-          return {
-            ...identityProvider,
-            associateEmail: identityProvider.token,
-            loginId: loginToken.id,
-            loginToken: loginToken.token,
-            promptForConnection: true
+          // Filter out identity providers associated with deactivated users
+          const activeIdentityProviders = await this.filterActiveIdentityProviders(existingIdentityProviders.data)
+
+          if (activeIdentityProviders.length > 0) {
+            const loginToken = await this.app.service(loginTokenPath).create({
+              identityProviderId: identityProvider.id,
+              associateUserId: activeIdentityProviders[0].userId,
+              expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
+            })
+            return {
+              ...identityProvider,
+              associateEmail: identityProvider.token,
+              loginId: loginToken.id,
+              loginToken: loginToken.token,
+              promptForConnection: true
+            }
           }
         }
       }
@@ -167,9 +173,13 @@ export class LoginService implements ServiceInterface {
         }
       })
 
-      await this.app.service(loginTokenPath).remove(loginToken.id)
+      // Disabling auto-delete of login-tokens due to some devices and email services auto-following links
+      // Uncomment to re-enable
+      // if (isValidId(loginToken.id)) await this.app.service(loginTokenPath).remove(loginToken.id)
       await this.app.service(userPath).patch(identityProvider.userId, {
-        isGuest: false
+        name: params.query?.username as UserName,
+        isGuest: false,
+        ageVerified: true
       })
 
       // Create a user-login record

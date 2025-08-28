@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import * as authentication from '@feathersjs/authentication'
 import { NotAuthenticated } from '@feathersjs/errors'
 import { HookContext, NextFunction, Paginated } from '@feathersjs/feathers'
@@ -33,6 +8,9 @@ import { isProvider } from 'feathers-hooks-common'
 import { userApiKeyPath, UserApiKeyType } from '@ir-engine/common/src/schemas/user/user-api-key.schema'
 import { userPath, UserType } from '@ir-engine/common/src/schemas/user/user.schema'
 
+import { apiJobPath } from '@ir-engine/common/src/schemas/cluster/api-job.schema'
+import { projectPath } from '@ir-engine/common/src/schemas/projects/project.schema'
+import { retry } from '@octokit/plugin-retry'
 import { JwtPayload, verify } from 'jsonwebtoken'
 import { Application } from '../../declarations'
 import config from '../appconfig'
@@ -67,7 +45,7 @@ export default async (context: HookContext<Application>, next: NextFunction): Pr
     return next()
   }
 
-  if (context.arguments[1]?.token && context.path === 'project' && context.method === 'update') {
+  if (context.arguments[1]?.token && context.path === projectPath && context.method === 'update') {
     const appId = config.authentication.oauth.github.appId ? parseInt(config.authentication.oauth.github.appId) : null
     const token = context.arguments[1].token
     if (!config.authentication.oauth.github.privateKey) throw new NotAuthenticated('No GitHub private key configured')
@@ -76,7 +54,8 @@ export default async (context: HookContext<Application>, next: NextFunction): Pr
     })! as JwtPayload
     if (jwtDecoded.iss == null || parseInt(jwtDecoded.iss) !== appId)
       throw new NotAuthenticated('Invalid app credentials')
-    const octoKit = new Octokit({ auth: token })
+    const retryOctokit = Octokit.plugin(retry)
+    const octoKit = new retryOctokit({ auth: token, retry: { enabled: process.env.TEST !== 'true' } })
     let appResponse
     try {
       appResponse = await octoKit.rest.apps.getAuthenticated()
@@ -104,6 +83,35 @@ export default async (context: HookContext<Application>, next: NextFunction): Pr
     authSplit = authHeader.split(' ')
   }
 
+  // Outside jobs that update projects need to long-poll the api-job service to see if the job has completed.
+  // This change was made because, with project dependency installation, the time to complete a whole project
+  // update may cause timeouts in the networking, and leaving a request running for several minutes is not
+  // good practice.
+  // They can now also use a JWT signed by the app to access the api-job service.
+  if (context.path === apiJobPath && context.method === 'get' && context.params.query.signedByAppJWT === 'true') {
+    const appId = config.authentication.oauth.github.appId ? parseInt(config.authentication.oauth.github.appId) : null
+    const token = authSplit[1]
+    if (!config.authentication.oauth.github.privateKey) throw new NotAuthenticated('No GitHub private key configured')
+    const jwtDecoded = verify(token, config.authentication.oauth.github.privateKey, {
+      algorithms: ['RS256']
+    })! as JwtPayload
+    if (jwtDecoded.iss == null || parseInt(jwtDecoded.iss) !== appId)
+      throw new NotAuthenticated('Invalid app credentials')
+    const retryOctokit = Octokit.plugin(retry)
+    const octoKit = new retryOctokit({ auth: token, retry: { enabled: process.env.TEST !== 'true' } })
+    let appResponse
+    try {
+      appResponse = await octoKit.rest.apps.getAuthenticated()
+    } catch (err) {
+      throw new NotAuthenticated('Invalid app credentials')
+    }
+    if (appResponse.data.id !== appId) throw new NotAuthenticated('App ID of JWT does not match installed App ID')
+    context.params.appJWT = token
+    context.params.signedByAppJWT = true
+    delete context.params.query.signedByAppJWT
+    return next()
+  }
+
   if (authSplit && authSplit.length > 1 && authSplit[1]) {
     const key = (await context.app.service(userApiKeyPath).find({
       query: {
@@ -113,6 +121,11 @@ export default async (context: HookContext<Application>, next: NextFunction): Pr
 
     if (key.data.length > 0) {
       const user = await context.app.service(userPath).get(key.data[0].userId)
+
+      if (user.isDeactivated) {
+        throw new NotAuthenticated('User account has been deactivated')
+      }
+
       context.params.user = user
       asyncLocalStorage.enterWith({ user })
       return next()

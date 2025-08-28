@@ -2,10 +2,14 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "module": "CommonJS",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "skipLibCheck": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -24,7 +28,8 @@
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "declaration": false,
-    "types": ["@types/node"]
+    "types": ["@types/node"],
+    "erasableSyntaxOnly": true
   },
   "include": ["../../__global.d.ts", "../client-core/src", "../server-core/src", "./src", "./index.ts"]
 }

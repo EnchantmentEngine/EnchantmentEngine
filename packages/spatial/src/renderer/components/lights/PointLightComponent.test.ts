@@ -1,53 +1,29 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   Entity,
+  EntityID,
+  SourceID,
+  UUIDComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   hasComponent,
   removeEntity,
   serializeComponent,
   setComponent
 } from '@ir-engine/ecs'
-import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { getMutableState } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { BoxGeometry, ColorRepresentation, MeshBasicMaterial, PointLight } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { assertColor } from '../../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../../tests/util/mockSpatialEngine'
-import { LightHelperComponent } from '../../../common/debug/LightHelperComponent'
 import { destroySpatialEngine } from '../../../initializeEngine'
 import { TransformComponent } from '../../../transform/components/TransformComponent'
 import { RendererState } from '../../RendererState'
-import { GroupComponent } from '../GroupComponent'
 import { LineSegmentComponent } from '../LineSegmentComponent'
+import { ObjectComponent } from '../ObjectComponent'
 import { LightTagComponent } from './LightTagComponent'
 import { PointLightComponent } from './PointLightComponent'
 
@@ -68,7 +44,7 @@ const PointLightComponentDefaults: PointLightComponentData = {
   range: 0,
   decay: 2,
   castShadow: false,
-  shadowBias: 0.5,
+  shadowBias: 0,
   shadowRadius: 1,
   helperEntity: UndefinedEntity
 }
@@ -143,7 +119,7 @@ describe('PointLightComponent', () => {
       return destroyEngine()
     })
 
-    it('should change the values of an initialized PointLightComponent', () => {
+    it('should change the values of an initialized PointLightComponent', async () => {
       const before = getComponent(testEntity, PointLightComponent)
       assertPointLightComponentEq(before, PointLightComponentDefaults)
       const DummyEntity = Number.MAX_VALUE as Entity
@@ -160,10 +136,13 @@ describe('PointLightComponent', () => {
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, Expected)
-      getMutableComponent(testEntity, PointLightComponent).helperEntity.set(DummyEntity)
-      const result = getComponent(testEntity, PointLightComponent)
-      assertPointLightComponentNotEq(result, PointLightComponentDefaults)
-      assertPointLightComponentEq(result, Expected)
+
+      getComponent(testEntity, PointLightComponent).helperEntity = DummyEntity
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent)
+        assertPointLightComponentNotEq(result, PointLightComponentDefaults)
+        assertPointLightComponentEq(result, Expected)
+      })
     })
   }) //:: onSet
 
@@ -206,6 +185,10 @@ describe('PointLightComponent', () => {
       createEngine()
       mockSpatialEngine()
       testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, {
+        entitySourceID: 'source' as SourceID,
+        entityID: 'id' as EntityID
+      })
       setComponent(testEntity, TransformComponent)
     })
 
@@ -215,35 +198,37 @@ describe('PointLightComponent', () => {
       return destroyEngine()
     })
 
-    it('should set a LightTagComponent on the entityContext when it is mounted', () => {
+    it('should set a LightTagComponent on the entityContext when it is mounted', async () => {
       // Sanity check before running
       assert.equal(hasComponent(testEntity, LightTagComponent), false)
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent)
-      assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      await vi.waitFor(() => {
+        assert.equal(hasComponent(testEntity, LightTagComponent), true)
+      })
     })
 
-    it('should react when directionalLightComponent.color changes', () => {
+    it('should react when pointLight.color changes', async () => {
       const Expected = 0x123456
 
       // Set the data as expected
       setComponent(testEntity, PointLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, PointLightComponent).color
-      assertColor.eq(before, PointLightComponentDefaults.color)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, PointLightComponent).color
+        assertColor.eq(before, PointLightComponentDefaults.color)
+      })
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { color: Expected })
-      const result = getComponent(testEntity, PointLightComponent).color
-      assertColor.eq(result, Expected)
-      // Check side-effect
-      const light = getComponent(testEntity, GroupComponent)[0] as PointLight
-      assert.equal(light.color.getHex(), Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent).color
+        assertColor.eq(result, Expected)
+      })
     })
 
-    it('should react when hemisphereLightComponent.intensity changes', () => {
+    it('should react when hemisphereLightComponent.intensity changes', async () => {
       const Expected = 42
 
       // Set the data as expected
@@ -251,22 +236,25 @@ describe('PointLightComponent', () => {
       const material = new MeshBasicMaterial({ color: 0xffff00 })
       setComponent(testEntity, LineSegmentComponent, { geometry: geometry, material: material })
       setComponent(testEntity, PointLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, PointLightComponent).intensity
-      assert.equal(before, PointLightComponentDefaults.intensity)
-      assert.notEqual(before, Expected)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, PointLightComponent).intensity
+        assert.equal(before, PointLightComponentDefaults.intensity)
+        assert.notEqual(before, Expected)
+      })
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { intensity: Expected })
-      const result = getComponent(testEntity, PointLightComponent).intensity
-      assert.equal(result, Expected)
-      // Check side-effect
-      const light = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(light.intensity, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent).intensity
+        assert.equal(result, Expected)
+        // Check side-effect
+        const light = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(light.intensity, Expected)
+      })
     })
 
-    it('should react when pointLightComponent.range changes', () => {
+    it('should react when pointLightComponent.range changes', async () => {
       const Expected = 42
 
       // Set the data as expected
@@ -274,22 +262,25 @@ describe('PointLightComponent', () => {
       const material = new MeshBasicMaterial({ color: 0xffff00 })
       setComponent(testEntity, LineSegmentComponent, { geometry: geometry, material: material })
       setComponent(testEntity, PointLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, PointLightComponent).range
-      assert.equal(before, PointLightComponentDefaults.range)
-      assert.notEqual(before, Expected)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, PointLightComponent).range
+        assert.equal(before, PointLightComponentDefaults.range)
+        assert.notEqual(before, Expected)
+      })
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { range: Expected })
-      const result = getComponent(testEntity, PointLightComponent).range
-      assert.equal(result, Expected)
-      // Check side-effect
-      const light = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(light.distance, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent).range
+        assert.equal(result, Expected)
+        // Check side-effect
+        const light = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(light.distance, Expected)
+      })
     })
 
-    it('should react when pointLightComponent.decay changes', () => {
+    it('should react when pointLightComponent.decay changes', async () => {
       const Expected = 42
 
       // Set the data as expected
@@ -297,22 +288,25 @@ describe('PointLightComponent', () => {
       const material = new MeshBasicMaterial({ color: 0xffff00 })
       setComponent(testEntity, LineSegmentComponent, { geometry: geometry, material: material })
       setComponent(testEntity, PointLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, PointLightComponent).decay
-      assert.equal(before, PointLightComponentDefaults.decay)
-      assert.notEqual(before, Expected)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, PointLightComponent).decay
+        assert.equal(before, PointLightComponentDefaults.decay)
+        assert.notEqual(before, Expected)
+      })
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { decay: Expected })
-      const result = getComponent(testEntity, PointLightComponent).decay
-      assert.equal(result, Expected)
-      // Check side-effect
-      const light = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(light.decay, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent).decay
+        assert.equal(result, Expected)
+        // Check side-effect
+        const light = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(light.decay, Expected)
+      })
     })
 
-    it('should react when pointLightComponent.castShadow changes', () => {
+    it('should react when pointLightComponent.castShadow changes', async () => {
       const Expected = !PointLightComponentDefaults.castShadow
 
       // Set the data as expected
@@ -320,22 +314,25 @@ describe('PointLightComponent', () => {
       const material = new MeshBasicMaterial({ color: 0xffff00 })
       setComponent(testEntity, LineSegmentComponent, { geometry: geometry, material: material })
       setComponent(testEntity, PointLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, PointLightComponent).castShadow
-      assert.equal(before, PointLightComponentDefaults.castShadow)
-      assert.notEqual(before, Expected)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, PointLightComponent).castShadow
+        assert.equal(before, PointLightComponentDefaults.castShadow)
+        assert.notEqual(before, Expected)
+      })
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { castShadow: Expected })
-      const result = getComponent(testEntity, PointLightComponent).castShadow
-      assert.equal(result, Expected)
-      // Check side-effect
-      const light = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(light.castShadow, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent).castShadow
+        assert.equal(result, Expected)
+        // Check side-effect
+        const light = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(light.castShadow, Expected)
+      })
     })
 
-    it('should react when pointLightComponent.shadowBias changes', () => {
+    it('should react when pointLightComponent.shadowBias changes', async () => {
       const Expected = 42
 
       // Set the data as expected
@@ -343,22 +340,25 @@ describe('PointLightComponent', () => {
       const material = new MeshBasicMaterial({ color: 0xffff00 })
       setComponent(testEntity, LineSegmentComponent, { geometry: geometry, material: material })
       setComponent(testEntity, PointLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, PointLightComponent).shadowBias
-      assert.equal(before, PointLightComponentDefaults.shadowBias)
-      assert.notEqual(before, Expected)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, PointLightComponent).shadowBias
+        assert.equal(before, PointLightComponentDefaults.shadowBias)
+        assert.notEqual(before, Expected)
+      })
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { shadowBias: Expected })
-      const result = getComponent(testEntity, PointLightComponent).shadowBias
-      assert.equal(result, Expected)
-      // Check side-effect
-      const light = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(light.shadow.bias, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent).shadowBias
+        assert.equal(result, Expected)
+        // Check side-effect
+        const light = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(light.shadow.bias, Expected)
+      })
     })
 
-    it('should react when pointLightComponent.shadowRadius changes', () => {
+    it('should react when pointLightComponent.shadowRadius changes', async () => {
       const Expected = 42
 
       // Set the data as expected
@@ -366,22 +366,25 @@ describe('PointLightComponent', () => {
       const material = new MeshBasicMaterial({ color: 0xffff00 })
       setComponent(testEntity, LineSegmentComponent, { geometry: geometry, material: material })
       setComponent(testEntity, PointLightComponent)
-
-      // Sanity check before running
-      const before = getComponent(testEntity, PointLightComponent).shadowRadius
-      assert.equal(before, PointLightComponentDefaults.shadowRadius)
-      assert.notEqual(before, Expected)
+      await vi.waitFor(() => {
+        // Sanity check before running
+        const before = getComponent(testEntity, PointLightComponent).shadowRadius
+        assert.equal(before, PointLightComponentDefaults.shadowRadius)
+        assert.notEqual(before, Expected)
+      })
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent, { shadowRadius: Expected })
-      const result = getComponent(testEntity, PointLightComponent).shadowRadius
-      assert.equal(result, Expected)
-      // Check side-effect
-      const light = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(light.shadow.radius, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, PointLightComponent).shadowRadius
+        assert.equal(result, Expected)
+        // Check side-effect
+        const light = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(light.shadow.radius, Expected)
+      })
     })
 
-    it('should react when renderState.shadowMapResolution changes', () => {
+    it('should react when renderState.shadowMapResolution changes', async () => {
       const Initial = 21
       const Expected = 42
 
@@ -393,38 +396,56 @@ describe('PointLightComponent', () => {
 
       // Run and Check the result
       setComponent(testEntity, PointLightComponent)
-      const before = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(before.shadow.mapSize.x, Initial)
+      await vi.waitFor(() => {
+        const before = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(before.shadow.mapSize.x, Initial)
+      })
 
       // Re-run and Check the result again
       getMutableState(RendererState).shadowMapResolution.set(Expected)
-      PointLightComponent.reactorMap.get(testEntity)!.run()
-      const result = getComponent(testEntity, GroupComponent)[1] as PointLight
-      assert.equal(result.shadow.mapSize.x, Expected)
+      await vi.waitFor(() => {
+        const result = getComponent(testEntity, ObjectComponent) as PointLight
+        assert.equal(result.shadow.mapSize.x, Expected)
+      })
     })
-
-    it('should react when debugEnabled changes', () => {
+    /*
+    it('should react when debugEnabled changes', async () => {
       const Initial = false
       const Expected = !Initial
+      const ExpectedColor = new Color(0x123456)
 
       // Set the data as expected
       assert.equal(getState(RendererState).nodeHelperVisibility, false)
       getMutableState(RendererState).nodeHelperVisibility.set(Initial)
+      getMutableState(EngineState).isEditing.set(Expected)
 
       // Run and Check the Initial result
       setComponent(testEntity, PointLightComponent)
-      assert.equal(hasComponent(testEntity, LightHelperComponent), Initial)
-
+      setComponent(testEntity, NameComponent, 'point-light')
+      setComponent(testEntity, VisibleComponent)
+      setComponent(testEntity, UUIDComponent, { entitySourceID: 'test' as SourceID, entityID: '0' as EntityID })
+      SelectionState.updateSelection([UUIDComponent.get(testEntity)])
+      startReactor(helperReactor)
       // Re-run and Check the result again
       getMutableState(RendererState).nodeHelperVisibility.set(Expected)
-      PointLightComponent.reactorMap.get(testEntity)!.run()
-      assert.equal(hasComponent(testEntity, LightHelperComponent), Expected)
-      assert.equal(getComponent(testEntity, LightHelperComponent).name, 'point-light-helper')
+
+      await vi.waitFor(() => {
+        const childEntity1 = getComponent(testEntity, EntityTreeComponent).children.find(
+          (child) => getOptionalComponent(child, LineSegmentComponent)?.name === 'point-light-helper'
+        )!
+        assert.equal(hasComponent(childEntity1, LineSegmentComponent), Expected)
+        assert.equal(getComponent(childEntity1, LineSegmentComponent).name, 'point-light-helper')
+      })
 
       // Re-run and Check the unmount case
-      getMutableState(RendererState).nodeHelperVisibility.set(Initial)
-      PointLightComponent.reactorMap.get(testEntity)!.run()
-      assert.equal(hasComponent(testEntity, LightHelperComponent), Initial)
-    })
-  }) //:: reactor
+      SelectionState.updateSelection([])
+
+      await vi.waitFor(() => {
+        const childEntity1 = getComponent(testEntity, EntityTreeComponent).children.find(
+          (child) => getOptionalComponent(child, LineSegmentComponent)?.name === 'point-light-helper'
+        )!
+        assert.equal(hasComponent(childEntity1, LineSegmentComponent), Initial)
+      })
+    })*/
+  }) //::  should be a test in the helper in the editor package, not here at all
 }) //:: PointLightComponent

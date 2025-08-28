@@ -1,0 +1,106 @@
+import { Entity, getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial/src/SpatialModule'
+import { Line, Raycaster, Sprite, SpriteMaterial, TextureLoader, Vector3 } from 'three'
+import { Vector3_One, Vector3_Zero } from '../../../../spatial/src/common/constants/MathConstants'
+import { EditorHelperState } from '../../services/EditorHelperState'
+import { getCameraFactor, intersectObjectWithRay } from './gizmoCommonFunctions'
+
+const _raycaster = new Raycaster() // for hover
+_raycaster.layers.set(ObjectLayers.NodeIcon)
+_raycaster.firstHitOnly = true
+
+const _interpolationFactor = 0.3 // used for the hover grow effect
+
+const _parentWorldPositon = new Vector3()
+const _parentWorldScale = new Vector3()
+export const VolumeVisibility = {
+  Off: 'Off' as const,
+  Auto: 'Auto' as const,
+  On: 'On' as const
+}
+
+export const getIconGizmo = (textureURL) => {
+  const texture = new TextureLoader().load(textureURL)
+  const material = new SpriteMaterial({
+    map: texture,
+    transparent: true, // Allow transparency
+    opacity: 1
+  })
+  material.depthTest = false // Disable depth testing
+  return new Sprite(material)
+}
+
+export function gizmoIconHelperYAxisUpdate(helperEntity, position) {
+  const transform = getComponent(helperEntity, TransformComponent)
+  transform.position.set(position.x, 0, position.z)
+  if (getComponent(helperEntity, MeshComponent) instanceof Line) transform.scale.set(1e-10, position.y, 1e-10)
+  else transform.scale.set(4, 4, 4)
+}
+
+export function gizmoIconHelperUpdate(helperEntity, start, end) {
+  const name = getComponent(helperEntity, NameComponent)
+  const transform = getComponent(helperEntity, TransformComponent)
+  if (name === 'DELTAX') {
+    transform.position.set(start.x, 0, start.z)
+    transform.scale.set(end.x - start.x, 1e-10, 1e-10)
+  } else if (name === 'DELTAY') {
+    gizmoIconHelperYAxisUpdate(helperEntity, end)
+  } else if (name === 'DELTAZ') {
+    transform.position.set(end.x, 0, start.z)
+    transform.scale.set(1e-10, 1e-10, end.z - start.z)
+  }
+}
+
+export function gizmoIconUpdate(parentEntity: Entity, iconEntity: Entity, directionalEntities: Entity[], currentsize) {
+  const transform = getComponent(iconEntity, TransformComponent)
+  TransformComponent.getWorldPosition(parentEntity, _parentWorldPositon)
+  TransformComponent.getWorldScale(parentEntity, _parentWorldScale)
+  const size = transform.scale
+  const finalSize = size
+    .set(1, 1, 1)
+    .multiplyScalar(getCameraFactor(_parentWorldPositon, currentsize))
+    .max(Vector3_One)
+    .divide(_parentWorldScale)
+
+  setComponent(iconEntity, TransformComponent, { position: Vector3_Zero, scale: finalSize })
+  for (const entity of directionalEntities) {
+    setComponent(entity, TransformComponent, { scale: finalSize })
+  }
+}
+
+function pointerHover(studioIcon: Entity) {
+  const spriteObject = getComponent(studioIcon, ObjectComponent)
+  const inputPointerEntity = InputPointerComponent.getPointersForCamera(getState(ReferenceSpaceState).viewerEntity)[0]
+  if (!inputPointerEntity) return
+
+  const pointerPosition = getComponent(inputPointerEntity, InputPointerComponent).position
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+  _raycaster.setFromCamera(pointerPosition, camera)
+
+  const intersect = intersectObjectWithRay(spriteObject, _raycaster, true)
+  return intersect
+}
+
+export function setIconSize(intersect, currentSize) {
+  const targetSize = intersect
+    ? getState(EditorHelperState).editorIconMaxSize
+    : getState(EditorHelperState).editorIconMinSize
+  //TODO : make the sizeFactor editable
+  const originalSize = currentSize
+  const interpolatedSize = originalSize + (targetSize - originalSize) * _interpolationFactor
+  return interpolatedSize
+}
+
+export function onPointerHover(studioIcon) {
+  const spriteObject = getOptionalComponent(studioIcon, ObjectComponent)
+  if (spriteObject === undefined) return
+
+  return pointerHover(studioIcon)
+}

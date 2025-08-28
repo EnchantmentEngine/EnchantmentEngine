@@ -1,37 +1,12 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { AuthenticationRequest, AuthenticationResult } from '@feathersjs/authentication'
 import { Paginated, Params } from '@feathersjs/feathers'
 
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
+import { loginTokenPath } from '@ir-engine/common/src/schemas/user/login-token.schema'
 import { userApiKeyPath, UserApiKeyType } from '@ir-engine/common/src/schemas/user/user-api-key.schema'
 import { InviteCode, UserName, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
-
-import { loginTokenPath } from '@ir-engine/common/src/schemas/user/login-token.schema'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import moment from 'moment/moment'
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
@@ -78,7 +53,8 @@ export class DiscordStrategy extends CustomOAuthStrategy {
         const newUser = await this.app.service(userPath).create({
           name: '' as UserName,
           isGuest: false,
-          inviteCode: code
+          inviteCode: code,
+          ageVerified: true
         })
         entity.userId = newUser.id
         await this.app.service(identityProviderPath).patch(entity.id, {
@@ -95,7 +71,8 @@ export class DiscordStrategy extends CustomOAuthStrategy {
     await makeInitialAdmin(this.app, user.id)
     if (user.isGuest)
       await this.app.service(userPath).patch(entity.userId, {
-        isGuest: false
+        isGuest: false,
+        ageVerified: true
       })
     const apiKey = (await this.app.service(userApiKeyPath).find({
       query: {
@@ -107,8 +84,14 @@ export class DiscordStrategy extends CustomOAuthStrategy {
         userId: entity.userId
       })
     if (entity.type !== 'guest' && identityProvider.type === 'guest') {
-      await this.app.service(identityProviderPath).remove(identityProvider.id)
-      await this.app.service(userPath).remove(identityProvider.userId)
+      if (isValidId(identityProvider.id)) await this.app.service(identityProviderPath).remove(identityProvider.id)
+      if (isValidId(identityProvider.userId)) await this.app.service(userPath).remove(identityProvider.userId)
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: entity.userId
+        }
+      })
       await this.userLoginEntry(entity, params)
       return super.updateEntity(entity, profile, params)
     }
@@ -117,8 +100,8 @@ export class DiscordStrategy extends CustomOAuthStrategy {
       profile.userId = user.id
       const newIP = await super.createEntity(profile, params)
       if (entity.type === 'guest') {
-        if (profile.email) {
-          const profileEmail = profile.email
+        if (newIP.email) {
+          const profileEmail = newIP.email
           const existingIdentityProviders = await this.app.service(identityProviderPath).find({
             query: {
               $or: [
@@ -135,25 +118,42 @@ export class DiscordStrategy extends CustomOAuthStrategy {
             }
           })
           if (existingIdentityProviders.total > 0) {
-            const loginToken = await this.app.service(loginTokenPath).create({
-              identityProviderId: newIP.id,
-              associateUserId: existingIdentityProviders.data[0].userId,
-              expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
-            })
-            return {
-              ...entity,
-              associateEmail: profileEmail,
-              loginId: loginToken.id,
-              loginToken: loginToken.token,
-              promptForConnection: true
+            // Filter out identity providers associated with deactivated users
+            const activeIdentityProviders = await this.filterActiveIdentityProviders(existingIdentityProviders.data)
+
+            if (activeIdentityProviders.length > 0) {
+              const loginToken = await this.app.service(loginTokenPath).create({
+                identityProviderId: newIP.id,
+                associateUserId: activeIdentityProviders[0].userId,
+                expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
+              })
+              return {
+                ...entity,
+                associateEmail: profileEmail,
+                loginId: loginToken.id,
+                loginToken: loginToken.token,
+                promptForConnection: true
+              }
             }
           }
         }
-        await this.app.service(identityProviderPath).remove(entity.id)
+        if (isValidId(entity.id)) await this.app.service(identityProviderPath).remove(entity.id)
       }
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: entity.userId
+        }
+      })
       await this.userLoginEntry(newIP, params)
       return newIP
     } else if (existingEntity.userId === identityProvider.userId) {
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: existingEntity.userId
+        }
+      })
       await this.userLoginEntry(existingEntity, params)
       return existingEntity
     } else {

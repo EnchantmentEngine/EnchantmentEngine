@@ -1,0 +1,81 @@
+import React, { useEffect } from 'react'
+
+import {
+  EntityID,
+  EntityTreeComponent,
+  SourceID,
+  UUIDComponent,
+  UndefinedEntity,
+  createEntity,
+  hasComponent,
+  removeComponent,
+  removeEntity,
+  setComponent
+} from '@ir-engine/ecs'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { useHookstate } from '@ir-engine/hyperflux'
+import { TransformComponent } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/CameraOrbitComponent'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
+import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+
+export function useRender3DPanelSystem(canvas: React.MutableRefObject<HTMLCanvasElement>) {
+  const canvasRef = useHookstate(canvas.current)
+
+  const panelState = useHookstate(() => {
+    const sceneEntity = createEntity()
+    const sourceID = UUIDComponent.generateUUID() as string as SourceID
+    setComponent(sceneEntity, UUIDComponent, { entitySourceID: sourceID, entityID: 'scene' as EntityID })
+    setComponent(sceneEntity, TransformComponent)
+    setComponent(sceneEntity, VisibleComponent)
+    setComponent(sceneEntity, SceneComponent)
+    setComponent(sceneEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
+
+    const cameraEntity = createEntity()
+    setComponent(cameraEntity, UUIDComponent, { entitySourceID: sourceID, entityID: 'camera' as EntityID })
+    setComponent(cameraEntity, CameraComponent)
+    setComponent(cameraEntity, TransformComponent)
+    setComponent(cameraEntity, VisibleComponent)
+    setComponent(cameraEntity, CameraOrbitComponent)
+    setComponent(cameraEntity, InputComponent)
+    setComponent(cameraEntity, EntityTreeComponent, { parentEntity: UndefinedEntity })
+
+    return {
+      cameraEntity,
+      sceneEntity
+    }
+  })
+
+  useEffect(() => {
+    const { cameraEntity, sceneEntity } = panelState.value
+    return () => {
+      // cleanup entities and state associated with this 3d panel
+      removeEntity(cameraEntity)
+      /**@todo why is this necessary to prevent gltf system stopping? */
+      if (hasComponent(sceneEntity, GLTFComponent)) removeComponent(sceneEntity, GLTFComponent)
+      removeEntity(sceneEntity)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!canvas.current || canvasRef.value === canvas.current) return
+    canvasRef.set(canvas.current)
+
+    const { cameraEntity, sceneEntity } = panelState.value
+
+    setComponent(cameraEntity, NameComponent, '3D Preview Camera for ' + canvasRef.value.id)
+
+    if (hasComponent(cameraEntity, RendererComponent)) return
+
+    setComponent(cameraEntity, RendererComponent, {
+      canvas: canvasRef.value as HTMLCanvasElement,
+      scenes: [sceneEntity]
+    })
+  }, [canvas.current])
+
+  return panelState.value
+}

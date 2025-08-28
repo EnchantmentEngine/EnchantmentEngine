@@ -1,30 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { VisualScriptComponent } from '@ir-engine/engine'
-import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { LoopAnimationComponent } from '@ir-engine/engine/src/avatar/components/LoopAnimationComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { GrabbableComponent } from '@ir-engine/engine/src/grabbable/GrabbableComponent'
@@ -32,19 +5,16 @@ import { InteractableComponent } from '@ir-engine/engine/src/interaction/compone
 import { AudioAnalysisComponent } from '@ir-engine/engine/src/scene/components/AudioAnalysisComponent'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { EnvMapBakeComponent } from '@ir-engine/engine/src/scene/components/EnvMapBakeComponent'
-import { EnvmapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
 import { GroundPlaneComponent } from '@ir-engine/engine/src/scene/components/GroundPlaneComponent'
 import { ImageComponent } from '@ir-engine/engine/src/scene/components/ImageComponent'
 import { InstancingComponent } from '@ir-engine/engine/src/scene/components/InstancingComponent'
 import { LegacyVolumetricComponent } from '@ir-engine/engine/src/scene/components/LegacyVolumetricComponent'
 import { LinkComponent } from '@ir-engine/engine/src/scene/components/LinkComponent'
-import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { MountPointComponent } from '@ir-engine/engine/src/scene/components/MountPointComponent'
 import { ParticleSystemComponent } from '@ir-engine/engine/src/scene/components/ParticleSystemComponent'
 import { PlaylistComponent } from '@ir-engine/engine/src/scene/components/PlaylistComponent'
 import { PortalComponent } from '@ir-engine/engine/src/scene/components/PortalComponent'
 import { PrimitiveGeometryComponent } from '@ir-engine/engine/src/scene/components/PrimitiveGeometryComponent'
-import { ReflectionProbeComponent } from '@ir-engine/engine/src/scene/components/ReflectionProbeComponent'
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
 import { SDFComponent } from '@ir-engine/engine/src/scene/components/SDFComponent'
 import { ScenePreviewCameraComponent } from '@ir-engine/engine/src/scene/components/ScenePreviewCamera'
@@ -59,6 +29,7 @@ import { TextComponent } from '@ir-engine/engine/src/scene/components/TextCompon
 import { VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
+import { VisualScriptComponent } from '@ir-engine/engine/src/visualscript/components/VisualScriptComponent'
 import { defineState } from '@ir-engine/hyperflux'
 import {
   AmbientLightComponent,
@@ -70,18 +41,15 @@ import {
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
-import { TriggerComponent } from '@ir-engine/spatial/src/physics/components/TriggerComponent'
 import { FogSettingsComponent } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
-import { LookAtComponent } from '@ir-engine/spatial/src/transform/components/LookAtComponent'
 import { PersistentAnchorComponent } from '@ir-engine/spatial/src/xr/XRAnchorComponents'
 
 // everything above still needs to be built
 import PersistentAnchorNodeEditor from '@ir-engine/ui/src/components/editor/properties/anchor'
 import LoopAnimationNodeEditor from '@ir-engine/ui/src/components/editor/properties/animation'
 import AudioAnalysisEditor from '@ir-engine/ui/src/components/editor/properties/audio/analysis'
-import PositionalAudioNodeEditor from '@ir-engine/ui/src/components/editor/properties/audio/positional'
 import CameraNodeEditor from '@ir-engine/ui/src/components/editor/properties/camera'
 import CameraPropertiesNodeEditor from '@ir-engine/ui/src/components/editor/properties/cameraProperties'
 import ColliderComponentEditor from '@ir-engine/ui/src/components/editor/properties/collider'
@@ -103,13 +71,12 @@ import PointLightNodeEditor from '@ir-engine/ui/src/components/editor/properties
 import SpotLightNodeEditor from '@ir-engine/ui/src/components/editor/properties/light/spot'
 import LinkNodeEditor from '@ir-engine/ui/src/components/editor/properties/link'
 import LookAtNodeEditor from '@ir-engine/ui/src/components/editor/properties/lookAt'
-import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
 import MeshNodeEditor from '@ir-engine/ui/src/components/editor/properties/mesh'
 import MountPointNodeEditor from '@ir-engine/ui/src/components/editor/properties/mountPoint'
+import OverlayNodeEditor from '@ir-engine/ui/src/components/editor/properties/overlay'
 import ParticleSystemNodeEditor from '@ir-engine/ui/src/components/editor/properties/particle'
 import PortalNodeEditor from '@ir-engine/ui/src/components/editor/properties/portal'
 import PostProcessingSettingsEditor from '@ir-engine/ui/src/components/editor/properties/postProcessing'
-import ReflectionProbeNodeEditor from '@ir-engine/ui/src/components/editor/properties/reflectionProbe'
 import RenderSettingsEditor from '@ir-engine/ui/src/components/editor/properties/render'
 import RigidBodyComponentEditor from '@ir-engine/ui/src/components/editor/properties/rigidBody'
 import ScenePreviewCameraNodeEditor from '@ir-engine/ui/src/components/editor/properties/scene/previewCamera'
@@ -121,7 +88,18 @@ import SkyboxNodeEditor from '@ir-engine/ui/src/components/editor/properties/sky
 import SpawnPointNodeEditor from '@ir-engine/ui/src/components/editor/properties/spawnPoint'
 import SplineNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline'
 
+import { LightmapComponent } from '@ir-engine/engine/src/lightmap/LightmapComponent'
+import { EnvMapComponent } from '@ir-engine/engine/src/scene/components/EnvmapComponent'
+import { LookAtComponent } from '@ir-engine/engine/src/scene/components/LookAtComponent'
+import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
+import { MixerComponent } from '@ir-engine/engine/src/scene/components/MixerComponent'
+import { OverlayComponent } from '@ir-engine/engine/src/scene/components/OverlayComponent'
+import { PoiComponent } from '@ir-engine/engine/src/scene/components/PoiComponent'
+import { TriggerCallbackComponent } from '@ir-engine/engine/src/scene/components/TriggerCallbackComponent'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import LightmapNodeEditor from '@ir-engine/ui/src/components/editor/properties/lightmap'
+import MediaNodeEditor from '@ir-engine/ui/src/components/editor/properties/media'
+import MixerNodeEditor from '@ir-engine/ui/src/components/editor/properties/mixer'
 import PlaylistNodeEditor from '@ir-engine/ui/src/components/editor/properties/playlist'
 import SplineTrackNodeEditor from '@ir-engine/ui/src/components/editor/properties/spline/track'
 import TextNodeEditor from '@ir-engine/ui/src/components/editor/properties/text'
@@ -131,6 +109,7 @@ import VideoNodeEditor from '@ir-engine/ui/src/components/editor/properties/vide
 import VisualScriptNodeEditor from '@ir-engine/ui/src/components/editor/properties/visualScript'
 import VolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric'
 import LegacyVolumetricNodeEditor from '@ir-engine/ui/src/components/editor/properties/volumetric/legacy'
+import PoiNodeEditor from '../../../ui/src/components/editor/properties/cameraPoi'
 import { EditorComponentType } from '../components/properties/Util'
 
 export const ComponentEditorsState = defineState({
@@ -139,7 +118,6 @@ export const ComponentEditorsState = defineState({
     return {
       [SceneSettingsComponent.name]: SceneSettingsEditor,
       [PostProcessingComponent.name]: PostProcessingSettingsEditor,
-      // [MediaSettingsComponent.name]: MediaSettingsEditor,
       [RenderSettingsComponent.name]: RenderSettingsEditor,
       [FogSettingsComponent.name]: FogSettingsEditor,
       [CameraSettingsComponent.name]: CameraPropertiesNodeEditor,
@@ -161,34 +139,37 @@ export const ComponentEditorsState = defineState({
       [MountPointComponent.name]: MountPointNodeEditor,
       [RigidBodyComponent.name]: RigidBodyComponentEditor,
       [ColliderComponent.name]: ColliderComponentEditor,
-      [TriggerComponent.name]: TriggerComponentEditor,
+      [TriggerCallbackComponent.name]: TriggerComponentEditor,
       [ScenePreviewCameraComponent.name]: ScenePreviewCameraNodeEditor,
       [SkyboxComponent.name]: SkyboxNodeEditor,
       [SpawnPointComponent.name]: SpawnPointNodeEditor,
-      [MediaComponent.name]: MediaNodeEditor,
       [ImageComponent.name]: ImageNodeEditor,
-      [PositionalAudioComponent.name]: PositionalAudioNodeEditor,
       [AudioAnalysisComponent.name]: AudioAnalysisEditor,
       [VideoComponent.name]: VideoNodeEditor,
       [LegacyVolumetricComponent.name]: LegacyVolumetricNodeEditor,
       [VolumetricComponent.name]: VolumetricNodeEditor,
       [PlaylistComponent.name]: PlaylistNodeEditor,
-      [EnvmapComponent.name]: EnvMapEditor,
+      [EnvMapComponent.name]: EnvMapEditor,
       [EnvMapBakeComponent.name]: EnvMapBakeNodeEditor,
       [InstancingComponent.name]: InstancingNodeEditor,
+      [LightmapComponent.name]: LightmapNodeEditor,
       [PersistentAnchorComponent.name]: PersistentAnchorNodeEditor,
       [VariantComponent.name]: VariantNodeEditor,
       [SplineComponent.name]: SplineNodeEditor,
       [SplineTrackComponent.name]: SplineTrackNodeEditor,
       [VisualScriptComponent.name]: VisualScriptNodeEditor,
       [LinkComponent.name]: LinkNodeEditor,
+      [OverlayComponent.name]: OverlayNodeEditor,
       [InteractableComponent.name]: InteractableComponentNodeEditor,
       [InputComponent.name]: InputComponentNodeEditor,
       [GrabbableComponent.name]: GrabbableComponentNodeEditor,
       [ScreenshareTargetComponent.name]: ScreenshareTargetNodeEditor,
       [TextComponent.name]: TextNodeEditor,
       [LookAtComponent.name]: LookAtNodeEditor,
-      [ReflectionProbeComponent.name]: ReflectionProbeNodeEditor
+      [MediaComponent.name]: MediaNodeEditor,
+      [MixerComponent.name]: MixerNodeEditor,
+      [PoiComponent.name]: PoiNodeEditor
+      //[PoiHotspotComponent.name]: PoiHotspotNodeEditor
     } as Record<string, EditorComponentType>
   }
 })

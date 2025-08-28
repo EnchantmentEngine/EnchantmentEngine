@@ -1,256 +1,294 @@
-/*
-CPAL-1.0 License
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { act, render } from '@testing-library/react'
-import assert from 'assert'
-import React, { useEffect } from 'react'
-import { afterEach, beforeEach, describe, it } from 'vitest'
-
-import {
-  ComponentMap,
-  getComponent,
-  getOptionalComponent,
-  hasComponent,
-  removeComponent,
-  serializeComponent,
-  setComponent
-} from './ComponentFunctions'
+import { createEntity } from '@ir-engine/ecs'
+import { ReactorReconciler, startReactor } from '@ir-engine/hyperflux'
+import { useEffect } from 'react'
+import { hasComponent, Layers, removeComponent, serializeComponent, setComponent } from './ComponentFunctions'
 import { createEngine, destroyEngine } from './Engine'
-import { Entity, EntityUUID, UndefinedEntity } from './Entity'
-import { createEntity, removeEntity } from './EntityFunctions'
-import { UUIDComponent } from './UUIDComponent'
+import { EntityID, EntityUUID, EntityUUIDPair, SourceID, UndefinedEntity } from './Entity'
+import { EntitiesByUUIDStores, UUIDComponent, UUIDComponentFunctions } from './UUIDComponent'
 
 describe('UUIDComponent', () => {
-  const TestUUID = 'TestUUID' as EntityUUID
-  const TestUUID2 = UUIDComponent.generateUUID()
-  let entity1 = UndefinedEntity
-  let entity2 = UndefinedEntity
-
   beforeEach(() => {
     createEngine()
-    ComponentMap.clear()
-    entity1 = createEntity()
-    entity2 = createEntity()
   })
 
   afterEach(() => {
-    removeEntity(entity1)
-    removeEntity(entity2)
-    return destroyEngine()
+    destroyEngine()
+  })
+
+  describe('name', () => {
+    it('should have the expected value', () => {
+      expect(UUIDComponent.name).toBeTruthy()
+      expect(UUIDComponent.name).toBe('UUIDComponent')
+    })
+
+    it('should respect the naming convention for Components', () => {
+      expect(UUIDComponent.name).toBeTruthy()
+      expect(UUIDComponent.name.endsWith('Component')).toBeTruthy()
+    })
+  }) //:: name
+
+  describe('serialize', () => {
+    it('should return correctly serialized data', () => {
+      const Expected = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, Expected)
+      const result = serializeComponent(testEntity, UUIDComponent)
+      expect(result).toEqual({ entityID: 'id' })
+    })
   })
 
   describe('onSet', () => {
-    it('should throw an Error exception when the uuid argument is not passed.', () => {
-      assert.throws(() => {
-        setComponent(entity1, UUIDComponent)
-      }, Error)
+    it('should call UUIDComponentFunctions._getUUIDState once and set its value to `@param entity`', () => {
+      // Set the data as expected
+      // Sanity check before running
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      const before = UUIDComponentFunctions._getUUIDState(uuid)
+      const resultSpy = vi.spyOn(UUIDComponentFunctions, '_getUUIDState')
+      expect(resultSpy).toHaveBeenCalledTimes(0)
+      // Run and Check the result
+      const testEntity = createEntity()
+      expect(before).not.toBe(testEntity)
+      // run via setComponent
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      expect(resultSpy).toHaveBeenCalledTimes(1)
+      expect(UUIDComponentFunctions._getUUIDState(uuid)).toBe(testEntity)
     })
-
-    it('should set/get the data of the component.', () => {
-      // Case1: set/get
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const component1 = getComponent(entity1, UUIDComponent)
-      assert.ok(component1, 'The UUIDComponent did not get set correctly')
-      assert.equal(component1, TestUUID, 'The UUID value did not get set correctly')
-    })
-
-    it("shouldn't change the data when set multiple times with the same data", () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const component1 = getComponent(entity1, UUIDComponent)
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const component2 = getComponent(entity1, UUIDComponent)
-      assert.equal(component1, component2)
-    })
-
-    it('Should throw an error when the UUID is already in use for another entity', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      assert.throws(() => {
-        setComponent(entity2, UUIDComponent, TestUUID)
-      }, Error)
-    })
-
-    it('should remove the old uuid from the entity', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      setComponent(entity1, UUIDComponent, TestUUID2)
-      assert.notEqual(getComponent(entity1, UUIDComponent), TestUUID)
-    })
-
-    it('should set a new uuid, and return its value when called with getOptionalComponent', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      assert.notEqual(getOptionalComponent(entity1, UUIDComponent), undefined)
-    })
-  })
-
-  describe('toJson', () => {
-    it('should return correctly serialized data', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const json = serializeComponent(entity1, UUIDComponent)
-      assert.equal(json, TestUUID as string)
-    })
-  })
+  }) //:: onSet
 
   describe('onRemove', () => {
-    it('should remove the component from the entity', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      removeComponent(entity1, UUIDComponent)
-      assert.equal(UndefinedEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
-      assert.equal(false, hasComponent(entity1, UUIDComponent))
-      assert.equal(getOptionalComponent(entity1, UUIDComponent), undefined)
+    it('should call UUIDComponentFunctions._getUUIDState with (currentUUID, layer) as arguments and set its value to UndefinedEntity', () => {
+      const Expected = UndefinedEntity
+      // Set the data as expected
+      const layer = Layers.Simulation
+      const testEntity = createEntity(layer)
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      const resultSpy = vi.spyOn(UUIDComponentFunctions, '_getUUIDState')
+      // Sanity check before running
+      expect(resultSpy).not.toHaveBeenCalled()
+      const before = UUIDComponentFunctions._getUUIDState(uuid, layer)
+      expect(before).toBe(testEntity)
+      expect(before).not.toBe(Expected)
+      // Run and Check the result
+      removeComponent(testEntity, UUIDComponent)
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledTimes(1)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toBeUndefined()
+      const result = UUIDComponentFunctions._getUUIDState(uuid, layer)
+      expect(result).not.toBe(testEntity)
+      expect(result).toBe(Expected)
     })
 
-    it('should do nothing if the entity does not have the component', () => {
-      removeComponent(entity1, UUIDComponent)
-      assert.equal(UndefinedEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
-      assert.equal(getOptionalComponent(entity1, UUIDComponent), undefined)
+    it('should remove the component from the entity', () => {
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      expect(hasComponent(testEntity, UUIDComponent)).toBeTruthy()
+      removeComponent(testEntity, UUIDComponent)
+      expect(hasComponent(testEntity, UUIDComponent)).toBeFalsy()
     })
-  })
+  }) //:: onRemove
+
+  describe('useEntityByUUID', () => {
+    it('should return the result.value of calling useHookstate with UUIDComponentFunctions._getUUIDState(uuid, `@param layer`) as its argument', () => {
+      // Set the data as expected
+      const layer = Layers.Authoring
+      const testEntity = createEntity(layer)
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      const resultSpy = vi.spyOn(UUIDComponent, 'useEntityByUUID')
+      const Initial = UndefinedEntity
+      const Expected = testEntity
+      let result = Initial
+      // Define the Reactor that will run the tested hook
+      const Reactor = () => {
+        const data = UUIDComponent.useEntityByUUID(uuid, layer)
+        useEffect(() => {
+          result = data
+        }, [data])
+        return null
+      }
+      // Sanity check before running
+      expect(result).toBe(Initial)
+      expect(result).not.toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      const root = startReactor(Reactor)
+      ReactorReconciler.flushSync(() => root.run())
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledTimes(1)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+      expect(result).toBe(UUIDComponentFunctions._getUUIDState(uuid, layer))
+    })
+
+    it('should return the result.value of calling useHookstate with UUIDComponentFunctions._getUUIDState(uuid, Layers.Simulation) as its argument when `@param layer` is not provided', () => {
+      // Set the data as expected
+      const testEntity = createEntity()
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      const resultSpy = vi.spyOn(UUIDComponent, 'useEntityByUUID')
+      const Initial = UndefinedEntity
+      const Expected = testEntity
+      let result = Initial
+      // Define the Reactor that will run the tested hook
+      const Reactor = () => {
+        const data = UUIDComponent.useEntityByUUID(uuid)
+        useEffect(() => {
+          result = data
+        }, [data])
+        return null
+      }
+      // Sanity check before running
+      expect(result).toBe(Initial)
+      expect(result).not.toBe(Expected)
+      expect(resultSpy).not.toHaveBeenCalled()
+      // Run and Check the result
+      const root = startReactor(Reactor)
+      ReactorReconciler.flushSync(() => root.run())
+      expect(resultSpy).toHaveBeenCalled()
+      expect(resultSpy).toHaveBeenCalledTimes(1)
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+      expect(result).toBe(UUIDComponentFunctions._getUUIDState(uuid, Layers.Simulation))
+    })
+  }) //:: useEntityByUUID
 
   describe('getEntityByUUID', () => {
     it('should return the correct entity', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const testEntity = UUIDComponent.getEntityByUUID(TestUUID)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
-      assert.equal(testEntity, entity1)
-    })
-
-    it('should return the correct entity when its UUIDComponent is removed and added back with a different UUID', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      removeComponent(entity1, UUIDComponent)
-      setComponent(entity1, UUIDComponent, TestUUID2)
-      const testEntity = UUIDComponent.getEntityByUUID(TestUUID2)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID2].value)
+      const testEntity = createEntity()
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      const Expected = testEntity
+      const result = UUIDComponent.getEntityByUUID(uuid)
+      expect(result).toBe(Expected)
     })
 
     it('should return UndefinedEntity when the UUID has not been added to any entity', () => {
-      const testEntity = UUIDComponent.getEntityByUUID(TestUUID)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
-      assert.equal(testEntity, UndefinedEntity)
-    })
-  })
-
-  describe('getOrCreateEntityByUUID', () => {
-    it('should return the correct entity when it exists', () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const testEntity = UUIDComponent.getOrCreateEntityByUUID(TestUUID)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
-      assert.equal(testEntity, entity1)
+      const testEntity = createEntity()
+      const uuid = 'uuid' as EntityUUID
+      // setComponent(testEntity, UUIDComponent, uuid)
+      const Expected = UndefinedEntity
+      const result = UUIDComponent.getEntityByUUID(uuid)
+      expect(result).not.toBe(testEntity)
+      expect(result).toBe(Expected)
     })
 
-    it("should create a new entity when the UUID hasn't been added to any entity", () => {
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const testEntity = UUIDComponent.getOrCreateEntityByUUID(TestUUID2)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID2].value)
-      assert.notEqual(testEntity, entity1)
+    it('should return the NO_PROXY_STEALTH result of calling UUIDComponentFunctions._getUUIDState with (uuid, `@param layer`) as its arguments', () => {
+      // Set the data as expected
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      const layer = Layers.Authoring
+      const testEntity = createEntity(layer)
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      const Expected = UUIDComponentFunctions._getUUIDState(uuid, layer)
+      // Run and Check the result
+      const result = UUIDComponent.getEntityByUUID(uuid, layer)
+      expect(result).not.toBe(UndefinedEntity)
+      expect(result).toBe(Expected)
+      expect(result).toBe(testEntity)
     })
-  })
+
+    it('should return the NO_PROXY_STEALTH result of calling UUIDComponentFunctions._getUUIDState with (uuid, Layers.Simulation) as its arguments when `@param layer` is not provided', () => {
+      // Set the data as expected
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      const testEntity = createEntity()
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      const Expected = UUIDComponentFunctions._getUUIDState(uuid, Layers.Simulation)
+      // Run and Check the result
+      const result = UUIDComponent.getEntityByUUID(uuid)
+      expect(result).not.toBe(UndefinedEntity)
+      expect(result).toBe(Expected)
+      expect(result).toBe(testEntity)
+    })
+  }) //:: getEntityByUUID
+
+  describe('_getUUIDState', () => {
+    it('should set getState(EntitiesByUUIDState)[layer] to a non-falsy value when it is falsy', () => {
+      const Initial = undefined
+      // Set the data as expected
+      const layer = Layers.Authoring
+      const uuid = 'uuid' as EntityUUID
+      // Coerce undefined into the Record entry
+      EntitiesByUUIDStores.get(layer)?.set({ ...EntitiesByUUIDStores.get(layer)?.value, [uuid]: Initial })
+      // Sanity check before running
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toBe(Initial)
+      // Run and Check the result
+      UUIDComponentFunctions._getUUIDState(uuid, layer)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).not.toBe(Initial)
+    })
+
+    it('should set getState(EntitiesByUUIDState)[layer][uuid] to the result of UndefinedEntity when it is falsy', () => {
+      const Initial = undefined
+      const Expected = UndefinedEntity
+      // Set the data as expected
+      const layer = Layers.Authoring
+      EntitiesByUUIDStores.get(layer)?.set({})
+      const uuid = 'uuid' as EntityUUID
+      // Coerce undefined into the Record entry
+      EntitiesByUUIDStores.get(layer)?.set({ ...EntitiesByUUIDStores.get(layer)?.value, [uuid]: Initial })
+      // Sanity check before running
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toBe(Initial)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).not.toEqual(Expected)
+      // Run and Check the result
+      UUIDComponentFunctions._getUUIDState(uuid, layer)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).not.toBe(Initial)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toEqual(Expected)
+    })
+
+    it('should return the value of getState(EntitiesByUUIDState)[layer][uuid]', () => {
+      const Initial = undefined
+      const Expected = UndefinedEntity
+      // Set the data as expected
+      const layer = Layers.Authoring
+      EntitiesByUUIDStores.get(layer)?.set({})
+      const uuidPair = { entitySourceID: 'source' as SourceID, entityID: 'id' as EntityID } as EntityUUIDPair
+      const uuid = UUIDComponent.join(uuidPair)
+      // Coerce undefined into the Record entry
+      EntitiesByUUIDStores.get(layer)?.set({ ...EntitiesByUUIDStores.get(layer)?.value, [uuid]: Initial })
+      // Sanity check before running
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toBe(Initial)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).not.toEqual(Expected)
+      // Run and Check the result
+      UUIDComponentFunctions._getUUIDState(uuid, layer)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).not.toBe(Initial)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toEqual(Expected)
+      const testEntity = createEntity(layer)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toEqual(UndefinedEntity)
+      setComponent(testEntity, UUIDComponent, uuidPair)
+      expect(EntitiesByUUIDStores.get(layer)?.value?.[uuid]).toEqual(testEntity)
+    })
+  }) //:: _getUUIDState
+
   describe('generateUUID', () => {
     it('should generate a non-empty UUID', () => {
-      const uuid = UUIDComponent.generateUUID()
-      assert.notEqual(uuid, '' as EntityUUID)
+      const result = UUIDComponent.generate()
+      expect(result).toBeTruthy()
+      expect(result).not.toBe('' as EntityID)
     })
 
     // const iter = 8_500 /** @note 10_000 iterations takes ~4sec on an AMD Ryzen 5 2600 */
     const iter = 10
     it(`should generate unique UUIDs when run multiple times  (${iter} iterations)`, () => {
-      const list = [] as EntityUUID[]
+      const list = [] as EntityID[]
       // Generate the list of (supposedly) unique UUIDs
-      for (let id = 0; id < iter; id++) {
-        list.push(UUIDComponent.generateUUID())
-      }
+      for (let id = 0; id < iter; id++) list.push(UUIDComponent.generate())
       // Compare every UUID with all other UUIDs
       for (let id = 0; id < iter; id++) {
         const A = list[id]
         for (const B in list.filter((n) => n !== list[id])) {
           // For every other uuid that is not the current one
-          assert.notEqual(A, B, 'Found two identical UUIDs')
+          expect(A).not.toBe(B)
         }
       }
     })
-  })
-})
-
-describe('UUIDComponent Hooks', async () => {
-  describe('useEntityByUUID', async () => {
-    type ResultType = Entity | undefined
-    const TestUUID = 'TestUUID' as EntityUUID
-    let entity1 = UndefinedEntity
-    let entity2 = UndefinedEntity
-    let result: ResultType = undefined
-    let counter = 0
-
-    beforeEach(() => {
-      createEngine()
-      ComponentMap.clear()
-      entity1 = createEntity()
-      entity2 = createEntity()
-    })
-
-    afterEach(() => {
-      counter = 0
-      removeEntity(entity1)
-      removeEntity(entity2)
-      return destroyEngine()
-    })
-
-    // Define the Reactor that will run the tested hook
-    const Reactor = () => {
-      const data = UUIDComponent.useEntityByUUID(TestUUID)
-      useEffect(() => {
-        result = data as ResultType
-        ++counter
-      }, [data])
-      return null
-    }
-
-    it('assigns the correct entity', async () => {
-      const ExpectedValue: ResultType = entity1
-      setComponent(entity1, UUIDComponent, TestUUID)
-      assert.equal(counter, 0, "The reactor shouldn't have run before rendering")
-      const tag = <Reactor />
-      const { rerender, unmount } = render(tag)
-      await act(() => rerender(tag))
-      assert.equal(counter, 1, `The reactor has run an incorrect number of times: ${counter}`)
-      assert.notEqual(result, undefined, "The result data didn't get assigned.")
-      assert.equal(result, ExpectedValue, `Did not return the correct data. result = ${result}`)
-      unmount()
-    })
-
-    it('returns the same entity than genEntityByUUID', async () => {
-      const ExpectedValue: ResultType = entity1
-      setComponent(entity1, UUIDComponent, TestUUID)
-      const testEntity = UUIDComponent.getEntityByUUID(TestUUID)
-      assert.equal(counter, 0, "The reactor shouldn't have run before rendering")
-      const tag = <Reactor />
-      const { rerender, unmount } = render(tag)
-      await act(() => rerender(tag))
-      assert.equal(counter, 1, `The reactor has run an incorrect number of times: ${counter}`)
-      assert.notEqual(result, undefined, "The result data didn't get assigned.")
-      assert.equal(result, ExpectedValue, `Did not return the correct data. result = ${result}`)
-      assert.equal(testEntity, UUIDComponent.entitiesByUUIDState[TestUUID].value)
-      assert.equal(testEntity, ExpectedValue)
-      unmount()
-    })
-  }) // useComponent
-})
+  }) //:: generateUUID
+}) //:: UUIDComponent

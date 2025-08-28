@@ -1,30 +1,4 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import * as mediasoupClient from 'mediasoup-client'
-import {
+import type {
   Consumer,
   DataProducer,
   DtlsParameters,
@@ -45,13 +19,16 @@ import { MediaStreamAppData, NetworkConnectionParams } from '@ir-engine/common/s
 import multiLogger from '@ir-engine/common/src/logger'
 import { ChannelID, InstanceID, InviteCode, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
 import { getSearchParamFromURL } from '@ir-engine/common/src/utils/getSearchParamFromURL'
-import { AuthTask, ReadyTask } from '@ir-engine/common/src/world/receiveJoinWorld'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem, destroySystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
+import { AuthTask, ReadyTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import {
   Action,
+  DataChannelType,
+  HyperFlux,
   NetworkID,
+  NetworkState,
+  NetworkTopics,
   PeerID,
   Topic,
   addOutgoingTopicIfNecessary,
@@ -59,21 +36,15 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  joinNetwork,
+  leaveNetwork,
   none,
-  removeActionQueue
+  removeActionQueue,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
 } from '@ir-engine/hyperflux'
-import {
-  DataChannelType,
-  NetworkState,
-  NetworkTopics,
-  addNetwork,
-  createNetwork,
-  removeNetwork,
-  screenshareAudioDataChannelType,
-  screenshareVideoDataChannelType,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType
-} from '@ir-engine/network'
 
 import {
   MediasoupDataProducerActions,
@@ -86,9 +57,9 @@ import {
   MediasoupTransportState,
   TransportType
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupTransportState'
+import { MediaStreamState } from '@ir-engine/hyperflux'
 import { LocationInstanceState } from '../../common/services/LocationInstanceConnectionService'
 import { MediaInstanceState } from '../../common/services/MediaInstanceConnectionService'
-import { MediaStreamState } from '../../media/MediaStreamState'
 import { ChannelState } from '../../social/services/ChannelService'
 import { LocationState } from '../../social/services/LocationService'
 import { AuthState } from '../../user/services/AuthService'
@@ -123,15 +94,21 @@ export const closeNetwork = (network: SocketWebRTCClientNetwork) => {
   clearInterval(network.heartbeat)
   network.primus?.removeAllListeners()
   network.primus?.end()
-  removeNetwork(network)
+  leaveNetwork(network)
 }
 
-export const initializeNetwork = (id: InstanceID, hostPeerID: PeerID, topic: Topic, primus: Primus) => {
+export const initializeNetwork = (
+  id: InstanceID,
+  hostPeerID: PeerID,
+  topic: Topic,
+  primus: Primus,
+  mediasoupClient: Awaited<typeof import('mediasoup-client')>
+) => {
   const mediasoupDevice = new mediasoupClient.Device(
     navigator.userAgent === BotUserAgent ? { handlerName: 'Chrome74' } : undefined
   )
 
-  const network = createNetwork(id, hostPeerID, topic, {
+  const network = joinNetwork(id, hostPeerID, topic, {
     mediasoupDevice,
     primus,
     heartbeat: setInterval(() => {
@@ -168,7 +145,7 @@ export const connectToInstance = (
     const token = authState.authUser.accessToken
 
     const query: NetworkConnectionParams = {
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       instanceID,
       locationId: locationID,
       channelId: channelID,
@@ -280,7 +257,7 @@ export const connectToInstance = (
       primus.end()
     } else {
       const network = getState(NetworkState).networks[instanceID] as SocketWebRTCClientNetwork | undefined
-      if (network) leaveNetwork(network)
+      if (network) leaveClientNetwork(network)
     }
   }
 }
@@ -338,7 +315,7 @@ export async function authenticatePrimus(primus: Primus, instanceID: InstanceID,
   const authState = getState(AuthState)
   const accessToken = authState.authUser.accessToken
   const inviteCode = getSearchParamFromURL('inviteCode') as InviteCode
-  const payload = { accessToken, peerID: Engine.instance.store.peerID, inviteCode }
+  const payload = { accessToken, peerID: HyperFlux.store.peerID, inviteCode }
 
   const { status, routerRtpCapabilities, cachedActions, error, hostPeerID } = await new Promise<AuthTask>((resolve) => {
     const onAuthentication = (response: AuthTask) => {
@@ -392,8 +369,9 @@ export const connectToNetwork = async (
   const existingNetwork = getState(NetworkState).networks[instanceID]
   if (!existingNetwork) {
     getMutableState(NetworkState).hostIds[topic].set(instanceID)
-    const network = initializeNetwork(instanceID, hostPeerID, topic, primus)
-    addNetwork(network)
+
+    const mediasoupClient = await import('mediasoup-client')
+    initializeNetwork(instanceID, hostPeerID, topic, primus, mediasoupClient)
   }
 
   const network = getState(NetworkState).networks[instanceID] as SocketWebRTCClientNetwork
@@ -408,7 +386,7 @@ export const connectToNetwork = async (
   }
 
   const buffer = (dataChannelType: DataChannelType, data: any) => {
-    const fromPeerID = Engine.instance.store.peerID
+    const fromPeerID = HyperFlux.store.peerID
     const dataProducer = MediasoupDataProducerConsumerState.getProducerByDataChannel(network.id, dataChannelType) as
       | DataProducer
       | undefined
@@ -428,11 +406,9 @@ export const connectToNetwork = async (
   addOutgoingTopicIfNecessary(network.topic)
 
   // handle cached actions
-  for (const action of cachedActions!) Engine.instance.store.actions.incoming.push({ ...action, $fromCache: true })
+  for (const action of cachedActions!) HyperFlux.store.actions.incoming.push({ ...action, $fromCache: true })
 
-  Engine.instance.store.actions.outgoing[network.topic].queue.push(
-    ...Engine.instance.store.actions.outgoing[network.topic].history
-  )
+  HyperFlux.store.actions.outgoing[network.topic].queue.push(...HyperFlux.store.actions.outgoing[network.topic].history)
 
   if (!network.mediasoupDevice.loaded) {
     await network.mediasoupDevice.load({ routerRtpCapabilities })
@@ -441,7 +417,7 @@ export const connectToNetwork = async (
 
   dispatchAction(
     MediasoupTransportActions.requestTransport({
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       direction: 'send',
       sctpCapabilities: network.mediasoupDevice.sctpCapabilities,
       $network: network.id,
@@ -452,7 +428,7 @@ export const connectToNetwork = async (
 
   dispatchAction(
     MediasoupTransportActions.requestTransport({
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       direction: 'recv',
       sctpCapabilities: network.mediasoupDevice.sctpCapabilities,
       $network: network.id,
@@ -566,16 +542,16 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
         let paused = false
 
         switch (appData.mediaTag) {
-          case webcamVideoDataChannelType:
+          case webcamVideoMediaChannelType:
             paused = !mediaStreamState.webcamEnabled.value
             break
-          case webcamAudioDataChannelType:
+          case webcamAudioMediaChannelType:
             paused = !mediaStreamState.microphoneEnabled.value
             break
-          case screenshareVideoDataChannelType:
+          case screenshareVideoMediaChannelType:
             paused = false
             break
-          case screenshareAudioDataChannelType:
+          case screenshareAudioMediaChannelType:
             paused = mediaStreamState.screenShareAudioPaused.value
             break
           default:
@@ -723,12 +699,12 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
         // ensure the network still exists and we want to re-create the transport
         if (!getState(NetworkState).networks[network.id] || !network.primus || network.primus.disconnect) return
 
-        const transportID = MediasoupTransportState.getTransport(network.id, direction, Engine.instance.store.peerID)
+        const transportID = MediasoupTransportState.getTransport(network.id, direction, HyperFlux.store.peerID)
         getMutableState(MediasoupTransportState)[network.id][transportID].set(none)
 
         dispatchAction(
           MediasoupTransportActions.requestTransport({
-            peerID: Engine.instance.store.peerID,
+            peerID: HyperFlux.store.peerID,
             direction,
             sctpCapabilities: network.mediasoupDevice.sctpCapabilities,
             $network: network.id,
@@ -743,7 +719,7 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
   getMutableState(MediasoupTransportObjectsState)[transportID].set(transport)
 }
 
-export function leaveNetwork(network: SocketWebRTCClientNetwork) {
+export function leaveClientNetwork(network: SocketWebRTCClientNetwork) {
   if (!network) return
   logger.info('Leaving network %o', { topic: network.topic, id: network.id })
 
@@ -756,7 +732,7 @@ export function leaveNetwork(network: SocketWebRTCClientNetwork) {
       getMutableState(NetworkState).hostIds.world.set(none)
       // if world has a media server connection
       if (NetworkState.mediaNetwork) {
-        leaveNetwork(NetworkState.mediaNetwork as SocketWebRTCClientNetwork)
+        leaveClientNetwork(NetworkState.mediaNetwork as SocketWebRTCClientNetwork)
       }
     }
   } catch (err) {

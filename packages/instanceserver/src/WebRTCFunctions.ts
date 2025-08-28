@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import detect from 'detect-port'
 import { createWorker } from 'mediasoup'
 import {
@@ -39,18 +14,34 @@ import { decode } from 'msgpackr'
 import os from 'os'
 
 import { API } from '@ir-engine/common'
-import { dispatchAction, getMutableState, getState, Identifiable, none, PeerID, State } from '@ir-engine/hyperflux'
-import { DataChannelRegistryState, DataChannelType, NetworkState } from '@ir-engine/network'
+import {
+  DataChannelRegistryState,
+  DataChannelType,
+  dispatchAction,
+  getMutableState,
+  getState,
+  Identifiable,
+  NetworkState,
+  none,
+  PeerID,
+  State
+} from '@ir-engine/hyperflux'
 import config from '@ir-engine/server-core/src/appconfig'
 import { config as mediaConfig, sctpParameters } from '@ir-engine/server-core/src/config'
 import multiLogger from '@ir-engine/server-core/src/ServerLogger'
 import { ServerState } from '@ir-engine/server-core/src/ServerState'
 import { WebRtcTransportParams } from '@ir-engine/server-core/src/types/WebRtcTransportParams'
 
-import { CREDENTIAL_OFFSET, HASH_ALGORITHM } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
+import {
+  CREDENTIAL_OFFSET,
+  HASH_ALGORITHM,
+  IceServer,
+  WebRTCSettings
+} from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
+import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { PUBLIC_STUN_SERVERS } from '@ir-engine/common/src/constants/STUNServers'
 import { MediaStreamAppData } from '@ir-engine/common/src/interfaces/NetworkInterfaces'
-import { IceServerType, instanceServerSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { engineSettingPath } from '@ir-engine/common/src/schema.type.module'
 import {
   MediasoupDataConsumerActions,
   MediasoupDataProducerActions,
@@ -67,6 +58,7 @@ import {
   MediasoupTransportObjectsState,
   MediasoupTransportState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupTransportState'
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
 import crypto from 'crypto'
 import { InstanceServerState } from './InstanceServerState'
 import { MediasoupInternalWebRTCDataChannelState } from './MediasoupInternalWebRTCDataChannelState'
@@ -401,25 +393,48 @@ export async function handleWebRtcTransportCreate(
 
     const { id, iceParameters, iceCandidates, dtlsParameters } = newTransport
 
-    const instanceServerSettingsResponse = await API.instance.service(instanceServerSettingPath).find()
-    const webRTCSettings = instanceServerSettingsResponse.data[0].webRTCSettings
-    const iceServers: IceServerType[] = webRTCSettings.useCustomICEServers
-      ? webRTCSettings.iceServers
-      : config.kubernetes.enabled
-      ? PUBLIC_STUN_SERVERS
-      : []
+    const instanceServerSettingsResponse = await API.instance.service(engineSettingPath).find({
+      query: {
+        category: 'instance-server-webrtc',
+        jsonKey: EngineSettings.InstanceServer.WebRTCSettings
+      },
+      paginate: false
+    })
+
+    if (!instanceServerSettingsResponse) {
+      logger.error('Failed to fetch instance server settings')
+      return dispatchAction(
+        MediasoupTransportActions.requestTransportError({
+          error: 'Failed to fetch instance server settings',
+          direction,
+          $network: network.id,
+          $topic: network.topic,
+          $to: peerID
+        })
+      )
+    }
+    const webRTCSettings = unflattenArrayToObject(
+      instanceServerSettingsResponse.map((setting) => {
+        return {
+          key: setting.key,
+          value: setting.value,
+          dataType: setting.dataType
+        }
+      })
+    ) as WebRTCSettings
+    const iceServers: IceServer[] = webRTCSettings.useCustomICEServers ? webRTCSettings.iceServers : PUBLIC_STUN_SERVERS
 
     if (config.kubernetes.enabled) {
       const serverState = getState(ServerState)
       const instanceServerState = getState(InstanceServerState)
 
-      const serverResult = await serverState.k8AgonesClient.listNamespacedCustomObject(
-        'agones.dev',
-        'v1',
-        'default',
-        'gameservers'
-      )
-      const thisGs = (serverResult?.body as any).items.find(
+      const serverResult = await serverState.k8AgonesClient.listNamespacedCustomObject({
+        group: 'agones.dev',
+        version: 'v1',
+        namespace: config.server.namespace,
+        plural: 'gameservers'
+      })
+      const thisGs = serverResult.items.find(
         (server) => server.metadata.name === instanceServerState.instanceServer.objectMeta.name
       )
 

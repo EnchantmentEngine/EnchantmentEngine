@@ -1,35 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Paginated } from '@feathersjs/feathers'
-
 import {
-  locationBanPath,
+  AbuseReasonsType,
   LocationID,
   locationPath,
   LocationType,
+  moderationBanPath,
   UserID,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
@@ -57,13 +32,15 @@ export const LocationSeed: LocationType = {
     audioEnabled: false,
     screenSharingEnabled: false,
     faceStreamingEnabled: false,
+    /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+    // jumpControlEnabled: false,
+    // vrEnabled: false,
     locationType: 'private',
     videoEnabled: false,
     createdAt: '',
     updatedAt: ''
   },
   locationAuthorizedUsers: [],
-  locationBans: [],
   updatedBy: '' as UserID,
   createdAt: '',
   updatedAt: ''
@@ -75,7 +52,6 @@ export const LocationState = defineState({
     locationName: null! as string,
     currentLocation: {
       location: LocationSeed as LocationType,
-      bannedUsers: [] as string[],
       selfUserBanned: false,
       selfNotAuthorized: false
     },
@@ -90,7 +66,6 @@ export const LocationState = defineState({
     getMutableState(LocationState).merge({
       currentLocation: {
         location: LocationSeed as LocationType,
-        bannedUsers: [] as string[],
         selfUserBanned: false,
         selfNotAuthorized: false
       }
@@ -98,17 +73,11 @@ export const LocationState = defineState({
   },
 
   socialLocationRetrieved: (location: LocationType) => {
-    let bannedUsers = [] as string[]
-    location.locationBans.forEach((ban) => {
-      bannedUsers.push(ban.userId)
-    })
-    bannedUsers = [...new Set(bannedUsers)]
     getMutableState(LocationState).merge({
       currentLocation: {
         location: {
           ...location
         },
-        bannedUsers,
         selfUserBanned: false,
         selfNotAuthorized: false
       }
@@ -119,7 +88,6 @@ export const LocationState = defineState({
     getMutableState(LocationState).merge({
       currentLocation: {
         location: LocationSeed,
-        bannedUsers: [],
         selfUserBanned: false,
         selfNotAuthorized: false
       },
@@ -160,7 +128,7 @@ export const LocationService = {
         // if (
         //   locationResult.data[0].locationSetting?.locationType === 'private' &&
         //   !locationResult.data[0].locationAuthorizedUsers?.find(
-        //     (authUser) => authUser.userId === Engine.instance.userID
+        //     (authUser) => authUser.userId === getState(EngineState).userID
         //   )
         // ) {
         //   LocationState.socialLocationNotAuthorized()
@@ -177,11 +145,13 @@ export const LocationService = {
         })
     }
   },
-  banUserFromLocation: async (userId: UserID, locationId: LocationID) => {
+  banUserFromLocation: async (userId: UserID, locationId: LocationID, banReason?: AbuseReasonsType) => {
     try {
-      await API.instance.service(locationBanPath).create({
-        userId: userId,
-        locationId: locationId
+      await API.instance.service(moderationBanPath).create({
+        banUserId: userId,
+        banned: true,
+        banReason: banReason ?? 'somethingElse',
+        reportedLocationId: locationId
       })
     } catch (err) {
       NotificationService.dispatchNotify(err.message, { variant: 'error' })
@@ -199,9 +169,9 @@ export const LocationService = {
           getMutableState(AuthState).merge({ user })
         }
       }
-      API.instance.service(locationBanPath).on('created', locationBanCreatedListener)
+      API.instance.service(moderationBanPath).on('created', locationBanCreatedListener)
       return () => {
-        API.instance.service(locationBanPath).off('created', locationBanCreatedListener)
+        API.instance.service(moderationBanPath).off('created', locationBanCreatedListener)
       }
     }, [])
   }

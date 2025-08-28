@@ -1,33 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { State } from '@ir-engine/hyperflux'
+import { Entity, getComponent, setComponent } from '@ir-engine/ecs'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import { MutableRefObject } from 'react'
 import {
+  BufferAttribute,
   BufferGeometry,
   CompressedTexture,
   InterleavedBufferAttribute,
@@ -37,6 +13,7 @@ import {
   ShaderMaterial,
   Vector2
 } from 'three'
+import { VolumetricComponent } from '../components/VolumetricComponent'
 import {
   DRACOTarget,
   GeometryType,
@@ -93,20 +70,20 @@ export const bufferLimits = {
   }
 }
 
-interface fetchProps {
+interface FetchProps {
   manifest: OldManifestSchema | ManifestSchema | Record<string, never>
   manifestPath: string
   currentTimeInMS: number
   bufferData: BufferDataContainer
   target: string
+  entity: Entity
   startTimeInMS: number
 }
 
-interface fetchGeometryProps extends fetchProps {
+interface FetchGeometryProps extends FetchProps {
   geometryType: GeometryType
   geometryBuffer: Map<string, (Mesh<BufferGeometry, Material> | BufferGeometry | KeyframeAttribute)[]>
   mesh: Mesh<BufferGeometry, ShaderMaterial>
-  initialBufferLoaded: State<boolean>
   repeat: MutableRefObject<Vector2>
   offset: MutableRefObject<Vector2>
 }
@@ -120,11 +97,11 @@ export const fetchGeometry = ({
   manifestPath,
   geometryBuffer,
   mesh,
-  initialBufferLoaded,
+  entity,
   startTimeInMS,
   repeat,
   offset
-}: fetchGeometryProps) => {
+}: FetchGeometryProps) => {
   if (Object.keys(manifest).length === 0) return
   const currentTime = currentTimeInMS * (TIME_UNIT_MULTIPLIER / 1000)
   const nextMissing = bufferData.getNextMissing(currentTime)
@@ -205,13 +182,15 @@ export const fetchGeometry = ({
           collection[_currentFrame] = geometry
           bufferData.addBufferedRange(currentFrameStartTime, currentFrameEndTime, -1)
 
-          if (!initialBufferLoaded.value) {
+          const comp = getComponent(entity, VolumetricComponent)
+          if (!comp.geometry.initialBufferLoaded) {
             const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
             const endTime = startTime + bufferLimits.geometry[geometryType].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
             const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
             if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-              initialBufferLoaded.set(true)
+              comp.geometry.initialBufferLoaded = true
+              setComponent(entity, VolumetricComponent)
             }
           }
         })
@@ -250,13 +229,15 @@ export const fetchGeometry = ({
           collection[currentFrame] = geometry
           bufferData.addBufferedRange(currentFrameStartTime, currentFrameEndTime, -1)
 
-          if (!initialBufferLoaded.value) {
+          const comp = getComponent(entity, VolumetricComponent)
+          if (!comp.geometry.initialBufferLoaded) {
             const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
             const endTime = startTime + bufferLimits.geometry[geometryType].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
             const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
             if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-              initialBufferLoaded.set(true)
+              comp.geometry.initialBufferLoaded = true
+              setComponent(entity, VolumetricComponent)
             }
           }
         })
@@ -333,20 +314,22 @@ export const fetchGeometry = ({
               mesh.geometry.index.needsUpdate = true
             }
 
-            mesh.geometry.morphAttributes = {}
+            mesh.geometry.morphAttributes = {} as Record<string, (BufferAttribute | InterleavedBufferAttribute)[]>
             mesh.morphTargetDictionary = undefined
             mesh.morphTargetInfluences = undefined
           }
 
           bufferData.addBufferedRange(currentSegmentStartTime, currentSegmentEndTime, currentFrameData.fetchTime)
 
-          if (!initialBufferLoaded.value) {
+          const comp = getComponent(entity, VolumetricComponent)
+          if (!comp.geometry.initialBufferLoaded) {
             const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
             const endTime = startTime + bufferLimits.geometry[geometryType].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
             const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
             if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-              initialBufferLoaded.set(true)
+              comp.geometry.initialBufferLoaded = true
+              setComponent(entity, VolumetricComponent)
             }
           }
         })
@@ -358,7 +341,7 @@ export const fetchGeometry = ({
   }
 }
 
-interface deleteUsedGeometryBuffersProps {
+interface DeleteUsedGeometryBuffersProps {
   currentTimeInMS: number
   bufferData?: BufferDataContainer
   geometryType: GeometryType
@@ -378,7 +361,7 @@ export const deleteUsedGeometryBuffers = ({
   frameRate,
   mesh,
   clearAll = false
-}: deleteUsedGeometryBuffersProps) => {
+}: DeleteUsedGeometryBuffersProps) => {
   if (geometryType === GeometryType.Corto || geometryType === GeometryType.Draco) {
     let _frameRate = frameRate || 1
 
@@ -470,11 +453,10 @@ export const deleteUsedGeometryBuffers = ({
   }
 }
 
-interface fetchTextureProps extends fetchProps {
+interface FetchTextureProps extends FetchProps {
   textureType: TextureType
   textureBuffer: Map<string, CompressedTexture[]>
   textureFormat: TextureFormat
-  initialBufferLoaded: State<boolean>
   startTimeInMS: number
 }
 
@@ -487,9 +469,9 @@ export const fetchTextures = ({
   manifestPath,
   textureBuffer,
   textureFormat,
-  initialBufferLoaded,
+  entity,
   startTimeInMS
-}: fetchTextureProps) => {
+}: FetchTextureProps) => {
   const currentTime = currentTimeInMS * (TIME_UNIT_MULTIPLIER / 1000)
 
   const nextMissing = bufferData.getNextMissing(currentTime)
@@ -558,13 +540,16 @@ export const fetchTextures = ({
 
         bufferData.addBufferedRange(currentFrameStartTime, currentFrameEndTime, currentFrameData.fetchTime)
 
-        if (!initialBufferLoaded.value) {
+        const comp = getComponent(entity, VolumetricComponent)
+        const initialBufferLoaded = comp.textureInfo.initialBufferLoaded[textureType]
+        if (!initialBufferLoaded) {
           const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
           const endTime = startTime + bufferLimits.texture[textureFormat].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
           const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
           if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-            initialBufferLoaded.set(true)
+            comp.textureInfo.initialBufferLoaded[textureType] = true
+            setComponent(entity, VolumetricComponent)
           }
         }
       })
@@ -574,7 +559,7 @@ export const fetchTextures = ({
   }
 }
 
-interface deleteUsedTextureBuffersProps {
+interface DeleteUsedTextureBuffersProps {
   currentTimeInMS: number
   bufferData?: BufferDataContainer
   textureBuffer: Map<string, CompressedTexture[]>
@@ -590,7 +575,7 @@ export const deleteUsedTextureBuffers = ({
   textureType,
   targetData,
   clearAll = false
-}: deleteUsedTextureBuffersProps) => {
+}: DeleteUsedTextureBuffersProps) => {
   for (const [target, collection] of textureBuffer) {
     if (!collection || !targetData || !targetData[target]) {
       continue

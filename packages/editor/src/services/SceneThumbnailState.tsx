@@ -1,28 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
+import { generateThumbnailKey } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
+import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
+import { API } from '@ir-engine/common'
+import config from '@ir-engine/common/src/config'
+import { fileBrowserUploadPath, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
+import { CommonKnownContentTypes } from '@ir-engine/common/src/utils/CommonKnownContentTypes'
+import { getComponent } from '@ir-engine/ecs'
 import {
   blurAndScaleImageData,
   convertImageDataToKTX2Blob,
@@ -30,6 +12,8 @@ import {
 } from '@ir-engine/engine/src/scene/classes/ImageUtils'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
 import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial/src/ReferenceSpaceState'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { useEffect } from 'react'
 import { commitProperty } from '../components/properties/Util'
 import { uploadProjectFiles } from '../functions/assetFunctions'
@@ -50,11 +34,22 @@ export const SceneThumbnailState = defineState({
     uploadingLoadingScreen: false,
     resolution: 2048
   }),
-  createThumbnail: async () => {
-    const thumbnailBlob = await takeScreenshot(512, 320)
+  createThumbnail: async (width = 512, height = 320, quality = 1) => {
+    const cameraEntity = getState(ReferenceSpaceState).viewerEntity
+    const camera = getComponent(cameraEntity, CameraComponent)
+    const thumbnailBlob = await takeScreenshot(camera, cameraEntity, width, height, quality, 'jpeg')
     if (!thumbnailBlob) return
-    const sceneName = getState(EditorState).sceneName!.split('.').slice(0, -1).join('.')
-    const file = new File([thumbnailBlob!], sceneName + '.thumbnail.jpg')
+    const sceneName = getState(EditorState).sceneName
+    if (!sceneName) {
+      console.error('sceneName is empty')
+      return
+    }
+    let fileNameArray = sceneName.split('.')
+    if (fileNameArray.length > 1) {
+      fileNameArray = fileNameArray.slice(0, -1)
+    }
+    const fileName = fileNameArray.join('.')
+    const file = new File([thumbnailBlob], fileName + '.thumbnail.jpg', { type: CommonKnownContentTypes['jpg'] })
     const sceneThumbnail = getMutableState(SceneThumbnailState)
     sceneThumbnail.merge({
       oldThumbnailURL: sceneThumbnail.thumbnailURL.value,
@@ -62,27 +57,111 @@ export const SceneThumbnailState = defineState({
       thumbnail: file
     })
   },
-  uploadThumbnail: async (entity) => {
+  getThumbnail: async (resourceKey?: string) => {
+    const editorState = getState(EditorState)
+    const key = resourceKey || editorState.scenePath
+
+    if (!key) {
+      console.warn('No resource key or scene path provided for getThumbnail')
+      return null
+    }
+
+    try {
+      const resourceQuery = await API.instance.service(staticResourcePath).find({
+        query: { key }
+      })
+
+      if (!resourceQuery.data || resourceQuery.data.length === 0) {
+        console.warn(`No static resource found for key: ${key}`)
+        return null
+      }
+
+      const resource = resourceQuery.data[0]
+      if (resource.thumbnailKey) {
+        const thumbnailQuery = await API.instance.service(staticResourcePath).find({
+          query: {
+            key: resource.thumbnailKey,
+            type: 'thumbnail'
+          }
+        })
+
+        if (thumbnailQuery.data && thumbnailQuery.data.length > 0) {
+          const thumbnailResource = thumbnailQuery.data[0]
+          return {
+            thumbnailURL: thumbnailResource.url,
+            thumbnailKey: resource.thumbnailKey,
+            thumbnailMode: resource.thumbnailMode,
+            resource: resource,
+            thumbnailResource: thumbnailResource
+          }
+        }
+      }
+      return null
+    } catch (error) {
+      console.error('Error fetching thumbnail from StaticResources:', error)
+      return null
+    }
+  },
+  initializeThumbnailFromStaticResources: async () => {
+    const editorState = getState(EditorState)
+    const scenePath = editorState.scenePath
+
+    if (!scenePath) return
+
+    try {
+      const thumbnailInfo = await SceneThumbnailState.getThumbnail(scenePath)
+
+      if (thumbnailInfo?.thumbnailURL) {
+        const sceneThumbnailState = getMutableState(SceneThumbnailState)
+        sceneThumbnailState.merge({
+          thumbnailURL: thumbnailInfo.thumbnailURL,
+          oldThumbnailURL: sceneThumbnailState.thumbnailURL.value
+        })
+      }
+    } catch (error) {
+      console.error('Error initializing thumbnail from StaticResources:', error)
+    }
+  },
+  uploadThumbnail: async (entity?) => {
     const sceneThumbnailState = getMutableState(SceneThumbnailState)
     if (!sceneThumbnailState.thumbnail.value) return
     sceneThumbnailState.uploadingThumbnail.set(true)
     const currentThumbnail = sceneThumbnailState.thumbnailURL.value
     const editorState = getState(EditorState)
     const projectName = editorState.projectName!
-    const currentSceneDirectory = getState(EditorState).scenePath!.split('/').slice(0, -1).join('/')
-    const { promises } = uploadProjectFiles(projectName, [sceneThumbnailState.thumbnail.value], [currentSceneDirectory])
-    const [[savedThumbnailURL]] = await Promise.all(promises)
-    commitProperty(SceneSettingsComponent, 'thumbnailURL', [entity])(savedThumbnailURL)
-    sceneThumbnailState.merge({
-      thumbnailURL: null,
-      oldThumbnailURL: currentThumbnail,
-      thumbnail: null,
-      uploadingThumbnail: false
-    })
+    const staticResourceId = editorState.sceneAssetID
+    const source = editorState.scenePath
+    if (!source || !projectName) return
+
+    const thumbnailKey = generateThumbnailKey(source, projectName)
+    const thumbnailMode = 'custom'
+    const thumbnailURL = new URL(
+      await uploadToFeathersService(fileBrowserUploadPath, [sceneThumbnailState.thumbnail.value], {
+        args: [
+          {
+            fileName: sceneThumbnailState.thumbnail.value.name,
+            project: projectName,
+            path: 'public/thumbnails/' + sceneThumbnailState.thumbnail.value.name,
+            contentType: sceneThumbnailState.thumbnail.value.type,
+            type: 'thumbnail',
+            thumbnailKey,
+            thumbnailMode
+          }
+        ]
+      }).promise
+    )
+    thumbnailURL.search = ''
+    thumbnailURL.hash = ''
+    const _thumbnailKey = thumbnailURL.href.replace(config.client.fileServer + '/', '')
+    await API.instance
+      .service(staticResourcePath)
+      .patch(staticResourceId, { thumbnailKey: _thumbnailKey, thumbnailMode, project: projectName })
+
+    if (entity) commitProperty(SceneSettingsComponent, 'thumbnailURL', [entity])(thumbnailURL.href)
   },
   createLoadingScreen: async () => {
     const sceneThumbnailState = getMutableState(SceneThumbnailState)
-    const envmapImageData = generateEnvmapBake(sceneThumbnailState.resolution.value)
+    const envmapImageData = await generateEnvmapBake({ resolution: sceneThumbnailState.resolution.value })
     const blob = await imageDataToBlob(envmapImageData)
     const sceneThumbnail = getMutableState(SceneThumbnailState)
     sceneThumbnail.merge({
@@ -91,7 +170,7 @@ export const SceneThumbnailState = defineState({
       loadingScreenImageData: envmapImageData
     })
   },
-  uploadLoadingScreen: async (entity) => {
+  uploadLoadingScreen: async (entity?) => {
     const sceneThumbnailState = getMutableState(SceneThumbnailState)
     const envmapImageData = sceneThumbnailState.loadingScreenImageData.value
     if (!envmapImageData) return
@@ -125,12 +204,13 @@ export const SceneThumbnailState = defineState({
     const cleanURL = new URL(loadingScreenURL)
     cleanURL.hash = ''
     cleanURL.search = ''
-    commitProperty(SceneSettingsComponent, 'loadingScreenURL', [entity])(cleanURL.href)
+
+    if (entity) commitProperty(SceneSettingsComponent, 'loadingScreenURL', [entity])(cleanURL.href)
 
     sceneThumbnailState.merge({
-      loadingScreenURL: null,
+      loadingScreenURL: loadingScreenURL,
       oldLoadingScreenURL: currentLoadingScreen,
-      loadingScreenImageData: null,
+      loadingScreenImageData: loadingScreenImageData,
       uploadingLoadingScreen: false
     })
   },
@@ -145,6 +225,7 @@ export const SceneThumbnailState = defineState({
         thumbnail: null,
         loadingScreenImageData: null
       })
+      SceneThumbnailState.initializeThumbnailFromStaticResources()
     }, [editorState.scenePath])
     return null
   }

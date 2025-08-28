@@ -1,35 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { defineQuery } from '@ir-engine/ecs'
+import { defineQuery, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { UserID, getState } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { Q_Y_180 } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -42,6 +16,7 @@ import {
 } from '@ir-engine/spatial/src/xr/XRComponents'
 import { ReferenceSpace, XRState } from '@ir-engine/spatial/src/xr/XRState'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
@@ -124,18 +99,16 @@ const inputSourceQuery = defineQuery([InputSourceComponent])
 /**
  * Pulls pose data from input sources into the ECS
  */
-export const applyInputSourcePoseToIKTargets = (userID: UserID) => {
+export const applyInputSourcePoseToIKTargets = () => {
   const xrFrame = getState(XRState).xrFrame!
   const referenceSpace = ReferenceSpace.origin
-
-  const localClientEntity = AvatarComponent.getUserAvatarEntity(userID)
-
-  const ikTargetLeftHand = AvatarIKTargetComponent.getTargetEntity(userID, ikTargets.leftHand)
-  const ikTargetRightHand = AvatarIKTargetComponent.getTargetEntity(userID, ikTargets.rightHand)
-  const ikTargetHead = AvatarIKTargetComponent.getTargetEntity(userID, ikTargets.head)
-  const ikTargetLeftFoot = AvatarIKTargetComponent.getTargetEntity(userID, ikTargets.leftFoot)
-  const ikTargetRightFoot = AvatarIKTargetComponent.getTargetEntity(userID, ikTargets.rightFoot)
-
+  const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
+  const entitySourceID = getComponent(selfAvatarEntity, UUIDComponent).entitySourceID
+  const ikTargetLeftHand = AvatarIKTargetComponent.getTargetEntity(entitySourceID, ikTargets.leftHand)
+  const ikTargetRightHand = AvatarIKTargetComponent.getTargetEntity(entitySourceID, ikTargets.rightHand)
+  const ikTargetHead = AvatarIKTargetComponent.getTargetEntity(entitySourceID, ikTargets.head)
+  const ikTargetLeftFoot = AvatarIKTargetComponent.getTargetEntity(entitySourceID, ikTargets.leftFoot)
+  const ikTargetRightFoot = AvatarIKTargetComponent.getTargetEntity(entitySourceID, ikTargets.rightFoot)
   // reset all IK targets
   if (ikTargetHead) AvatarIKTargetComponent.blendWeight[ikTargetHead] = 0
   if (ikTargetLeftHand) AvatarIKTargetComponent.blendWeight[ikTargetLeftHand] = 0
@@ -148,19 +121,19 @@ export const applyInputSourcePoseToIKTargets = (userID: UserID) => {
     return
   }
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
 
   /** Head */
-  if (isCameraAttachedToAvatar && ikTargetHead) {
-    const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
+  if (shouldViewerFollowController && ikTargetHead) {
+    const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
     const ikTransform = getComponent(ikTargetHead, TransformComponent)
     ikTransform.position.copy(cameraTransform.position)
     ikTransform.rotation.copy(cameraTransform.rotation).multiply(Q_Y_180)
     AvatarIKTargetComponent.blendWeight[ikTargetHead] = 1
-    const rigComponent = getComponent(localClientEntity, AvatarRigComponent)
-    const avatar = getComponent(localClientEntity, AvatarComponent)
+    const rigComponent = getComponent(selfAvatarEntity, AvatarRigComponent)
+    const avatar = getComponent(selfAvatarEntity, AvatarComponent)
     if (rigComponent) {
-      const avatarTransform = getComponent(localClientEntity, TransformComponent)
+      const avatarTransform = getComponent(selfAvatarEntity, TransformComponent)
       if (cameraTransform.position.y - avatarTransform.position.y < avatar.avatarHeight) {
         AvatarIKTargetComponent.blendWeight[ikTargetLeftFoot] = 1
         AvatarIKTargetComponent.blendWeight[ikTargetRightFoot] = 1
@@ -169,11 +142,11 @@ export const applyInputSourcePoseToIKTargets = (userID: UserID) => {
   }
 
   /** In miniature mode, IK doesn't make much sense */
-  if (!isCameraAttachedToAvatar) return
+  if (!shouldViewerFollowController) return
 
   const inverseWorldScale = 1 / XRState.worldScale
 
-  const localClientTransform = getComponent(localClientEntity, TransformComponent)
+  const localClientTransform = getComponent(selfAvatarEntity, TransformComponent)
 
   for (const inputSourceEntity of inputSourceQuery()) {
     const inputSourceComponent = getComponent(inputSourceEntity, InputSourceComponent)
@@ -187,8 +160,8 @@ export const applyInputSourcePoseToIKTargets = (userID: UserID) => {
       const hand = inputSourceComponent.source.hand as XRHand | undefined
       /** detect hand joint pose support */
       if (hand && xrFrame.fillPoses && xrFrame.getJointPose) {
-        if (!hasComponent(localClientEntity, XRHandComponent)) {
-          setComponent(localClientEntity, XRHandComponent, { hand })
+        if (!hasComponent(selfAvatarEntity, XRHandComponent)) {
+          setComponent(selfAvatarEntity, XRHandComponent, { hand })
         }
         const wrist = hand.get('wrist')
         if (wrist) {
@@ -203,11 +176,11 @@ export const applyInputSourcePoseToIKTargets = (userID: UserID) => {
               .multiply(handedness === 'right' ? rightControllerOffset : leftControllerOffset)
           }
         }
-        applyHandPose(inputSourceComponent.source, localClientEntity)
+        applyHandPose(inputSourceComponent.source, selfAvatarEntity)
 
         AvatarIKTargetComponent.blendWeight[entity] = 1
       } else {
-        removeComponent(localClientEntity, XRHandComponent)
+        removeComponent(selfAvatarEntity, XRHandComponent)
         if (inputSourceComponent.source.gripSpace) {
           const pose = xrFrame.getPose(inputSourceComponent.source.gripSpace, referenceSpace)
           if (pose) {

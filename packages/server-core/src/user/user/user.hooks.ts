@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { MethodNotAllowed } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
 import { disallow, discardQuery, iff, isProvider } from 'feathers-hooks-common'
@@ -82,12 +57,14 @@ const restrictUserPatch = async (context: HookContext<UserService>) => {
   if (loggedInUser.id !== context.id)
     throw new Error("Must be an admin with user:write scope to patch another user's data")
 
-  // If a user without admin and user:write scope is patching themself, only allow changes to avatarId and name
+  // If a user without admin and user:write scope is patching themself, only allow changes to specific properties
   const process = (item: UserType) => {
     const data = {} as UserPatch
     // selective define allowed props as not to accidentally pass an undefined value (which will be interpreted as NULL)
     if (typeof item.name !== 'undefined') data.name = item.name
-    if (typeof item.acceptedTOS !== 'undefined') data.acceptedTOS = item.acceptedTOS
+    if (typeof item.ageVerified !== 'undefined') data.ageVerified = item.ageVerified
+    // Allow users to deactivate their own accounts
+    if (typeof item.isDeactivated !== 'undefined') data.isDeactivated = item.isDeactivated
 
     return data
   }

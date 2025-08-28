@@ -1,43 +1,14 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Matrix4, Quaternion, Vector3 } from 'three'
 
 import { defineQuery, defineSystem, Entity, getComponent } from '@ir-engine/ecs'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { getState } from '@ir-engine/hyperflux'
 
+import { EntityTreeComponent, getAncestorWithComponents } from '@ir-engine/ecs'
 import { Vector3_One, Vector3_Zero } from '../../common/constants/MathConstants'
-import {
-  EntityTreeComponent,
-  getAncestorWithComponents,
-  iterateEntityNode
-} from '../../transform/components/EntityTree'
-import { TransformComponent } from '../../transform/components/TransformComponent'
-import { computeTransformMatrix, isDirty, TransformDirtyUpdateSystem } from '../../transform/systems/TransformSystem'
-import { Physics } from '../classes/Physics'
+import { setChildrenDirtyFast, TransformComponent } from '../../transform/components/TransformComponent'
+import { isDirty, TransformDirtyUpdateSystem } from '../../transform/systems/TransformSystem'
+import { Physics, PhysicsWorld } from '../classes/Physics'
 import { ColliderComponent } from '../components/ColliderComponent'
 import { RigidBodyComponent } from '../components/RigidBodyComponent'
 
@@ -48,8 +19,6 @@ const _position = new Vector3()
 const _rotation = new Quaternion()
 const _scale = new Vector3()
 const _mat4 = new Matrix4()
-
-const setDirty = (entity: Entity) => (TransformComponent.dirtyTransforms[entity] = true)
 
 /**
  * Lerp the transform of a rigidbody entity from the previous frame to the current frame.
@@ -107,8 +76,8 @@ export const lerpTransformFromRigidbody = (entity: Entity, alpha: number) => {
   transform.matrixWorld.multiplyMatrices(parentTransform.matrixWorld, transform.matrix)
 
   /** set all children dirty deeply, but set this entity to clean */
-  iterateEntityNode(entity, setDirty)
-  TransformComponent.dirtyTransforms[entity] = false
+  setChildrenDirtyFast(entity)
+  TransformComponent.dirty[entity] = 0
 }
 
 export const copyTransformToRigidBody = (entity: Entity) => {
@@ -116,7 +85,7 @@ export const copyTransformToRigidBody = (entity: Entity) => {
   if (!world) return
 
   // if the entity has a parent, we need to use the scene space
-  computeTransformMatrix(entity)
+  TransformComponent.computeTransformMatrix(entity)
   TransformComponent.getMatrixRelativeToScene(entity, _mat4)
   _mat4.decompose(_position, _rotation, _scale)
 
@@ -153,14 +122,14 @@ export const copyTransformToRigidBody = (entity: Entity) => {
   Physics.setRigidbodyPose(world, entity, rigidbody.position, rigidbody.rotation, Vector3_Zero, Vector3_Zero)
 
   /** set all children dirty deeply, but set this entity to clean */
-  iterateEntityNode(entity, setDirty)
-  TransformComponent.dirtyTransforms[entity] = false
+  setChildrenDirtyFast(entity)
+  TransformComponent.dirty[entity] = 0
 }
 
 const copyTransformToCollider = (entity: Entity) => {
   const world = Physics.getWorld(entity)
   if (!world) return
-  computeTransformMatrix(entity)
+  TransformComponent.computeTransformMatrix(entity)
   const rigidbodyEntity = getAncestorWithComponents(entity, [RigidBodyComponent])
   if (!rigidbodyEntity) return
   const colliderDesc = Physics.createColliderDesc(world, entity, rigidbodyEntity)
@@ -173,16 +142,22 @@ const copyTransformToCollider = (entity: Entity) => {
 const rigidbodyQuery = defineQuery([TransformComponent, RigidBodyComponent, EntityTreeComponent])
 const colliderQuery = defineQuery([TransformComponent, ColliderComponent, EntityTreeComponent]) // @todo maybe add Not(RigidBodyComponent) to this query
 
+const canUpdateRigidBody = (entity: Entity, world: PhysicsWorld) =>
+  !Physics.isSleeping(world, entity) && getComponent(entity, RigidBodyComponent).initialized
+
 const filterAwakeCleanRigidbodies = (entity: Entity) => {
+  const world = Physics.getWorld(entity)
+  if (!world || !world.Rigidbodies.has(entity)) return false
+
   // if the entity has a parent that is dirty, we need to update the transform
   const parentEntity = getComponent(entity, EntityTreeComponent).parentEntity
-  if (TransformComponent.dirtyTransforms[parentEntity]) return true
+  if (TransformComponent.dirty[parentEntity]) return canUpdateRigidBody(entity, world)
+
   // if the entity is dirty, we don't need to update the transform
-  if (TransformComponent.dirtyTransforms[entity]) return false
-  const world = Physics.getWorld(entity)
-  if (!world) return false
+  if (TransformComponent.dirty[entity]) return false
+
   // if the entity is not dirty, we only need to update the transform if it is awake
-  return !Physics.isSleeping(world, entity)
+  return canUpdateRigidBody(entity, world)
 }
 
 export const execute = () => {
@@ -193,10 +168,10 @@ export const execute = () => {
   const dirtyRigidbodyEntities = allRigidbodyEntities.filter(isDirty)
   const dirtyColliderEntities = colliderQuery().filter(isDirty)
 
-  /** Ff rigidbody transforms have been dirtied, teleport the rigidbody to the transform */
+  /** If rigidbody transforms have been dirtied, teleport the rigidbody to the transform */
   for (const entity of dirtyRigidbodyEntities) copyTransformToRigidBody(entity)
 
-  /** Ff collider transforms have been dirtied, update them */
+  /** If collider transforms have been dirtied, update them */
   for (const entity of dirtyColliderEntities) copyTransformToCollider(entity)
 
   /** Lerp awake clean rigidbody entities (and make their transforms dirty) */

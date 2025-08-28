@@ -1,39 +1,14 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Euler, MathUtils, Quaternion, Vector3 } from 'three'
 
 import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { UserID } from '@ir-engine/hyperflux'
 import { Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
 import { ikTargets } from '../animation/Util'
+import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
 import { AvatarIKTargetComponent } from '../components/AvatarIKComponents'
 
@@ -51,14 +26,15 @@ const offset = new Quaternion().setFromEuler(new Euler(0, Math.PI, 0))
 const quat = new Quaternion()
 let currentStep = ikTargets.leftFoot
 const speedMultiplier = 2
-
+const hipsOffset = new Vector3()
 //step threshold should be a function of leg length
 //walk threshold to determine when to move the feet back into standing position, should be
-export const setIkFootTarget = (userID: UserID, delta: number) => {
-  const selfAvatarEntity = AvatarComponent.getUserAvatarEntity(userID)
+export const setIkFootTarget = (delta: number) => {
+  const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
+  const uuid = getComponent(selfAvatarEntity, UUIDComponent)
 
-  const leftFootEntity = UUIDComponent.getEntityByUUID((userID + ikTargets.leftFoot) as EntityUUID)
-  const rightFootEntity = UUIDComponent.getEntityByUUID((userID + ikTargets.rightFoot) as EntityUUID)
+  const leftFootEntity = UUIDComponent.getEntityByUUID((uuid + ikTargets.leftFoot) as EntityUUID)
+  const rightFootEntity = UUIDComponent.getEntityByUUID((uuid + ikTargets.rightFoot) as EntityUUID)
 
   if (!leftFootEntity || !rightFootEntity) return
 
@@ -69,20 +45,26 @@ export const setIkFootTarget = (userID: UserID, delta: number) => {
   /** quick fix - set feet to under the avtar and slide around */
   const avatarTransform = getComponent(selfAvatarEntity, TransformComponent)
   const avatar = getComponent(selfAvatarEntity, AvatarComponent)
-
+  const hipsPos = getComponent(
+    getComponent(selfAvatarEntity, AvatarRigComponent).bonesToEntities.hips,
+    TransformComponent
+  ).position
+  hipsOffset.set(hipsPos.x, 0, hipsPos.z * 2)
   const leftFootTransform = getComponent(leftFootEntity, TransformComponent)
-  leftFootTransform.position
-    .set(avatar.footGap, avatar.footHeight, 0)
-    .applyQuaternion(avatarTransform.rotation)
-    .add(avatarTransform.position)
-  leftFootTransform.rotation.copy(avatarTransform.rotation)
+  // leftFootTransform.position
+  //   .set(avatar.footGap, avatar.footHeight, 0)
+  //   .applyQuaternion(avatarTransform.rotation)
+  //   .add(avatarTransform.position)
+  //   .add(hipsOffset)
+  // leftFootTransform.rotation.copy(avatarTransform.rotation)
 
-  const rightFootTransform = getComponent(rightFootEntity, TransformComponent)
-  rightFootTransform.position
-    .set(-avatar.footGap, avatar.footHeight, 0)
-    .applyQuaternion(avatarTransform.rotation)
-    .add(avatarTransform.position)
-  rightFootTransform.rotation.copy(avatarTransform.rotation)
+  // const rightFootTransform = getComponent(rightFootEntity, TransformComponent)
+  // rightFootTransform.position
+  //   .set(-avatar.footGap, avatar.footHeight, 0)
+  //   .applyQuaternion(avatarTransform.rotation)
+  //   .add(avatarTransform.position)
+  //   .add(hipsOffset)
+  // rightFootTransform.rotation.copy(avatarTransform.rotation)
 
   /** @todo new implementation */
   return
@@ -91,8 +73,8 @@ export const setIkFootTarget = (userID: UserID, delta: number) => {
   const stepDistance = 0.1
 
   const feet = {
-    [ikTargets.rightFoot]: UUIDComponent.getEntityByUUID((userID + ikTargets.rightFoot) as EntityUUID),
-    [ikTargets.leftFoot]: UUIDComponent.getEntityByUUID((userID + ikTargets.leftFoot) as EntityUUID)
+    [ikTargets.rightFoot]: UUIDComponent.getEntityByUUID((uuid + ikTargets.rightFoot) as EntityUUID),
+    [ikTargets.leftFoot]: UUIDComponent.getEntityByUUID((uuid + ikTargets.leftFoot) as EntityUUID)
   }
 
   const playerRigidbody = getComponent(selfAvatarEntity, RigidBodyComponent)

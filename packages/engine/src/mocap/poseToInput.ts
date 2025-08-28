@@ -1,35 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { getComponent, getMutableComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { getState, none } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 
+import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { AvatarRigComponent } from '../avatar/components/AvatarAnimationComponent'
-import { NormalizedBoneComponent } from '../avatar/components/NormalizedBoneComponent'
 import { MotionCapturePoseComponent } from './MotionCapturePoseComponent'
 import { MotionCaptureRigComponent } from './MotionCaptureRigComponent'
 
@@ -49,25 +24,25 @@ export const evaluatePose = (entity: Entity) => {
 
   if (!hasComponent(entity, MotionCapturePoseComponent)) setComponent(entity, MotionCapturePoseComponent)
 
-  const pose = getMutableComponent(entity, MotionCapturePoseComponent)
+  const pose = getComponent(entity, MotionCapturePoseComponent)
 
   if (!MotionCaptureRigComponent.solvingLowerBody[entity]) return 'none'
 
-  const rightUpperLeg = getComponent(rig.rightUpperLeg, NormalizedBoneComponent).quaternion
-  const leftUpperLeg = getComponent(rig.leftUpperLeg, NormalizedBoneComponent).quaternion
-  const spine = getComponent(rig.spine, NormalizedBoneComponent).quaternion
+  const rightUpperLeg = getComponent(rig.rightUpperLeg, BoneComponent).quaternion
+  const leftUpperLeg = getComponent(rig.leftUpperLeg, BoneComponent).quaternion
+  const spine = getComponent(rig.spine, BoneComponent).quaternion
   /**Detect if our legs pose has changed by their angle */
   const getLegsSeatedChange = (toPose: MotionCapturePoses): boolean => {
     let metTargetStateAngle =
       rightUpperLeg.angleTo(spine) < minSeatedAngle && leftUpperLeg.angleTo(spine) < minSeatedAngle
     metTargetStateAngle = toPose == 'sitting' ? !metTargetStateAngle : metTargetStateAngle
 
-    if (!metTargetStateAngle || pose[toPose].value) return false
+    if (!metTargetStateAngle || pose[toPose]) return false
 
     poseHoldTimer += deltaSeconds
     if (poseHoldTimer > poseHoldTime) {
       //remove old pose
-      pose[toPose === 'standing' ? 'sitting' : 'standing'].set(none)
+      delete pose[toPose === 'standing' ? 'sitting' : 'standing']
       poseHoldTimer = 0
       return true
     }
@@ -77,9 +52,10 @@ export const evaluatePose = (entity: Entity) => {
 
   /**if we find a change in pose, set a new pose
    * otherwise, set the begun property to false */
-  if (getLegsSeatedChange('sitting')) pose['sitting'].set({ begun: true })
-  else if (pose.sitting.value && pose.sitting.begun.value) pose.sitting.begun.set(false)
+  if (getLegsSeatedChange('sitting')) {
+    pose['sitting'] = { begun: true }
+  } else if (pose.sitting && pose.sitting.begun) pose.sitting.begun = false
 
-  if (getLegsSeatedChange('standing')) pose['standing'].set({ begun: true })
-  else if (pose.standing.value && pose.standing.begun.value) pose.standing.begun.set(false)
+  if (getLegsSeatedChange('standing')) pose['standing'] = { begun: true }
+  else if (pose.standing && pose.standing.begun) pose.standing.begun = false
 }

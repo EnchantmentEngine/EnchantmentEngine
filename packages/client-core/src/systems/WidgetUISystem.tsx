@@ -1,32 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { Quaternion, Vector3 } from 'three'
 
 import { isDev } from '@ir-engine/common/src/config'
+import { removeEntity } from '@ir-engine/ecs'
 import {
   getComponent,
   getOptionalComponent,
@@ -34,8 +10,6 @@ import {
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import {
@@ -48,6 +22,7 @@ import {
 } from '@ir-engine/hyperflux'
 // import { createHeightAdjustmentWidget } from './createHeightAdjustmentWidget'
 // import { createMediaWidget } from './createMediaWidget'
+import { EntityTreeComponent } from '@ir-engine/ecs'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Vector3_Back, Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
@@ -55,15 +30,13 @@ import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/In
 import { XRStandardGamepadButton } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { ReferenceSpace, XRState, isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import { RegisteredWidgets, WidgetAppActions, WidgetAppService, WidgetAppState } from './WidgetAppService'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import React from 'react'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { createAnchorWidget } from './createAnchorWidget'
 import { createWidgetButtonsView } from './ui/WidgetMenuView'
 
@@ -118,7 +91,7 @@ const unregisterWidgetQueue = defineActionQueue(WidgetAppActions.unregisterWidge
 
 const execute = () => {
   const { widgetMenuUI } = getState(WidgetUISystemState)
-  const { viewerEntity, localFloorEntity } = getState(EngineState)
+  const { viewerEntity, localFloorEntity } = getState(ReferenceSpaceState)
   if (!widgetMenuUI || !viewerEntity) return
 
   const widgetState = getState(WidgetAppState)
@@ -148,7 +121,9 @@ const execute = () => {
   }
   for (const action of unregisterWidgetQueue()) {
     const widget = RegisteredWidgets.get(action.id)!
-    setComponent(widget.ui.entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(widget.ui.entity, EntityTreeComponent, {
+      parentEntity: getState(ReferenceSpaceState).localFloorEntity
+    })
     if (typeof widget.cleanup === 'function') widget.cleanup()
   }
 
@@ -217,7 +192,9 @@ const Reactor = () => {
 
   useEffect(() => {
     const widgetMenuUI = createWidgetButtonsView()
-    setComponent(widgetMenuUI.entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(widgetMenuUI.entity, EntityTreeComponent, {
+      parentEntity: getState(ReferenceSpaceState).localFloorEntity
+    })
     setComponent(widgetMenuUI.entity, TransformComponent)
     removeComponent(widgetMenuUI.entity, VisibleComponent)
     setComponent(widgetMenuUI.entity, NameComponent, 'widget_menu')
@@ -236,12 +213,15 @@ const Reactor = () => {
   return null
 }
 
+/**
+ * @todo disabled until WebXR is fully supported again
+ */
 export const WidgetUISystem = defineSystem({
   uuid: 'ee.client.WidgetUISystem',
-  insert: { before: TransformSystem },
-  execute,
-  reactor: () => {
-    if (!useMutableState(EngineState).viewerEntity.value) return null
-    return <Reactor />
-  }
+  insert: { before: TransformSystem }
+  // execute,
+  // reactor: () => {
+  //   if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
+  //   return <Reactor />
+  // }
 })

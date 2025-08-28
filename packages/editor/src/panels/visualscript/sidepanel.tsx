@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { MdOutlineAdd, MdOutlineCancel } from 'react-icons/md'
 
 import React, { useEffect } from 'react'
@@ -30,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useReactFlow } from 'reactflow'
 
 import { UndefinedEntity } from '@ir-engine/ecs'
-import { NodetoEnginetype } from '@ir-engine/engine'
+import { NodetoEnginetype } from '@ir-engine/engine/src/visualscript/VisualScriptModule'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
 import { Button } from '@ir-engine/ui'
 import SelectInput from '@ir-engine/ui/src/components/editor/input/Select'
@@ -43,9 +18,9 @@ import { useTemplateHandler, useVariableHandler, useVisualScriptFlow } from './h
 import { Examples } from './modals/load'
 import { visualToFlow } from './transformers'
 
-type templateHandler = ReturnType<typeof useTemplateHandler>
-type variableHandler = ReturnType<typeof useVariableHandler>
-type visualScriptFlow = ReturnType<typeof useVisualScriptFlow>
+type TemplateHandler = ReturnType<typeof useTemplateHandler>
+type VariableHandler = ReturnType<typeof useVariableHandler>
+type VisualScriptFlow = ReturnType<typeof useVisualScriptFlow>
 
 export type SidePanelProps = {
   flowref: React.MutableRefObject<HTMLElement | null>
@@ -66,9 +41,9 @@ export const SidePanel = ({
   handleEditVariable,
   handleDeleteVariable
 }: SidePanelProps &
-  Pick<templateHandler, 'handleApplyTemplate' | 'handleDeleteTemplate' | 'handleEditTemplate' | 'handleAddTemplate'> &
-  Pick<visualScriptFlow, 'onNodesChange'> &
-  Pick<variableHandler, 'handleAddVariable' | 'handleDeleteVariable' | 'handleEditVariable'>) => {
+  Pick<TemplateHandler, 'handleApplyTemplate' | 'handleDeleteTemplate' | 'handleEditTemplate' | 'handleAddTemplate'> &
+  Pick<VisualScriptFlow, 'onNodesChange'> &
+  Pick<VariableHandler, 'handleAddVariable' | 'handleDeleteVariable' | 'handleEditVariable'>) => {
   const reactFlow = useReactFlow()
   const visualScriptState = useMutableState(VisualScriptState)
   const { t } = useTranslation()
@@ -208,7 +183,7 @@ export const SidePanel = ({
                     }}
                   />
                   <ParameterInput
-                    entity={`${UndefinedEntity}`}
+                    path={`${UndefinedEntity}`}
                     values={[NodetoEnginetype(variable.initialValue, variable.valueTypeName)]}
                     onChange={(key) => (e) => {
                       let value = e

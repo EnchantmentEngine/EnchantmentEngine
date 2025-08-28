@@ -1,91 +1,32 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 import { twMerge } from 'tailwind-merge'
 
 export interface BadgeProps {
   label: string
   className?: string
-  textClassName?: string
-  icon?: React.ReactNode
   variant?: 'success' | 'successLight' | 'danger' | 'neutral' | 'warning'
 }
 
 const variantMap = {
-  success: {
-    containerClass: 'bg-theme-tagGreen',
-    iconColor: '#15803d',
-    textClass: 'text-green-900 dark:text-white'
-  },
-  successLight: {
-    containerClass: 'bg-theme-tagLime',
-    iconColor: '#9ACD32',
-    textClass: 'text-[#9ACD32]-900 dark:text-white'
-  },
-  danger: {
-    containerClass: 'bg-theme-tagRed',
-    iconColor: '#f43f5e',
-    textClass: 'text-white'
-  },
-  neutral: {
-    containerClass: 'bg-stone-200 dark:bg-gray-800',
-    iconColor: 'black',
-    textClass: 'text-black dark:text-white'
-  },
-  warning: {
-    containerClass: 'bg-theme-tagYellow',
-    iconColor: '#d6a407',
-    textClass: 'text-yellow-900 dark:text-white'
-  }
-}
+  success: 'bg-ui-hover-success',
+  successLight: 'bg-ui-hover-success opacity-80',
+  danger: 'bg-ui-hover-error',
+  neutral: 'bg-gray-700',
+  warning: 'bg-ui-hover-warning'
+} as const
 
-const Badge = ({ label, className, textClassName, icon, variant }: BadgeProps) => {
-  let twClassName = twMerge('flex h-fit items-center justify-around gap-x-1.5	rounded-full px-2.5 py-0.5', className)
-
-  let twTextClassName = textClassName
-
-  let variantIconColor: null | string = null
-
-  if (variant && variantMap[variant]) {
-    const { containerClass, iconColor, textClass } = variantMap[variant]
-    twClassName = twMerge(containerClass, twClassName)
-    twTextClassName = twMerge(textClass, twTextClassName)
-    variantIconColor = iconColor
-  }
+const Badge = ({ label, className, variant }: BadgeProps) => {
+  variant = variant || 'neutral'
 
   return (
-    <div className={twClassName}>
-      {variantIconColor && React.isValidElement(icon)
-        ? React.cloneElement(icon, {
-            ...icon.props,
-            // @ts-ignore
-            color: variantIconColor
-          })
-        : icon}
-      <span className={twTextClassName}>{label}</span>
+    <div
+      className={twMerge(
+        'flex h-fit items-center justify-around gap-x-1.5	rounded-full px-2.5 py-0.5 text-white',
+        variantMap[variant],
+        className
+      )}
+    >
+      <span className="font-semibold">{label}</span>
     </div>
   )
 }

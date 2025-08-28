@@ -1,67 +1,58 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
-import { deleteScene } from '@ir-engine/client-core/src/world/SceneAPI'
-import { config } from '@ir-engine/common/src/config'
-import { StaticResourceType } from '@ir-engine/common/src/schema.type.module'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
+import { ThemeState } from '@ir-engine/client-core/src/common/services/ThemeService'
+import { clientContextParams } from '@ir-engine/client-core/src/util/ClientContextState'
+import { cloneScene, deleteScene } from '@ir-engine/client-core/src/world/SceneAPI'
+import NapsterLogoModalDark from '@ir-engine/client/src/assets/napster-logo-modal-dark.png'
+import { API } from '@ir-engine/common'
+import multiLogger from '@ir-engine/common/src/logger'
+import { locationPath, StaticResourceType } from '@ir-engine/common/src/schema.type.module'
 import { timeAgo } from '@ir-engine/common/src/utils/datetime-sql'
-import { useClickOutside } from '@ir-engine/common/src/utils/useClickOutside'
 import RenameSceneModal from '@ir-engine/editor/src/panels/scenes/RenameSceneModal'
-import { useHookstate } from '@ir-engine/hyperflux'
-import { Button, Tooltip } from '@ir-engine/ui'
+import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
+import { Tooltip } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
+import InputDialog from '@ir-engine/ui/src/components/tailwind/InputDialog'
+import MoreOptionsMenu from '@ir-engine/ui/src/components/tailwind/MoreOptionsMenu'
+import { CodeSnippet01Sm, Copy02Sm, Edit01Sm, Trash04Sm } from '@ir-engine/ui/src/icons'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
-import { default as React, useRef } from 'react'
+import { default as React } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BsThreeDotsVertical } from 'react-icons/bs'
+import { IoDuplicateOutline } from 'react-icons/io5'
 import { twMerge } from 'tailwind-merge'
+import { UIAddonsState } from '../../services/UIAddonsState'
+import SceneCard from './SceneCard'
+
+const logger = multiLogger.child({ component: `editor:SceneItem`, modifier: clientContextParams })
+export interface SceneItemMoreOtionData {
+  label: string
+  disabled?: boolean
+  icon?: React.ReactNode
+  onClick: (scene: StaticResourceType) => void
+}
 
 type SceneItemProps = {
   scene: StaticResourceType
   handleOpenScene: () => void
   refetchProjectsData: () => void
+  onCloneToProject?: () => void
   onRenameScene?: (newName: string) => void
   onDeleteScene?: (scene: StaticResourceType) => void
+  disableDeleteScene?: boolean
 }
-
-const DEFAULT_SCENE_THUMBNAIL = `${config.client.fileServer}/projects/ir-engine/default-project/public/scenes/default.thumbnail.jpg`
 
 export default function SceneItem({
   scene,
   handleOpenScene,
   refetchProjectsData,
   onRenameScene,
-  onDeleteScene
+  onDeleteScene,
+  onCloneToProject,
+  disableDeleteScene
 }: SceneItemProps) {
   const { t } = useTranslation()
 
   const sceneName = scene.key.split('/').pop()!.replace('.gltf', '')
-  const isOptionsPopupOpen = useHookstate(false)
-  const sceneItemOptionsRef = useRef<HTMLDivElement>(null)
-
-  useClickOutside(sceneItemOptionsRef, () => isOptionsPopupOpen.set(false))
+  const theme = useMutableState(ThemeState).theme
 
   const deleteSelectedScene = async (scene: StaticResourceType) => {
     if (scene) {
@@ -73,101 +64,151 @@ export default function SceneItem({
         refetchProjectsData()
       }
     }
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
+  }
+
+  const defaultThumbnail = NapsterLogoModalDark
+  const sceneItemMoreOptions = useMutableState(UIAddonsState).editor.sceneItemMoreOptions.get(NO_PROXY)
+
+  const actionProps = [
+    {
+      label: t('editor:hierarchy.lbl-rename'),
+      disabled: false,
+      icon: <Edit01Sm fontSize={16} />,
+      onClick: () => {
+        ModalState.openModal(
+          <RenameSceneModal
+            sceneName={sceneName}
+            scene={scene}
+            onRenameScene={onRenameScene}
+            refetchProjectsData={refetchProjectsData}
+          />
+        )
+      }
+    },
+    {
+      label: t('editor:hierarchy.lbl-copyEmbedCode'),
+      disabled: false,
+      icon: <CodeSnippet01Sm fontSize={16} />,
+      onClick: async () => {
+        const location = await API.instance.service(locationPath).find({
+          query: {
+            sceneId: scene.id,
+            action: 'account',
+            $limit: 1
+          }
+        })
+        ModalState.openModal(
+          <InputDialog
+            title={t('editor:hierarchy.lbl-copyEmbedCode')}
+            fields={[
+              {
+                id: 'embedCode',
+                label: location.data.length > 0 ? t('common:components.embed') : '',
+                type: 'codefield',
+                url: location.data[0]?.url || '',
+                readOnly: true,
+                showLabel: location.data.length > 0
+              }
+            ]}
+            onSubmit={async () => {}}
+            modalProps={{
+              submitButtonText: t('common:components.close')
+            }}
+          />
+        )
+      }
+    },
+    {
+      label: t('editor:hierarchy.lbl-cloneScene'),
+      disabled: false,
+      icon: <IoDuplicateOutline fontSize={16} />,
+      onClick: async () => {
+        logger.analytics({ event_name: 'clone_scene' })
+        await cloneScene(scene, scene.key, scene.project!, scene.project!)
+        refetchProjectsData()
+      }
+    },
+    {
+      label: t('editor:hierarchy.lbl-delete'),
+      disabled: disableDeleteScene,
+      icon: <Trash04Sm fontSize={16} />,
+      onClick: () => {
+        ModalState.openModal(
+          <ConfirmDialog
+            title={t('editor:hierarchy.lbl-deleteScene')}
+            text={t('editor:hierarchy.lbl-deleteSceneDescription', { sceneName })}
+            onSubmit={async () => deleteSelectedScene(scene)}
+          />
+        )
+      }
+    },
+    ...Object.values(sceneItemMoreOptions).map((value, index) => {
+      return {
+        label: value.label,
+        disabled: value.disabled,
+        icon: value.icon,
+        onClick: () => {
+          value.onClick(scene)
+        }
+      }
+    })
+  ]
+
+  if (onCloneToProject) {
+    const cloneSceneIndex = actionProps.findIndex((item) => item.label === t('editor:hierarchy.lbl-cloneScene'))
+    actionProps.splice(cloneSceneIndex + 1, 0, {
+      label: t('editor:hierarchy.lbl-cloneSceneToProject'),
+      disabled: false,
+      icon: <Copy02Sm fontSize={16} />,
+      onClick: () => {
+        logger.analytics({ event_name: 'clone_scene_to_project' })
+        onCloneToProject()
+      }
+    })
   }
 
   return (
-    <div
-      data-testid="scene-container"
-      className="col-span-2 inline-flex h-64 w-64 min-w-64 max-w-64 cursor-pointer flex-col items-start justify-start gap-3 rounded-lg bg-[#191B1F] p-3 lg:col-span-1"
-    >
-      <img
-        className="shrink grow basis-0 self-stretch rounded"
-        src={scene.thumbnailURL || DEFAULT_SCENE_THUMBNAIL}
-        alt={DEFAULT_SCENE_THUMBNAIL}
-        data-testid="scene-thumbnail"
-        onClick={handleOpenScene}
-      />
+    <SceneCard className="cursor-pointer items-start justify-start gap-3 bg-white p-3">
+      <div className="flex max-h-40 shrink grow basis-0 items-center justify-center self-stretch rounded bg-surface-4">
+        <img
+          className={twMerge(
+            'h-full w-full object-cover',
+            scene.thumbnailURL ? 'rounded' : 'h-auto max-h-32 w-full max-w-32'
+          )}
+          src={scene.thumbnailURL || defaultThumbnail}
+          alt={defaultThumbnail}
+          data-testid="scene-thumbnail"
+          onClick={handleOpenScene}
+        />
+      </div>
       <div className="inline-flex items-start justify-between self-stretch">
-        <div className="inline-flex w-full flex-col items-start justify-start">
+        <div className="inline-flex w-full flex-col items-start justify-start gap-1.5">
           <div className="space-between flex w-full flex-row">
-            <Text component="h3" fontWeight="light" className="leading-6 text-neutral-100">
-              <Tooltip content={sceneName}>
-                <div className="w-52 truncate" data-testid="scene-name">
-                  {sceneName}
-                </div>
-              </Tooltip>
-            </Text>
+            <Tooltip content={sceneName} position="top">
+              <Text
+                component="h3"
+                fontWeight="semibold"
+                className="w-52 truncate leading-6 text-text-primary"
+                data-testid="scene-name"
+                fontSize="xl"
+              >
+                {sceneName}
+              </Text>
+            </Tooltip>
           </div>
           <Text
             component="h3"
-            fontSize="xs"
-            fontWeight="light"
-            className="h-3.5 w-40 leading-5 text-neutral-100"
+            fontSize="sm"
+            className="h-3.5 w-40 leading-5 text-text-primary"
             data-testid="scene-updated-at"
           >
             {t('editor:hierarchy.lbl-edited')} {t('common:timeAgo', { time: timeAgo(new Date(scene.updatedAt)) })}
           </Text>
         </div>
-        <div className="relative h-6 w-6" ref={sceneItemOptionsRef}>
-          <Button
-            variant="tertiary"
-            size="sm"
-            className="px-2 py-1.5"
-            data-testid="scene-options-button"
-            onClick={() => isOptionsPopupOpen.set((displayed) => !displayed)}
-          >
-            <BsThreeDotsVertical className="text-neutral-100" />
-          </Button>
-          <ul
-            className={twMerge(
-              'dropdown-menu absolute left-6 top-2  z-10  block w-[180px] rounded-lg bg-theme-primary px-4 py-3 pr-10',
-              isOptionsPopupOpen.value ? 'visible' : 'hidden'
-            )}
-            data-testid="project-options-list"
-          >
-            <li className="h-8">
-              <Button
-                variant="tertiary"
-                className="h-full p-0 text-zinc-400 hover:text-[var(--text-primary)]"
-                data-testid="scene-rename-button"
-                onClick={() => {
-                  isOptionsPopupOpen.set(false)
-                  PopoverState.showPopupover(
-                    <RenameSceneModal
-                      sceneName={sceneName}
-                      scene={scene}
-                      onRenameScene={onRenameScene}
-                      refetchProjectsData={refetchProjectsData}
-                    />
-                  )
-                }}
-              >
-                {t('editor:hierarchy.lbl-rename')}
-              </Button>
-            </li>
-            <li className="h-8">
-              <Button
-                variant="tertiary"
-                className="h-full p-0 text-zinc-400 hover:text-[var(--text-primary)]"
-                data-testid="scene-delete-button"
-                onClick={() => {
-                  isOptionsPopupOpen.set(false)
-                  PopoverState.showPopupover(
-                    <ConfirmDialog
-                      title={t('editor:hierarchy.lbl-deleteScene')}
-                      text={t('editor:hierarchy.lbl-deleteSceneDescription', { sceneName })}
-                      onSubmit={async () => deleteSelectedScene(scene)}
-                    />
-                  )
-                }}
-              >
-                {t('editor:hierarchy.lbl-delete')}
-              </Button>
-            </li>
-          </ul>
-        </div>
+
+        <MoreOptionsMenu position="right top" actionProps={actionProps} />
       </div>
-    </div>
+    </SceneCard>
   )
 }

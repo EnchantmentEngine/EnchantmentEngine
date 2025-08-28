@@ -16,7 +16,7 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ['packages/server/upload', 'packages/server/upload_test', '**/*.js', 'packages/projects/projects/**/*', 'packages/spatial/tests/webxr/emulator/**' ]
+    ignores: ['packages/server/upload', 'packages/server/upload_test', '**/*.js', 'packages/projects/projects/**/*', 'packages/spatial/tests/webxr/emulator/**', '**/dist/**' ]
   },
   ...compat.extends('eslint:recommended', 'plugin:@typescript-eslint/recommended'),
   {
@@ -41,12 +41,25 @@ export default [
       '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'warn',
+      '@typescript-eslint/naming-convention': ['error',
+        {
+          selector: "typeLike",
+          format: ["PascalCase"]
+        }
+      ],
       'prefer-const': 'warn',
+      'no-loss-of-precision': 'warn',
       'no-async-promise-executor': 'off',
       'no-useless-escape': 'off',
       '@typescript-eslint/no-extra-semi': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      'no-fallthrough': 'off'
+      '@typescript-eslint/ban-types': 'off',
+      'no-fallthrough': 'off',
+      "no-unexpected-multiline": "off"
     }
   }
 ]

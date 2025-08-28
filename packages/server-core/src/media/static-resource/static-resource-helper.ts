@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import * as ffprobe from '@ffprobe-installer/ffprobe'
 import { ResourcesJson } from '@ir-engine/common/src/interfaces/ResourcesJson'
 import { StaticResourceType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
@@ -168,9 +143,9 @@ export const getImageStats = async (
       width: widthBuffer.readUInt32LE()
     }
   } else {
-    if (typeof file === 'string') file = Buffer.from(await (await fetch(file)).arrayBuffer())
+    const fileBuffer = typeof file === 'string' ? Buffer.from(await (await fetch(file)).arrayBuffer()) : file
     const stream = new Readable()
-    stream.push(file)
+    stream.push(fileBuffer)
     stream.push(null)
     try {
       const imageDimensions = await probe(stream)
@@ -181,7 +156,7 @@ export const getImageStats = async (
     } catch (e) {
       console.error('error getting image stats')
       console.error(e)
-      console.log(file, mimeType)
+      if (typeof file === 'string') console.log(file, mimeType)
     }
   }
   return {} as any
@@ -221,7 +196,10 @@ export const regenerateProjectResourcesJson = async (app: Application, projectNa
         name: resource.name ?? undefined,
         attribution: resource.attribution ?? undefined,
         thumbnailKey: resource.thumbnailKey ?? undefined,
-        thumbnailMode: resource.thumbnailMode ?? undefined
+        thumbnailMode: resource.thumbnailMode ?? undefined,
+        width: resource.width ?? undefined,
+        height: resource.height ?? undefined,
+        depth: resource.depth ?? undefined
       }
     ])
   )
@@ -252,7 +230,7 @@ export const regenerateProjectResourcesJson = async (app: Application, projectNa
     const filePath = path.join(appRootPath.path, 'packages', 'projects', key)
     const dirname = path.dirname(filePath)
     fs.mkdirSync(dirname, { recursive: true })
-    fs.writeFileSync(filePath, body)
+    fs.writeFileSync(filePath, new Uint8Array(body))
   }
 }
 
@@ -277,7 +255,10 @@ export const patchSingleProjectResourcesJson = async (app: Application, id: stri
         name: resource.name ?? undefined,
         attribution: resource.attribution ?? undefined,
         thumbnailKey: resource.thumbnailKey ?? undefined,
-        thumbnailMode: resource.thumbnailMode ?? undefined
+        thumbnailMode: resource.thumbnailMode ?? undefined,
+        width: resource.width ?? undefined,
+        height: resource.height ?? undefined,
+        depth: resource.depth ?? undefined
       }
     }
 
@@ -304,7 +285,7 @@ export const patchSingleProjectResourcesJson = async (app: Application, id: stri
       const filePath = path.join(appRootPath.path, 'packages', 'projects', key)
       const dirname = path.dirname(filePath)
       fs.mkdirSync(dirname, { recursive: true })
-      fs.writeFileSync(filePath, body)
+      fs.writeFileSync(filePath, new Uint8Array(body))
     }
     return
   }
@@ -322,7 +303,10 @@ export const patchSingleProjectResourcesJson = async (app: Application, id: stri
     name: resource.name ?? undefined,
     attribution: resource.attribution ?? undefined,
     thumbnailKey: resource.thumbnailKey ?? undefined,
-    thumbnailMode: resource.thumbnailMode ?? undefined
+    thumbnailMode: resource.thumbnailMode ?? undefined,
+    width: resource.width ?? undefined,
+    height: resource.height ?? undefined,
+    depth: resource.depth ?? undefined
   }
 
   const sortedResourcesJson = Object.fromEntries(
@@ -348,7 +332,7 @@ export const patchSingleProjectResourcesJson = async (app: Application, id: stri
     const filePath = path.join(appRootPath.path, 'packages', 'projects', key)
     const dirname = path.dirname(filePath)
     fs.mkdirSync(dirname, { recursive: true })
-    fs.writeFileSync(filePath, body)
+    fs.writeFileSync(filePath, new Uint8Array(body))
   }
 }
 
@@ -389,6 +373,6 @@ export const removeProjectResourcesJson = async (app: Application, resource: Sta
     const filePath = path.join(appRootPath.path, 'packages', 'projects', key)
     const dirname = path.dirname(filePath)
     fs.mkdirSync(dirname, { recursive: true })
-    fs.writeFileSync(filePath, body)
+    fs.writeFileSync(filePath, new Uint8Array(body))
   }
 }

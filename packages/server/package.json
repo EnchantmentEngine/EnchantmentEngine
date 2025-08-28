@@ -1,7 +1,7 @@
 {
   "name": "@ir-engine/server",
   "description": "API Server for Infinite Reality Engine",
-  "version": "1.6.0",
+  "version": "1.0.3",
   "private": true,
   "homepage": "",
   "main": "dist/index.js",
@@ -27,22 +27,22 @@
     "config": "config/"
   },
   "engines": {
-    "node": ">= 18.12.0"
+    "node": ">= 22.11.0"
   },
   "scripts": {
     "check-errors": "tsc --noemit",
-    "dev": "cross-env APP_ENV=development concurrently -n server,instanceserver,mediaserver,files -c '#FF9800,#A2789C,#00908F,#F93822' \"ts-node --swc src/index.ts\" \"cd ../instanceserver && npm run dev\" \"cd ../instanceserver && npm run dev-channel\"",
-    "start": "cross-env APP_ENV=production ts-node --swc src/index.ts",
-    "dev-api-server": "ts-node --swc src/index.ts",
-    "dev-api-server-nossl": "cross-env NOSSL=true ts-node --swc src/index.ts",
-    "dev-nossl": "concurrently \"cross-env NOSSL=true ts-node --swc src/index.ts\" \"cd ../instanceserver && cross-env NOSSL=true ts-node --swc src/index.ts\"",
-    "dev-reinit-db": "cross-env FORCE_DB_REFRESH=true ts-node --swc src/index.ts",
+    "dev": "cross-env APP_ENV=development concurrently -n server,instanceserver,mediaserver,files -c '#FF9800,#A2789C,#00908F,#F93822' \"tsx src/index.ts\" \"cd ../instanceserver && npm run dev\" \"cd ../instanceserver && npm run dev-channel\"",
+    "start": "NODE_OPTIONS='--heapsnapshot-signal=SIGUSR2' cross-env APP_ENV=production tsx src/index.ts",
+    "dev-api-server": "tsx src/index.ts",
+    "dev-api-server-nossl": "cross-env NOSSL=true tsx src/index.ts",
+    "dev-nossl": "concurrently \"cross-env NOSSL=true tsx src/index.ts\" \"cd ../instanceserver && cross-env NOSSL=true tsx src/index.ts\"",
+    "dev-reinit-db": "cross-env FORCE_DB_REFRESH=true tsx src/index.ts",
     "test": "echo \"TODO: no test specified\" && exit 0",
     "validate": "npm run build && npm run test"
   },
   "types": "lib/",
   "dependencies": {
-    "@ir-engine/server-core": "^1.6.0",
+    "@ir-engine/server-core": "^1.0.3",
     "@feathersjs/koa": "5.0.5",
     "@feathersjs/transport-commons": "5.0.5",
     "app-root-path": "^3.1.0",
@@ -52,15 +52,14 @@
     "koa-send": "5.0.1",
     "koa-static": "5.0.0",
     "ps-list": "7.2.0",
-    "typescript": "5.4.5",
+    "typescript": "5.8.3",
     "uuid": "9.0.0"
   },
   "devDependencies": {
     "@types/koa-compress": "^4.0.3",
     "@types/node": "18.15.5",
     "concurrently": "7.6.0",
-    "http-server": "14.1.1",
-    "supertest": "6.3.3"
+    "http-server": "14.1.1"
   },
   "gitHead": "66449f6ffba4d32c424b16b4f0667fe0ad36562c"
 }

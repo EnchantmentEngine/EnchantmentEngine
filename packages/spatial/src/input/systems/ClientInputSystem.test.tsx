@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
@@ -33,7 +8,6 @@ import {
   Entity,
   entityExists,
   getComponent,
-  getMutableComponent,
   hasComponent,
   InputSystemGroup,
   PresentationSystemGroup,
@@ -166,7 +140,7 @@ describe('client input system reactor', () => {
   //   mockXRFrame.pose.transform.orientation.y = 0.8455
   //   mockXRFrame.pose.transform.orientation.z = 0.2454
   //   mockXRFrame.pose.transform.orientation.w = 0.2743
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(XRState).xrFrame.set(mockXRFrame as unknown as XRFrame)
   //   setComponent(entity, InputSourceComponent, { source: mockXRInputSource })
   //   setComponent(entity, XRSpaceComponent, new MockXRSpace() as XRSpace)
@@ -192,7 +166,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(XRUIState).interactionRays.set([
   //     new Ray(new Vector3(0.23, 0.65, 0.98), new Vector3(0.21, 0.43, 0.82))
   //   ])
@@ -232,7 +206,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(PhysicsState).physicsWorld.set({
   //     castRayAndGetNormal: () => {
   //       return {
@@ -273,7 +247,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   setComponent(entity, BoundingBoxComponent)
   //   setComponent(entity, InputComponent)
   //   setComponent(entity, VisibleComponent)
@@ -343,14 +317,17 @@ describe('ClientInputSystem', () => {
       const one = createEntity()
       setComponent(one, InputPointerComponent, { pointerId: 1, cameraEntity: cameraEntity })
       setComponent(one, InputSourceComponent)
+      setComponent(one, TransformComponent)
       assert.equal(hasComponent(one, XRSpaceComponent), false)
       const two = createEntity()
       setComponent(two, InputPointerComponent, { pointerId: 2, cameraEntity: cameraEntity })
       setComponent(two, InputSourceComponent)
+      setComponent(two, TransformComponent)
       assert.equal(hasComponent(two, XRSpaceComponent), false)
       const three = createEntity()
       setComponent(three, InputPointerComponent, { pointerId: 3, cameraEntity: otherCameraEntity })
       setComponent(three, InputSourceComponent)
+      setComponent(three, TransformComponent)
       assert.equal(hasComponent(three, XRSpaceComponent), false)
 
       const StaleEntities = [one, two] as Entity[]
@@ -420,13 +397,10 @@ describe('ClientInputCleanupSystem', () => {
 
       // Set the expected data
       for (const entity of EntityList) {
-        const gamepad = getMutableComponent(entity, InputSourceComponent).source.gamepad!
-        for (let id = 0; id < gamepad?.value!.axes.length; ++id) {
-          gamepad.set((value) => {
-            // @ts-ignore Ignore the readonly property typecheck
-            if (value) value.axes[id] = Initial
-            return value
-          })
+        const gamepad = getComponent(entity, InputSourceComponent).source.gamepad
+        for (let id = 0; id < gamepad!.axes.length; ++id) {
+          // @ts-expect-error
+          gamepad!.axes[id] = Initial
         }
       }
 
@@ -442,42 +416,46 @@ describe('ClientInputCleanupSystem', () => {
       }
     })
 
-    it('should not do anything if the DOM is undefined', () => {
-      const oneEntity = createEntity()
-      const twoEntity = createEntity()
-      const Initial = 42
+    /** The ClientInputSystem still clears values even if there's no DOM now */
+    // it('should not do anything if the DOM is undefined', () => {
+    //   const oneEntity = createEntity()
+    //   const twoEntity = createEntity()
+    //   const Initial = 42
 
-      // Set the initial data from the conditions
-      const EntityList = [testEntity, oneEntity, twoEntity] as Entity[]
-      for (const entity of EntityList) {
-        setComponent(entity, InputPointerComponent, { pointerId: 42, cameraEntity: createEntity() })
-        setComponent(entity, InputSourceComponent)
-      }
+    //   // Set the initial data from the conditions
+    //   const EntityList = [testEntity, oneEntity, twoEntity] as Entity[]
+    //   for (const entity of EntityList) {
+    //     setComponent(entity, InputPointerComponent, { pointerId: 42, cameraEntity: createEntity() })
+    //     setComponent(entity, InputSourceComponent)
+    //   }
 
-      // Set the expected data
-      for (const entity of EntityList) {
-        const gamepad = getMutableComponent(entity, InputSourceComponent).source.gamepad!
-        for (let id = 0; id < gamepad?.value!.axes.length; ++id) {
-          gamepad.set((value) => {
-            // @ts-ignore Ignore the readonly property typecheck
-            if (value) value.axes[id] = Initial
-            return value
-          })
-        }
-      }
+    //   // Set the expected data
+    //   for (const entity of EntityList) {
+    //     const gamepad = getComponent(entity, InputSourceComponent).source.gamepad!
+    //     gamepad.set((value) => {
+    //       if (!value) value = { axes: [0, 0, 0, 0] } as unknown as Gamepad
+    //       for (let id = 0; id < value!.axes.length; ++id) {
+    //         // @ts-ignore Ignore the readonly property typecheck
+    //         value.axes[id] = Initial
+    //       }
+    //       return value
+    //     })
+    //   }
 
-      const DOMbackup = globalThis.document
-      // @ts-ignore Force-assign undefined to the dom
-      globalThis.document = undefined
-      // Run and Check the result
-      clientInputCleanupSystemExecute()
-      for (const entity of EntityList) {
-        assert.equal(hasComponent(entity, XRSpaceComponent), false)
-        const Axes = getComponent(entity, InputSourceComponent).source.gamepad!.axes
-        for (const axis of Axes) assert.equal(axis, Initial)
-      }
-      // Restore the DOM  (note: Other tests will break if this is not restored)
-      globalThis.document = DOMbackup
-    })
+    //   const DOMbackup = globalThis.document
+    //   // @ts-ignore Force-assign undefined to the dom
+    //   globalThis.document = undefined
+    //   // Run and Check the result
+    //   clientInputCleanupSystemExecute()
+    //   for (const entity of EntityList) {
+    //     assert.equal(hasComponent(entity, XRSpaceComponent), false)
+    //     const Axes = getComponent(entity, InputSourceComponent).source.gamepad!.axes
+
+    //     // The system still clears input if there's not document
+    //     for (const axis of Axes) assert.equal(axis, Initial)
+    //   }
+    //   // Restore the DOM  (note: Other tests will break if this is not restored)
+    //   globalThis.document = DOMbackup
+    // })
   })
 })

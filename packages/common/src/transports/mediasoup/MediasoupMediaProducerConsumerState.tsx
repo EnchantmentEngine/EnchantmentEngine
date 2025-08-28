@@ -1,34 +1,13 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 
 import { ChannelID } from '@ir-engine/common/src/schema.type.module'
 import {
+  MediaChannelType,
   NO_PROXY_STEALTH,
+  Network,
+  NetworkActions,
   NetworkID,
+  NetworkState,
   PeerID,
   Validator,
   defineAction,
@@ -44,7 +23,6 @@ import {
   useMutableState
 } from '@ir-engine/hyperflux'
 
-import { DataChannelType, MediaTagType, Network, NetworkActions, NetworkState } from '@ir-engine/network'
 import { MediaStreamAppData } from '../../interfaces/NetworkInterfaces'
 import {
   MediasoupTransportActions,
@@ -75,7 +53,7 @@ export class MediasoupMediaProducerActions {
     producerID: matches.string,
     transportID: matches.string,
     peerID: matchesPeerID,
-    mediaTag: matches.string as Validator<unknown, DataChannelType>,
+    mediaTag: matches.string as Validator<unknown, MediaChannelType>,
     channelID: matches.string as Validator<unknown, ChannelID>,
     $cache: true
   })
@@ -101,7 +79,7 @@ export class MediasoupMediaConsumerActions {
   static requestConsumer = defineAction({
     type: 'ee.engine.network.mediasoup.MEDIA_REQUEST_CONSUMER',
     peerID: matchesPeerID,
-    mediaTag: matches.string as Validator<unknown, DataChannelType>,
+    mediaTag: matches.string as Validator<unknown, MediaChannelType>,
     rtpCapabilities: matches.object,
     channelID: matches.string as Validator<unknown, ChannelID>
   })
@@ -111,7 +89,7 @@ export class MediasoupMediaConsumerActions {
     consumerID: matches.string,
     transportID: matches.string,
     peerID: matchesPeerID,
-    mediaTag: matches.string as Validator<unknown, DataChannelType>,
+    mediaTag: matches.string as Validator<unknown, MediaChannelType>,
     channelID: matches.string as Validator<unknown, ChannelID>,
     producerID: matches.string,
     kind: matches.literals('audio', 'video').optional(),
@@ -151,7 +129,7 @@ export const MediasoupMediaProducersConsumersObjectsState = defineState({
 export type MediasoupMediaProducerType = {
   producerID: string
   peerID: PeerID
-  mediaTag: DataChannelType
+  mediaTag: MediaChannelType
   transportID: string
   channelID: ChannelID
   paused?: boolean
@@ -161,7 +139,7 @@ export type MediasoupMediaProducerType = {
 export type MediasoupMediaConsumerType = {
   consumerID: string
   peerID: PeerID
-  mediaTag: DataChannelType
+  mediaTag: MediaChannelType
   transportID: string
   channelID: ChannelID
   producerID: string
@@ -187,7 +165,7 @@ export const MediasoupMediaProducerConsumerState = defineState({
     }
   >,
 
-  getProducerByPeerIdAndMediaTag: (networkID: NetworkID, peerID: string, mediaTag: MediaTagType) => {
+  getProducerByPeerIdAndMediaTag: (networkID: NetworkID, peerID: string, mediaTag: MediaChannelType) => {
     const state = getState(MediasoupMediaProducerConsumerState)[networkID]
     if (!state) return
 
@@ -197,7 +175,7 @@ export const MediasoupMediaProducerConsumerState = defineState({
     return getState(MediasoupMediaProducersConsumersObjectsState).producers[producer.producerID]
   },
 
-  getConsumerByPeerIdAndMediaTag: (networkID: NetworkID, peerID: string, tag: MediaTagType) => {
+  getConsumerByPeerIdAndMediaTag: (networkID: NetworkID, peerID: string, tag: MediaChannelType) => {
     const state = getState(MediasoupMediaProducerConsumerState)[networkID]
     if (!state) return
 

@@ -1,36 +1,11 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { createBrowserHistory, History } from 'history'
 import i18n from 'i18next'
 import React, { lazy, useEffect, useLayoutEffect } from 'react'
-import { BrowserRouterProps as NativeBrowserRouterProps, Router, useSearchParams } from 'react-router-dom'
+import { BrowserRouterProps as NativeBrowserRouterProps, Router } from 'react-router-dom'
 
 import { API } from '@ir-engine/common'
 import { routePath, RouteType } from '@ir-engine/common/src/schema.type.module'
-import { defineState, getMutableState, NO_PROXY, startReactor, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
 import { loadRoute } from '@ir-engine/projects/loadRoute'
 
 type SearchParamsType = { [key: string]: string }
@@ -66,69 +41,6 @@ export const RouterState = defineState({
     }
   }
 })
-
-export const SearchParamState = defineState({
-  name: 'SearchParamState',
-  initial: {} as SearchParamsType,
-  set: (key: string, value: string) => {
-    getMutableState(SearchParamState)[key].set(value)
-  }
-})
-
-/** This hook wraps useSearchParams in a hyperflux state such that we can reactively change params in reactors */
-export const useSearchParamState = () => {
-  const [search, setSearchParams] = useSearchParams()
-
-  useEffect(() => {
-    const searchParams = Object.fromEntries(search)
-    getMutableState(SearchParamState).set(searchParams)
-  }, [search])
-
-  /** Create a nested reactor to react to state changes */
-  useEffect(() => {
-    const SubReactor = (props: { keyID: string }) => {
-      const value = useHookstate(getMutableState(SearchParamState)[props.keyID]).value
-
-      useEffect(() => {
-        const location = new URL(window.location as any)
-        const params = new URLSearchParams(location.search)
-        const current = Object.fromEntries([...params.entries()])
-
-        if (current[props.keyID] === value) return
-
-        setSearchParams({ ...current, [props.keyID]: value })
-      }, [value])
-
-      useEffect(() => {
-        const location = new URL(window.location as any)
-        const params = new URLSearchParams(location.search)
-
-        return () => {
-          const current = Object.fromEntries([...params.entries()])
-          delete current[props.keyID]
-          setSearchParams(current)
-        }
-      }, [])
-
-      return null
-    }
-
-    const reactor = startReactor(() => {
-      const keys = useHookstate(getMutableState(SearchParamState)).keys
-      return (
-        <>
-          {keys.map((key) => (
-            <SubReactor keyID={key} key={key} />
-          ))}
-        </>
-      )
-    })
-
-    return () => {
-      reactor.stop()
-    }
-  }, [])
-}
 
 export type CustomRoute = {
   route: string

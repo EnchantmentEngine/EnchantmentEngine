@@ -1,33 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import AddEditProjectModal from '@ir-engine/client-core/src/admin/components/project/AddEditProjectModal'
 import ManageUserPermissionModal from '@ir-engine/client-core/src/admin/components/project/ManageUserPermissionModal'
 import { ProjectUpdateState } from '@ir-engine/client-core/src/admin/services/ProjectUpdateService'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { ProjectService } from '@ir-engine/client-core/src/common/services/ProjectService'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { useFind } from '@ir-engine/common'
@@ -39,9 +14,9 @@ import {
   projectPath,
   scopePath
 } from '@ir-engine/common/src/schema.type.module'
-import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
 import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
@@ -51,8 +26,6 @@ import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  MdArrowDropDown,
-  MdArrowRight,
   MdDownload,
   MdDownloadDone,
   MdFilterList,
@@ -173,7 +146,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
 
   const adminScopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'admin:admin' as ScopeType
     }
   })
@@ -182,7 +155,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
 
   const editorScopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'projects:write' as ScopeType
     }
   })
@@ -278,7 +251,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
     }).catch((err) => {
       NotificationService.dispatchNotify(err.message, { variant: 'error' })
     })
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
   const renderProjectList = (projects: ProjectType[], areInstalledProjects?: boolean) => {
@@ -305,7 +278,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
                 <Text component="h3">{clipText(project.name.replace(/-/g, ' '), 25, 'start')}</Text>
               </Tooltip>
 
-              {project.name !== 'ir-engine/default-project' && (
+              {project.name !== 'enchantmentengine/default-project' && (
                 <button
                   className="absolute right-2"
                   onClick={(e: any) => {
@@ -389,7 +362,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
 
           <Button
             onClick={() => {
-              PopoverState.showPopupover(<AddEditProjectModal onSubmit={handleProjectUpdate} update={false} />)
+              ModalState.openModal(<AddEditProjectModal onSubmit={handleProjectUpdate} update={false} />)
             }}
             variant="tertiary"
           >
@@ -424,37 +397,19 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
       </ContextMenu>
 
       {installedProjects.length > 0 && (
-        <Accordion
-          title={`${t('editor.projects.installed')} (${installedProjects.length})`}
-          expandIcon={<MdArrowRight className="text-2xl" />}
-          shrinkIcon={<MdArrowDropDown className="text-2xl" />}
-          className="mb-3 mt-5 w-3/4"
-          open={true}
-        >
+        <Accordion title={`${t('editor.projects.installed')} (${installedProjects.length})`} open={true}>
           {renderProjectList(installedProjects, true)}
         </Accordion>
       )}
 
       {officialProjects.length > 0 && (
-        <Accordion
-          title={`${t('editor.projects.official')} (${officialProjects.length})`}
-          expandIcon={<MdArrowRight className="text-2xl" />}
-          shrinkIcon={<MdArrowDropDown className="text-2xl" />}
-          className="mb-3 w-3/4"
-          open={true}
-        >
+        <Accordion title={`${t('editor.projects.official')} (${officialProjects.length})`} open={true}>
           {renderProjectList(officialProjects)}
         </Accordion>
       )}
 
       {communityProjects.length > 0 && (
-        <Accordion
-          title={`${t('editor.projects.community')} (${communityProjects.length})`}
-          expandIcon={<MdArrowRight className="text-2xl" />}
-          shrinkIcon={<MdArrowDropDown className="text-2xl" />}
-          className="w-3/4"
-          open={true}
-        >
+        <Accordion title={`${t('editor.projects.community')} (${communityProjects.length})`} open={true}>
           {renderProjectList(communityProjects)}
         </Accordion>
       )}
@@ -471,7 +426,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
               onClick={() => {
                 if (projectContextState.project) {
                   setProjectContextState({ event: undefined, project: null })
-                  PopoverState.showPopupover(<ManageUserPermissionModal project={projectContextState.project} />)
+                  ModalState.openModal(<ManageUserPermissionModal project={projectContextState.project} />)
                 }
               }}
               variant="tertiary"
@@ -490,7 +445,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
                 onClick={() => {
                   if (projectContextState.project) {
                     setProjectContextState({ event: undefined, project: null })
-                    PopoverState.showPopupover(<AddEditProjectModal onSubmit={handleProjectUpdate} update={true} />)
+                    ModalState.openModal(<AddEditProjectModal onSubmit={handleProjectUpdate} update={true} />)
                   }
                 }}
                 variant="tertiary"
@@ -509,7 +464,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
                 onClick={() => {
                   if (projectContextState.project) {
                     setProjectContextState({ event: undefined, project: null })
-                    PopoverState.showPopupover(<AddEditProjectModal onSubmit={handleProjectUpdate} update={true} />)
+                    ModalState.openModal(<AddEditProjectModal onSubmit={handleProjectUpdate} update={true} />)
                   }
                 }}
                 variant="tertiary"
@@ -528,7 +483,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
                 onClick={() => {
                   if (projectContextState.project) {
                     setProjectContextState({ event: undefined, project: null })
-                    PopoverState.showPopupover(<AddEditProjectModal onSubmit={handleProjectUpdate} update={true} />)
+                    ModalState.openModal(<AddEditProjectModal onSubmit={handleProjectUpdate} update={true} />)
                   }
                 }}
                 variant="tertiary"
@@ -554,7 +509,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
             <Button
               onClick={() => {
                 setProjectContextState({ event: undefined, project: null })
-                PopoverState.showPopupover(<AddEditProjectModal onSubmit={handleProjectUpdate} update={false} />)
+                ModalState.openModal(<AddEditProjectModal onSubmit={handleProjectUpdate} update={false} />)
               }}
               variant="tertiary"
               fullWidth

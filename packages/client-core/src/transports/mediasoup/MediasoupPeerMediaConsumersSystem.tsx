@@ -1,54 +1,36 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 
-import { clientSettingPath, InstanceID } from '@ir-engine/common/src/schema.type.module'
+import { useFind } from '@ir-engine/common'
+import { engineSettingPath, InstanceID } from '@ir-engine/common/src/schema.type.module'
 import {
   MediasoupMediaProducerConsumerState,
   MediasoupMediaProducersConsumersObjectsState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState, getState, PeerID, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import {
+  getMutableState,
+  getState,
+  HyperFlux,
   NetworkState,
-  screenshareAudioDataChannelType,
-  screenshareVideoDataChannelType,
-  VideoConstants,
-  webcamAudioDataChannelType
-} from '@ir-engine/network'
+  PeerID,
+  useHookstate,
+  useMutableState,
+  VideoConstants
+} from '@ir-engine/hyperflux'
 
-import { useFind } from '@ir-engine/common'
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
 import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
-import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
 import {
   createPeerMediaChannels,
-  PeerMediaChannelState,
-  removePeerMediaChannels
-} from '../../media/PeerMediaChannelState'
+  MediaChannelState,
+  removePeerMediaChannels,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  webcamAudioMediaChannelType
+} from '@ir-engine/hyperflux'
+
+import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
+import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
 import { ConsumerExtension, ProducerExtension } from './MediasoupClientFunctions'
 
 const MAX_RES_TO_USE_TOP_LAYER = 540 // If under 540p, use the topmost video layer, otherwise use layer n-1
@@ -71,11 +53,9 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
   const peerID = consumerState.peerID.value
   const mediaTag = consumerState.mediaTag.value
 
-  const type =
-    mediaTag === screenshareAudioDataChannelType || mediaTag === screenshareVideoDataChannelType ? 'screen' : 'cam'
-  const isAudio = mediaTag === webcamAudioDataChannelType || mediaTag === screenshareAudioDataChannelType
+  const isAudio = mediaTag === webcamAudioMediaChannelType || mediaTag === screenshareAudioMediaChannelType
 
-  const peerMediaChannelState = useMutableState(PeerMediaChannelState)[peerID]?.[type]
+  const peerMediaChannelState = useMutableState(MediaChannelState)[peerID][mediaTag]
 
   const consumer = useHookstate(
     getMutableState(MediasoupMediaProducersConsumersObjectsState).consumers[props.consumerID]
@@ -86,48 +66,43 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
 
   useEffect(() => {
     if (!consumer) return
-    const peerMediaChannelState = getMutableState(PeerMediaChannelState)[peerID]?.[type]
+    const peerMediaChannelState = getMutableState(MediaChannelState)[peerID]?.[mediaTag]
     if (!peerMediaChannelState) return
     if (isAudio) {
       const newMediaStream = new MediaStream([consumer.track.clone()])
-      peerMediaChannelState.audioMediaStream.set(newMediaStream)
+      peerMediaChannelState.stream.set(newMediaStream)
       return () => {
         newMediaStream.getTracks().forEach((track) => track.stop())
-        peerMediaChannelState.audioMediaStream.set(null)
+        peerMediaChannelState.stream.set(null)
       }
     } else {
       const newMediaStream = new MediaStream([consumer.track.clone()])
-      peerMediaChannelState.videoMediaStream.set(newMediaStream)
+      peerMediaChannelState.stream.set(newMediaStream)
       return () => {
         newMediaStream.getTracks().forEach((track) => track.stop())
-        peerMediaChannelState.videoMediaStream.set(null)
+        peerMediaChannelState.stream.set(null)
       }
     }
   }, [consumer])
 
   useEffect(() => {
     if (!consumer) return
-    const peerMediaChannelState = getMutableState(PeerMediaChannelState)[peerID]?.[type]
+    const peerMediaChannelState = getMutableState(MediaChannelState)[peerID]?.[mediaTag]
     if (!peerMediaChannelState) return
-    const paused =
-      (isAudio ? peerMediaChannelState.audioStreamPaused.value : peerMediaChannelState.videoStreamPaused.value) ||
-      !!consumerState.producerPaused.value
+    const paused = peerMediaChannelState.stream.value || !!consumerState.producerPaused.value
     const network = getState(NetworkState).networks[props.networkID]
     if (paused) {
       MediasoupMediaProducerConsumerState.pauseConsumer(network, consumer.id)
     } else {
       MediasoupMediaProducerConsumerState.resumeConsumer(network, consumer.id)
     }
-  }, [
-    isAudio ? peerMediaChannelState.audioStreamPaused.value : peerMediaChannelState.videoStreamPaused.value,
-    consumerState.producerPaused?.value
-  ])
+  }, [peerMediaChannelState.stream.value, consumerState.producerPaused?.value])
 
   // useEffect(() => {
   //   const globalMute = !!producerState.globalMute?.value
   //   const paused = !!producerState.paused?.value
 
-  //   const peerMediaChannelState = getMutableState(PeerMediaChannelState)[peerID]?.[type]
+  //   const peerMediaChannelState = getMutableState(MediaChannelState)[peerID]?.[type]
   //   if (!peerMediaChannelState) return
 
   //   if (isAudio) {
@@ -139,15 +114,22 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
   //   }
   // }, [producerState.paused?.value])
 
-  const clientSettingQuery = useFind(clientSettingPath)
-  const clientSetting = clientSettingQuery.data[0]
+  const clientSettingQuery = useFind(engineSettingPath, {
+    query: {
+      category: 'client',
+      paginate: false
+    }
+  })
+  const clientSetting = unflattenArrayToObject(
+    clientSettingQuery.data.map((setting) => ({ key: setting.key, value: setting.value, dataType: setting.dataType }))
+  ) as ClientEngineSettingType
 
-  const isPiP = peerMediaChannelState.videoQuality.value === 'largest'
+  const isPiP = peerMediaChannelState.quality.value === 'largest'
 
   useEffect(() => {
     if (!consumer || isAudio) return
 
-    const isScreen = mediaTag === screenshareVideoDataChannelType
+    const isScreen = mediaTag === screenshareVideoMediaChannelType
 
     const mediaNetwork = NetworkState.mediaNetwork
     const encodings = consumer.rtpParameters.encodings
@@ -188,11 +170,14 @@ const PeerMedia = (props: { consumerID: string; networkID: InstanceID }) => {
 const NetworkConsumers = (props: { networkID: InstanceID }) => {
   const { networkID } = props
   const consumers = useHookstate(getMutableState(MediasoupMediaProducerConsumerState)[networkID].consumers)
+  const peerMediaChannelState = useMutableState(MediaChannelState)
   return (
     <>
-      {consumers.keys.map((consumerID: string) => (
-        <PeerMedia key={consumerID} consumerID={consumerID} networkID={networkID} />
-      ))}
+      {consumers.keys
+        .filter((c) => !!peerMediaChannelState[consumers.value[c].peerID])
+        .map((consumerID: string) => (
+          <PeerMedia key={consumerID} consumerID={consumerID} networkID={networkID} />
+        ))}
     </>
   )
 }
@@ -215,7 +200,7 @@ export const PeerMediaChannels = () => {
   useEffect(() => {
     const mediaChannelPeers = mediaNetwork?.peers?.keys?.length
       ? Array.from(mediaNetwork.peers.keys as PeerID[]).filter(
-          (peerID) => peerID !== mediaNetwork.value.hostPeerID && peerID !== Engine.instance.store.peerID
+          (peerID) => peerID !== mediaNetwork.value.hostPeerID && peerID !== HyperFlux.store.peerID
         )
       : []
     mediaPeers.set(mediaChannelPeers)

@@ -1,56 +1,39 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 
-import { Entity, EntityUUID, Static, UUIDComponent } from '@ir-engine/ecs'
+import {
+  Entity,
+  EntityID,
+  EntityTreeComponent,
+  EntityUUIDPair,
+  UUIDComponent,
+  UndefinedEntity,
+  createEntity,
+  removeEntity,
+  useEntityContext,
+  useQueryBySource
+} from '@ir-engine/ecs'
 import {
   defineComponent,
   getComponent,
-  getMutableComponent,
+  removeComponent,
   setComponent,
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useHookstate } from '@ir-engine/hyperflux'
+import { Schema, Static, useHookstate } from '@ir-engine/hyperflux'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { addOBCPlugin } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { addObjectToGroup, removeObjectFromGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { DistanceFromCameraComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
-import { EntityTreeComponent, useChildrenWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import React from 'react'
-import { InstancedMesh, Material } from 'three'
+import { InstancedMesh } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
+import { defineMaterialPlugin } from '../../material/defineMaterialPlugin'
 import { InstancingComponent } from './InstancingComponent'
 
 export type VariantLevel = {
@@ -58,42 +41,52 @@ export type VariantLevel = {
   metadata: Record<string, any>
 }
 
-export enum Heuristic {
-  DISTANCE = 'DISTANCE',
-  MANUAL = 'MANUAL',
-  DEVICE = 'DEVICE'
-}
+export const Heuristic = {
+  DISTANCE: 'DISTANCE',
+  MANUAL: 'MANUAL',
+  DEVICE: 'DEVICE'
+} as const
 
-export enum Devices {
-  DESKTOP = 'DESKTOP',
-  MOBILE = 'MOBILE',
-  XR = 'XR'
-}
+export type HeuristicType = (typeof Heuristic)[keyof typeof Heuristic]
 
-const distanceMetadataSchema = S.Object({
-  minDistance: S.Optional(S.Number()),
-  maxDistance: S.Optional(S.Number())
+export const Devices = {
+  DESKTOP: 'DESKTOP',
+  MOBILE: 'MOBILE',
+  XR: 'XR'
+} as const
+
+export type DevicesType = (typeof Devices)[keyof typeof Devices]
+
+export const distanceMetadataSchema = Schema.Object({
+  minDistance: Schema.Optional(Schema.Number()),
+  maxDistance: Schema.Optional(Schema.Number())
 })
 
-const deviceMetadataSchema = S.Object({
-  device: S.Optional(S.Enum(Devices))
+export const deviceMetadataSchema = Schema.Object({
+  device: Schema.Enum(Devices, {
+    $comment: "A string enum, ie. one of the following values: 'DESKTOP', 'MOBILE', 'XR'",
+    default: Devices.DESKTOP
+  })
 })
 
 export type VariantMetadata = Static<typeof distanceMetadataSchema> | Static<typeof deviceMetadataSchema>
 
 export const VariantComponent = defineComponent({
-  name: 'EE_variant',
+  name: 'VariantComponent',
   jsonID: 'EE_variant',
 
-  schema: S.Object({
-    levels: S.Array(
-      S.Object({
-        src: S.String(),
-        metadata: S.Union([distanceMetadataSchema, deviceMetadataSchema])
+  schema: Schema.Object({
+    levels: Schema.Array(
+      Schema.Object({
+        src: Schema.String(),
+        metadata: Schema.Union([distanceMetadataSchema, deviceMetadataSchema])
       })
     ),
-    heuristic: S.Enum(Heuristic, Heuristic.MANUAL),
-    currentLevel: S.NonSerialized(S.Number(0))
+    heuristic: Schema.Enum(Heuristic, {
+      $comment: "A string enum, ie. one of the following values: 'DISTANCE', 'MANUAL', 'DEVICE'",
+      default: Heuristic.MANUAL
+    }),
+    currentLevel: Schema.Number({ default: 0, serialized: false })
   }),
 
   setDistanceLevel: (entity: Entity) => {
@@ -106,7 +99,7 @@ export const VariantComponent = defineComponent({
       const minDistance = Math.pow(level.metadata['minDistance'], 2)
       const maxDistance = Math.pow(level.metadata['maxDistance'], 2)
       if (minDistance <= distance && distance <= maxDistance) {
-        getMutableComponent(entity, VariantComponent).currentLevel.set(i)
+        setComponent(entity, VariantComponent, { currentLevel: i })
         break
       }
     }
@@ -115,42 +108,61 @@ export const VariantComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const variantComponent = useComponent(entity, VariantComponent)
-
     const instancingComponent = useOptionalComponent(entity, InstancingComponent)
+    const childEntity = useHookstate(UndefinedEntity)
+
+    useEffect(() => {
+      if (instancingComponent) return
+      const _childEntity = createEntity()
+      setComponent(_childEntity, UUIDComponent, {
+        entitySourceID: UUIDComponent.getAsSourceID(entity),
+        entityID: 'variant-child' as EntityID
+      })
+      setComponent(_childEntity, NameComponent, 'Variant Child w/ GLTFComponent')
+      setComponent(_childEntity, TransformComponent)
+      setComponent(_childEntity, EntityTreeComponent, { parentEntity: entity })
+      setComponent(_childEntity, VisibleComponent)
+      setComponent(_childEntity, GLTFComponent, { src: '' })
+      childEntity.set(_childEntity)
+
+      return () => {
+        childEntity.set(UndefinedEntity)
+        removeEntity(_childEntity)
+      }
+    }, [instancingComponent])
 
     useEffect(() => {
       if (!variantComponent.levels.length) return
 
-      const heuristic = variantComponent.heuristic.value
+      const heuristic = variantComponent.heuristic
       if (heuristic === Heuristic.DEVICE) {
         const targetDevice = isMobile || isMobileXRHeadset ? Devices.MOBILE : Devices.DESKTOP
-        const levelIndex = variantComponent.levels.value.findIndex((level) => level.metadata['device'] === targetDevice)
+        const levelIndex = variantComponent.levels.findIndex((level) => level.metadata['device'] === targetDevice)
         if (levelIndex < 0) {
           console.warn('VariantComponent: No asset found for target device')
           return
         }
-        variantComponent.currentLevel.set(levelIndex)
+        setComponent(entity, VariantComponent, { currentLevel: levelIndex })
       } else if (heuristic === Heuristic.DISTANCE) {
         setComponent(entity, DistanceFromCameraComponent)
         VariantComponent.setDistanceLevel(entity)
       }
-    }, [variantComponent.heuristic.value, variantComponent.levels])
+    }, [variantComponent.heuristic, variantComponent.levels])
 
     useEffect(() => {
-      if (!variantComponent.levels.length || instancingComponent) return
+      if (!variantComponent.levels.length || !childEntity.value) return
 
-      const currentLevel = variantComponent.currentLevel.value
-      const src = variantComponent.levels[currentLevel].src.value
+      const currentLevel = variantComponent.currentLevel
+      const src = variantComponent.levels[currentLevel].src
       if (!src) return
-
-      setComponent(entity, GLTFComponent, { src: src })
-    }, [instancingComponent, variantComponent.currentLevel, variantComponent.levels])
+      setComponent(childEntity.value, GLTFComponent, { src: src })
+    }, [childEntity, variantComponent.currentLevel, variantComponent.levels])
 
     useEffect(() => {
       const levels = variantComponent.levels.length
       for (let level = 0; level < levels; level++) {
         setCallback(entity, `variantLevel${level}`, () => {
-          variantComponent.currentLevel.set(level)
+          setComponent(entity, VariantComponent, { currentLevel: level })
         })
       }
       return () => {
@@ -163,6 +175,34 @@ export const VariantComponent = defineComponent({
     if (!instancingComponent) return null
 
     return <InstancingVariantReactor entity={entity} />
+  }
+})
+
+export const InstanceVariantMaterialPluginComponent = defineMaterialPlugin({
+  name: 'InstanceVariantMaterialPluginComponent',
+  jsonID: 'IR_instance_variant_material',
+  uniforms: Schema.Object({
+    minDistance: Schema.Number(),
+    maxDistance: Schema.Number()
+  }),
+  onApply: (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      'uniform float opacity;',
+      `uniform float opacity;
+uniform float maxDistance;
+uniform float minDistance;`
+    )
+
+    // Calculate the camera distance from the geometry
+    // Discard fragments outside the minDistance and maxDistance range
+    shader.fragmentShader = shader.fragmentShader.replace(
+      'void main() {',
+      `void main() {
+  float cameraDistance = length(vViewPosition);
+  if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
+    discard;
+  }`
+    )
   }
 })
 
@@ -181,15 +221,14 @@ const InstancingVariantReactor = (props: { entity: Entity }) => {
 const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) => {
   const variantComponent = useComponent(props.entity, VariantComponent)
 
-  const level = variantComponent.levels[props.level].value
+  const level = variantComponent.levels[props.level]
 
   const modelEntity = useHookstate(() => {
     const entity = createEntity()
-    setComponent(
-      entity,
-      UUIDComponent,
-      (getComponent(props.entity, UUIDComponent) + '-LOD-' + props.level) as EntityUUID
-    )
+    setComponent(entity, UUIDComponent, {
+      entitySourceID: getComponent(props.entity, UUIDComponent).entitySourceID,
+      entityID: 'LOD-' + props.level
+    } as EntityUUIDPair)
     setComponent(entity, NameComponent, getComponent(props.entity, NameComponent) + ' LOD ' + props.level)
     setComponent(entity, TransformComponent)
     setComponent(entity, EntityTreeComponent, { parentEntity: props.entity })
@@ -204,7 +243,7 @@ const VariantInstanceLoadReactor = (props: { entity: Entity; level: number }) =>
     }
   }, [])
 
-  const childMeshEntities = useChildrenWithComponents(modelEntity, [MeshComponent])
+  const childMeshEntities = useQueryBySource(modelEntity, [MeshComponent])
 
   return (
     <>
@@ -240,68 +279,78 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
     const instancedMesh =
       mesh instanceof InstancedMesh
         ? mesh
-        : new InstancedMesh(mesh.geometry, mesh.material, instancingComponent.instanceMatrix.count)
-    instancedMesh.instanceMatrix = instancingComponent.instanceMatrix
+        : new InstancedMesh(mesh.geometry.clone(), mesh.material, instancingComponent.instanceMatrix.count)
+    instancedMesh.instanceMatrix.copy(instancingComponent.instanceMatrix)
     instancedMesh.frustumCulled = false
 
-    //add distance culling shader plugin
-    const materials: Material[] = Array.isArray(instancedMesh.material)
-      ? instancedMesh.material
-      : [instancedMesh.material]
-    for (const material of materials) {
-      addOBCPlugin(material, {
-        id: 'lod-culling',
-        priority: 1,
-        compile: (shader, renderer) => {
-          shader.fragmentShader = shader.fragmentShader.replace(
-            'uniform float opacity;',
-            `uniform float opacity;
-uniform float maxDistance;
-uniform float minDistance;`
-          )
-
-          // Calculate the camera distance from the geometry
-          // Discard fragments outside the minDistance and maxDistance range
-          shader.fragmentShader = shader.fragmentShader.replace(
-            'void main() {',
-            `void main() {
-  float cameraDistance = length(vViewPosition);
-  if (cameraDistance <= minDistance || cameraDistance >= maxDistance) {
-    discard;
-  }`
-          )
-          material.shader.uniforms.minDistance = { value: minDistance }
-          material.shader.uniforms.maxDistance = { value: maxDistance }
-        }
-      })
-    }
-
-    /** @todo rather than this, update the mesh component */
-    removeObjectFromGroup(props.meshEntity, mesh)
-    addObjectToGroup(props.meshEntity, instancedMesh)
+    removeComponent(props.meshEntity, MeshComponent)
+    setComponent(props.meshEntity, MeshComponent, instancedMesh)
   }, [])
 
-  const level = useComponent(props.variantEntity, VariantComponent).levels[props.level].value
+  const materialEntities = useComponent(props.meshEntity, MaterialInstanceComponent).entities
+  const level = useComponent(props.variantEntity, VariantComponent).levels[props.level]
 
   useEffect(() => {
-    const mesh = getComponent(props.meshEntity, MeshComponent)
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-
-    for (const material of materials) {
-      if (!material.shader) continue
-      material.shader.uniforms.minDistance.value = level.metadata['minDistance']
+    const entities = [...materialEntities]
+    for (const materialEntity of entities) {
+      setComponent(materialEntity, InstanceVariantMaterialPluginComponent)
     }
-  }, [level.metadata['minDistance']])
+    return () => {
+      for (const materialEntity of entities) {
+        removeComponent(materialEntity, InstanceVariantMaterialPluginComponent)
+      }
+    }
+  }, [materialEntities])
 
   useEffect(() => {
-    const mesh = getComponent(props.meshEntity, MeshComponent)
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-
-    for (const material of materials) {
-      if (!material.shader) continue
-      material.shader.uniforms.maxDistance.value = level.metadata['maxDistance']
+    const minDistance = level.metadata['minDistance']
+    const maxDistance = level.metadata['maxDistance']
+    for (const materialEntity of materialEntities) {
+      setComponent(materialEntity, InstanceVariantMaterialPluginComponent, {
+        minDistance: minDistance,
+        maxDistance: maxDistance
+      })
     }
-  }, [level.metadata['minDistance']])
+  }, [materialEntities, level.metadata['minDistance'], level.metadata['maxDistance']])
 
   return null
 }
+
+/** @todo needs to be re-implemented */
+// const buildBudgetVariantMetadata = (
+//   level: VariantLevel,
+//   signal: AbortSignal,
+//   callback: (maxTextureSize: number, vertexCount: number) => void
+// ) => {
+//   const src = level.src
+//   const resources = getState(ResourceState).resources
+//   if (resources[src] && resources[src].status == ResourceStatus.Loaded) {
+//     const metadata = getState(ResourceState).resources[src].metadata as { verts: number; textureWidths: number[] }
+//     const maxTextureSize = metadata.textureWidths ? Math.max(...metadata.textureWidths) : 0
+//     const verts = metadata.verts
+//     callback(maxTextureSize, verts)
+//     return
+//   }
+
+//   loadResource(
+//     src,
+//     ResourceType.GLTF,
+//     UndefinedEntity,
+//     () => {
+//       const metadata = getState(ResourceState).resources[src].metadata as { verts: number; textureWidths: number[] }
+//       const maxTextureSize = metadata.textureWidths ? Math.max(...metadata.textureWidths) : 0
+//       const verts = metadata.verts
+//       callback(maxTextureSize, verts)
+//       ResourceState.unload(src, UndefinedEntity)
+//     },
+//     () => {},
+//     (error) => {
+//       console.warn(
+//         `VariantNodeEditor:buildBudgetVariantMetadata: error loading ${src} to build variant metadata`,
+//         error
+//       )
+//       callback(0, 0)
+//     },
+//     signal
+//   )
+// }

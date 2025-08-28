@@ -1,41 +1,14 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Ethereal Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Ethereal Engine team.
-
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2023
-Ethereal Engine. All Rights Reserved.
-*/
 import { mockSpatialEngine } from '../../../tests/util/mockSpatialEngine'
 
 import {
-  Engine,
   Entity,
-  EntityUUID,
+  EntityTreeComponent,
   SystemDefinitions,
-  UUIDComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
@@ -43,16 +16,18 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getMutableState, getState } from '@ir-engine/hyperflux'
+import { act, render } from '@testing-library/react'
 import assert from 'assert'
-import { BoxGeometry, MathUtils, Mesh } from 'three'
+import { OutlineEffect } from 'postprocessing'
+import { BoxGeometry, Mesh } from 'three'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
-import { EngineState } from '../../EngineState'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
+import { NameComponent } from '../../common/NameComponent'
 import { destroySpatialEngine, destroySpatialViewer } from '../../initializeEngine'
-import { EntityTreeComponent } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../RendererModule'
 import { RendererState } from '../RendererState'
-import { RendererComponent, WebGLRendererSystem } from '../WebGLRendererSystem'
-import { GroupComponent, addObjectToGroup } from './GroupComponent'
+import { WebGLRendererSystem } from '../WebGLRendererSystem'
+import { RendererComponent } from '../components/RendererComponent'
 import { HighlightComponent, HighlightSystem } from './HighlightComponent'
 import { MeshComponent } from './MeshComponent'
 import { PostProcessingComponent } from './PostProcessingComponent'
@@ -70,7 +45,7 @@ describe('HighlightComponent', () => {
 describe('HighlightSystem', () => {
   describe('IDs', () => {
     it('should initialize the HighlightSystem.uuid field with the expected value', () => {
-      assert.equal(SystemDefinitions.get(HighlightSystem)!.uuid, 'HighlightSystem')
+      assert.equal(SystemDefinitions.get(HighlightSystem)!.uuid, 'ir.spatial.render.HighlightSystem')
     })
   }) //:: IDs
 
@@ -99,9 +74,8 @@ describe('HighlightSystem', () => {
       const result = createEntity()
       setComponent(result, HighlightComponent)
       setComponent(result, VisibleComponent)
+      setComponent(result, NameComponent, name)
       setComponent(result, MeshComponent, new Mesh(new BoxGeometry()))
-      getMutableComponent(result, MeshComponent).name.set(name)
-      setComponent(result, GroupComponent)
       setComponent(result, EntityTreeComponent)
       return {
         id: result,
@@ -109,39 +83,45 @@ describe('HighlightSystem', () => {
       }
     }
 
-    it('should set the list of objects of every entity that has a MeshComponent, a GroupComponent and a VisibleComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list', () => {
+    it('should set the list of objects of every entity that has a MeshComponent, a ObjectComponent and a VisibleComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list', async () => {
       mockSpatialEngine()
       const entity1 = createOutlineEntity('entity1')
       const entity2 = createOutlineEntity('entity2')
       const entity3 = createOutlineEntity('entity3')
+      await act(() => render(null))
       const Expected = [entity1.name, entity2.name, entity3.name]
       // Get the system definition
       const highlightSystemExecute = SystemDefinitions.get(HighlightSystem)!.execute
       // Run and Check the result
       highlightSystemExecute()
-      const result = getComponent(Engine.instance.viewerEntity, RendererComponent).effectComposer?.OutlineEffect
-        .selection
+      const result = (
+        getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)?.effectInstances
+          ?.OutlineEffect as OutlineEffect
+      ).selection
       const list = [...result!.values()]
       list.forEach((value, _) => assert.equal(Expected.includes(value.name), true))
     })
 
-    it('should not do anything if the Engine.instance.viewerEntity does not have a RendererComponent', () => {
+    it('should not do anything if the getState(ReferenceSpaceState).viewerEntity does not have a RendererComponent', async () => {
       const entity1 = createOutlineEntity('entity1')
       const entity2 = createOutlineEntity('entity2')
       const entity3 = createOutlineEntity('entity3')
+      await act(() => render(null))
       const Expected = [entity1.name, entity2.name, entity3.name]
       // Sanity check before running
-      assert.equal(hasComponent(getState(EngineState).viewerEntity, RendererComponent), false)
+      assert.equal(hasComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent), false)
       // Get the system definition
       const highlightSystemExecute = SystemDefinitions.get(HighlightSystem)!.execute
       // Run and Check the result
       highlightSystemExecute()
-      const result = getOptionalComponent(getState(EngineState).viewerEntity, RendererComponent)?.effectComposer
-        ?.OutlineEffect.selection
+      const result = (
+        getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)?.effectInstances
+          ?.OutlineEffect as OutlineEffect
+      )?.selection
       assert.equal(result, undefined)
     })
 
-    it("should not add any child of the query [HighlightComponent, VisibleComponent] that doesn't have a MeshComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list", () => {
+    it("should not add any child of the query [HighlightComponent, MeshComponent, VisibleComponent] that doesn't have a MeshComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list", async () => {
       mockSpatialEngine()
 
       const queryEntity = createEntity()
@@ -150,9 +130,9 @@ describe('HighlightSystem', () => {
       setComponent(queryEntity, VisibleComponent)
       setComponent(queryEntity, TransformComponent)
       setComponent(queryEntity, MeshComponent, mesh)
-      addObjectToGroup(queryEntity, mesh)
       const notQueryEntity1 = createOutlineEntity('notQueryEntity1')
       const notQueryEntity2 = createOutlineEntity('notQueryEntity2')
+      await act(() => render(null))
       setComponent(notQueryEntity1.id, EntityTreeComponent, { parentEntity: queryEntity })
       setComponent(notQueryEntity2.id, EntityTreeComponent, { parentEntity: queryEntity })
       removeComponent(notQueryEntity1.id, MeshComponent)
@@ -162,15 +142,17 @@ describe('HighlightSystem', () => {
       const highlightSystemExecute = SystemDefinitions.get(HighlightSystem)!.execute
       // Run and Check the result
       highlightSystemExecute()
-      const result = getOptionalComponent(getState(EngineState).viewerEntity, RendererComponent)?.effectComposer
-        ?.OutlineEffect.selection
+      const result = (
+        getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)?.effectInstances
+          ?.OutlineEffect as OutlineEffect
+      )?.selection
       for (const obj of result!) {
         assert.notEqual(obj.entity, notQueryEntity1)
         assert.notEqual(obj.entity, notQueryEntity2)
       }
     })
 
-    it("should not add any child of the query [HighlightComponent, VisibleComponent] that doesn't have a GroupComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list", () => {
+    it("should not add any child of the query [HighlightComponent, MeshComponent, VisibleComponent] that doesn't have a ObjectComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list", async () => {
       mockSpatialEngine()
 
       const queryEntity = createEntity()
@@ -179,27 +161,30 @@ describe('HighlightSystem', () => {
       setComponent(queryEntity, VisibleComponent)
       setComponent(queryEntity, TransformComponent)
       setComponent(queryEntity, MeshComponent, mesh)
-      addObjectToGroup(queryEntity, mesh)
       const notQueryEntity1 = createOutlineEntity('notQueryEntity1')
       const notQueryEntity2 = createOutlineEntity('notQueryEntity2')
       setComponent(notQueryEntity1.id, EntityTreeComponent, { parentEntity: queryEntity })
       setComponent(notQueryEntity2.id, EntityTreeComponent, { parentEntity: queryEntity })
-      removeComponent(notQueryEntity1.id, GroupComponent)
-      removeComponent(notQueryEntity2.id, GroupComponent)
+      removeComponent(notQueryEntity1.id, MeshComponent)
+      removeComponent(notQueryEntity2.id, MeshComponent)
+
+      await act(() => render(null))
 
       // Get the system definition
       const highlightSystemExecute = SystemDefinitions.get(HighlightSystem)!.execute
       // Run and Check the result
       highlightSystemExecute()
-      const result = getOptionalComponent(getState(EngineState).viewerEntity, RendererComponent)?.effectComposer
-        ?.OutlineEffect.selection
+      const result = (
+        getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)?.effectInstances
+          ?.OutlineEffect as OutlineEffect
+      )?.selection
       for (const obj of result!) {
         assert.notEqual(obj.entity, notQueryEntity1)
         assert.notEqual(obj.entity, notQueryEntity2)
       }
     })
 
-    it("should not add any child of the query [HighlightComponent, VisibleComponent] that doesn't have a VisibleComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list", () => {
+    it("should not add any child of the query [HighlightComponent, MeshComponent, VisibleComponent] that doesn't have a VisibleComponent to the rendererComponent.effectComposer?.OutlineEffect?.selection list", async () => {
       mockSpatialEngine()
 
       const queryEntity = createEntity()
@@ -208,7 +193,6 @@ describe('HighlightSystem', () => {
       setComponent(queryEntity, VisibleComponent)
       setComponent(queryEntity, TransformComponent)
       setComponent(queryEntity, MeshComponent, mesh)
-      addObjectToGroup(queryEntity, mesh)
       const notQueryEntity1 = createOutlineEntity('notQueryEntity1')
       const notQueryEntity2 = createOutlineEntity('notQueryEntity2')
       setComponent(notQueryEntity1.id, EntityTreeComponent, { parentEntity: queryEntity })
@@ -216,12 +200,16 @@ describe('HighlightSystem', () => {
       removeComponent(notQueryEntity1.id, VisibleComponent)
       removeComponent(notQueryEntity2.id, VisibleComponent)
 
+      await act(() => render(null))
+
       // Get the system definition
       const highlightSystemExecute = SystemDefinitions.get(HighlightSystem)!.execute
       // Run and Check the result
       highlightSystemExecute()
-      const result = getOptionalComponent(getState(EngineState).viewerEntity, RendererComponent)?.effectComposer
-        ?.OutlineEffect.selection
+      const result = (
+        getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)?.effectInstances
+          ?.OutlineEffect as OutlineEffect
+      )?.selection
       for (const obj of result!) {
         assert.notEqual(obj.entity, notQueryEntity1)
         assert.notEqual(obj.entity, notQueryEntity2)
@@ -236,13 +224,12 @@ describe('HighlightSystem', () => {
     beforeEach(() => {
       createEngine()
       mockSpatialEngine()
-      rootEntity = getState(EngineState).viewerEntity
+      rootEntity = getState(ReferenceSpaceState).viewerEntity
 
       testEntity = createEntity()
-      setComponent(testEntity, UUIDComponent, MathUtils.generateUUID() as EntityUUID)
       getMutableState(RendererState).usePostProcessing.set(true)
       setComponent(testEntity, SceneComponent)
-      getMutableComponent(rootEntity, RendererComponent).scenes.merge([testEntity])
+      getComponent(rootEntity, RendererComponent).scenes.push(testEntity)
       setComponent(testEntity, PostProcessingComponent, { enabled: true })
       setComponent(testEntity, EntityTreeComponent)
     })

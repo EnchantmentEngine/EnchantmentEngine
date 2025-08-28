@@ -1,33 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BadRequest, Forbidden, MethodNotAllowed, NotFound } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import { disallow, discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
-import { v4 } from 'uuid'
-
 import { isDev } from '@ir-engine/common/src/config'
 import { scopeTypePath } from '@ir-engine/common/src/schemas/scope/scope-type.schema'
 import { scopePath, ScopeType } from '@ir-engine/common/src/schemas/scope/scope.schema'
@@ -41,10 +13,12 @@ import {
 } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { UserID, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 import { checkScope as checkScopeMethod } from '@ir-engine/common/src/utils/checkScope'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
+import { disallow, discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
+import { v4 } from 'uuid'
 import checkScope from '../../hooks/check-scope'
 
 import { Paginated } from '@feathersjs/feathers'
-import { USER_ID_REGEX } from '@ir-engine/common/src/regex'
 import {
   projectPath,
   projectPermissionPath,
@@ -191,10 +165,10 @@ async function addIdentityProviderType(context: HookContext<IdentityProviderServ
     context.params!.provider &&
     !['password', 'email', 'sms'].includes((context!.actualData as IdentityProviderData).type as string)
   ) {
-    if (!USER_ID_REGEX.test(data.token as string))
+    if (!isValidId(data.token as string))
       //Ensure that guest tokens are UUIDs
       data.token = v4()
-    if (!USER_ID_REGEX.test(actualData.token as string))
+    if (!isValidId(actualData.token as string))
       //Ensure that guest tokens are UUIDs
       actualData.token = v4()
     data.type = 'guest' //Non-password/magiclink create requests must always be for guests
@@ -246,7 +220,8 @@ async function addIdentityProviderType(context: HookContext<IdentityProviderServ
 async function createNewUser(context: HookContext<IdentityProviderService>) {
   const isGuest = (context.actualData as IdentityProviderType).type === 'guest'
   context.existingUser = await context.app.service(userPath).create({
-    isGuest
+    isGuest,
+    ageVerified: isGuest ? false : true
   })
 }
 
@@ -265,7 +240,7 @@ async function addScopes(context: HookContext<IdentityProviderService>) {
 
     await context.app.service(scopePath).create(data)
 
-    await context.app.service(userPath).patch(context.existingUser!.id, { isGuest: false })
+    await context.app.service(userPath).patch(context.existingUser!.id, { isGuest: false, ageVerified: true })
   }
 }
 

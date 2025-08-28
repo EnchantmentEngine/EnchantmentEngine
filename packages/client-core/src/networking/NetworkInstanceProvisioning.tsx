@@ -1,31 +1,4 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import Groups from '@mui/icons-material/Groups'
 import React, { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
   LocationInstanceConnectionService,
@@ -37,21 +10,25 @@ import {
   MediaInstanceConnectionService,
   MediaInstanceState
 } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { ChannelService, ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
+import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
 import { InstanceID, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
-import { PresentationSystemGroup, defineSystem } from '@ir-engine/ecs'
-import { getMutableState, getState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
+import {
+  getMutableState,
+  getState,
+  MediaStreamState,
+  NetworkState,
+  none,
+  useHookstate,
+  useMutableState
+} from '@ir-engine/hyperflux'
+import { ClientEngineSettingType } from '@ir-engine/server-core/src/appconfig'
 import { FriendService } from '../social/services/FriendService'
 import { connectToInstance } from '../transports/mediasoup/MediasoupClientFunctions'
 import { PeerToPeerNetworkState } from '../transports/p2p/PeerToPeerNetworkState'
-import { PopupMenuState } from '../user/components/UserMenu/PopupMenuService'
-import FriendsMenu from '../user/components/UserMenu/menus/FriendsMenu'
-import MessagesMenu from '../user/components/UserMenu/menus/MessagesMenu'
+import { AuthState } from '../user/services/AuthService'
 
 export const WorldInstanceProvisioning = () => {
   const locationState = useMutableState(LocationState)
@@ -69,12 +46,10 @@ export const WorldInstanceProvisioning = () => {
   // Once we have the location, provision the instance server
   useEffect(() => {
     const currentLocation = locationState.currentLocation.location
-    const hasJoined = !!worldNetwork
 
     if (
       !currentLocation.id?.value ||
       isUserBanned ||
-      hasJoined ||
       locationInstances.keys.length ||
       Object.values(locationInstances).find((instance) => instance.locationId.value === currentLocation.id?.value)
     )
@@ -165,7 +140,10 @@ export const WorldInstance = ({ id }: { id: InstanceID }) => {
   useEffect(() => {
     const worldInstance = getState(LocationInstanceState).instances[id]
     if (worldInstance.p2p) {
-      return PeerToPeerNetworkState.connectToP2PInstance(id)
+      return PeerToPeerNetworkState.connectToP2PInstance({
+        id,
+        locationId: worldInstance.locationId
+      })
     } else {
       return connectToInstance(
         id,
@@ -182,10 +160,17 @@ export const WorldInstance = ({ id }: { id: InstanceID }) => {
 }
 
 export const MediaInstanceProvisioning = () => {
-  const channelState = useMutableState(ChannelState)
+  const clientSetting = useEngineSetting<ClientEngineSettingType>('client')
 
-  const worldNetworkId = NetworkState.worldNetwork?.id
-  const worldNetwork = useWorldNetwork()
+  const maxResolution =
+    clientSetting && clientSetting.data && (clientSetting.data.mediaSettings.video.maxResolution as any)
+
+  useEffect(() => {
+    if (!maxResolution) return
+    getMutableState(MediaStreamState).maxResolution.set(maxResolution)
+  }, [])
+
+  const channelState = useMutableState(ChannelState)
 
   MediaInstanceConnectionService.useAPIListeners()
   const mediaInstanceState = useHookstate(getMutableState(MediaInstanceState).instances)
@@ -193,7 +178,7 @@ export const MediaInstanceProvisioning = () => {
 
   // Once we have the world server, provision the media server
   useEffect(() => {
-    if (mediaInstanceState.keys.length || !worldNetwork?.ready?.value) return
+    if (mediaInstanceState.keys.length) return
 
     const currentChannel = channelState.targetChannelId.value
     if (!currentChannel) return
@@ -210,7 +195,7 @@ export const MediaInstanceProvisioning = () => {
     //     mediaInstanceState[id].set(none)
     //   }
     // }
-  }, [worldNetwork?.ready?.value, mediaInstanceState.keys.length, channelState.targetChannelId.value])
+  }, [mediaInstanceState.keys.length, channelState.targetChannelId.value])
 
   return (
     <>
@@ -225,7 +210,10 @@ export const MediaInstance = ({ id }: { id: InstanceID }) => {
   useEffect(() => {
     const mediaInstance = getState(MediaInstanceState).instances[id]
     if (mediaInstance.p2p) {
-      return PeerToPeerNetworkState.connectToP2PInstance(id)
+      return PeerToPeerNetworkState.connectToP2PInstance({
+        id,
+        channelId: mediaInstance.channelId
+      })
     } else {
       return connectToInstance(
         id,
@@ -247,49 +235,15 @@ export const SocialMenus = {
 }
 
 export const FriendMenus = () => {
-  const { t } = useTranslation()
-
-  const [socialsEnabled] = useFeatureFlags([FeatureFlags.Client.Menu.Social])
-
-  useEffect(() => {
-    if (!socialsEnabled) return
-
-    const popupMenuState = getMutableState(PopupMenuState)
-    popupMenuState.menus.merge({
-      [SocialMenus.Friends]: FriendsMenu,
-      [SocialMenus.Messages]: MessagesMenu
-    })
-
-    popupMenuState.hotbar.merge({
-      [SocialMenus.Friends]: { icon: <Groups />, tooltip: t('user:menu.friends') }
-    })
-
-    return () => {
-      popupMenuState.menus.merge({
-        [SocialMenus.Friends]: none,
-        [SocialMenus.Messages]: none
-      })
-
-      popupMenuState.hotbar.merge({
-        [SocialMenus.Friends]: none
-      })
-    }
-  }, [socialsEnabled])
-
-  if (!socialsEnabled) return null
-
-  const UseFriendsListeners = () => {
-    FriendService.useAPIListeners()
-    return null
-  }
-  return <UseFriendsListeners />
+  FriendService.useAPIListeners()
+  return null
 }
 
 export const reactor = () => {
   const networkConfigState = useHookstate(getMutableState(NetworkState).config)
-  const userID = useHookstate(getMutableState(EngineState).userID).value
+  const isAuthenticated = useHookstate(getMutableState(AuthState).isAuthenticated).value
 
-  if (!userID) return null
+  if (!isAuthenticated) return null
 
   return (
     <>

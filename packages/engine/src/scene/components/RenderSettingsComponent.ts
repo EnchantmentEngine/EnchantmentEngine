@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import {
   ACESFilmicToneMapping,
@@ -34,32 +9,35 @@ import {
   PCFShadowMap,
   PCFSoftShadowMap,
   ReinhardToneMapping,
-  VSMShadowMap
+  VSMShadowMap,
+  WebGLRenderer
 } from 'three'
 
+import { EntitySchema, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { Schema } from '@ir-engine/hyperflux'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 
-const ToneMappingSchema = S.LiteralUnion(
+const ToneMappingSchema = Schema.LiteralUnion(
   [NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping],
-  LinearToneMapping
+  { default: LinearToneMapping }
 )
 
-const ShadowMapSchema = S.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], PCFSoftShadowMap)
+const ShadowMapSchema = Schema.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], {
+  default: PCFSoftShadowMap
+})
 
 export const RenderSettingsComponent = defineComponent({
   name: 'RenderSettingsComponent',
   jsonID: 'EE_render_settings',
 
-  schema: S.Object({
-    primaryLight: S.EntityUUID(),
-    csm: S.Bool(true),
-    cascades: S.Number(5),
+  schema: Schema.Object({
+    primaryLight: EntitySchema.EntityID(),
+    csm: Schema.Bool({ default: true }),
+    cascades: Schema.Number({ default: 5 }),
     toneMapping: ToneMappingSchema,
-    toneMappingExposure: S.Number(0.8),
+    toneMappingExposure: Schema.Number({ default: 0.8 }),
     shadowMapType: ShadowMapSchema
   }),
 
@@ -71,21 +49,21 @@ export const RenderSettingsComponent = defineComponent({
     useEffect(() => {
       if (!rendererEntity) return
       const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.toneMapping = component.toneMapping.value
-    }, [component.toneMapping])
+      renderer.toneMapping = component.toneMapping
+    }, [component.toneMapping, rendererEntity])
 
     useEffect(() => {
       if (!rendererEntity) return
       const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.toneMappingExposure = component.toneMappingExposure.value
-    }, [component.toneMappingExposure])
+      renderer.toneMappingExposure = component.toneMappingExposure
+    }, [component.toneMappingExposure, rendererEntity])
 
     useEffect(() => {
       if (!rendererEntity) return
-      const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.shadowMap.type = component.shadowMapType.value
+      const renderer = getComponent(rendererEntity, RendererComponent).renderer! as WebGLRenderer // todo
+      renderer.shadowMap.type = component.shadowMapType
       renderer.shadowMap.needsUpdate = true
-    }, [component.shadowMapType])
+    }, [component.shadowMapType, rendererEntity])
 
     return null
   }

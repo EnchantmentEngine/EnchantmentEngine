@@ -1,40 +1,16 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
+import useLoadingThumbnails from '@ir-engine/client-core/src/hooks/useLoadingThumbnails'
 import { useUploadingFiles } from '@ir-engine/client-core/src/util/upload'
 import { API } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
 import { archiverPath } from '@ir-engine/common/src/schema.type.module'
 import { bytesToSize } from '@ir-engine/common/src/utils/btyesToSize'
 import { downloadBlobAsZip } from '@ir-engine/editor/src/functions/assetFunctions'
-import { defineState, getMutableState, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Progress from '@ir-engine/ui/src/primitives/tailwind/Progress'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCurrentFiles } from './helpers'
 
@@ -80,6 +56,7 @@ export const handleDownloadProject = async (projectName: string, selectedDirecto
   const chunks: Uint8Array[] = []
   let bytesReceived = 0
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader!.read()
     if (done) break
@@ -118,11 +95,16 @@ export function ProjectDownloadProgress() {
   return (
     <>
       {isDownloading && (
-        <div className="flex h-auto w-full justify-center pb-2 pt-2">
-          <div className="flex w-1/2">
-            <span className="inline-block pr-2 text-xs font-normal leading-none text-theme-primary">
-              {t('editor:layout.filebrowser.downloadingProject', { completed, total })}
-            </span>
+        <div className="flex h-auto w-full justify-center pb-2 pt-1">
+          <div className="flex w-1/2 items-center gap-x-3">
+            <div className="flex gap-x-1 whitespace-nowrap text-center text-xs font-normal leading-none dark:text-[#A3A3A3]">
+              <div>{t('editor:layout.filebrowser.downloadingProject')}</div>
+              <div className="flex gap-x-1">
+                <span className="min-w-[6em] text-right">{completed}</span>
+                {`/`}
+                <span>{total}</span>
+              </div>
+            </div>
             <div className="basis-1/2">
               <Progress value={progress} />
             </div>
@@ -144,11 +126,10 @@ export function ProjectDownloadProgress() {
 export function FileUploadProgress() {
   const { t } = useTranslation()
   const { completed, total, progress } = useUploadingFiles()
-
   return total ? (
     <div className="flex h-auto w-full justify-center pb-2 pt-2">
       <div className="flex w-1/2">
-        <span className="inline-block pr-2 text-xs font-normal leading-none text-theme-primary">
+        <span className="inline-block pr-2 text-xs font-normal leading-none ">
           {t('editor:layout.filebrowser.uploadingFiles', { completed, total })}
         </span>
         <div className="basis-1/2">
@@ -161,26 +142,79 @@ export function FileUploadProgress() {
 
 function GeneratingThumbnailsProgress() {
   const { t } = useTranslation()
-  const thumbnailJobState = useMutableState(FileThumbnailJobState)
+  const thumbnailJobs = useMutableState(FileThumbnailJobState).jobs
 
-  if (!thumbnailJobState.length) return null
-
-  return (
-    <LoadingView
-      titleClassname="mt-0"
-      containerClassName="flex-row mt-1"
-      className="mx-2 my-auto h-6 w-6"
-      title={t('editor:layout.filebrowser.generatingThumbnails', { count: thumbnailJobState.length })}
-    />
-  )
+  const isLoading = useHookstate(false)
+  useLoadingThumbnails(isLoading)
+  let thumbnailjobCount = 0
+  let dimensionJobCount = 0
+  let muiltiViewJobCount = 0
+  for (const job of thumbnailJobs.value) {
+    if (job.jobType === 'thumbnail') {
+      thumbnailjobCount++
+    } else if (job.jobType === 'dimension') {
+      dimensionJobCount++
+    }
+    if (job.jobType === 'cv processing') {
+      muiltiViewJobCount++
+    }
+  }
+  return isLoading.value ? (
+    <>
+      <LoadingView
+        titleClassname="mt-0"
+        containerClassName="flex-row mt-1"
+        className="mx-2 my-auto h-6 w-6"
+        title={t('editor:layout.filebrowser.generatingThumbnails', { count: thumbnailjobCount })}
+      />
+      {/* commenting out instead of dealing for future use */}
+      {/* <LoadingView
+        titleClassname="mt-0"
+        containerClassName="flex-row mt-1"
+        className="mx-2 my-auto h-6 w-6"
+        title={t('editor:layout.filebrowser.generatingDimension', { count: dimensionJobCount })}
+      /> */}
+      {/* commenting out can use for testing */}
+      {/* <LoadingView
+        titleClassname="mt-0"
+        containerClassName="flex-row mt-1"
+        className="mx-2 my-auto h-6 w-6"
+        title={t('editor:layout.filebrowser.generatingMultiView', { count: muiltiViewJobCount })}
+      /> */}
+    </>
+  ) : null
 }
 
 function FilesLoading() {
   const { t } = useTranslation()
   const { filesQuery } = useCurrentFiles()
-  const isLoading = filesQuery?.status === 'pending'
 
-  return isLoading ? (
+  const isLoading = useHookstate(false)
+  const debouncedStatusRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    clearTimeout(debouncedStatusRef.current)
+  }, [])
+
+  useEffect(() => {
+    if (debouncedStatusRef) {
+      clearTimeout(debouncedStatusRef.current)
+    }
+
+    const isFilesLoading = filesQuery?.status === 'pending'
+    if (isFilesLoading) {
+      isLoading.set(true)
+    } else {
+      debouncedStatusRef.current = setTimeout(() => {
+        isLoading.set(false)
+      }, 1000)
+    }
+    return () => {
+      clearTimeout(debouncedStatusRef.current)
+    }
+  }, [filesQuery?.status])
+
+  return isLoading.value ? (
     <LoadingView title={t('editor:layout.filebrowser.loadingFiles')} fullSpace className="block h-12 w-12" />
   ) : null
 }
@@ -188,10 +222,10 @@ function FilesLoading() {
 export default function Loaders() {
   return (
     <>
+      <GeneratingThumbnailsProgress />
       <FileUploadProgress />
       <ProjectDownloadProgress />
       <FilesLoading />
-      <GeneratingThumbnailsProgress />
     </>
   )
 }

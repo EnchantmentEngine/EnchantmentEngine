@@ -1,31 +1,6 @@
-/*
-CPAL-1.0 License
+import { Not, UUIDComponent } from '@ir-engine/ecs'
 
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { Not } from 'bitecs'
-
-import { hasComponent, removeComponent, UUIDComponent } from '@ir-engine/ecs'
+import { hasComponent, removeComponent } from '@ir-engine/ecs'
 import { getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -80,7 +55,7 @@ export const InteractableSystem = defineSystem({
 // const executeInput = () => {
 //   if (getState(EngineState).isEditing) return
 
-//   const inputPointerEntity = InputPointerComponent.getPointerForCanvas(Engine.instance.viewerEntity)
+//   const inputPointerEntity = InputPointerComponent.getPointerForCanvas(getState(ReferenceSpaceState).viewerEntity)
 //   if (!inputPointerEntity) return
 
 //   const buttons = InputSourceComponent.getMergedButtons()
@@ -134,8 +109,8 @@ const clickInteract = (entity: Entity) => {
   const interactable = getOptionalComponent(entity, InteractableComponent)
   if (!interactable) return
   for (const callback of interactable.callbacks) {
-    if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-    const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : entity
+    if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(entity, callback.target)) continue
+    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceByID(entity, callback.target) : entity
     if (targetEntity && callback.callbackID) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
       if (!callbacks) continue
@@ -150,8 +125,10 @@ const interactWithClosestInteractable = () => {
     const interactable = getOptionalComponent(interactableEntity, InteractableComponent)
     if (interactable) {
       for (const callback of interactable.callbacks) {
-        if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-        const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : interactableEntity
+        if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(interactableEntity, callback.target)) continue
+        const targetEntity = callback.target
+          ? UUIDComponent.getEntityFromSameSourceByID(interactableEntity, callback.target)
+          : interactableEntity
         if (targetEntity && callback.callbackID) {
           const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
           if (!callbacks) continue

@@ -1,41 +1,16 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
-import { Color, CubeTexture, LightProbe, Vector3, WebGLCubeRenderTarget } from 'three'
+import { Color, CubeTexture, LightProbe, Vector3, WebGLCubeRenderTarget, WebGLRenderer } from 'three'
 
-import { Engine } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { createEntity } from '@ir-engine/ecs'
+import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { createEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { Vector3_Zero } from '../common/constants/MathConstants'
-import { RendererComponent } from '../renderer/WebGLRendererSystem'
-import { addObjectToGroup } from '../renderer/components/GroupComponent'
+import { ObjectComponent } from '../renderer/components/ObjectComponent'
+import { RendererComponent } from '../renderer/components/RendererComponent'
 import { EnvironmentMapComponent } from '../renderer/components/SceneComponents'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { DirectionalLightComponent } from '../renderer/components/lights/DirectionalLightComponent'
@@ -83,9 +58,9 @@ const updateReflection = () => {
 
   if (!xrLightProbeState.environment || !xrLightProbeState.xrWebGLBinding || !xrLightProbeState.probe) return
 
-  const textureProperties = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.properties.get(
-    xrLightProbeState.environment
-  )
+  const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+    .renderer! as WebGLRenderer
+  const textureProperties = renderer.properties.get(xrLightProbeState.environment) as any
 
   if (textureProperties) {
     const cubeMap = xrLightProbeState.xrWebGLBinding!.getReflectionCubeMap?.(xrLightProbeState.probe)
@@ -128,19 +103,15 @@ const execute = () => {
       )
     )
 
-    const directionalLightState = getMutableComponent(
-      xrLightProbeState.directionalLightEntity,
-      DirectionalLightComponent
+    const directionalLightState = getComponent(xrLightProbeState.directionalLightEntity, DirectionalLightComponent)
+
+    directionalLightState.color = new Color(
+      lightEstimate.primaryLightIntensity.x / intensityScalar,
+      lightEstimate.primaryLightIntensity.y / intensityScalar,
+      lightEstimate.primaryLightIntensity.z / intensityScalar
     )
 
-    directionalLightState.color.set(
-      new Color(
-        lightEstimate.primaryLightIntensity.x / intensityScalar,
-        lightEstimate.primaryLightIntensity.y / intensityScalar,
-        lightEstimate.primaryLightIntensity.z / intensityScalar
-      )
-    )
-    directionalLightState.intensity.set(intensityScalar)
+    directionalLightState.intensity = intensityScalar
 
     getComponent(xrLightProbeState.directionalLightEntity, TransformComponent).rotation.setFromUnitVectors(
       Vector3_Zero,
@@ -197,7 +168,7 @@ const reactor = () => {
       cameraFar: 2000,
       castShadow: true
     })
-    addObjectToGroup(directionalLightEntity, getState(XRLightProbeState).lightProbe)
+    setComponent(directionalLightEntity, ObjectComponent, getState(XRLightProbeState).lightProbe)
     setVisibleComponent(directionalLightEntity, true)
 
     xrLightProbeState.directionalLightEntity.set(directionalLightEntity)
@@ -212,14 +183,16 @@ const reactor = () => {
     const probe = xrLightProbeState.probe.value
     if (!probe || !session) return
 
-    // If the XRWebGLBinding class is available then we can also query an
-    // estimated reflection cube map.
+    // If the XRWebGLBinding class is available then
+    // we can also query an estimated reflection cube map.
     if ('XRWebGLBinding' in window) {
       // This is the simplest way I know of to initialize a WebGL cubemap in Three.
       const cubeRenderTarget = new WebGLCubeRenderTarget(16)
       xrLightProbeState.environment.set(cubeRenderTarget.texture)
 
-      const gl = getComponent(Engine.instance.viewerEntity, RendererComponent).renderer!.getContext()
+      const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+        .renderer as WebGLRenderer
+      const gl = renderer.getContext()
 
       // Ensure that we have any extensions needed to use the preferred cube map format.
       switch (session.preferredReflectionFormat) {

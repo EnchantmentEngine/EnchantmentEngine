@@ -1,41 +1,26 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { GetGPUTier, getGPUTier } from 'detect-gpu'
 import { debounce } from 'lodash'
 import { SMAAPreset } from 'postprocessing'
 import { useEffect } from 'react'
 import { Camera, MathUtils, Scene } from 'three'
 
-import { ComponentType, defineSystem, ECSState, PresentationSystemGroup } from '@ir-engine/ecs'
+import {
+  ComponentType,
+  defineSystem,
+  ECSState,
+  getComponent,
+  PresentationSystemGroup,
+  useOptionalComponent
+} from '@ir-engine/ecs'
 import { profile } from '@ir-engine/ecs/src/Timer'
 import { defineState, getMutableState, getState, State, useMutableState } from '@ir-engine/hyperflux'
-import { RendererComponent, RenderSettingsState } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { RenderSettingsState } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 
-import { EngineState } from '../EngineState'
+import { EngineState } from '@ir-engine/ecs'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { RendererState } from './RendererState'
+import { RendererComponent } from './components/RendererComponent'
+import { RenderBackends } from './constants/RenderModes'
 
 type PerformanceTier = 0 | 1 | 2 | 3 | 4 | 5
 type TargetFPS = 30 | 60
@@ -96,7 +81,7 @@ const tieredSettings = {
   [5]: {
     engine: {
       useShadows: true,
-      shadowMapResolution: 2048,
+      shadowMapResolution: 1024, // @todo we should probably make this opt in or only allow on high end GPUs
       usePostProcessing: true,
       forceBasicMaterials: false,
       renderScale: 1
@@ -165,6 +150,14 @@ export const PerformanceState = defineState({
   }),
 
   reactor: () => {
+    const viewerEntity = useMutableState(ReferenceSpaceState).viewerEntity.value
+    const renderer = useOptionalComponent(viewerEntity, RendererComponent)
+
+    useEffect(() => {
+      if (!renderer?.renderer) return
+      PerformanceManager.buildPerformanceState(getComponent(viewerEntity, RendererComponent))
+    }, [!!renderer?.renderer])
+
     const performanceState = useMutableState(PerformanceState)
     const renderSettings = useMutableState(RenderSettingsState)
     const engineSettings = useMutableState(RendererState)
@@ -182,8 +175,10 @@ export const PerformanceState = defineState({
     }
 
     useEffect(() => {
-      performanceState.enabled.set(!engineState.isEditing.value && engineSettings.automatic.value)
-    }, [engineState.isEditing, engineSettings.automatic])
+      performanceState.enabled.set(
+        !engineState.isEditing.value && engineSettings.automatic.value && performanceState.initialized.value
+      )
+    }, [engineState.isEditing, engineSettings.automatic, performanceState.initialized])
 
     useEffect(() => {
       recreateEMA()
@@ -196,12 +191,15 @@ export const PerformanceState = defineState({
       const settings = tieredSettings[performanceTier]
       engineSettings.merge(settings.engine)
       renderSettings.merge(settings.render)
+      if (performanceTier !== engineSettings.qualityLevel.value) engineSettings.qualityLevel.set(performanceTier)
     }, [performanceState.gpuTier, performanceState.initialized])
 
     useEffect(() => {
       recreateEMA()
       performanceState.performanceSmoothingAccum.set(0)
     }, [performanceState.gpuPerformanceOffset, performanceState.cpuPerformanceOffset])
+
+    return null
   }
 })
 
@@ -213,18 +211,16 @@ export const PerformanceSystem = defineSystem({
     const performanceState = getState(PerformanceState)
     if (!performanceState.enabled) return
 
-    {
-      const { performanceSmoothingAccum, performanceSmoothingCycles } = performanceState
-      const performanceStateMut = getMutableState(PerformanceState)
-      const ecsState = getState(ECSState)
+    const { performanceSmoothingAccum, performanceSmoothingCycles } = performanceState
+    const performanceStateMut = getMutableState(PerformanceState)
+    const ecsState = getState(ECSState)
 
-      updateExponentialMovingAverage(performanceStateMut.averageSystemTime, ecsState.lastSystemExecutionDuration)
-      updateExponentialMovingAverage(performanceStateMut.averageFrameTime, ecsState.deltaSeconds * 1000)
+    updateExponentialMovingAverage(performanceStateMut.averageSystemTime, ecsState.lastSystemExecutionDuration)
+    updateExponentialMovingAverage(performanceStateMut.averageFrameTime, ecsState.deltaSeconds * 1000)
 
-      if (performanceSmoothingAccum < performanceSmoothingCycles) {
-        performanceStateMut.performanceSmoothingAccum.set(performanceSmoothingAccum + 1)
-        return
-      }
+    if (performanceSmoothingAccum < performanceSmoothingCycles) {
+      performanceStateMut.performanceSmoothingAccum.set(performanceSmoothingAccum + 1)
+      return
     }
 
     const { averageFrameTime, averageRenderTime, averageSystemTime, targetFPS } = performanceState
@@ -421,8 +417,19 @@ const buildPerformanceState = async (
   renderer: ComponentType<typeof RendererComponent>,
   override?: GetGPUTier['override']
 ) => {
+  // hack fix for nodejs
+  if (!renderer.renderer) return
+  const isWebGLBackend = getState(RendererState).backend
+
+  if (isWebGLBackend === RenderBackends.WEBGPU) {
+    console.log('Performance state: Skipping GPU tier detection for WebGPU renderer')
+    return
+  }
+
+  if (!renderer.canvas || !renderer.canvas!.getContext('webgl2')) return
+
   const performanceState = getMutableState(PerformanceState)
-  const gl = renderer.renderContext as WebGL2RenderingContext
+  const gl = renderer.renderer?.getContext() as any as WebGL2RenderingContext
 
   const gpuTier = await getGPUTier({
     glContext: gl,

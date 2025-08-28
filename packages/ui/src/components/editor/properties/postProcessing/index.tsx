@@ -1,34 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BlendFunction, SMAAPreset, VignetteTechnique } from 'postprocessing'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa'
 import { MdAutoFixHigh } from 'react-icons/md'
-import { Color, DisplayP3ColorSpace, LinearDisplayP3ColorSpace, LinearSRGBColorSpace, SRGBColorSpace } from 'three'
+import { Color, LinearSRGBColorSpace, SRGBColorSpace } from 'three'
 
 import { useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
@@ -38,12 +12,13 @@ import {
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
+import { PropertyTypes } from '@ir-engine/engine/src/postprocessing/PostProcessingRegister'
 import { NO_PROXY, getState } from '@ir-engine/hyperflux'
 import { PostProcessingComponent } from '@ir-engine/spatial/src/renderer/components/PostProcessingComponent'
 import { PostProcessingEffectState } from '@ir-engine/spatial/src/renderer/effects/EffectRegistry'
+import { DisplayP3ColorSpace, LinearDisplayP3ColorSpace } from '@ir-engine/spatial/src/threejsPatches'
 import { Checkbox } from '@ir-engine/ui'
 import { Slider } from '@ir-engine/ui/editor'
-import { GiMagickTrick } from 'react-icons/gi'
 import Accordion from '../../../../primitives/tailwind/Accordion'
 import ColorInput from '../../../../primitives/tailwind/Color'
 import InputGroup from '../../input/Group'
@@ -51,22 +26,6 @@ import SelectInput from '../../input/Select'
 import TexturePreviewInput from '../../input/Texture'
 import Vector2Input from '../../input/Vector2'
 import Vector3Input from '../../input/Vector3'
-
-enum PropertyTypes {
-  BlendFunction,
-  Number,
-  Boolean,
-  Color,
-  ColorSpace,
-  KernelSize,
-  SMAAPreset,
-  EdgeDetectionMode,
-  PredicationMode,
-  Texture,
-  Vector2,
-  Vector3,
-  VignetteTechnique
-}
 
 const SMAAPresetSelect = Object.entries(SMAAPreset).map(([label, value]) => {
   return { label, value }
@@ -130,7 +89,7 @@ export const PostProcessingSettingsEditor: EditorComponentType = (props) => {
             max={effectSettingState.max}
             step={effectSettingState.step}
             value={effectSettingValue}
-            onChange={updateProperty(PostProcessingComponent, `effects.${effectName}.${property}` as any)}
+            onChange={commitProperty(PostProcessingComponent, `effects.${effectName}.${property}` as any)}
             onRelease={commitProperty(PostProcessingComponent, `effects.${effectName}.${property}` as any)}
           />
         )
@@ -245,6 +204,7 @@ export const PostProcessingSettingsEditor: EditorComponentType = (props) => {
         break
       default:
         renderVal = <>Can't Determine type of property</>
+        break
     }
 
     return (
@@ -293,22 +253,15 @@ export const PostProcessingSettingsEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Post Processing Enabled" label={t('editor:properties.postprocessing.enabled')}>
         <Checkbox
-          checked={postprocessing.enabled.value}
+          checked={postprocessing.enabled}
           onChange={(val) => {
             commitProperty(PostProcessingComponent, 'enabled')(val)
           }}
         />
       </InputGroup>
-      {postprocessing.enabled.value && (
+      {postprocessing.enabled && (
         <>
-          <Accordion
-            className="bg-none p-2 text-white"
-            onClick={() => setOpenSettings(!openSettings)}
-            title={t('editor:properties.postprocessing.name')}
-            prefixIcon={<GiMagickTrick />}
-            expandIcon={<FaChevronDown />}
-            shrinkIcon={<FaChevronUp />}
-          >
+          <Accordion onClick={() => setOpenSettings(!openSettings)} title={t('editor:properties.postprocessing.name')}>
             {renderEffects()}
           </Accordion>
         </>

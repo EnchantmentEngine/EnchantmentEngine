@@ -1,48 +1,22 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, ShadowMaterial } from 'three'
 
 import {
+  createEntity,
   defineComponent,
-  getMutableComponent,
-  hasComponent,
-  removeComponent,
+  Entity,
+  EntityTreeComponent,
+  getComponent,
+  removeEntity,
   setComponent,
-  useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+  useComponent,
+  useEntityContext
+} from '@ir-engine/ecs'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { getState, Schema } from '@ir-engine/hyperflux'
+
 import { NameComponent } from '../common/NameComponent'
-import { addObjectToGroup, removeObjectFromGroup } from '../renderer/components/GroupComponent'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { MeshComponent } from '../renderer/components/MeshComponent'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -54,85 +28,43 @@ export const placementHelperMaterial = new MeshBasicMaterial({
   opacity: 0.5,
   transparent: true
 })
-export const shadowMaterial = new ShadowMaterial({ opacity: 0.5, color: 0x0a0a0a })
+export const shadowMaterial = new ShadowMaterial({ opacity: 0.5, color: 0x0a0a0a, colorWrite: false })
 shadowMaterial.polygonOffset = true
 shadowMaterial.polygonOffsetFactor = -0.01
-export const occlusionMat = new MeshBasicMaterial({ colorWrite: false })
-occlusionMat.polygonOffset = true
-occlusionMat.polygonOffsetFactor = -0.01
+
+export const XRDetectedPlaneComponentState = defineComponent({
+  name: 'XRDetectedPlaneComponentState',
+  initial: () => ({
+    detectedPlanesMap: new Map<XRPlane, Entity>(),
+    planesLastChangedTimes: new Map<XRPlane, number>()
+  })
+})
 
 export const XRDetectedPlaneComponent = defineComponent({
   name: 'XRDetectedPlaneComponent',
 
-  schema: S.Object({
-    plane: S.Type<XRPlane>(),
+  schema: Schema.Object({
+    plane: Schema.Type<XRPlane>(),
     // internal
-    shadowMesh: S.Type<Mesh>(),
-    occlusionMesh: S.Type<Mesh>(),
-    geometry: S.Type<BufferGeometry>(),
-    placementHelper: S.Type<Mesh>()
+    shadowMesh: Schema.Type<Mesh>({ serialized: false }),
+    geometry: Schema.Type<BufferGeometry>({ serialized: false }),
+    placementHelper: Schema.Type<Mesh>({ serialized: false })
   }),
 
   reactor: function () {
     const entity = useEntityContext()
     const component = useComponent(entity, XRDetectedPlaneComponent)
-    const scenePlacementMode = useHookstate(getMutableState(XRState).scenePlacementMode)
 
     useEffect(() => {
-      if (!component.plane.value) return
-
-      const geometry = XRDetectedPlaneComponent.createGeometryFromPolygon(component.plane.value as XRPlane)
-
-      XRDetectedPlaneComponent.updatePlanePose(entity, component.plane.value as XRPlane)
-      component.geometry.set(geometry)
-
-      const shadowMesh = new Mesh(geometry, shadowMaterial)
-
-      const occlusionMesh = new Mesh(geometry, occlusionMat)
-
-      const placementHelper = new Mesh(geometry, placementHelperMaterial)
-
-      setComponent(entity, MeshComponent, shadowMesh)
-
-      addObjectToGroup(entity, shadowMesh)
-      addObjectToGroup(entity, occlusionMesh)
-      addObjectToGroup(entity, placementHelper)
-      occlusionMesh.renderOrder = -1 /** @todo make a global config for AR occlusion mesh renderOrder */
-
-      component.shadowMesh.set(shadowMesh)
-      component.occlusionMesh.set(occlusionMesh)
-      component.placementHelper.set(placementHelper)
-
       return () => {
-        removeComponent(entity, MeshComponent)
-
-        removeObjectFromGroup(entity, shadowMesh)
-        removeObjectFromGroup(entity, occlusionMesh)
-        removeObjectFromGroup(entity, placementHelper)
-
-        if (!hasComponent(entity, XRDetectedPlaneComponent)) return
-
-        component.shadowMesh.set(none)
-        component.occlusionMesh.set(none)
-        component.placementHelper.set(none)
+        component.geometry?.dispose()
       }
-    }, [component.plane])
+    }, [])
 
-    useEffect(() => {
-      const geometry = component.geometry.value
-
-      if (component.shadowMesh.value) component.shadowMesh.geometry.set(geometry)
-      if (component.occlusionMesh.value) component.occlusionMesh.geometry.set(geometry)
-
-      return () => {
-        geometry.dispose()
-      }
-    }, [component.geometry])
-
-    useEffect(() => {
-      const placementHelper = component.placementHelper
-      placementHelper.visible.set(scenePlacementMode.value === 'placing')
-    }, [scenePlacementMode])
+    // useEffect(() => {
+    //   const placementHelper = component.placementHelper.get(NO_PROXY) as Mesh
+    //   placementHelper.visible = scenePlacementMode.value === 'placing'
+    // }, [scenePlacementMode])
 
     return null
   },
@@ -164,13 +96,25 @@ export const XRDetectedPlaneComponent = defineComponent({
     return geometry
   },
 
-  updatePlaneGeometry: (entity: Entity, plane: XRPlane) => {
-    XRDetectedPlaneComponent.planesLastChangedTimes.set(plane, plane.lastChangedTime)
-    const geometry = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
-    getMutableComponent(entity, XRDetectedPlaneComponent).geometry.set(geometry)
+  updatePlaneGeometry: (entity: Entity) => {
+    const state = getState(XRDetectedPlaneComponentState)
+    const plane = getComponent(entity, XRDetectedPlaneComponent).plane
+    const lastKnownTime = state.planesLastChangedTimes.get(plane)!
+    if (plane.lastChangedTime > lastKnownTime) {
+      state.planesLastChangedTimes.set(plane, plane.lastChangedTime)
+      const geometry = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
+      const planeComponent = getComponent(entity, XRDetectedPlaneComponent)
+      planeComponent.geometry?.dispose()
+      planeComponent.shadowMesh?.geometry.dispose()
+      const mesh = new Mesh(geometry, shadowMaterial)
+      setComponent(entity, MeshComponent, mesh)
+      planeComponent.geometry = geometry
+      planeComponent.shadowMesh = mesh
+    }
   },
 
-  updatePlanePose: (entity: Entity, plane: XRPlane) => {
+  updatePlanePose: (entity: Entity) => {
+    const plane = getComponent(entity, XRDetectedPlaneComponent).plane
     const planePose = getState(XRState).xrFrame!.getPose(plane.planeSpace, ReferenceSpace.localFloor!)!
     if (!planePose) return
     TransformComponent.position.x[entity] = planePose.transform.position.x
@@ -182,19 +126,40 @@ export const XRDetectedPlaneComponent = defineComponent({
     TransformComponent.rotation.w[entity] = planePose.transform.orientation.w
   },
 
-  foundPlane: (plane: XRPlane) => {
+  getPlaneEntity: (plane: XRPlane) => {
+    const state = getState(XRDetectedPlaneComponentState)
+    if (state.detectedPlanesMap.has(plane)) {
+      return state.detectedPlanesMap.get(plane)!
+    }
     const entity = createEntity()
-    setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     setComponent(entity, TransformComponent)
     setVisibleComponent(entity, true)
     setComponent(entity, XRDetectedPlaneComponent, { plane })
-    setComponent(entity, NameComponent, 'plane-' + planeId++)
-
-    XRDetectedPlaneComponent.planesLastChangedTimes.set(plane, plane.lastChangedTime)
-    XRDetectedPlaneComponent.detectedPlanesMap.set(plane, entity)
+    setComponent(entity, NameComponent, 'xrplane-' + planeId++ + '-' + plane.semanticLabel)
+    state.planesLastChangedTimes.set(plane, -1)
+    state.detectedPlanesMap.set(plane, entity)
+    return entity
   },
-  detectedPlanesMap: new Map<XRPlane, Entity>(),
-  planesLastChangedTimes: new Map<XRPlane, number>()
+
+  purgeExpiredPlanes: (detectedPlanes: XRPlaneSet) => {
+    const state = getState(XRDetectedPlaneComponentState)
+    for (const [plane, entity] of state.detectedPlanesMap) {
+      if (detectedPlanes.has(plane)) continue
+      state.detectedPlanesMap.delete(plane)
+      state.planesLastChangedTimes.delete(plane)
+      removeEntity(entity)
+    }
+  },
+
+  updateDetectedPlanes: (detectedPlanes: XRPlaneSet) => {
+    XRDetectedPlaneComponent.purgeExpiredPlanes(detectedPlanes)
+    for (const plane of detectedPlanes) {
+      const entity = XRDetectedPlaneComponent.getPlaneEntity(plane)
+      XRDetectedPlaneComponent.updatePlaneGeometry(entity)
+      XRDetectedPlaneComponent.updatePlanePose(entity)
+    }
+  }
 })
 
 let planeId = 0

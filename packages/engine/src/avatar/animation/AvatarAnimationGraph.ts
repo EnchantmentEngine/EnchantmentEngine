@@ -1,38 +1,14 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { clamp } from 'lodash'
-import { AnimationAction, AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'three'
+import { AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'three'
 
 import { UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, getMutableComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { defineActionQueue, getState } from '@ir-engine/hyperflux'
+import { defineActionQueue, getState, NetworkState } from '@ir-engine/hyperflux'
 import { lerp } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
 
+import { NetworkObjectComponent } from '@ir-engine/ecs'
 import { AnimationState } from '../AnimationManager'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
@@ -49,7 +25,7 @@ export const getAnimationAction = (name: string, mixer: AnimationMixer, animatio
       getComponent(manager.loadedAnimations[preloadedAnimations.locomotion]!, AnimationComponent).animations,
     name
   )
-  return mixer.clipAction(clip)
+  return mixer.clipAction(clip!)
 }
 
 const currentActionBlendSpeed = 7
@@ -59,6 +35,11 @@ const epsilon = 0.01
 export const updateAnimationGraph = (avatarEntities: Entity[]) => {
   for (const newAnimation of animationQueue()) {
     const targetEntity = UUIDComponent.getEntityByUUID(newAnimation.entityUUID)
+    /** @todo this validation will require some more advanced tooling in event source state once we convert this module to use that paradigm */
+    const networkState = NetworkState.worldNetwork
+    if (targetEntity && networkState) {
+      if (newAnimation.$peer !== getOptionalComponent(targetEntity, NetworkObjectComponent)?.authorityPeerID) continue
+    }
     if (!hasComponent(targetEntity, AvatarAnimationComponent)) {
       console.warn(
         '[updateAnimationGraph]: AvatarAnimationComponent not found on entity',
@@ -77,37 +58,36 @@ export const updateAnimationGraph = (avatarEntities: Entity[]) => {
       )
       continue
     }
-    const graph = getMutableComponent(targetEntity, AvatarAnimationComponent).animationGraph
-    graph.fadingOut.set(newAnimation.needsSkip ?? false)
-    graph.layer.set(newAnimation.layer ?? 0)
+    const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
+    graph.fadingOut = newAnimation.needsSkip ?? false
+    graph.layer = newAnimation.layer ?? 0
     playAvatarAnimationFromMixamo(targetEntity, animationAsset, newAnimation.loop!, newAnimation.clipName!)
   }
 
   for (const entity of avatarEntities) {
-    const animationGraph = getMutableComponent(entity, AvatarAnimationComponent).animationGraph
+    const animationGraph = getComponent(entity, AvatarAnimationComponent).animationGraph
 
     setAvatarLocomotionAnimation(entity)
 
     const currentAction = animationGraph.blendAnimation
 
-    if (currentAction.value) {
+    if (currentAction) {
       const deltaSeconds = getState(ECSState).deltaSeconds
       const locomotionBlend = animationGraph.blendStrength
-      currentAction.value.setEffectiveWeight(locomotionBlend.value)
+      currentAction.setEffectiveWeight(locomotionBlend)
       if (
-        (currentAction.value.time >= currentAction.value.getClip().duration - epsilon &&
-          currentAction.value.loop != LoopRepeat) ||
-        animationGraph.fadingOut.value
+        (currentAction.time >= currentAction.getClip().duration - epsilon && currentAction.loop != LoopRepeat) ||
+        animationGraph.fadingOut
       ) {
-        currentAction.value.setEffectiveTimeScale(0)
-        locomotionBlend.set(Math.max(locomotionBlend.value - deltaSeconds * currentActionBlendSpeed, 0))
-        if (locomotionBlend.value <= 0) {
-          currentAction.value.setEffectiveWeight(0)
-          animationGraph.fadingOut.set(false)
-          currentAction.set(undefined)
+        currentAction.setEffectiveTimeScale(0)
+        animationGraph.blendStrength = Math.max(locomotionBlend - deltaSeconds * currentActionBlendSpeed, 0)
+        if (locomotionBlend <= 0) {
+          currentAction.setEffectiveWeight(0)
+          animationGraph.fadingOut = false
+          animationGraph.blendAnimation = undefined
         }
       } else {
-        locomotionBlend.set(Math.min(locomotionBlend.value + deltaSeconds * currentActionBlendSpeed, 1))
+        animationGraph.blendStrength = Math.min(locomotionBlend + deltaSeconds * currentActionBlendSpeed, 1)
       }
     }
   }
@@ -121,9 +101,9 @@ export const playAvatarAnimationFromMixamo = (
   clipName?: string
 ) => {
   const animationComponent = getComponent(entity, AnimationComponent)
-  const avatarAnimationComponent = getMutableComponent(entity, AvatarAnimationComponent)
+  const avatarAnimationComponent = getComponent(entity, AvatarAnimationComponent)
   const rigComponent = getComponent(entity, AvatarRigComponent)
-  if (!rigComponent || !rigComponent.vrm) return
+  if (!rigComponent || !rigComponent.bonesToEntities.hips) return
   //if animation is already present on animation component, use it instead of retargeting again
   const animationsScene = getComponent(animationsEntity, AnimationComponent)
   let retargetedAnimation = animationComponent.animations.find(
@@ -132,15 +112,17 @@ export const playAvatarAnimationFromMixamo = (
 
   if (!retargetedAnimation) retargetedAnimation = animationsScene.animations[0]
 
-  const currentAction = avatarAnimationComponent.animationGraph.blendAnimation
+  const action = avatarAnimationComponent.animationGraph.blendAnimation
   //before setting animation, stop previous animation if it exists
-  if (currentAction.value) currentAction.value.stop()
+  if (action) action.stop()
   //set the animation to the current action
-  currentAction.set(
-    getAnimationAction(retargetedAnimation.name, animationComponent.mixer, animationComponent.animations)
+  avatarAnimationComponent.animationGraph.blendAnimation = getAnimationAction(
+    retargetedAnimation.name,
+    animationComponent.mixer,
+    animationComponent.animations
   )
-  if (currentAction.value) {
-    const action = currentAction.value as AnimationAction
+
+  if (action) {
     action.timeScale = 1
     action.time = 0
     action.loop = loop ? LoopRepeat : LoopOnce
@@ -156,7 +138,7 @@ let runWeight = 0,
 export const setAvatarLocomotionAnimation = (entity: Entity) => {
   const animationComponent = getComponent(entity, AnimationComponent)
   if (!animationComponent.animations) return
-  const avatarAnimationComponent = getMutableComponent(entity, AvatarAnimationComponent)
+  const avatarAnimationComponent = getComponent(entity, AvatarAnimationComponent)
 
   const idle = getAnimationAction('Idle', animationComponent.mixer, animationComponent.animations)
   const run = getAnimationAction('Run', animationComponent.mixer, animationComponent.animations)
@@ -168,13 +150,13 @@ export const setAvatarLocomotionAnimation = (entity: Entity) => {
 
   //for now we're hard coding layer overrides into the locomotion blending function
   const animationGraph = avatarAnimationComponent.animationGraph
-  const idleBlendStrength = animationGraph.blendStrength.value
-  const layerOverride = animationGraph.layer.value > 0
-  const locomoteBlendStrength = layerOverride ? animationGraph.blendStrength.value : 0
-  const needsSkip = animationGraph.fadingOut
+  const idleBlendStrength = animationGraph.blendStrength
+  const layerOverride = animationGraph.layer > 0
+  const locomoteBlendStrength = layerOverride ? animationGraph.blendStrength : 0
 
-  const magnitude = moveLength.copy(avatarAnimationComponent.value.locomotion).setY(0).lengthSq()
-  if (animationGraph.blendAnimation && magnitude > 1 && idleBlendStrength >= 1 && !layerOverride) needsSkip.set(true)
+  const magnitude = moveLength.copy(avatarAnimationComponent.locomotion).setY(0).lengthSq()
+  if (animationGraph.blendAnimation && magnitude > 1 && idleBlendStrength >= 1 && !layerOverride)
+    animationGraph.fadingOut = true
 
   walkWeight = lerp(
     walk.getEffectiveWeight(),

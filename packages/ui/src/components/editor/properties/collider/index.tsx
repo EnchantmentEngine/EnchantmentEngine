@@ -1,45 +1,29 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { camelCaseToSpacedString } from '@ir-engine/common/src/utils/camelCaseToSpacedString'
-import { hasComponent, SerializedComponentType, useComponent } from '@ir-engine/ecs'
+import {
+  getComponent,
+  LayerComponents,
+  Layers,
+  SerializedComponentType,
+  setComponent,
+  useAncestorWithComponents,
+  useComponent,
+  useOptionalComponent,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { commitProperty, EditorComponentType } from '@ir-engine/editor/src/components/properties/Util'
-import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions.ts'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices.ts'
+import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
+import { AuthoringState } from '@ir-engine/engine/src/authoring/AuthoringState'
 import { ColliderComponent, supportedColliderShapes } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
-import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent.ts'
+import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { Shapes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
-import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent.ts'
-import { useAncestorWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree.tsx'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiMinimize2 } from 'react-icons/fi'
 import { HiPlus } from 'react-icons/hi2'
 import { Vector3 } from 'three'
-import { Checkbox } from '../../../../index.ts'
+import { Checkbox } from '../../../../index'
 import Button from '../../../../primitives/tailwind/Button'
 import Text from '../../../../primitives/tailwind/Text'
 import InputGroup from '../../input/Group'
@@ -58,14 +42,16 @@ const shapeTypeOptions = Object.entries(Shapes)
 export const ColliderComponentEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
   const colliderComponent = useComponent(props.entity, ColliderComponent)
+  const authoringComponent = getComponent(props.entity, LayerComponents[Layers.Authoring])
+  const linkedEntity = authoringComponent.relations[Layers.Simulation]
+  const meshComponent = useOptionalComponent(linkedEntity, MeshComponent)
 
-  const isMeshOrConvexHull =
-    colliderComponent.shape.value === Shapes.Mesh || colliderComponent.shape.value === Shapes.ConvexHull
+  const isMeshOrConvexHull = colliderComponent.shape === Shapes.Mesh || colliderComponent.shape === Shapes.ConvexHull
 
-  const showMatchMesh = !isMeshOrConvexHull && hasComponent(props.entity, MeshComponent)
+  const showMatchMesh = !isMeshOrConvexHull && !!meshComponent
   const hasRigidBody = useAncestorWithComponents(props.entity, [RigidBodyComponent])
 
-  const shape = colliderComponent.shape.value
+  const shape = colliderComponent.shape
 
   const sanitzeAndCommitNumber = <K extends keyof SerializedComponentType<typeof ColliderComponent>>(
     value: number,
@@ -98,8 +84,11 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
             title={t('editor:properties.collider.lbl-addRigidBody')}
             className="text-sm text-[#FFFFFF]"
             onClick={() => {
-              const nodes = SelectionState.getSelectedEntities()
-              EditorControlFunctions.addOrRemoveComponent(nodes, RigidBodyComponent, true, { type: 'fixed' })
+              const entities = SelectionState.getSelectedEntities()
+              for (const entity of entities) setComponent(entity, RigidBodyComponent, { type: 'fixed' })
+              AuthoringState.snapshotEntities(entities)
+              // trigger the rerender for the editor panel
+              SelectionState.updateSelection(entities.map((node) => UUIDComponent.get(node)))
             }}
           >
             <HiPlus />
@@ -111,7 +100,7 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
       <InputGroup name="Shape" label={t('editor:properties.collider.lbl-shape')}>
         <SelectInput
           options={shapeTypeOptions}
-          value={colliderComponent.shape.value}
+          value={colliderComponent.shape}
           onChange={commitProperty(ColliderComponent, 'shape')}
         />
       </InputGroup>
@@ -120,20 +109,17 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
           label={t('editor:properties.collider.lbl-matchMesh')}
           info={t('editor:properties.collider.info-matchMesh')}
         >
-          <Checkbox
-            checked={colliderComponent.matchMesh.value}
-            onChange={commitProperty(ColliderComponent, 'matchMesh')}
-          />
+          <Checkbox checked={colliderComponent.matchMesh} onChange={commitProperty(ColliderComponent, 'matchMesh')} />
         </InputGroup>
       )}
       <InputGroup
         name="CenterOffset"
         label={t('editor:properties.collider.lbl-centerOffset')}
-        disabled={colliderComponent.matchMesh.value}
+        disabled={colliderComponent.matchMesh}
       >
         <Vector3Input
-          disabled={colliderComponent.matchMesh.value}
-          value={colliderComponent.centerOffset.value}
+          disabled={colliderComponent.matchMesh}
+          value={colliderComponent.centerOffset}
           onChange={commitProperty(ColliderComponent, 'centerOffset')}
         />
       </InputGroup>
@@ -141,11 +127,11 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
         <InputGroup
           name="BoxSize"
           label={t('editor:properties.collider.lbl-boxSize')}
-          disabled={colliderComponent.matchMesh.value}
+          disabled={colliderComponent.matchMesh}
         >
           <Vector3Input
-            disabled={colliderComponent.matchMesh.value}
-            value={colliderComponent.boxSize.value}
+            disabled={colliderComponent.matchMesh}
+            value={colliderComponent.boxSize}
             onChange={(value) => sanitizeAndCommitVector3(value, 'boxSize')}
           />
         </InputGroup>
@@ -154,14 +140,14 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
         <InputGroup
           name="Radius"
           label={t('editor:properties.collider.lbl-radius')}
-          disabled={colliderComponent.matchMesh.value}
+          disabled={colliderComponent.matchMesh}
         >
           <NumericScrubber
             smallStep={0.001}
             mediumStep={0.01}
             largeStep={0.1}
-            disabled={colliderComponent.matchMesh.value}
-            value={colliderComponent.radius.value}
+            disabled={colliderComponent.matchMesh}
+            value={colliderComponent.radius}
             onChange={(value) => sanitzeAndCommitNumber(value, 'radius')}
             onRelease={(value) => sanitzeAndCommitNumber(value, 'radius')}
           />
@@ -171,14 +157,14 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
         <InputGroup
           name="Height"
           label={t('editor:properties.collider.lbl-height')}
-          disabled={colliderComponent.matchMesh.value}
+          disabled={colliderComponent.matchMesh}
         >
           <NumericScrubber
             smallStep={0.001}
             mediumStep={0.01}
             largeStep={0.1}
-            disabled={colliderComponent.matchMesh.value}
-            value={colliderComponent.height.value}
+            disabled={colliderComponent.matchMesh}
+            value={colliderComponent.height}
             onChange={(value) => sanitzeAndCommitNumber(value, 'height')}
             onRelease={(value) => sanitzeAndCommitNumber(value, 'height')}
           />
@@ -189,15 +175,12 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
           smallStep={0.001}
           mediumStep={0.01}
           largeStep={0.1}
-          value={colliderComponent.mass.value}
+          value={colliderComponent.mass}
           onChange={(value) => sanitzeAndCommitNumber(value, 'mass')}
         />
       </InputGroup>
       <InputGroup name="Mass Center" label={t('editor:properties.collider.lbl-massCenter')} className="w-auto">
-        <Vector3Input
-          value={colliderComponent.massCenter.value}
-          onChange={commitProperty(ColliderComponent, 'massCenter')}
-        />
+        <Vector3Input value={colliderComponent.massCenter} onChange={commitProperty(ColliderComponent, 'massCenter')} />
       </InputGroup>
       <InputGroup
         name="Friction"
@@ -209,7 +192,7 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
           mediumStep={0.01}
           largeStep={0.1}
           min={0}
-          value={colliderComponent.friction.value}
+          value={colliderComponent.friction}
           onChange={commitProperty(ColliderComponent, 'friction')}
         />
       </InputGroup>
@@ -224,19 +207,19 @@ export const ColliderComponentEditor: EditorComponentType = (props) => {
           largeStep={0.1}
           min={0}
           max={1}
-          value={colliderComponent.restitution.value}
+          value={colliderComponent.restitution}
           onChange={commitProperty(ColliderComponent, 'restitution')}
         />
       </InputGroup>
       <InputGroup name="Collision Layer" label={t('editor:properties.collider.lbl-collisionLayer')}>
         <NumericInput
-          value={colliderComponent.collisionLayer.value}
+          value={colliderComponent.collisionLayer}
           onChange={commitProperty(ColliderComponent, 'collisionLayer')}
         />
       </InputGroup>
       <InputGroup name="Collision Mask" label={t('editor:properties.collider.lbl-collisionMask')}>
         <NumericInput
-          value={colliderComponent.collisionMask.value}
+          value={colliderComponent.collisionMask}
           onChange={commitProperty(ColliderComponent, 'collisionMask')}
         />
       </InputGroup>

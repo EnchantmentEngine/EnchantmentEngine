@@ -1,35 +1,11 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { MathUtils, Vector2, Vector3 } from 'three'
+import { MathUtils, MeshBasicMaterial, Vector3 } from 'three'
 
 import {
   ECSState,
   Entity,
+  EntityTreeComponent,
   getComponent,
-  getMutableComponent,
+  getSimulationCounterpart,
   removeComponent,
   removeEntity,
   setComponent,
@@ -47,22 +23,20 @@ import { getState, isClient, useImmediateEffect, useMutableState } from '@ir-eng
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
 import { InputComponent, InputExecutionOrder } from '@ir-engine/spatial/src/input/components/InputComponent'
-import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import {
   BoundingBoxComponent,
   updateBoundingBox
-} from '@ir-engine/spatial/src/transform/components/BoundingBoxComponents'
+} from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
 import { WebLayer3D } from '@ir-engine/xrui'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EngineState, EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { inFrustum } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { smootheLerpAlpha } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import {
   DistanceFromCameraComponent,
   DistanceFromLocalClientComponent
@@ -78,36 +52,39 @@ import { InteractableState, InteractableTransitions } from '../functions/interac
  *
  * NOTE - if more states are added we need to modify logic in InteractableSystem.ts for state other than "none"
  */
-export enum XRUIVisibilityOverride {
-  none = 0,
-  on = 1,
-  off = 2
-}
-export enum XRUIActivationType {
-  proximity = 0,
-  hover = 1
-}
+export const XRUIVisibilityOverride = {
+  none: 0,
+  on: 1,
+  off: 2
+} as const
+
+export type XRUIVisibilityOverrideType = (typeof XRUIVisibilityOverride)[keyof typeof XRUIVisibilityOverride]
+export const XRUIActivationType = {
+  proximity: 0,
+  hover: 1
+} as const
+
+export type XRUIActivationTypeType = (typeof XRUIActivationType)[keyof typeof XRUIActivationType]
 
 const xrDistVec3 = new Vector3()
-const inputPointerPosition = new Vector2()
-let inputPointerEntity = UndefinedEntity
 
-const updateXrDistVec3 = (selfAvatarEntity: Entity) => {
-  //TODO change from using rigidbody to use the transform position (+ height of avatar)
-  const selfAvatarRigidBodyComponent = getComponent(selfAvatarEntity, RigidBodyComponent)
-  const avatar = getComponent(selfAvatarEntity, AvatarComponent)
-  xrDistVec3.copy(selfAvatarRigidBodyComponent.position)
-  xrDistVec3.y += avatar.avatarHeight
+const updateXrDistVec3 = (targetEntity: Entity) => {
+  const transformComponent = getComponent(targetEntity, TransformComponent)
+  xrDistVec3.copy(transformComponent.position)
+  if (hasComponent(targetEntity, AvatarComponent)) {
+    const avatar = getComponent(targetEntity, AvatarComponent)
+    xrDistVec3.y += avatar.avatarHeight
+  }
 }
 
 const _center = new Vector3()
 const _size = new Vector3()
 
 export const updateInteractableUI = (entity: Entity) => {
-  const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
+  const targetEntity = AvatarComponent.getSelfAvatarEntity() ?? getState(ReferenceSpaceState).viewerEntity
   const interactable = getOptionalComponent(entity, InteractableComponent)
 
-  if (!selfAvatarEntity || !interactable || interactable.uiEntity == UndefinedEntity) return
+  if (!targetEntity || !interactable || interactable.uiEntity == UndefinedEntity) return
 
   const xrui = getOptionalComponent(interactable.uiEntity, XRUIComponent)
   const xruiTransform = getOptionalComponent(interactable.uiEntity, TransformComponent)
@@ -115,7 +92,7 @@ export const updateInteractableUI = (entity: Entity) => {
 
   const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
 
-  updateXrDistVec3(selfAvatarEntity)
+  updateXrDistVec3(targetEntity)
 
   const hasVisibleComponent = hasComponent(interactable.uiEntity, VisibleComponent)
   if (hasVisibleComponent) {
@@ -129,7 +106,7 @@ export const updateInteractableUI = (entity: Entity) => {
       xruiTransform.position.z = center.z
       xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, center.y + 0.7 * size.y, alpha)
 
-      const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
       xruiTransform.rotation.copy(cameraTransform.rotation)
     } else {
       TransformComponent.getWorldPosition(entity, _center)
@@ -138,7 +115,7 @@ export const updateInteractableUI = (entity: Entity) => {
       xruiTransform.position.z = _center.z
       xruiTransform.position.y = MathUtils.lerp(xruiTransform.position.y, _center.y + 0.5, alpha)
 
-      const cameraTransform = getComponent(getState(EngineState).viewerEntity, TransformComponent)
+      const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
       xruiTransform.rotation.copy(cameraTransform.rotation)
     }
   }
@@ -175,14 +152,14 @@ export const updateInteractableUI = (entity: Entity) => {
     } else {
       activateUI = interactable.uiVisibilityOverride !== XRUIVisibilityOverride.off //could be more explicit, needs to be if we add more enum options
     }
-    getMutableComponent(entity, InteractableComponent).canInteract.set(activateUI)
+    setComponent(entity, InteractableComponent, { canInteract: activateUI })
   }
 
   //highlight if hovering OR if closest, otherwise turn off highlight
-  const mutableInteractable = getMutableComponent(entity, InteractableComponent)
+  const mutableInteractable = getComponent(entity, InteractableComponent)
   const newHighlight = hovering || entity === getState(InteractableState).available[0]
-  if (mutableInteractable.highlighted.value !== newHighlight) {
-    mutableInteractable.highlighted.set(newHighlight)
+  if (mutableInteractable.highlighted !== newHighlight) {
+    setComponent(entity, InteractableComponent, { highlighted: newHighlight })
   }
 
   if (transition.state === 'OUT' && activateUI) {
@@ -194,11 +171,8 @@ export const updateInteractableUI = (entity: Entity) => {
   }
   const deltaSeconds = getState(ECSState).deltaSeconds
   transition.update(deltaSeconds, (opacity) => {
-    if (opacity === 0) {
-      removeComponent(interactable.uiEntity, VisibleComponent)
-    }
     xrui.rootLayer.traverseLayersPreOrder((layer: WebLayer3D) => {
-      const mat = layer.contentMesh.material as THREE.MeshBasicMaterial
+      const mat = layer.contentMesh.material as MeshBasicMaterial
       mat.opacity = opacity
     })
   })
@@ -223,10 +197,10 @@ const addInteractableUI = (entity: Entity) => {
     TransformComponent.getWorldPosition(entity, _center)
     uiTransform.position.copy(_center)
   }
-  getMutableComponent(entity, InteractableComponent).uiEntity.set(uiEntity)
-  setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(EngineState).originEntity })
+  setComponent(entity, InteractableComponent, { uiEntity })
+  setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiEntity, ComputedTransformComponent, {
-    referenceEntities: [entity, getState(EngineState).viewerEntity],
+    referenceEntities: [entity, getState(ReferenceSpaceState).viewerEntity],
     computeFunction: () => updateInteractableUI(entity)
   })
 
@@ -240,26 +214,33 @@ export const InteractableComponent = defineComponent({
   name: 'InteractableComponent',
   jsonID: 'EE_interactable',
 
-  schema: S.Object({
-    canInteract: S.NonSerialized(S.Bool(false)),
-    uiInteractable: S.NonSerialized(S.Bool(true)),
-    uiEntity: S.Entity(),
-    label: S.String('E'),
-    uiVisibilityOverride: S.NonSerialized(S.Enum(XRUIVisibilityOverride, XRUIVisibilityOverride.none)),
-    uiActivationType: S.NonSerialized(S.Enum(XRUIActivationType, XRUIActivationType.proximity)),
-    activationDistance: S.Number(2),
-    clickInteract: S.Bool(false),
-    highlighted: S.NonSerialized(S.Bool(false)),
-    callbacks: S.Array(
-      S.Object({
+  schema: Schema.Object({
+    canInteract: Schema.Bool({ default: false, serialized: false }),
+    uiInteractable: Schema.Bool({ default: true, serialized: false }),
+    uiEntity: EntitySchema.Entity({ serialized: false }),
+    label: Schema.String({ default: 'E' }),
+    uiVisibilityOverride: Schema.Enum(XRUIVisibilityOverride, {
+      $comment: "A number enum, where: 0 represents 'none', 1 represents 'on', 2 represents 'off'",
+      default: XRUIVisibilityOverride.none,
+      serialized: false
+    }),
+    uiActivationType: Schema.Enum(XRUIActivationType, {
+      $comment: "A number enum, where: 0 represents 'proximity', 1 represents 'hover'",
+      default: XRUIActivationType.proximity
+    }),
+    activationDistance: Schema.Number({ default: 2 }),
+    clickInteract: Schema.Bool({ default: false }),
+    highlighted: Schema.Bool({ default: false, serialized: false }),
+    callbacks: Schema.Array(
+      Schema.Object({
         /**
          * The function to call on the CallbackComponent of the targetEntity when the trigger volume is entered.
          */
-        callbackID: S.String(),
+        callbackID: Schema.String(),
         /**
          * empty string represents self
          */
-        target: S.EntityUUID()
+        target: EntitySchema.EntityID()
       })
     )
   }),
@@ -274,38 +255,38 @@ export const InteractableComponent = defineComponent({
       setComponent(entity, DistanceFromCameraComponent)
       setComponent(entity, DistanceFromLocalClientComponent)
       setComponent(entity, BoundingBoxComponent)
+      setComponent(entity, InputComponent)
       return () => {
         removeComponent(entity, DistanceFromCameraComponent)
         removeComponent(entity, DistanceFromLocalClientComponent)
         removeComponent(entity, BoundingBoxComponent)
+        removeComponent(entity, InputComponent)
       }
     }, [])
 
     InputComponent.useExecuteWithInput(
       () => {
-        const buttons = InputComponent.getMergedButtons(entity)
-        if (!interactableComponent.clickInteract.value && buttons.PrimaryClick?.pressed) return
-        if (
-          buttons.Interact?.pressed &&
-          !buttons.Interact?.dragging &&
-          getState(InputState).capturingEntity === UndefinedEntity
-        ) {
-          InputState.setCapturingEntity(entity)
+        if (!interactableComponent.canInteract) return
+        const buttons = InputComponent.getButtons(entity)
 
-          if (buttons.Interact?.up) {
-            callInteractCallbacks(entity)
-          }
+        if (buttons.Interact?.up && !buttons.Interact?.dragging) {
+          callInteractCallbacks(entity)
         }
       },
-      true,
-      InputExecutionOrder.After
+      InputExecutionOrder.After,
+      true
     )
 
     useEffect(() => {
+      const simulationEntity = getSimulationCounterpart(entity)
       if (!isEditing.value) {
-        const uiEntity = addInteractableUI(entity)
+        addInteractableUI(simulationEntity)
         return () => {
+          const interactableComponent = getOptionalComponent(entity, InteractableComponent)
+          if (!interactableComponent) return
+          const uiEntity = interactableComponent.uiEntity
           if (uiEntity) {
+            setComponent(uiEntity, InteractableComponent, { uiEntity: UndefinedEntity })
             removeEntity(uiEntity)
           }
         }
@@ -319,8 +300,8 @@ export const InteractableComponent = defineComponent({
 const callInteractCallbacks = (entity: Entity) => {
   const interactable = getComponent(entity, InteractableComponent)
   for (const callback of interactable.callbacks) {
-    if (callback.target && !UUIDComponent.getEntityByUUID(callback.target)) continue
-    const targetEntity = callback.target ? UUIDComponent.getEntityByUUID(callback.target) : entity
+    if (callback.target && !UUIDComponent.getEntityFromSameSourceByID(entity, callback.target)) continue
+    const targetEntity = callback.target ? UUIDComponent.getEntityFromSameSourceByID(entity, callback.target) : entity
     if (targetEntity && callback.callbackID) {
       const callbacks = getOptionalComponent(targetEntity, CallbackComponent)
       if (!callbacks) continue

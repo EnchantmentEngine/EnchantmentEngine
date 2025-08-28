@@ -1,32 +1,7 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { State } from '@hookstate/core'
 import { v4 as uuidv4 } from 'uuid'
 
-import { PeerID } from '../types/Types'
+import { PeerID, UserID } from '../types/Types'
 import { ActionQueueHandle, ActionQueueInstance, ResolvedActionType, Topic } from './ActionFunctions'
 import { ReactorRoot } from './ReactorFunctions'
 
@@ -45,6 +20,10 @@ export interface HyperStore {
    */
   peerID: PeerID
   /**
+   * The peer index
+   */
+  peerIndex: number
+  /**
    * A function which returns the current dispatch time (units are arbitrary)
    */
   getDispatchTime: () => number
@@ -57,9 +36,14 @@ export interface HyperStore {
    */
   defaultDispatchDelay: () => number
   /**
+   * The agent id
+   */
+  getAgentID: () => UserID
+  /**
    * State dictionary
    */
   stateMap: Record<string, State<any>>
+  valueMap: Record<string, any>
 
   stateReactors: Record<string, ReactorRoot>
 
@@ -91,7 +75,7 @@ export interface HyperStore {
   receptors: Record<string, () => void>
 
   /** active reactors */
-  activeReactors: Set<ReactorRoot>
+  activeReactors: Map<string, ReactorRoot>
 
   logger: (component: string) => {
     debug: (...message: any[]) => void
@@ -110,15 +94,21 @@ export function createHyperStore(options?: {
   getDispatchTime?: () => number
   defaultDispatchDelay?: () => number
   getCurrentReactorRoot?: () => ReactorRoot | undefined
+  getAgentID?: () => UserID
 }) {
+  const peerID = uuidv4() as PeerID
+  const peerIndex = uuidToUint32(peerID)
   const store: HyperStore = {
     defaultTopic: 'default' as Topic,
     forwardingTopics: new Set<Topic>(),
     getDispatchTime: options?.getDispatchTime ?? (() => 0),
     defaultDispatchDelay: options?.defaultDispatchDelay ?? (() => 0),
     getCurrentReactorRoot: options?.getCurrentReactorRoot ?? (() => undefined),
-    peerID: uuidv4() as PeerID,
+    getAgentID: () => 'default' as UserID,
+    peerID,
+    peerIndex,
     stateMap: {},
+    valueMap: {},
     stateReactors: {},
     actions: {
       queues: new Map(),
@@ -129,7 +119,7 @@ export function createHyperStore(options?: {
       outgoing: {}
     },
     receptors: {},
-    activeReactors: new Set(),
+    activeReactors: new Map(),
     logger: (component: string) => ({
       debug: (...message: string[]) => console.debug(`[${component}]`, ...message),
       info: (...message: string[]) => console.info(`[${component}]`, ...message),
@@ -140,4 +130,17 @@ export function createHyperStore(options?: {
   }
   HyperFlux.store = store
   return store
+}
+
+/**
+ * Converts a UUID string to a 32-bit unsigned integer.
+ */
+function uuidToUint32(uuid) {
+  let hash = 0
+  for (let i = 0; i < uuid.length; i++) {
+    const char = uuid.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash >>> 0 // Force to unsigned 32-bit integer
+  }
+  return hash
 }

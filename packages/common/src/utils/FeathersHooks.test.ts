@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { act, renderHook } from '@testing-library/react'
 import assert from 'assert'
 import { useEffect } from 'react'
@@ -30,7 +5,7 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { UserName, userPath } from '@ir-engine/common/src/schema.type.module'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { EventDispatcher, createState } from '@ir-engine/hyperflux'
+import { EventDispatcher, hookstate } from '@ir-engine/hyperflux'
 
 import { API } from '@ir-engine/common'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
@@ -276,7 +251,7 @@ describe('FeathersHooks', () => {
   describe('can use listeners', () => {
     describe('on created', () => {
       it('should populate find query', async () => {
-        const result = createState({} as any)
+        const result = hookstate({} as any)
         const { rerender } = renderHook(() => {
           const data = useFind(userPath)
           useEffect(() => {
@@ -297,7 +272,7 @@ describe('FeathersHooks', () => {
       })
 
       it('should populate get query', async () => {
-        const result = createState({} as any)
+        const result = hookstate({} as any)
         const { rerender } = renderHook(() => {
           const data = useGet(userPath, '3')
           useEffect(() => {
@@ -335,7 +310,7 @@ describe('FeathersHooks', () => {
       })
 
       it('should populate get query', async () => {
-        const result = createState({} as any)
+        const result = hookstate({} as any)
         const { rerender } = renderHook(() => {
           const data = useGet(userPath, '1')
           useEffect(() => {
@@ -373,7 +348,7 @@ describe('FeathersHooks', () => {
       })
 
       it('should populate get query', async () => {
-        const result = createState({} as any)
+        const result = hookstate({} as any)
         const { rerender } = renderHook(() => {
           const data = useGet(userPath, '1')
           useEffect(() => {
@@ -411,7 +386,7 @@ describe('FeathersHooks', () => {
       })
 
       it('should populate get query', async () => {
-        const result = createState({} as any)
+        const result = hookstate({} as any)
         const { rerender } = renderHook(() => {
           const data = useGet(userPath, '1')
           useEffect(() => {

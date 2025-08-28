@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import {
   Box3,
@@ -39,7 +14,7 @@ import {
   Vector3
 } from 'three'
 
-import { AnimationSystemGroup, Engine, UUIDComponent } from '@ir-engine/ecs'
+import { AnimationSystemGroup, createEntity, removeEntity, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   getComponent,
   getOptionalComponent,
@@ -47,44 +22,53 @@ import {
   removeComponent,
   setComponent,
   useComponent,
+  useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { defineState, getMutableState, getState, NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { Vector3_Back } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import {
   createPriorityQueue,
   createSortAndApplyPriorityQueue
 } from '@ir-engine/spatial/src/common/functions/PriorityQueue'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { addObjectToGroup, GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
 import { DirectionalLightComponent } from '@ir-engine/spatial/src/renderer/components/lights/DirectionalLightComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
-import { ObjectLayerComponents } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
+import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
+import {
+  ObjectLayerComponents,
+  ObjectLayerMaskComponent
+} from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { CSM } from '@ir-engine/spatial/src/renderer/csm/CSM'
+import { CSM, CSMParams } from '@ir-engine/spatial/src/renderer/csm/CSM'
+import { CSMComponent } from '@ir-engine/spatial/src/renderer/csm/CSMComponent'
 //import { CSMHelper } from '@ir-engine/spatial/src/renderer/csm/CSMHelper'
+import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/ecs'
+import { isWebGPURenderer } from '@ir-engine/spatial/src/renderer/functions/RendererBackendUtils'
 import { getShadowsEnabled, useShadowsEnabled } from '@ir-engine/spatial/src/renderer/functions/RenderSettingsFunction'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
 import { compareDistanceToCamera } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
-import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { XRLightProbeState } from '@ir-engine/spatial/src/xr/XRLightProbeSystem'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { RenderModes } from '@ir-engine/spatial/src/renderer/constants/RenderModes'
+import { CSMPluginComponent } from '@ir-engine/spatial/src/renderer/csm/CSMPluginComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
-import { createDisposable } from '@ir-engine/spatial/src/resources/resourceHooks'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
+import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-import { useTexture } from '../../assets/functions/resourceLoaderHooks'
-import { DomainConfigState } from '../../assets/state/DomainConfigState'
+import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js'
+import { CSMFrustum } from 'three/examples/jsm/csm/CSMFrustum.js'
 import { useHasModelOrIndependentMesh } from '../../gltf/GLTFComponent'
 import { DropShadowComponent } from '../components/DropShadowComponent'
 import { RenderSettingsComponent } from '../components/RenderSettingsComponent'
@@ -107,123 +91,131 @@ export const ShadowSystemState = defineState({
 })
 
 export const shadowDirection = new Vector3(0, -1, 0)
-const shadowRotation = new Quaternion()
-const raycaster = new Raycaster()
-raycaster.firstHitOnly = true
-const raycasterPosition = new Vector3()
+const _shadowRotation = new Quaternion()
+const _raycaster = new Raycaster()
+_raycaster.firstHitOnly = true
+const _raycasterPosition = new Vector3()
 
 const EntityCSMReactor = (props: { entity: Entity; rendererEntity: Entity; renderSettingsEntity: Entity }) => {
   const { entity, rendererEntity, renderSettingsEntity } = props
-  const rendererComponent = useComponent(rendererEntity, RendererComponent)
   const renderSettingsComponent = useComponent(renderSettingsEntity, RenderSettingsComponent)
 
-  const directionalLightComponent = useComponent(entity, DirectionalLightComponent)
+  const directionalLightComponent = useOptionalComponent(entity, DirectionalLightComponent)
+
   const shadowMapResolution = useHookstate(getMutableState(RendererState).shadowMapResolution)
 
-  const directionalLight = directionalLightComponent.light.get(NO_PROXY) as DirectionalLight
-
-  const csm = rendererComponent.csm.get(NO_PROXY) as CSM | null
+  const directionalLight = directionalLightComponent?.light
 
   useEffect(() => {
-    if (!directionalLight) return
-    if (!directionalLightComponent.castShadow.value) return
-    const csm = new CSM({
+    if (!directionalLightComponent || !directionalLight) return
+    if (!directionalLightComponent.castShadow) return
+    const useWebGPU = isWebGPURenderer(rendererEntity)
+    let csmShadowNode: CSMShadowNode | undefined
+
+    if (useWebGPU) {
+      const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+      //will update
+      csmShadowNode = new CSMShadowNode(directionalLight, {
+        cascades: 4,
+        maxFar: 200,
+        mode: 'practical'
+      })
+      directionalLight.shadow.shadowNode = csmShadowNode
+      directionalLight.castShadow = true
+
+      camera.cameras[0].updateProjectionMatrix()
+      csmShadowNode.camera = camera.cameras[0]
+      csmShadowNode.fade = true
+      csmShadowNode.mainFrustum = new CSMFrustum()
+      csmShadowNode.mainFrustum.setFromProjectionMatrix(camera.projectionMatrix, csmShadowNode.maxFar)
+    }
+
+    const params = {
       light: directionalLight as DirectionalLight,
       shadowMapSize: shadowMapResolution.value,
-      shadowBias: directionalLightComponent.shadowBias.value,
-      maxFar: directionalLightComponent.cameraFar.value,
-      lightIntensity: directionalLightComponent.intensity.value,
-      lightColor: directionalLightComponent.color.value,
-      cascades: renderSettingsComponent.cascades.value
-    })
-    rendererComponent.csm.set(csm)
+      shadowBias: directionalLightComponent.shadowBias,
+      maxFar: directionalLightComponent.cameraFar,
+      lightIntensity: directionalLightComponent.intensity,
+      lightColor: directionalLightComponent.color,
+      cascades: renderSettingsComponent.cascades,
+      lightMargin: directionalLightComponent.cameraFar,
+      csmShadowNode: csmShadowNode
+    } as CSMParams
+
+    CSM.initCSM(params, rendererEntity)
+
     return () => {
-      csm.dispose()
-      if (!hasComponent(rendererEntity, RendererComponent)) return
-      rendererComponent.csm.set(null)
+      CSM.dispose(rendererEntity)
     }
-  }, [directionalLight, directionalLightComponent?.castShadow.value])
+  }, [
+    directionalLightComponent?.castShadow,
+    renderSettingsComponent.cascades,
+    renderSettingsComponent.shadowMapType,
+    !!directionalLight
+  ])
 
   /** Must run after scene object system to ensure source light is not lit */
   useExecute(
     () => {
-      if (!directionalLight || !directionalLightComponent.castShadow.value) return
+      if (!directionalLight) return
+      if (!getOptionalComponent(entity, DirectionalLightComponent)?.castShadow) return
       directionalLight.visible = false
     },
     { after: SceneObjectSystem }
   )
 
   useEffect(() => {
-    if (!csm) return
-    if (!directionalLight) return
-    if (!directionalLightComponent.castShadow.value) return
+    setComponent(rendererEntity, CSMComponent)
+    const csmComponent = getComponent(rendererEntity, CSMComponent)
 
-    csm.shadowBias = directionalLight.shadow.bias
-    csm.maxFar = directionalLightComponent.cameraFar.value
-    csm.shadowMapSize = shadowMapResolution.value
+    if (!directionalLightComponent?.castShadow || !directionalLight) return
 
-    for (const light of csm.lights) {
-      light.color.set(new Color(directionalLightComponent.color.value))
-      light.intensity = directionalLightComponent.intensity.value
+    csmComponent.shadowBias = directionalLight.shadow.bias
+    csmComponent.maxFar = directionalLightComponent.cameraFar
+    csmComponent.shadowMapSize = shadowMapResolution.value
+
+    for (const light of csmComponent.lights) {
+      light.color.set(new Color(directionalLightComponent.color))
+      ;(light as DirectionalLight).intensity = directionalLightComponent.intensity
       light.shadow.mapSize.setScalar(shadowMapResolution.value)
-      light.shadow.radius = directionalLightComponent.shadowRadius.value
+      ;(light as DirectionalLight).shadow.radius = directionalLightComponent.shadowRadius
     }
-    csm.needsUpdate = true
+    setComponent(entity, CSMComponent, { needsUpdate: true })
   }, [
-    rendererComponent.csm,
     shadowMapResolution,
     directionalLight,
-    directionalLightComponent.shadowBias,
-    directionalLightComponent.intensity,
-    directionalLightComponent.color,
-    directionalLightComponent.castShadow,
-    directionalLightComponent.shadowRadius,
-    directionalLightComponent.cameraFar
+    directionalLightComponent?.shadowBias,
+    directionalLightComponent?.intensity,
+    directionalLightComponent?.color,
+    directionalLightComponent?.castShadow,
+    directionalLightComponent?.shadowRadius,
+    directionalLightComponent?.cameraFar
   ])
 
   useEffect(() => {
-    if (!csm) return
-    csm.cascades = renderSettingsComponent.cascades.value
-    csm.needsUpdate = true
-  }, [csm, renderSettingsComponent.cascades])
+    if (!hasComponent(rendererEntity, CSMComponent)) return
+    setComponent(rendererEntity, CSMComponent, { cascades: renderSettingsComponent.cascades, needsUpdate: true })
+  }, [renderSettingsComponent.cascades])
 
   return (
     <QueryReactor
-      Components={[ShadowComponent, GroupComponent]}
-      ChildEntityReactor={EntityChildCSMReactor}
+      Components={[MaterialStateComponent]}
+      ChildEntityReactor={ShadowSystemReactors.EntityChildCSMReactor}
       props={{ rendererEntity: rendererEntity }}
     />
   )
 }
 
-const EntityChildCSMReactor = (props: { rendererEntity: Entity }) => {
-  const entity = useEntityContext()
-  const { rendererEntity } = props
-
-  const shadowComponent = useComponent(entity, ShadowComponent)
-  const groupComponent = useComponent(entity, GroupComponent)
-  const csm = useComponent(rendererEntity, RendererComponent).csm.value
+const EntityChildCSMReactor = (props: { rendererEntity: Entity; entity: Entity }) => {
+  const { rendererEntity, entity } = props
+  const material = useComponent(entity, MaterialStateComponent).material
+  const csm = useComponent(rendererEntity, CSMComponent)
 
   useEffect(() => {
-    if (!csm || !shadowComponent.receive.value) return
-
-    if (!groupComponent) return
-
-    const objs = [...groupComponent.value] as Mesh<any, Material>[]
-    for (const obj of objs) {
-      if (obj.material) {
-        csm.setupMaterial(obj)
-      }
-    }
-
-    return () => {
-      for (const obj of objs) {
-        if (obj.material) {
-          csm.teardownMaterial(obj.material)
-        }
-      }
-    }
-  }, [shadowComponent.receive, csm])
+    if (!csm) return
+    setComponent(entity, CSMPluginComponent)
+    return () => removeComponent(entity, CSMPluginComponent)
+  }, [csm, material])
 
   return null
 }
@@ -235,12 +227,12 @@ function RenderSettingsQueryReactor() {
   /**
    * @todo Currently we only have support for CSM for the core renderer, since we need to add proper multi-scene support via spatial volumes.
    */
-  const viewerEntity = useHookstate(getMutableState(EngineState).viewerEntity).value
+  const viewerEntity = useHookstate(getMutableState(ReferenceSpaceState).viewerEntity).value
 
   if (!rendererEntity || rendererEntity !== viewerEntity) return null
   if (renderMode === RenderModes.UNLIT || renderMode === RenderModes.LIT) return null
 
-  return <CSMReactor rendererEntity={rendererEntity} renderSettingsEntity={entity} />
+  return <ShadowSystemReactors.CSMReactor rendererEntity={rendererEntity} renderSettingsEntity={entity} />
 }
 
 function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entity }) {
@@ -249,51 +241,46 @@ function CSMReactor(props: { rendererEntity: Entity; renderSettingsEntity: Entit
 
   const renderSettingsComponent = useComponent(renderSettingsEntity, RenderSettingsComponent)
   const xrLightProbeEntity = useHookstate(getMutableState(XRLightProbeState).directionalLightEntity)
-  const activeLightEntity = useHookstate(UUIDComponent.getEntityByUUID(renderSettingsComponent.primaryLight.value))
-  const directionalLight = useOptionalComponent(activeLightEntity.value, DirectionalLightComponent)
+  const activeLightEntity = UUIDComponent.useEntityFromSameSourceByID(
+    renderSettingsEntity,
+    renderSettingsComponent.primaryLight
+  )
 
-  //const rendererState = useMutableState(RendererState)
+  const activeLightEntityState = useHookstate(activeLightEntity)
+  const directionalLightComponent = useHasComponent(activeLightEntityState.value, DirectionalLightComponent)
 
-  // useEffect(() => {
-  //   if (!rendererComponent) return
-  //   if (!rendererComponent.csm.value || !rendererState.nodeHelperVisibility.value) return
-
-  //   const helper = new CSMHelper()
-  //   rendererComponent.csmHelper.set(helper)
-  //   return () => {
-  //     helper.remove()
-  //     rendererComponent.csmHelper.set(null)
-  //   }
-  // }, [rendererComponent, renderSettingsComponent.csm, rendererState.nodeHelperVisibility])
+  const primaryLightVisibleComponent = useHasComponent(activeLightEntity, VisibleComponent)
 
   useEffect(() => {
-    if (rendererEntity === Engine.instance.viewerEntity && xrLightProbeEntity.value) {
-      activeLightEntity.set(xrLightProbeEntity.value)
+    if (rendererEntity === getState(ReferenceSpaceState).viewerEntity && xrLightProbeEntity.value) {
+      activeLightEntityState.set(xrLightProbeEntity.value)
       return
     }
 
-    if (renderSettingsComponent.primaryLight.value) {
-      activeLightEntity.set(UUIDComponent.getEntityByUUID(renderSettingsComponent.primaryLight.value))
+    if (renderSettingsComponent.primaryLight && primaryLightVisibleComponent) {
+      activeLightEntityState.set(
+        UUIDComponent.getEntityFromSameSourceByID(renderSettingsEntity, renderSettingsComponent.primaryLight)
+      )
       return
     }
 
-    activeLightEntity.set(UndefinedEntity)
-  }, [xrLightProbeEntity.value, renderSettingsComponent.primaryLight])
+    activeLightEntityState.set(UndefinedEntity)
+  }, [xrLightProbeEntity.value, renderSettingsComponent.primaryLight, primaryLightVisibleComponent])
 
-  if (!renderSettingsComponent.csm.value || !activeLightEntity.value || !directionalLight?.value) return null
+  if (!renderSettingsComponent.csm || !activeLightEntityState.value || !directionalLightComponent) return null
 
   return (
-    <EntityCSMReactor
-      key={activeLightEntity.value}
-      entity={activeLightEntity.value}
+    <ShadowSystemReactors.EntityCSMReactor
+      key={activeLightEntityState.value}
+      entity={activeLightEntityState.value}
       rendererEntity={rendererEntity}
       renderSettingsEntity={renderSettingsEntity}
     />
   )
 }
 
-const shadowGeometry = new PlaneGeometry(1, 1, 1, 1).rotateX(-Math.PI)
-const shadowMaterial = new MeshBasicMaterial({
+const _shadowGeometry = new PlaneGeometry(1, 1, 1, 1).rotateX(-Math.PI)
+const _shadowMaterial = new MeshBasicMaterial({
   side: DoubleSide,
   transparent: true,
   opacity: 1,
@@ -304,11 +291,11 @@ const shadowMaterial = new MeshBasicMaterial({
 
 const dropShadowComponentQuery = defineQuery([DropShadowComponent])
 
-const minRadius = 0.15
-const maxRadius = 5
-const sphere = new Sphere()
-const box3 = new Box3()
-const vec3 = new Vector3()
+const _minRadius = 0.15
+const _maxRadius = 5
+const _sphere = new Sphere()
+const _box3 = new Box3()
+const _vec3 = new Vector3()
 
 const DropShadowReactor = () => {
   const entity = useEntityContext()
@@ -316,62 +303,61 @@ const DropShadowReactor = () => {
   const shadow = useComponent(entity, ShadowComponent)
 
   useEffect(() => {
-    if (!shadow.cast.value || !hasMeshOrModel || hasComponent(entity, DropShadowComponent)) return
+    if (!shadow.cast || !hasMeshOrModel || hasComponent(entity, DropShadowComponent)) return
 
-    box3.makeEmpty()
+    _box3.makeEmpty()
 
     let foundMesh = false
 
     iterateEntityNode(entity, (child) => {
       const mesh = getOptionalComponent(child, MeshComponent)
       if (mesh) {
-        box3.expandByObject(mesh)
+        _box3.expandByObject(mesh)
         foundMesh = true
       }
     })
 
     if (!foundMesh) return
 
-    box3.getBoundingSphere(sphere)
+    _box3.getBoundingSphere(_sphere)
 
-    if (sphere.radius > maxRadius) return
+    if (_sphere.radius > _maxRadius) return
 
-    const radius = Math.max(sphere.radius * 2, minRadius)
-    const center = sphere.center.sub(TransformComponent.getWorldPosition(entity, vec3))
+    const radius = Math.max(_sphere.radius * 2, _minRadius)
+    const center = _sphere.center.sub(TransformComponent.getWorldPosition(entity, _vec3))
     const shadowEntity = createEntity()
-    const [shadowObject, unload] = createDisposable(Mesh, shadowEntity, shadowGeometry.clone(), shadowMaterial.clone())
-    addObjectToGroup(shadowEntity, shadowObject)
-    setComponent(shadowEntity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+    setComponent(shadowEntity, MeshComponent, new Mesh(_shadowGeometry.clone(), _shadowMaterial.clone()))
+    ObjectLayerMaskComponent.setLayer(shadowEntity, ObjectLayers.Avatar)
+    setComponent(shadowEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
     setComponent(
       shadowEntity,
       NameComponent,
       'Shadow for ' + getComponent(entity, NameComponent) + '_' + getComponent(entity, UUIDComponent)
     )
     setComponent(shadowEntity, VisibleComponent)
-    setComponent(shadowEntity, ObjectLayerComponents[ObjectLayers.Scene])
     setComponent(entity, DropShadowComponent, { radius, center, entity: shadowEntity })
 
     return () => {
       removeComponent(entity, DropShadowComponent)
       removeEntity(shadowEntity)
-      unload()
     }
   }, [hasMeshOrModel, shadow])
 
   return null
 }
 
-const shadowOffset = new Vector3(0, 0.01, 0)
+const _shadowOffset = new Vector3(0, 0.01, 0)
 
 const sortAndApplyPriorityQueue = createSortAndApplyPriorityQueue(dropShadowComponentQuery, compareDistanceToCamera)
-const sortedEntityTransforms = [] as Entity[]
+const _sortedEntityTransforms = [] as Entity[]
 
 const cameraLayerQuery = defineQuery([ObjectLayerComponents[ObjectLayers.Scene], MeshComponent])
-const updateDropShadowTransforms = () => {
+
+function updateDropShadowTransforms() {
   const { deltaSeconds } = getState(ECSState)
   const { priorityQueue } = getState(ShadowSystemState)
 
-  sortAndApplyPriorityQueue(priorityQueue, sortedEntityTransforms, deltaSeconds)
+  ShadowSystemFunctions.sortAndApplyPriorityQueue(priorityQueue, _sortedEntityTransforms, deltaSeconds)
 
   const sceneObjects = cameraLayerQuery().flatMap((entity) => getComponent(entity, MeshComponent))
 
@@ -379,10 +365,10 @@ const updateDropShadowTransforms = () => {
     const dropShadow = getComponent(entity, DropShadowComponent)
     const dropShadowTransform = getComponent(dropShadow.entity, TransformComponent)
 
-    TransformComponent.getWorldPosition(entity, raycasterPosition).add(dropShadow.center)
-    raycaster.set(raycasterPosition, shadowDirection)
+    TransformComponent.getWorldPosition(entity, _raycasterPosition)
+    _raycaster.set(_raycasterPosition, shadowDirection)
 
-    const intersected = raycaster.intersectObjects(sceneObjects, false)[0]
+    const intersected = _raycaster.intersectObjects(sceneObjects, false)[0]
     if (!intersected || !intersected.face) {
       dropShadowTransform.scale.setScalar(0)
       continue
@@ -394,27 +380,24 @@ const updateDropShadowTransforms = () => {
     const sizeBias = 0.3
     const finalRadius = sizeBias * dropShadow.radius + dropShadow.radius * centerCorrectedDist * 0.5
 
-    const shadowMaterial = (getComponent(dropShadow.entity, GroupComponent)[0] as Mesh).material as Material
+    const shadowMaterial = (getComponent(dropShadow.entity, ObjectComponent) as Mesh).material as Material
     shadowMaterial.opacity = Math.min(1 / (1 + centerCorrectedDist), 1) * 1.2
-    shadowRotation.setFromUnitVectors(intersected.face.normal, Vector3_Back)
-    dropShadowTransform.rotation.copy(shadowRotation)
+    _shadowRotation.setFromUnitVectors(intersected.face.normal, Vector3_Back)
+    dropShadowTransform.rotation.copy(_shadowRotation)
     dropShadowTransform.scale.setScalar(finalRadius * 2)
-    dropShadowTransform.position.copy(intersected.point).add(shadowOffset)
+    dropShadowTransform.position.copy(intersected.point).add(_shadowOffset)
   }
 }
 
-const rendererQuery = defineQuery([RendererComponent])
+const csmQuery = defineQuery([CSMComponent])
 
 const execute = () => {
   const useShadows = getShadowsEnabled()
   if (!useShadows) return
 
-  for (const entity of rendererQuery()) {
-    const { csm, csmHelper } = getComponent(entity, RendererComponent)
-    if (csm) {
-      csm.update()
-      //if (csmHelper) csmHelper.update(csm)
-    }
+  for (const entity of csmQuery()) {
+    if (!getComponent(entity, CSMComponent).lights.length) continue
+    CSM.update(entity)
   }
 }
 
@@ -424,9 +407,10 @@ const RendererShadowReactor = () => {
   const rendererComponent = useComponent(entity, RendererComponent)
 
   useEffect(() => {
-    const renderer = getComponent(entity, RendererComponent).renderer
+    const renderer = rendererComponent.renderer
     if (!renderer) return
-    renderer.shadowMap.enabled = renderer.shadowMap.autoUpdate = useShadows
+    renderer.shadowMap.enabled = useShadows
+    ;(renderer.shadowMap as any).autoUpdate = useShadows
   }, [useShadows, rendererComponent.renderer])
 
   return null
@@ -436,23 +420,31 @@ const reactor = () => {
   const useShadows = useShadowsEnabled()
 
   const [shadowTexture] = useTexture(
-    `${getState(DomainConfigState).cloudDomain}/projects/ir-engine/default-project/assets/drop-shadow.png`
+    `${getState(DomainConfigState).cloudDomain}/projects/enchantmentengine/default-project/assets/drop-shadow.ktx2`
   )
 
   useEffect(() => {
     if (!shadowTexture) return
-    shadowMaterial.map = shadowTexture
-    shadowMaterial.needsUpdate = true
+    _shadowMaterial.map = shadowTexture
+    _shadowMaterial.needsUpdate = true
   }, [shadowTexture])
 
   return (
     <>
       {useShadows ? (
-        <QueryReactor Components={[RenderSettingsComponent]} ChildEntityReactor={RenderSettingsQueryReactor} />
+        <QueryReactor
+          key={'renderSettingsQueryReactor'}
+          Components={[RenderSettingsComponent]}
+          ChildEntityReactor={ShadowSystemReactors.RenderSettingsQueryReactor}
+        />
       ) : shadowTexture ? (
-        <QueryReactor Components={[VisibleComponent, ShadowComponent]} ChildEntityReactor={DropShadowReactor} />
+        <QueryReactor
+          key={'dropShadowReactor'}
+          Components={[VisibleComponent, ShadowComponent]}
+          ChildEntityReactor={ShadowSystemReactors.DropShadowReactor}
+        />
       ) : null}
-      <QueryReactor Components={[RendererComponent]} ChildEntityReactor={RendererShadowReactor} />
+      <QueryReactor Components={[RendererComponent]} ChildEntityReactor={ShadowSystemReactors.RendererShadowReactor} />
     </>
   )
 }
@@ -469,8 +461,26 @@ export const DropShadowSystem = defineSystem({
   insert: { after: TransformSystem },
   execute: () => {
     const useShadows = getShadowsEnabled()
-    if (!useShadows) {
-      updateDropShadowTransforms()
-    }
+    if (!useShadows) ShadowSystemFunctions.updateDropShadowTransforms()
   }
 })
+
+export const ShadowSystemFunctions = {
+  updateDropShadowTransforms,
+  sortAndApplyPriorityQueue
+}
+
+export const ShadowSystemReactors = {
+  EntityChildCSMReactor,
+  EntityCSMReactor,
+  CSMReactor,
+  RenderSettingsQueryReactor,
+  DropShadowReactor,
+  RendererShadowReactor
+}
+
+export const ShadowSystemData = {
+  shadowDirection,
+  _shadowGeometry,
+  _shadowMaterial
+}

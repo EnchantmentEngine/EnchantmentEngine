@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   DepthFormat,
   DepthStencilFormat,
@@ -35,20 +10,19 @@ import {
   Vector4,
   WebGLMultiviewRenderTarget,
   WebGLRenderer,
-  WebGLRenderTarget,
-  WebGLRenderTargetOptions
+  WebGLRenderTarget
 } from 'three'
 
-import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent } from '@ir-engine/ecs'
 import { defineState, getMutableState, getState, NO_PROXY } from '@ir-engine/hyperflux'
 
 import { createAnimationLoop, ECSState } from '@ir-engine/ecs'
 import { CameraComponent } from '../camera/components/CameraComponent'
-import { EngineState } from '../EngineState'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { XRState } from './XRState'
 
 // augment PerspectiveCamera
-declare module 'three/src/cameras/PerspectiveCamera' {
+declare module 'three/src/cameras/PerspectiveCamera.js' {
   interface PerspectiveCamera {
     /**
      * viewport used for XR rendering
@@ -57,7 +31,7 @@ declare module 'three/src/cameras/PerspectiveCamera' {
   }
 }
 
-declare module 'three/src/renderers/WebGLRenderer' {
+declare module 'three/src/renderers/WebGLRenderer.js' {
   interface WebGLRenderer {
     animation: WebGLAnimation
   }
@@ -65,7 +39,7 @@ declare module 'three/src/renderers/WebGLRenderer' {
 
 declare module 'three' {
   class WebGLMultiviewRenderTarget extends WebGLRenderTarget {
-    constructor(width: number, height: number, numViews: number, options: WebGLRenderTargetOptions)
+    constructor(width: number, height: number, numViews: number, options)
     numViews: number
     static isWebGLMultiviewRenderTarget: true
   }
@@ -109,7 +83,7 @@ function getSession() {
 /**
  * @description Factory function that creates the `onSessionEnd` member function of the {@link WebXRManager} class-like object
  * */
-function createFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
+function createFunctionOnSessionEnd(renderer: WebGLRenderer, manager: WebXRManager) {
   const onSessionEnd = () => {
     const xrState = getState(XRState)
     const xrRendererState = getMutableState(XRRendererState)
@@ -119,7 +93,6 @@ function createFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
     xrState.session!.removeEventListener('end', onSessionEnd)
 
     // restore framebuffer/rendering state
-
     renderer.setRenderTarget(xrRendererState.initialRenderTarget.value as WebGLRenderTarget)
 
     xrRendererState.glBaseLayer.set(null)
@@ -131,7 +104,7 @@ function createFunctionOnSessionEnd(renderer: WebGLRenderer, scope) {
     animation.stop()
     animation.start()
 
-    scope.isPresenting = false
+    manager.isPresenting = false
   }
   return onSessionEnd
 }
@@ -149,7 +122,7 @@ function getEnvironmentBlendMode() {
  * @description Member function of the {@link WebXRManager} class-like object
  * */
 function getCamera() {
-  return getComponent(getState(EngineState).viewerEntity, CameraComponent)
+  return getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
 }
 
 /**
@@ -198,17 +171,14 @@ function createRenderTargetLegacy(
   renderer: WebGLRenderer,
   _: WebXRManager
 ): WebGLRenderTarget {
-  const xrRendererState = getMutableState(XRRendererState)
-  const layerInit = {
+  const glBaseLayer = new XRWebGLLayer(session, gl, {
     antialias: session.renderState.layers === undefined ? attributes.antialias : true,
     alpha: attributes.alpha,
     depth: attributes.depth,
     stencil: attributes.stencil,
     framebufferScaleFactor: framebufferScaleFactor
-  }
-
-  const glBaseLayer = new XRWebGLLayer(session, gl, layerInit)
-  xrRendererState.glBaseLayer.set(glBaseLayer)
+  })
+  getMutableState(XRRendererState).glBaseLayer.set(glBaseLayer)
 
   session.updateRenderState({ baseLayer: glBaseLayer })
 
@@ -233,9 +203,9 @@ function createRenderTarget(
   manager: WebXRManager
 ): WebGLRenderTarget {
   let result = null as WebGLRenderTarget | null
+  let glDepthFormat: number | undefined
   let depthFormat: number | undefined
   let depthType: TextureDataType | undefined
-  let glDepthFormat: number | undefined
 
   const xrRendererState = getMutableState(XRRendererState)
 
@@ -245,7 +215,6 @@ function createRenderTarget(
     depthType = attributes.stencil ? UnsignedInt248Type : UnsignedIntType
   }
 
-  // @ts-ignore
   const extensions = renderer.extensions
   manager.isMultiview = manager.useMultiview && extensions.has('OCULUS_multiview')
 
@@ -289,13 +258,11 @@ function createRenderTarget(
 
   if (manager.isMultiview) {
     const extension = extensions.get('OCULUS_multiview')
-    this.maxNumViews = gl.getParameter(extension.MAX_VIEWS_OVR)
+    manager.maxNumViews = gl.getParameter(extension.MAX_VIEWS_OVR)
     result = new WebGLMultiviewRenderTarget(glProjLayer.textureWidth, glProjLayer.textureHeight, 2, rtOptions)
   } else {
     result = new WebGLRenderTarget(glProjLayer.textureWidth, glProjLayer.textureHeight, rtOptions)
   }
-  const renderTargetProperties = renderer.properties.get(result)
-  renderTargetProperties.__ignoreDepthValues = glProjLayer.ignoreDepthValues
 
   return result
 }
@@ -316,7 +283,7 @@ function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager
 
     // wrap in try catch to avoid errors when calling updateTargetFrameRate on unsupported devices
     try {
-      if (typeof session.updateTargetFrameRate === 'function') session.updateTargetFrameRate(72)
+      if (typeof session.updateTargetFrameRate === 'function') session.updateTargetFrameRate(72).catch(console.warn)
     } catch (e) {
       console.warn(e)
     }
@@ -329,15 +296,22 @@ function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager
 
     const newRenderTarget =
       session.renderState.layers === undefined || renderer.capabilities.isWebGL2 === false
-        ? createRenderTargetLegacy(session, framebufferScaleFactor, gl, attributes, renderer, manager)
-        : createRenderTarget(session, framebufferScaleFactor, gl, attributes, renderer, manager)
+        ? WebXRManagerFunctions.createRenderTargetLegacy(
+            session,
+            framebufferScaleFactor,
+            gl,
+            attributes,
+            renderer,
+            manager
+          )
+        : WebXRManagerFunctions.createRenderTarget(session, framebufferScaleFactor, gl, attributes, renderer, manager)
 
     // @ts-expect-error @todo Remove scope when possible, see #23278
     newRenderTarget.isXRRenderTarget = true
     xrRendererState.newRenderTarget.set(newRenderTarget)
 
     // Set foveation to maximum.
-    // scope.setFoveation(1.0)
+    // manager.setFoveation(1.0)
     manager.setFoveation(0)
 
     animation.setContext(session)
@@ -360,22 +334,23 @@ export function createWebXRManager(renderer: WebGLRenderer) {
 
   result.isPresenting = false
   result.isMultiview = false
+  result.maxNumViews = 0
 
   /** this is needed by WebGLBackground */
-  result.getSession = getSession
-  result.onSessionEnd = createFunctionOnSessionEnd(renderer, result)
+  result.getSession = WebXRManagerFunctions.getSession
+  result.onSessionEnd = WebXRManagerFunctions.createFunctionOnSessionEnd(renderer, result)
 
-  result.setSession = createFunctionSetSession(renderer, result)
+  result.setSession = WebXRManagerFunctions.createFunctionSetSession(renderer, result)
 
-  result.getEnvironmentBlendMode = getEnvironmentBlendMode
+  result.getEnvironmentBlendMode = WebXRManagerFunctions.getEnvironmentBlendMode
 
   result.updateCamera = function () {}
-  result.getCamera = getCamera
+  result.getCamera = WebXRManagerFunctions.getCamera
 
-  result.getFoveation = getFoveation
+  result.getFoveation = WebXRManagerFunctions.getFoveation
 
   /** @todo put foveation in state and make a reactor to update it */
-  result.setFoveation = setFoveation
+  result.setFoveation = WebXRManagerFunctions.setFoveation
 
   result.setAnimationLoop = function () {}
   result.dispose = function () {}

@@ -1,33 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import appRootPath from 'app-root-path'
-import { ChildProcess } from 'child_process'
+import { default as appRootPath } from 'app-root-path'
 import fs from 'fs'
 import fsStore from 'fs-blob-store'
-import glob from 'glob'
+import { glob } from 'glob'
+import kill from 'kill-port'
 import path from 'path/posix'
 import { PassThrough, Readable } from 'stream'
 
@@ -35,6 +10,7 @@ import { MULTIPART_CUTOFF_SIZE } from '@ir-engine/common/src/constants/FileSizeC
 import { FileBrowserContentType } from '@ir-engine/common/src/schemas/media/file-browser.schema'
 import { getState } from '@ir-engine/hyperflux'
 
+import { ChildProcess } from 'child_process'
 import config from '../../appconfig'
 import logger from '../../ServerLogger'
 import { ServerMode, ServerState } from '../../ServerState'
@@ -47,6 +23,8 @@ import {
   StorageObjectPutInterface,
   StorageProviderInterface
 } from './storageprovider.interface'
+
+const port = config.server.localStorageProviderPort
 
 /**
  * Storage provide class to communicate with Local http file server.
@@ -85,33 +63,37 @@ export class LocalStorage implements StorageProviderInterface {
     this._store = fsStore(this.PATH_PREFIX)
 
     if (getState(ServerState).serverMode === ServerMode.API) {
-      const child: ChildProcess = require('child_process').spawn(
-        'npx',
-        [
-          'http-server',
-          `${this.PATH_PREFIX}`,
-          '--ssl',
-          '--cert',
-          `${config.server.certPath}`,
-          '--key',
-          `${config.server.keyPath}`,
-          '--port',
-          '8642',
-          '--cors=*',
-          '--brotli',
-          '--gzip',
-          '-a',
-          '::'
-        ],
-        {
-          cwd: process.cwd(),
-          stdio: 'inherit',
-          detached: true
-        }
-      )
-      process.on('exit', async () => {
-        process.kill(-child.pid!, 'SIGINT')
-      })
+      kill(port, 'tcp')
+        .catch(() => {})
+        .finally(() => {
+          const child: ChildProcess = require('child_process').spawn(
+            'npx',
+            [
+              'http-server',
+              `${this.PATH_PREFIX}`,
+              '--ssl',
+              '--cert',
+              `${config.server.certPath}`,
+              '--key',
+              `${config.server.keyPath}`,
+              '--port',
+              `${port}`,
+              '--cors=*',
+              '--brotli',
+              '--gzip',
+              '-a',
+              '::'
+            ],
+            {
+              cwd: process.cwd(),
+              stdio: 'inherit',
+              detached: true
+            }
+          )
+          process.on('exit', async () => {
+            process.kill(-child.pid!, 'SIGINT')
+          })
+        })
     }
     this.getOriginURLs().then((result) => (this.originURLs = result))
   }
@@ -137,6 +119,10 @@ export class LocalStorage implements StorageProviderInterface {
   getCachedURL(key: string): string {
     const cacheDomain = this.getCacheDomain()
     return new URL(key, 'https://' + cacheDomain).href
+  }
+
+  async getObjectContentType(key: string): Promise<any> {
+    return Promise.resolve('')
   }
 
   /**
@@ -231,7 +217,7 @@ export class LocalStorage implements StorageProviderInterface {
         }
       })
     } else {
-      fs.writeFileSync(filePath, data.Body)
+      fs.writeFileSync(filePath, new Uint8Array(data.Body))
       return true
     }
   }
@@ -381,15 +367,20 @@ export class LocalStorage implements StorageProviderInterface {
    * List all the files/folders in the directory.
    * @param relativeDirPath Name of folder in the storage.
    */
-  listFolderContent = async (relativeDirPath: string): Promise<FileBrowserContentType[]> => {
-    const absoluteDirPath = path.join(this.PATH_PREFIX, relativeDirPath)
+  listFolderContent = async (relativeDirPath: string, recursive = false): Promise<FileBrowserContentType[]> => {
+    let absoluteDirPath = path.join(this.PATH_PREFIX, relativeDirPath)
+    if (recursive) absoluteDirPath = path.join(absoluteDirPath, '**')
 
     const folder = glob
-      .sync(path.join(absoluteDirPath, '*/'))
+      .sync(path.join(absoluteDirPath, '*/'), {
+        dot: true,
+        nodir: false // include directories
+      })
       .map((p) => this._processContent(relativeDirPath, p, true))
     const files = glob
-      .sync(path.join(absoluteDirPath, '*.*'), {
-        dot: true
+      .sync(path.join(absoluteDirPath, '*'), {
+        dot: true,
+        nodir: true // only include files
       })
       .map((p) => this._processContent(relativeDirPath, p))
 

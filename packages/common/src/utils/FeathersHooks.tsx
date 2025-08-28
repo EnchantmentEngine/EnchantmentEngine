@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 /**
  * This is a modified version of figbird. https://humaans.github.io/figbird/
  * It now runs on hookstate instead of redux, and has been modified to work with
@@ -36,11 +11,12 @@ Infinite Reality Engine. All Rights Reserved.
  */
 
 import { Params, Query } from '@feathersjs/feathers'
-import React, { useCallback, useEffect, useLayoutEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { ServiceTypes } from '../../declarations'
 
 import {
   defineState,
+  getMutableState,
   getState,
   isDev,
   NO_PROXY,
@@ -86,9 +62,12 @@ export const FeathersState = defineState({
         {
           fetch: () => void
           query: any
+          refs: number
           response: unknown
           status: 'pending' | 'success' | 'error'
           error: string
+          requestTime: number
+          resolvedTime: number | null
           $stack?: string[]
         }
       >
@@ -110,7 +89,7 @@ const FeathersChildReactor = (props: { serviceName: keyof ServiceTypes }) => {
   const fetch = () => {
     const feathersState = getState(FeathersState)
     for (const queryId in feathersState[props.serviceName]) {
-      feathersState[props.serviceName][queryId].fetch()
+      if (feathersState[props.serviceName][queryId].refs > 0) feathersState[props.serviceName][queryId].fetch()
     }
   }
 
@@ -126,7 +105,52 @@ export const useService = <S extends keyof ServiceTypes, M extends Methods>(
   method: M,
   ...args: Args
 ) => {
-  const state = useMutableState(FeathersState)
+  const fetchRef = useRef<() => void>()
+  fetchRef.current = () => {
+    const state = getMutableState(FeathersState)[serviceName][queryId]
+    if (method === 'get' && (!args || args[0] == null || args[0] === '')) {
+      state.merge({
+        status: 'error',
+        error: 'Get method requires an id or query object'
+      })
+      return
+    }
+    state.merge({
+      status: 'pending',
+      requestTime: Date.now(),
+      error: ''
+    })
+    if (isDev) {
+      const trace = { stack: '' }
+      Error.captureStackTrace?.(trace, fetch)
+      const stack = trace.stack.split('\n')
+      stack.shift()
+      state.merge({ $stack: stack })
+    }
+    // prettier-ignore
+    return API.instance.service(serviceName)[method](...args)
+      .then((res) => {
+        //console.log(`API: ${serviceName}.${method}`, ...args, res)
+        state.merge({
+          response: res,
+          status: 'success',
+          error: '',
+          resolvedTime: Date.now()
+        })
+      })
+      .catch((error) => {
+        console.error(`Error in service: ${serviceName}, method: ${method}, args: ${JSON.stringify(args)}`, error)
+        state.merge({
+          status: 'error',
+          error: error.message,
+          resolvedTime: Date.now()
+        })
+      })
+  }
+
+  const fetch = useCallback(() => {
+    fetchRef.current?.()
+  }, [fetchRef])
 
   const queryParams = {
     serviceName,
@@ -136,66 +160,47 @@ export const useService = <S extends keyof ServiceTypes, M extends Methods>(
 
   const queryId = `${method.substring(0, 1)}:${hashObject(queryParams)}` as QueryHash
 
-  const fetch = () => {
-    if (method === 'get' && (!args || args[0] == null || args[0] === '')) {
-      state[serviceName][queryId].merge({
-        status: 'error',
-        error: 'Get method requires an id or query object'
-      })
-      return
-    }
-    state[serviceName][queryId].merge({
-      status: 'pending',
-      error: ''
+  const feathersState = getMutableState(FeathersState)
+  if (!feathersState.get(NO_PROXY)[serviceName]) feathersState[serviceName].set({})
+  if (!feathersState.get(NO_PROXY)[serviceName][queryId]) {
+    feathersState[serviceName].merge({
+      [queryId]: {
+        fetch,
+        query: queryParams,
+        refs: 0,
+        response: null,
+        status: 'pending',
+        requestTime: 0,
+        resolvedTime: null,
+        error: ''
+      }
     })
-    if (isDev) {
-      const trace = { stack: '' }
-      Error.captureStackTrace?.(trace, fetch)
-      const stack = trace.stack.split('\n')
-      stack.shift()
-      state[serviceName][queryId].merge({ $stack: stack })
-    }
-    // prettier-ignore
-    return API.instance.service(serviceName)[method](...args)
-      .then((res) => {
-        //console.log(`API: ${serviceName}.${method}`, ...args, res)
-        state[serviceName][queryId].merge({
-          response: res,
-          status: 'success',
-          error: ''
-        })
-      })
-      .catch((error) => {
-        console.error(`Error in service: ${serviceName}, method: ${method}, args: ${JSON.stringify(args)}`, error)
-        state[serviceName][queryId].merge({
-          status: 'error',
-          error: error.message
-        })
-      })
+    fetch()
   }
 
   // use immediate effect to get the stack trace of the react context, then add it to the state
   useImmediateEffect(() => {
-    if (!state.get(NO_PROXY)[serviceName]) state[serviceName].set({})
-    if (!state.get(NO_PROXY)[serviceName][queryId]) {
-      state[serviceName].merge({
-        [queryId]: {
-          fetch,
-          query: queryParams,
-          response: null,
-          status: 'pending',
-          error: ''
-        }
+    const state = getMutableState(FeathersState)[serviceName][queryId]
+    if (state.get(NO_PROXY).error) {
+      state.merge({
+        fetch,
+        query: queryParams,
+        response: null,
+        status: 'pending',
+        error: ''
       })
       fetch()
     }
-  }, [serviceName, method, ...args])
+    state.refs.set(state.refs.value + 1)
+    return () => {
+      state.refs.set(state.refs.value - 1)
+    }
+  }, [queryId])
 
-  const query = state[serviceName]?.[queryId]
-  const queryObj = state.get(NO_PROXY)[serviceName]?.[queryId]
-  const data = queryObj?.response as Awaited<ReturnType<ServiceTypes[S][M]>> | undefined
-  const error = queryObj?.error
-  const status = queryObj?.status
+  const state = useHookstate(getMutableState(FeathersState)[serviceName][queryId]).get(NO_PROXY)
+  const data = state.response as Awaited<ReturnType<ServiceTypes[S][M]>> | undefined
+  const error = state.error
+  const status = state.status
 
   return useMemo(
     () => ({
@@ -204,7 +209,7 @@ export const useService = <S extends keyof ServiceTypes, M extends Methods>(
       error,
       refetch: fetch
     }),
-    [data, query?.response, query?.status, query?.error]
+    [data, status, error, fetch]
   )
 }
 

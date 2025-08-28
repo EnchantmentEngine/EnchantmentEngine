@@ -1,30 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
 import { API, useFind } from '@ir-engine/common'
 import config from '@ir-engine/common/src/config'
@@ -34,6 +9,7 @@ import {
   fileBrowserUploadPath,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
+import { bytesToSize } from '@ir-engine/common/src/utils/btyesToSize'
 import { NO_PROXY, State, getMutableState, startReactor, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, Input } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
@@ -63,6 +39,7 @@ export default function FilePropertiesModal() {
   const editedField = useHookstate<string | null>(null)
   const tagInput = useHookstate<string>('')
   const sharedTags = useHookstate<string[]>([])
+  const totalSize = useHookstate<string>('')
 
   let title: string
   let filename: string
@@ -86,18 +63,18 @@ export default function FilePropertiesModal() {
 
   const handleRegenerateThumbnail = () => {
     for (const resource of fileStaticResources.value) {
-      getMutableState(FileThumbnailJobState).merge([
+      getMutableState(FileThumbnailJobState).jobs.merge([
         {
           key: resource.url,
           project: resource.project!,
-          id: resource.id
+          jobType: 'thumbnail'
         }
       ])
     }
   }
 
   const handleSubmit = async () => {
-    PopoverState.showPopupover(<FilePropertiesSaveConfirmationModal />)
+    ModalState.openModal(<FilePropertiesSaveConfirmationModal />)
     if (modifiedFields.value.length > 0) {
       const addedTags: string[] = resourceDigest.tags.value!.filter((tag) => !sharedTags.value.includes(tag))
       const removedTags: string[] = sharedTags.value!.filter((tag) => !resourceDigest.tags.value!.includes(tag))
@@ -114,41 +91,44 @@ export default function FilePropertiesModal() {
           project: resource.project
         })
       }
-      const reactor = startReactor(() => {
-        const updatedResources = useFind(staticResourcePath, {
-          query: {
-            key: {
-              $like: undefined,
-              $or: files.map(({ key }) => ({
-                key
-              }))
-            },
-            $limit: 10000
+      const reactor = startReactor(
+        () => {
+          const updatedResources = useFind(staticResourcePath, {
+            query: {
+              key: {
+                $like: undefined,
+                $or: files.map(({ key }) => ({
+                  key
+                }))
+              },
+              $limit: 10000
+            }
+          })
+          for (const resource of updatedResources.data) {
+            const oldTags = resource.tags ?? []
+            const newTags = Array.from(new Set([...addedTags, ...oldTags.filter((tag) => !removedTags.includes(tag))]))
+            if (
+              resource.tags?.length === newTags.length &&
+              resource.tags.every((val, index) => val === newTags[index]) &&
+              resource.name === resourceDigest.name.value &&
+              resource.licensing === resourceDigest.licensing.value &&
+              resource.attribution === resourceDigest.attribution.value &&
+              resource.description === resourceDigest.description.value
+            ) {
+              console.log('All properties successfully updated')
+              modifiedFields.set([])
+              ModalState.closeModal()
+              ModalState.closeModal()
+              reactor.stop()
+            }
           }
-        })
-        for (const resource of updatedResources.data) {
-          const oldTags = resource.tags ?? []
-          const newTags = Array.from(new Set([...addedTags, ...oldTags.filter((tag) => !removedTags.includes(tag))]))
-          if (
-            resource.tags?.length === newTags.length &&
-            resource.tags.every((val, index) => val === newTags[index]) &&
-            resource.name === resourceDigest.name.value &&
-            resource.licensing === resourceDigest.licensing.value &&
-            resource.attribution === resourceDigest.attribution.value &&
-            resource.description === resourceDigest.description.value
-          ) {
-            console.log('All properties successfully updated')
-            modifiedFields.set([])
-            PopoverState.hidePopupover()
-            PopoverState.hidePopupover()
-            reactor.stop()
-          }
-        }
-        return null
-      })
+          return null
+        },
+        `FilePropertiesModal - ${files.map((f) => f.key).join(', ')}`
+      )
     } else {
-      PopoverState.hidePopupover()
-      PopoverState.hidePopupover()
+      ModalState.closeModal()
+      ModalState.closeModal()
     }
   }
 
@@ -185,11 +165,12 @@ export default function FilePropertiesModal() {
   const author = useHookstate<UserType | null>(null)
 
   const handleAddTag = () => {
-    if (tagInput.value != '' && !resourceDigest.tags.value!.includes(tagInput.value)) {
+    const trimmedTagInput = tagInput.value.trim()
+    if (trimmedTagInput != '' && !resourceDigest.tags.value!.includes(trimmedTagInput)) {
       if (!modifiedFields.value.includes('tags')) {
         modifiedFields.set([...modifiedFields.value, 'tags'])
       }
-      resourceDigest.tags.set([...resourceDigest.tags.value!, tagInput.value])
+      resourceDigest.tags.set([...resourceDigest.tags.value!, trimmedTagInput])
     }
     tagInput.set('')
   }
@@ -222,18 +203,45 @@ export default function FilePropertiesModal() {
         const _thumbnailKey = thumbnailURL.href.replace(config.client.fileServer + '/', '')
         API.instance.service(staticResourcePath).patch(resource.id, {
           thumbnailKey: _thumbnailKey,
-          thumbnailMode: 'custom'
+          thumbnailMode: 'custom',
+          project: projectName
         })
       }
     }
   }
+
+  useEffect(() => {
+    const getTotalSize = () => {
+      return bytesToSize(
+        files
+          .map((file) => {
+            const sizeStr = file.size || '0'
+            const regex = /^([\d.]+)\s*([A-Za-z]+)$/
+            const matches = sizeStr.match(regex)
+
+            if (!matches) return 0
+
+            const value = parseFloat(matches[1])
+            const unit = matches[2]
+
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+            const unitIndex = sizes.findIndex((size) => size.toLowerCase() === unit.toLowerCase())
+            if (unitIndex === -1) return 0
+
+            return value * Math.pow(1024, unitIndex)
+          })
+          .reduce((total, value) => total + value, 0)
+      )
+    }
+    totalSize.set(getTotalSize())
+  }, [files])
 
   return (
     <Modal
       title={title}
       className="w-[50vw] max-w-2xl"
       onSubmit={handleSubmit}
-      onClose={PopoverState.hidePopupover}
+      onClose={ModalState.closeModal}
       submitButtonText={t('editor:layout.filebrowser.fileProperties.save-changes')}
       closeButtonText={t('editor:layout.filebrowser.fileProperties.discard')}
     >
@@ -253,7 +261,7 @@ export default function FilePropertiesModal() {
         >
           {t('editor:layout.filebrowser.fileProperties.regenerateThumbnail')}
         </Button>
-        <div className="mt-1 rounded-md bg-blue-primary px-4 py-1 text-base">
+        <div className="mt-1 rounded-md px-4 py-1 text-base">
           {/* Use a label to trigger the file input click, no ref needed */}
           <label className="mt-1 cursor-pointer text-xs">
             <input
@@ -270,7 +278,7 @@ export default function FilePropertiesModal() {
       <div className="flex flex-col items-center gap-2">
         <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.fileName')}</Text>
-          <Text className="text-theme-input" data-testid="files-panel-file-item-properties-file-name">
+          <Text className="" data-testid="files-panel-file-item-properties-file-name">
             {filename}
           </Text>
         </div>
@@ -291,7 +299,7 @@ export default function FilePropertiesModal() {
               </>
             ) : (
               <>
-                <Text className="text-theme-input">
+                <Text className="">
                   {files.length > 1 && !sharedFields.value.includes('name')
                     ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                     : resourceDigest.name.value || <em>{t('common:components.none')}</em>}
@@ -310,21 +318,25 @@ export default function FilePropertiesModal() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.type')}</Text>
-          <Text className="text-theme-input" data-testid="files-panel-file-item-properties-file-type">
+          <Text className="" data-testid="files-panel-file-item-properties-file-type">
             {fileDigest.type.toUpperCase()}
           </Text>
         </div>
         <div className="grid grid-cols-2 gap-2">
+          <Text className="text-end">{'dimensions'}</Text>({resourceDigest.width.value}, {resourceDigest.height.value},{' '}
+          {resourceDigest.depth.value})
+        </div>
+        <div className="grid grid-cols-2 gap-2">
           <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.size')}</Text>
-          <Text className="text-theme-input" data-testid="files-panel-file-item-properties-file-size">
-            {files.map((file) => file.size).reduce((total, value) => total + parseInt(value ?? '0'), 0)}
+          <Text className="" data-testid="files-panel-file-item-properties-file-size">
+            {totalSize.value}
           </Text>
         </div>
         {fileStaticResources.length > 0 && (
           <>
             <div className="grid grid-cols-2 gap-2">
               <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.author')}</Text>
-              <Text className="text-theme-input">{author.value?.name}</Text>
+              <Text className="">{author.value?.name}</Text>
             </div>
             <div className="grid grid-cols-2 items-center gap-2">
               <Text className="text-end">{t('editor:layout.filebrowser.fileProperties.attribution')}</Text>
@@ -346,7 +358,7 @@ export default function FilePropertiesModal() {
                   </>
                 ) : (
                   <>
-                    <Text className="text-theme-input">
+                    <Text className="">
                       {files.length > 1 && !sharedFields.value.includes('attribution')
                         ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                         : resourceDigest.attribution.value || <em>{t('common:components.none')}</em>}
@@ -383,7 +395,7 @@ export default function FilePropertiesModal() {
                   </>
                 ) : (
                   <>
-                    <Text className="text-theme-input">
+                    <Text className="">
                       {files.length > 1 && !sharedFields.value.includes('licensing')
                         ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                         : resourceDigest.licensing.value || <em>{t('common:components.none')}</em>}
@@ -422,7 +434,7 @@ export default function FilePropertiesModal() {
                 </>
               ) : (
                 <>
-                  <Text className="block h-auto w-full overflow-auto whitespace-normal break-words text-theme-input">
+                  <Text className="block h-auto w-full overflow-auto whitespace-normal break-words ">
                     {files.length > 1 && !sharedFields.value.includes('description')
                       ? t('editor:layout.filebrowser.fileProperties.mixedValues')
                       : resourceDigest.description.value || <em>{t('common:components.none')}</em>}
@@ -439,7 +451,7 @@ export default function FilePropertiesModal() {
               )}
             </span>
             <div className="mt-10 flex flex-col gap-2">
-              <Text className="text-theme-gray3" fontSize="sm">
+              <Text className="" fontSize="sm">
                 {t('editor:layout.filebrowser.fileProperties.addTag')}
               </Text>
               <div className="flex items-center gap-2">
@@ -456,7 +468,7 @@ export default function FilePropertiesModal() {
                   <HiPlus />
                 </Button>
               </div>
-              <div className="flex h-24 flex-wrap gap-2 overflow-y-auto bg-theme-surfaceInput p-2">
+              <div className="flex h-24 flex-wrap gap-2 overflow-y-auto  p-2">
                 {resourceDigest.tags.value!.map((tag, idx) => (
                   <span key={idx} className="flex h-fit w-fit items-center rounded bg-[#2C2E33] px-2 py-0.5">
                     {tag} <HiXMark className="ml-1 cursor-pointer" onClick={() => handleRemoveTag(idx)} />

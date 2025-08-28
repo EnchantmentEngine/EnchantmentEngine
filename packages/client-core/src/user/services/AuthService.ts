@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { AuthenticationResult } from '@feathersjs/authentication'
 import { Paginated } from '@feathersjs/feathers'
 import i18n from 'i18next'
@@ -34,8 +9,6 @@ import config, { validateEmail, validatePhoneNumber } from '@ir-engine/common/sr
 import { AuthUserSeed, resolveAuthUser } from '@ir-engine/common/src/interfaces/AuthUser'
 import multiLogger from '@ir-engine/common/src/logger'
 import {
-  AuthStrategiesType,
-  HasAccessType,
   IdentityProviderType,
   InstanceID,
   UserApiKeyType,
@@ -59,11 +32,10 @@ import {
   getMutableState,
   getState,
   stateNamespaceKey,
-  syncStateWithLocalStorage,
-  useHookstate
+  syncStateWithLocalStorage
 } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { MessageResponse, ParentCommunicator } from '../../common/iframeCOM'
+import { AuthStrategiesType } from '../../common/initialAuthState'
 import { NotificationService } from '../../common/services/NotificationService'
 
 export const logger = multiLogger.child({ component: 'client-core:AuthService' })
@@ -72,11 +44,17 @@ export const TIMEOUT_INTERVAL = 50 // ms per interval of waiting for authToken t
 const iframe = document.getElementById('root-cookie-accessor') as HTMLIFrameElement
 const communicator = new ParentCommunicator('root-cookie-accessor', config.client.clientUrl) //Eventually we can configure iframe target seperatly
 
+declare global {
+  interface Window {
+    dataLayer?: any[]
+  }
+}
+
 export const UserSeed: UserType = {
   id: '' as UserID,
   name: '' as UserName,
   isGuest: true,
-  acceptedTOS: false,
+  ageVerified: false,
   createdAt: '',
   updatedAt: ''
 }
@@ -129,11 +107,11 @@ const getToken = async (): Promise<string> => {
   }
 
   const clientUrl = config.client.clientUrl
-  const hasAccess = (await communicator
+  return waitForToken(win, clientUrl)
+  /** @todo renable once UI is redone. No Shared login for now */
+  /* const hasAccess = (await communicator
     .sendMessage('checkAccess')
     .then((message) => {
-      if (message?.data?.skipCrossOriginCookieCheck === true || message?.data?.storageAccessPermission === 'denied')
-        localStorage.setItem('skipCrossOriginCookieCheck', 'true')
       return message.data
     })
     .catch((message) => {
@@ -156,7 +134,7 @@ const getToken = async (): Promise<string> => {
           if (e.origin !== config.client.clientUrl || e.source !== iframe.contentWindow) return
           try {
             const data = e?.data?.data
-            if (data.skipCrossOriginCookieCheck === true || data.storageAccessPermission === 'denied') {
+            if (data.skipCrossOriginCookieCheck === true) {
               localStorage.setItem('skipCrossOriginCookieCheck', 'true')
               iframe.style.display = 'none'
               iframe.style.visibility = 'hidden'
@@ -179,12 +157,13 @@ const getToken = async (): Promise<string> => {
     }
   } else {
     return waitForToken(win, clientUrl)
-  }
+  } */
 }
 
 export const AuthState = defineState({
   name: 'AuthState',
   initial: () => ({
+    isAuthenticated: false,
     isProcessing: false,
     error: '',
     authUser: AuthUserSeed,
@@ -249,7 +228,7 @@ async function _resetToGuestToken(options = { reset: true }) {
   })
   const accessToken = newProvider.accessToken!
   await API.instance.authentication.setAccessToken(accessToken as string)
-  writeAuthUserToIframe()
+  await writeAuthUserToIframe()
   return accessToken
 }
 
@@ -303,15 +282,25 @@ export const AuthService = {
         const authUser = resolveAuthUser(res)
         // authUser is now { accessToken, authentication, identityProvider }
         authState.merge({ authUser })
-        writeAuthUserToIframe()
+        await writeAuthUserToIframe()
         await AuthService.loadUserData(authUser.identityProvider.userId)
+
+        // We are setting userId in dataLayer for Google Tag Manager user tracking.
+        // Ref: https://analystadmin.medium.com/implementing-google-analytics-and-google-tag-manager-into-a-react-js-app-e986579cd0ee
+        // Ref: https://developers.google.com/analytics/devguides/collection/ga4/user-id?client_type=gtm
+        if (window.dataLayer) {
+          window.dataLayer.push({
+            userId: authUser.identityProvider.userId
+          })
+        }
       } else {
         logger.warn('No response received from reAuthenticate()!')
       }
+      getMutableState(AuthState).isAuthenticated.set(true)
     } catch (err) {
       logger.error(err, 'Error on resolving auth user in doLoginAuto, logging out')
       authState.merge({ user: UserSeed, authUser: AuthUserSeed })
-      writeAuthUserToIframe()
+      await writeAuthUserToIframe()
 
       // if (window.location.pathname !== '/') {
       //   window.location.href = '/';
@@ -424,13 +413,20 @@ export const AuthService = {
   /**
    * Logs in the current user based on an OAuth response.
    */
-  async loginUserByOAuth(service: string, location: any, isSignUp: boolean, redirectUrl?: string) {
+  async loginUserByOAuth(
+    service: string,
+    location: any,
+    isSignUp: boolean,
+    redirectUrl?: string,
+    signupUsername?: string
+  ) {
     getMutableState(AuthState).merge({ isProcessing: true, error: '' })
     const token = getState(AuthState).authUser.accessToken
     const path = redirectUrl || new URLSearchParams(location.search).get('redirectUrl') || location.pathname
 
     const redirectConfig = {
-      path
+      path,
+      signupUsername
     } as Record<string, string>
 
     const currentUrl = new URL(window.location.href)
@@ -488,7 +484,7 @@ export const AuthService = {
 
       const authUser = resolveAuthUser(res)
       authState.merge({ authUser })
-      writeAuthUserToIframe()
+      await writeAuthUserToIframe()
       await AuthService.loadUserData(authUser.identityProvider?.userId)
       authState.merge({ isProcessing: false, error: '' })
       let timeoutTimer = 0
@@ -504,7 +500,10 @@ export const AuthService = {
         }
         // After 3 seconds without the token getting updated, send the user back anyway - something seems to have
         // gone wrong, and we don't want them stuck on the page they were on indefinitely.
-        if (timeoutTimer > 3000) window.location.href = redirectSuccess
+        if (timeoutTimer > 3000) {
+          clearInterval(waitForTokenStored)
+          window.location.href = redirectSuccess
+        }
       }, TIMEOUT_INTERVAL)
     } catch (err) {
       authState.merge({ error: i18n.t('common:error.login-error') })
@@ -661,12 +660,12 @@ export const AuthService = {
     try {
       const identityProviders = await API.instance.service(identityProviderPath).find({
         query: {
-          email: email.toLowerCase(),
+          email,
           type: 'email'
         }
       })
 
-      return identityProviders.data.some((provider) => provider.email === email.toLowerCase())
+      return identityProviders.data.some((provider) => provider.email?.toLowerCase() === email.toLowerCase())
     } catch (error) {
       return false
     }
@@ -762,11 +761,6 @@ export const AuthService = {
     AuthService.loadUserData(userId)
   },
 
-  async removeUser(userId: UserID) {
-    await API.instance.service(userPath).remove(userId)
-    AuthService.logoutUser()
-  },
-
   async updateApiKey() {
     const userApiKey = (await API.instance.service(userApiKeyPath).find()) as Paginated<UserApiKeyType>
 
@@ -856,21 +850,4 @@ function parseLoginDisplayCredential(credentials) {
   const displayIcon = loginDisplayVc.credentialSubject.displayIcon || DEFAULT_ICON
 
   return { displayName, displayIcon }
-}
-
-export const useAuthenticated = () => {
-  const userID = useHookstate(getMutableState(AuthState).user.id).value
-
-  useEffect(() => {
-    AuthService.doLoginAuto()
-    return () => {
-      communicator.destroy()
-    }
-  }, [])
-
-  useEffect(() => {
-    getMutableState(EngineState).userID.set(userID)
-  }, [userID])
-
-  return userID !== ''
 }

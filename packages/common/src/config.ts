@@ -1,30 +1,78 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { EMAIL_REGEX } from './regex'
-import type { MediaSettingsType } from './schema.type.module'
+/**
+ * Media settings configuration for audio, video, and screenshare
+ */
+export interface MediaSettingsType {
+  /**
+   * Audio settings configuration
+   */
+  audio: {
+    /**
+     * Maximum bitrate for audio in kbps
+     */
+    maxBitrate: number
+  }
+
+  /**
+   * Video settings configuration
+   */
+  video: {
+    /**
+     * Video codec (e.g., 'VP9', 'H264')
+     */
+    codec: string
+
+    /**
+     * Maximum resolution for video (e.g., 'hd', 'sd')
+     */
+    maxResolution: string
+
+    /**
+     * Maximum bitrate for low resolution video in kbps
+     */
+    lowResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for medium resolution video in kbps
+     */
+    midResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for high resolution video in kbps
+     */
+    highResMaxBitrate: number
+  }
+
+  /**
+   * Screen sharing settings configuration
+   */
+  screenshare: {
+    /**
+     * Screen sharing codec (e.g., 'VP9', 'H264')
+     */
+    codec: string
+
+    /**
+     * Maximum resolution for screen sharing (e.g., 'hd', 'sd')
+     */
+    maxResolution: string
+
+    /**
+     * Maximum bitrate for low resolution screen sharing in kbps
+     */
+    lowResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for medium resolution screen sharing in kbps
+     */
+    midResMaxBitrate: number
+
+    /**
+     * Maximum bitrate for high resolution screen sharing in kbps
+     */
+    highResMaxBitrate: number
+  }
+}
 
 /**
  * Config settings (for client and isomorphic engine usage).
@@ -40,7 +88,7 @@ export function validatePhoneNumber(phone: string): boolean {
   return /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/.test(phone)
 }
 
-/** @deprecated - use import from @ir-engine/hyperflux instead */
+/** @deprecated use import from @ir-engine/hyperflux instead */
 export const isDev = globalThis.process.env.APP_ENV === 'development'
 
 /**
@@ -82,20 +130,20 @@ const client = {
     forceClientAggregate: globalThis.process.env.VITE_FORCE_CLIENT_LOG_AGGREGATE,
     disabled: globalThis.process.env.VITE_DISABLE_LOG
   },
-  mediaSettings: null! as MediaSettingsType,
   rootRedirect: globalThis.process.env.VITE_ROOT_REDIRECT,
   tosAddress: globalThis.process.env.VITE_TERMS_OF_SERVICE_ADDRESS,
   readyPlayerMeUrl: globalThis.process.env.VITE_READY_PLAYER_ME_URL,
   avaturnUrl: globalThis.process.env.VITE_AVATURN_URL,
   avaturnAPI: globalThis.process.env.VITE_AVATURN_API,
-  key8thWall: globalThis.process.env.VITE_8TH_WALL!,
   featherStoreKey: globalThis.process.env.VITE_FEATHERS_STORE_KEY,
-  gaMeasurementId: globalThis.process.env.VITE_GA_MEASUREMENT_ID,
   zendesk: {
     enabled: globalThis.process.env.VITE_ZENDESK_ENABLED,
     authenticationEnabled: globalThis.process.env.VITE_ZENDESK_AUTHENTICATION_ENABLED,
     key: globalThis.process.env.VITE_ZENDESK_KEY
-  }
+  },
+  maxFileSizeToUpload: globalThis.process.env.VITE_MAX_FILE_SIZE_TO_UPLOAD_MB
+    ? parseInt(globalThis.process.env.VITE_MAX_FILE_SIZE_TO_UPLOAD_MB, 10) * 1024 * 1024
+    : 1000 * 1024 * 1024 // 1000 MB or 1GB
 }
 
 /**

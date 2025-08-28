@@ -1,44 +1,62 @@
-/*
-CPAL-1.0 License
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-The Original Code is Infinite Reality Engine.
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import React, { lazy, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
-
-import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
-import { useFind, useMutation } from '@ir-engine/common'
+import { EmbedCodeField } from '@ir-engine/client-core/src/common/components/EmbedCodeField'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
+import { deleteScene } from '@ir-engine/client-core/src/world/SceneAPI'
+import { API, useFind, useMutation } from '@ir-engine/common'
+import config from '@ir-engine/common/src/config'
+import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import {
+  engineSettingPath,
+  fileBrowserPath,
   LocationData,
   LocationID,
   LocationPatch,
-  LocationType,
   locationPath,
+  LocationType,
   staticResourcePath
 } from '@ir-engine/common/src/schema.type.module'
-import { useHookstate } from '@ir-engine/hyperflux'
-import { Button, Input, Select } from '@ir-engine/ui'
+import { Entity, getComponent, hasComponent, iterateEntityNode, setComponent, UndefinedEntity } from '@ir-engine/ecs'
+import { defaultLODs, LODVariantDescriptor } from '@ir-engine/editor/src/constants/GLTFPresets'
+import { exportRelativeGLTF } from '@ir-engine/editor/src/functions/exportGLTF'
+import { saveSceneGLTF } from '@ir-engine/editor/src/functions/sceneFunctions'
+import { ModelTransformStatus, safeCompressGLTFWeb } from '@ir-engine/editor/src/optimize/ModelTransformFunctions'
+import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
+import { SceneThumbnailState } from '@ir-engine/editor/src/services/SceneThumbnailState'
+import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
+import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { DomainConfigState } from '@ir-engine/spatial/src/resources/DomainConfigState'
+import { Button, DropdownItem, Input, Select, Tooltip } from '@ir-engine/ui'
+import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
+import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
+import { CheckCircleLg, Copy02Sm, EllipsisVertical } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import { ModalHeader } from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
-import { HiLink } from 'react-icons/hi2'
+import React, { lazy, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { HiOutlineInformationCircle } from 'react-icons/hi2'
+import { NotificationService } from '../../../common/services/NotificationService'
+import { CompressedPublishConfirmation, ProgressState } from './CompressedPublishConfirmation'
 
+function formatPublishedDate(isoString) {
+  const date = new Date(isoString)
+
+  const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  const formattedDate = date.toLocaleDateString('en-US', options)
+
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short'
+  }
+  const formattedTime = date.toLocaleTimeString('en-US', timeOptions)
+
+  return { formattedDate, formattedTime }
+}
 const getDefaultErrors = () => ({
   name: '',
   maxUsers: '',
@@ -56,44 +74,62 @@ const locationTypeOptions = [
   { label: 'Showroom', value: 'showroom' }
 ]
 
-export default function AddEditLocationModal(props: {
+const LOCATION_MAX = 5
+
+type AddEditLocationModalProps = Readonly<{
   action: string
   location?: LocationType
   sceneID?: string | null
   sceneModified?: boolean
   inStudio?: boolean
-
+  projectFullName?: string
   onPublish?: () => Promise<void>
-}) {
+  onPublishSuccess?: (location: LocationType) => void
+}>
+
+export default function AddEditLocationModal(props: AddEditLocationModalProps) {
   const { t } = useTranslation()
-
   const locationID = useHookstate(props.location?.id || null)
-
+  const fileService = useMutation(fileBrowserPath)
   const params = {
     query: {
       id: locationID.value,
       action: props.action
     }
   }
-
   const locationQuery = useFind(locationPath, locationID.value ? params : undefined)
   const location = locationID.value ? locationQuery.data[0] : undefined
 
   const locationMutation = useMutation(locationPath)
 
+  const instanceEngineSettings = useFind(engineSettingPath, {
+    query: {
+      category: 'instance-server',
+      key: EngineSettings.InstanceServer.MaxUsersPerInstance,
+      paginate: false
+    }
+  })
+
   const publishLoading = useHookstate(false)
   const unPublishLoading = useHookstate(false)
+  const isNewPublished = useHookstate(false)
   const isLoading = locationQuery.status === 'pending' || publishLoading.value || unPublishLoading.value
   const errors = useHookstate(getDefaultErrors())
+  const saveScenePath = useHookstate<string | undefined>(undefined)
 
   const name = useHookstate(location?.name || '')
-  const maxUsers = useHookstate(location?.maxUsersPerInstance || 5)
+  const maxUsers = useHookstate(LOCATION_MAX)
 
   const scene = useHookstate((location ? location.sceneId : props.sceneID) || '')
   const videoEnabled = useHookstate<boolean>(location?.locationSetting.videoEnabled || true)
   const audioEnabled = useHookstate<boolean>(location?.locationSetting.audioEnabled || true)
+  /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+  // const jumpControlEnabled = useHookstate<boolean>(location?.locationSetting.jumpControlEnabled || true)
+  // const vrEnabled = useHookstate<boolean>(location?.locationSetting.vrEnabled || true)
   const screenSharingEnabled = useHookstate<boolean>(location?.locationSetting.screenSharingEnabled || true)
   const locationType = useHookstate(location?.locationSetting.locationType || 'public')
+  const progressState = useHookstate(getMutableState(ProgressState))
+  const lods = useHookstate<LODVariantDescriptor[]>([])
 
   useEffect(() => {
     if (location) {
@@ -103,40 +139,246 @@ export default function AddEditLocationModal(props: {
       audioEnabled.set(location.locationSetting.audioEnabled)
       screenSharingEnabled.set(location.locationSetting.screenSharingEnabled)
       locationType.set(location.locationSetting.locationType)
+      /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+      // jumpControlEnabled.set(location.locationSetting.jumpControlEnabled)
+      // vrEnabled.set(location.locationSetting.vrEnabled)
 
       if (!props.sceneID) scene.set(location.sceneId)
     }
   }, [location])
 
+  const projectQueryParam = props.action === 'studio' && !props.inStudio ? props.projectFullName : undefined
+
   const scenes = useFind(staticResourcePath, {
     query: {
       paginate: false,
-      type: 'scene'
+      type: 'scene',
+      project: projectQueryParam
     }
   })
 
-  const handlePublish = async () => {
+  const scenesOptions = useMemo(() => {
+    if (scenes.status === 'pending') {
+      return [{ value: '', label: t('common:select.fetching') }]
+    }
+    if (scenes.status === 'success' && scenes.data.length) {
+      return [
+        { value: '', label: t('admin:components.location.selectScene'), disabled: true },
+        ...scenes.data.map((scene) => {
+          const project = scene.project
+          const name = scene.key.split('/').pop()!.split('.').at(0)!
+          return {
+            label: `${name} (${project})`,
+            value: scene.id
+          }
+        })
+      ]
+    }
+    return []
+  }, [scenes])
+
+  const validate = (): boolean => {
     errors.set(getDefaultErrors())
 
-    if (!name.value) {
+    if (!name.value.trim()) {
       errors.name.set(t('admin:components.location.nameCantEmpty'))
     }
     if (!maxUsers.value) {
       errors.maxUsers.set(t('admin:components.location.maxUserCantEmpty'))
     }
-    if (maxUsers.value > 5) {
-      errors.maxUsers.set(t('admin:components.location.maxUserExceeded'))
+    if (maxUsers.value > parseInt(instanceEngineSettings.data[0].value)) {
+      errors.maxUsers.set(
+        t('admin:components.location.maxUserExceeded', { maxUsers: instanceEngineSettings?.data[0].value })
+      )
     }
     if (!scene.value) {
       errors.scene.set(t('admin:components.location.sceneCantEmpty'))
     }
-    if (Object.values(errors.value).some((value) => value.length > 0)) {
+
+    return !Object.values(errors.value).some((value) => value.length > 0)
+  }
+
+  const handlePublishFolder = async () => {
+    const isValid = validate()
+    if (!isValid) {
       return
     }
+    ModalState.openModal(<CompressedPublishConfirmation />)
+    const { projectName, sceneName, rootEntity, sceneAssetID, scenePath } = getState(EditorState)
+    const abortController = new AbortController()
+    try {
+      //save current scene
+      await saveSceneGLTF(sceneAssetID!, projectName!, sceneName!, abortController.signal)
+      // save as duplicate scene
+      if (sceneName && projectName) {
+        saveScenePath.set(
+          getState(EditorState).scenePath!.split('/').slice(0, -1).join('/').replace('scenes', 'publish')
+        )
 
+        const scenename = getState(EditorState).sceneName?.split('.').shift()
+        // Find all entities with GLTFComponent and compress them
+        const entitiesToCompress = [] as Entity[]
+        iterateEntityNode(rootEntity, (entity) => {
+          if (entity === rootEntity) return
+          if (hasComponent(entity, GLTFComponent)) {
+            entitiesToCompress.push(entity)
+          }
+        })
+
+        // Process each child GLTF entity
+        for (const gltfEntity of entitiesToCompress) {
+          const gltfComponent = getComponent(gltfEntity, GLTFComponent)
+          const srcURL = gltfComponent.src
+          if (!srcURL) continue
+          // Set up compression for this entity
+          const fileName = srcURL.split('/').pop()!.split('.').shift()!
+          if (fileName === 'platform') continue
+          try {
+            const extension = new URL(srcURL).pathname.split('.').pop()!
+            const modelFormat = extension === 'gltf' ? 'gltf' : extension === 'vrm' ? 'vrm' : 'glb'
+            const destPath = `${saveScenePath.value}/${scenename}/${fileName}-compressed-published.${extension}`
+            // remove old optimized scene if it exists
+            try {
+              await fileService.remove(destPath.replace('-compressed-published', ''))
+              await fileService.remove(destPath)
+            } catch (e) {
+              console.log('Tried to remove ', destPath, ' but no file was found')
+            }
+
+            /** If a GLTF file, re-export GLTF to the publish folder such that it has a copy of it's relative referenced assets. */
+            if (modelFormat === 'gltf') {
+              await exportRelativeGLTF(
+                gltfEntity,
+                projectName,
+                'public/publish/' + scenename + '/' + fileName + '.gltf',
+                false
+              )
+            }
+
+            // Apply model transformation/compression
+            const progressCaptions: Record<ModelTransformStatus, string> = {
+              [ModelTransformStatus.TransformingModels]: 'editor:properties.model.transform.status.transformingmodels',
+              [ModelTransformStatus.ProcessingTexture]: 'editor:properties.model.transform.status.processingtexture',
+              [ModelTransformStatus.WritingFiles]: 'editor:properties.model.transform.status.writingfiles',
+              [ModelTransformStatus.Complete]: 'editor:properties.model.transform.status.complete'
+            }
+            // Create LOD parameters for this model
+            const lodParams: ModelTransformParameters = {
+              ...defaultLODs[2].params,
+              dst: fileName + '-compressed-published',
+              modelFormat: modelFormat,
+              resourceUri: '',
+              adaptiveSimplification: true,
+              maxTextureSize: 1024
+            }
+
+            progressState.set({
+              progress: progressState.value.progress,
+              caption: `Compressing ${fileName}...`
+            })
+
+            const { cloudDomain } = getState(DomainConfigState)
+            const compressedGLTFPath = `${cloudDomain}/projects/${projectName}/public/publish/${scenename}/${fileName}.gltf`
+
+            await safeCompressGLTFWeb(
+              modelFormat === 'gltf' ? compressedGLTFPath : gltfComponent.src,
+              destPath,
+              lodParams,
+              (progress, status, numerator, denominator) => {
+                const caption = t(progressCaptions[status]!, {
+                  numerator: (numerator ?? 0) + 1,
+                  denominator
+                })
+                progressState.set({
+                  progress: progressState.value.progress + progress / entitiesToCompress.length,
+                  caption
+                })
+              }
+            )
+            // find newly created file from static resources to get with hash
+            const newResource = await API.instance.service(staticResourcePath).find({
+              query: { key: destPath, $limit: 1 }
+            })
+
+            const newGLTFURL = newResource?.data?.[0]?.url
+              ? newResource.data[0].url
+              : pathJoin(config.client.fileServer, destPath)
+
+            setComponent(gltfEntity, NameComponent, fileName + '-compressed')
+            setComponent(gltfEntity, GLTFComponent, { src: newGLTFURL })
+          } catch (error) {
+            console.error(error)
+          }
+        }
+        // Increase wait time to ensure files are fully processed
+        progressState.set({
+          progress: progressState.value.progress,
+          caption: `Waiting for files to be processed...`
+        })
+        //save duplicated scene and publish that
+        await saveSceneGLTF(
+          sceneAssetID!,
+          projectName,
+          sceneName.replace('.gltf', '-compressed.gltf'),
+          abortController.signal,
+          true,
+          saveScenePath.value + '/' + scenename
+        )
+        await handlePublish(true)
+        ModalState.closeModal()
+        progressState.set({ progress: 0, caption: '' })
+      }
+    } catch (error) {
+      console.error(error)
+      progressState.set({ progress: 0, caption: '' })
+      ModalState.closeModal()
+      ModalState.openModal(
+        <ErrorDialog title={t('editor:savingError')} description={error?.message || t('editor:savingErrorMsg')} />
+      )
+
+      getMutableState(AssetModifiedState).set({})
+      // set timeout to allow EditorState to update for the compressed scene
+      setTimeout(() => {
+        getMutableState(EditorState).merge({
+          scenePath: scenePath,
+          sceneName: sceneName,
+          sceneAssetID: sceneAssetID,
+          projectName: projectName
+        })
+        if (saveScenePath.value && sceneName) {
+          deleteScene(
+            `${saveScenePath.value}/${sceneName.replace('.gltf', '')}/${sceneName.replace('.gltf', '-compressed.gltf')}`
+          )
+        }
+        saveScenePath.set(undefined)
+      }, 1000)
+    }
+  }
+
+  const handlePublish = async (inCompress = false) => {
+    const isValid = validate()
+    if (!isValid) {
+      return
+    }
     publishLoading.set(true)
 
-    if (props.onPublish) {
+    let updateSceneID = getState(EditorState).sceneAssetID
+
+    if (location?.sceneId && scene.value !== location?.sceneId) updateSceneID = scene.value
+
+    try {
+      if (updateSceneID && getState(ReferenceSpaceState).originEntity !== UndefinedEntity) {
+        const thumbnailInfo = await SceneThumbnailState.getThumbnail()
+        if (!thumbnailInfo) {
+          await SceneThumbnailState.createThumbnail()
+          await SceneThumbnailState.uploadThumbnail()
+        }
+      }
+    } catch (e) {
+      errors.serverError.set(e.message)
+    }
+
+    if (!inCompress && props.onPublish) {
       try {
         await props.onPublish()
       } catch (e) {
@@ -147,8 +389,8 @@ export default function AddEditLocationModal(props: {
     }
 
     const locationData: LocationData = {
-      name: name.value,
-      sceneId: scene.value,
+      name: name.value.trim(),
+      sceneId: updateSceneID || (location?.sceneId as string),
       maxUsersPerInstance: maxUsers.value,
       locationSetting: {
         locationId: '' as LocationID,
@@ -157,6 +399,9 @@ export default function AddEditLocationModal(props: {
         screenSharingEnabled: Boolean(screenSharingEnabled.value),
         faceStreamingEnabled: false,
         videoEnabled: Boolean(videoEnabled.value)
+        /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+        // jumpControlEnabled: Boolean(jumpControlEnabled.value),
+        // vrEnabled: Boolean(vrEnabled.value)
       },
       isLobby: false,
       isFeatured: false
@@ -164,7 +409,7 @@ export default function AddEditLocationModal(props: {
 
     try {
       if (location?.id) {
-        await locationMutation.patch(location.id, locationData as LocationPatch, {
+        await locationMutation.patch(location.id, { ...locationData, id: location.id } as LocationPatch, {
           query: { projectId: location.projectId }
         })
       } else {
@@ -172,6 +417,7 @@ export default function AddEditLocationModal(props: {
         locationID.set(response.id)
       }
       await locationQuery.refetch()
+      isNewPublished.set(true)
     } catch (err) {
       errors.serverError.set(err.message)
     }
@@ -192,38 +438,58 @@ export default function AddEditLocationModal(props: {
     }
   }
 
+  const anchorEvent = useHookstate<null | React.MouseEvent<HTMLElement>>(null)
+
+  useEffect(() => {
+    if (isNewPublished.value && location && props.onPublishSuccess) {
+      props.onPublishSuccess(location)
+    }
+  }, [location, props.onPublishSuccess, isNewPublished.value])
+
+  const setMaxUsers = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const maxU = parseInt(event.currentTarget.value, 0)
+    maxUsers.set(Math.max(maxU, 0))
+    if (maxU < 2) {
+      videoEnabled.set(false)
+    }
+  }
+
   return (
-    <div className="relative z-50 w-[50vw] bg-theme-surface-main">
-      <div className="relative rounded-lg shadow">
-        <ModalHeader
-          onClose={PopoverState.hidePopupover}
-          title={location?.id ? t('editor:toolbar.publishLocation.update') : t('editor:toolbar.publishLocation.create')}
-        />
-        <div className="h-fit max-h-[60vh] w-full overflow-y-auto px-10 py-6">
-          <div className="relative grid w-full gap-6">
-            {errors.serverError.value && <p className="mb-3 text-red-700">{errors.serverError.value}</p>}
-            {location && (
-              <button
-                className="flex w-full cursor-default items-center justify-center gap-x-1 text-left text-xs font-medium"
-                data-testid="publish-panel-copy-link-buttons-group"
-              >
-                <div
-                  className="cursor-pointer text-blue-primary hover:underline"
-                  onClick={() => window.open(new URL(location.url))}
-                >
-                  {location.url}
-                </div>
-                <HiLink
-                  className="z-10 h-4 w-4 cursor-pointer"
-                  onClick={() => {
-                    navigator.clipboard.writeText(new URL(location.url).href)
-                    NotificationService.dispatchNotify(t('editor:toolbar.publishLocation.locationLinkCopied'), {
-                      variant: 'success'
-                    })
-                  }}
-                />
-              </button>
+    <div
+      className="absolute z-50 rounded-xl border border-surface-1 bg-white px-8 pt-6 shadow-lg dark:bg-surface-1"
+      data-testid="publish-panel"
+    >
+      <div className="relative rounded-lg py-2">
+        <div className="flex justify-between pb-6">
+          <span className="text-xl">
+            {location?.id ? t('editor:toolbar.publishLocation.update') : t('editor:toolbar.publishLocation.create')}
+          </span>
+          <div className="flex items-center gap-3" data-testid="publish-panel-publish-status">
+            {location ? (
+              <span className="text-xs text-green-500" data-testid="publish-panel-published-date">
+                {t('editor:toolbar.publishLocation.publishDate', formatPublishedDate(location.createdAt))}
+              </span>
+            ) : (
+              <span className="text-text-primary" data-testid="publish-panel-not-yet-published-message">
+                {t('editor:toolbar.publishLocation.notYetPublished')}
+              </span>
             )}
+            <button data-testid="publish-panel-ellipsis-icon" onClick={(event) => anchorEvent.set(event)}>
+              <EllipsisVertical />
+            </button>
+          </div>
+        </div>
+
+        <div className="h-fit max-h-[60vh] w-full overflow-y-auto">
+          <div className="relative grid w-full gap-4">
+            {errors.serverError.value && <p className="mb-3 text-red-700">{errors.serverError.value}</p>}
+            {
+              <div className={location ? 'border-y border-y-ui-outline' : ''}>
+                {location && (
+                  <LocationPublishSuccess published={isNewPublished.value ? false : !!location} url={location.url} />
+                )}
+              </div>
+            }
             <Input
               labelProps={{ text: t('admin:components.location.lbl-name'), position: 'top' }}
               value={name.value}
@@ -235,18 +501,7 @@ export default function AddEditLocationModal(props: {
               fullWidth
               height="xl"
             />
-            <Input
-              type="number"
-              labelProps={{ text: t('admin:components.location.lbl-maxuser'), position: 'top' }}
-              value={maxUsers.value}
-              data-testid="publish-panel-location-max-users"
-              onChange={(event) => maxUsers.set(Math.max(parseInt(event.target.value, 0), 0))}
-              state={errors.maxUsers.value ? 'error' : undefined}
-              helperText={errors.maxUsers.value}
-              disabled={isLoading}
-              fullWidth
-              height="xl"
-            />
+
             <Select
               labelProps={{
                 text: t('admin:components.location.lbl-scene'),
@@ -255,21 +510,7 @@ export default function AddEditLocationModal(props: {
               value={scene.value}
               onChange={(value: string) => scene.set(value)}
               disabled={!!props.sceneID || scenes.status !== 'success' || isLoading}
-              options={
-                scenes.status === 'pending'
-                  ? [{ value: '', label: t('common:select.fetching') }]
-                  : [
-                      { value: '', label: t('admin:components.location.selectScene'), disabled: true },
-                      ...scenes.data.map((scene) => {
-                        const project = scene.project
-                        const name = scene.key.split('/').pop()!.split('.').at(0)!
-                        return {
-                          label: `${name} (${project})`,
-                          value: scene.id
-                        }
-                      })
-                    ]
-              }
+              options={scenesOptions}
               state={errors.scene.value ? 'error' : undefined}
               helperText={errors.scene.value}
               width="full"
@@ -287,38 +528,99 @@ export default function AddEditLocationModal(props: {
               width="full"
               inputSizeVariant="xl"
             />*/}
-            <Toggle
-              label={t('admin:components.location.lbl-ve')}
-              value={videoEnabled.value}
-              onChange={videoEnabled.set}
-              disabled={isLoading}
-            />
-            <Toggle
-              label={t('admin:components.location.lbl-ae')}
-              value={audioEnabled.value}
-              onChange={audioEnabled.set}
-              disabled={isLoading}
-            />
-            <Toggle
-              label={t('admin:components.location.lbl-se')}
-              value={screenSharingEnabled.value}
-              onChange={screenSharingEnabled.set}
-              disabled={isLoading}
-            />
-            {props.inStudio && (
-              <React.Suspense fallback={null}>
-                <StudioSections />
-              </React.Suspense>
+
+            <div className="grid grid-cols-[276px_minmax(0,1fr)] gap-12 border-t border-t-ui-outline py-6">
+              {props.inStudio && (
+                <div className="flex flex-col">
+                  <React.Suspense fallback={null}>
+                    <StudioSections />
+                  </React.Suspense>
+                </div>
+              )}
+
+              <div className="grid h-full grid-rows-[auto,1fr] gap-5">
+                <div className="flex h-auto flex-col self-start">
+                  <h5>{t('editor:toolbar.publishLocation.jumpControlFeature')}</h5>
+                  <span className="text-xs">{t('editor:toolbar.publishLocation.jumpControlFeatureDesc')}</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Toggle
+                    label={t('admin:components.location.lbl-je')}
+                    /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+                    value={false}
+                    onChange={() => {}}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="flex h-auto flex-col self-start">
+                  <h5>{t('editor:toolbar.publishLocation.vrCapabilitiesFeature')}</h5>
+                  <span className="text-xs">{t('editor:toolbar.publishLocation.vrCapabilitiesFeatureDesc')}</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Toggle
+                    label={t('admin:components.location.lbl-vre')}
+                    /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+                    value={false}
+                    onChange={() => {}}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="flex h-auto flex-col self-start">
+                  <h5>{t('editor:toolbar.publishLocation.multiplayerFeatures')}</h5>
+                  <span className="text-xs">{t('editor:toolbar.publishLocation.multiplayerDescription')}</span>
+                </div>
+
+                <div className="flex flex-col gap-5">
+                  <Input
+                    type="number"
+                    labelProps={{ text: t('admin:components.location.lbl-maxuser'), position: 'top' }}
+                    value={maxUsers.value}
+                    data-testid="publish-panel-location-max-users"
+                    onChange={setMaxUsers}
+                    state={errors.maxUsers.value ? 'error' : undefined}
+                    helperText={errors.maxUsers.value}
+                    disabled={isLoading}
+                    fullWidth
+                    height="xl"
+                    placeholder="5 - Default"
+                    max={parseInt(instanceEngineSettings?.data[0]?.value)}
+                  />
+                  <Toggle
+                    label={t('admin:components.location.lbl-ve')}
+                    value={videoEnabled.value}
+                    onChange={videoEnabled.set}
+                    disabled={isLoading || maxUsers.value < 2}
+                  />
+
+                  <Toggle
+                    label={t('admin:components.location.lbl-se')}
+                    value={screenSharingEnabled.value}
+                    onChange={screenSharingEnabled.set}
+                    disabled={isLoading}
+                    className="pl-4"
+                  />
+
+                  <Toggle
+                    label={t('admin:components.location.lbl-ae')}
+                    value={audioEnabled.value}
+                    onChange={audioEnabled.set}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            </div>
+            {location?.url && (
+              <div className="border-t border-t-ui-outline py-6">
+                <EmbedCodeField url={location.url} />
+              </div>
             )}
           </div>
         </div>
 
-        <div className="grid grid-flow-col border-t border-t-theme-primary px-6 py-5">
-          <Button
-            variant="tertiary"
-            data-testid="publish-panel-cancel-button"
-            onClick={() => PopoverState.hidePopupover()}
-          >
+        <div className="grid grid-flow-col border-t border-t-ui-outline px-6 py-5">
+          <Button variant="tertiary" data-testid="publish-panel-cancel-button" onClick={() => ModalState.closeModal()}>
             {t('common:components.cancel')}
           </Button>
           <div className="ml-auto flex items-center gap-2">
@@ -333,7 +635,22 @@ export default function AddEditLocationModal(props: {
                 {unPublishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
               </Button>
             )}
-            <Button data-testid="publish-panel-publish-or-update-button" disabled={isLoading} onClick={handlePublish}>
+            <Tooltip content={t('editor:toolbar.publishLocation.createCompressedScenePublishInfo')}>
+              <Button
+                className="bg-[#2F3A4D]"
+                data-testid="publish-panel-compress-and-publish-button"
+                disabled={isLoading}
+                onClick={handlePublishFolder}
+              >
+                <HiOutlineInformationCircle />
+                {t('editor:toolbar.publishLocation.createCompressedScenePublish')}
+              </Button>
+            </Tooltip>
+            <Button
+              data-testid="publish-panel-publish-or-update-button"
+              disabled={isLoading}
+              onClick={() => handlePublish()}
+            >
               {location?.id
                 ? t('common:components.update')
                 : props.sceneModified
@@ -342,6 +659,89 @@ export default function AddEditLocationModal(props: {
               {publishLoading.value ? <LoadingView spinnerOnly className="h-6 w-6" /> : undefined}
             </Button>
           </div>
+        </div>
+      </div>
+
+      <ContextMenu
+        anchorEvent={anchorEvent.value as React.MouseEvent<HTMLElement>}
+        onClose={() => anchorEvent.set(null)}
+        className="z-9999"
+      >
+        <div className="w-[180px]" tabIndex={0}>
+          <DropdownItem
+            className="text-red-500"
+            label={t('editor:toolbar.publishLocation.unpublish')}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              unPublishLocation()
+              anchorEvent.set(null)
+            }}
+          />
+        </div>
+      </ContextMenu>
+    </div>
+  )
+}
+
+const LocationPublishSuccess = ({ published, url }: { published: boolean; url: string }) => {
+  const copied = useHookstate(false)
+  const { t } = useTranslation()
+
+  const handleCopy = () => {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        copied.set(true)
+        setTimeout(() => copied.set(false), 5000)
+
+        NotificationService.dispatchNotify(t('editor:toolbar.publishLocation.locationLinkCopied'), {
+          variant: 'success'
+        })
+      })
+      .catch((err) => {
+        alert(`Failed to copy URL: ${err}`)
+      })
+  }
+
+  return (
+    <div className={published ? 'border-b border-t border-black' : ''}>
+      <div
+        className={`flex items-center justify-between rounded p-3 ${
+          published ? 'bg-transparent shadow' : 'bg-surface-success'
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex h-full items-center">
+            <CheckCircleLg className={`h-10 w-10 ${published ? 'text-green-500' : 'text-white'}`} />
+          </div>
+
+          <div className="flex flex-col">
+            <span className="font-semibold text-text-primary">
+              {published
+                ? t('editor:toolbar.publishLocation.publishSuccess')
+                : t('editor:toolbar.publishLocation.publicUrl')}
+            </span>
+            <span
+              className="cursor-pointer py-1 text-sm font-light text-text-primary"
+              data-testid="publish-panel-location-link"
+              onClick={() => window.open(url)}
+            >
+              {url}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center">
+          <button
+            onClick={handleCopy}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-white transition ${
+              published ? 'bg-ui-success hover:bg-[#0e5026]' : 'bg-black bg-opacity-50'
+            }`}
+            data-testid="publish-panel-copy-location-link-button"
+          >
+            <Copy02Sm className="text-white" />
+            {published ? t('editor:toolbar.publishLocation.copy') : t('editor:toolbar.publishLocation.copyPublicUrl')}
+          </button>
         </div>
       </div>
     </div>

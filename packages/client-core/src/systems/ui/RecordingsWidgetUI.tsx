@@ -1,42 +1,25 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect, useRef } from 'react'
 import { HiPlay, HiPlusCircle } from 'react-icons/hi2'
 
 import { useFind, useGet } from '@ir-engine/common'
 import { ECSRecordingActions, PlaybackState, RecordingState } from '@ir-engine/common/src/recording/ECSRecordingSystem'
 import { RecordingType, recordingPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { PeerID, defineState, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
+import {
+  MediaChannelState,
+  NetworkState,
+  PeerID,
+  defineState,
+  getMutableState,
+  getState,
+  useHookstate,
+  useMutableState,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { startPlayback } from '@ir-engine/ui/src/pages/Capture'
-import { WidgetAppService } from '../WidgetAppService'
 
+import { EngineState } from '@ir-engine/ecs'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
-import { PeerMediaChannelState } from '../../media/PeerMediaChannelState'
+import { WidgetAppService } from '../WidgetAppService'
 
 // TODO replace these templates with our generalised ones for XRUI
 const Checkbox = (props: { label: string; disabled?: boolean; checked: boolean; onChange: () => void }) => {
@@ -78,28 +61,28 @@ const Button = (props: { label: string | JSX.Element; onClick: () => void }) => 
 const VideoPreview = (props: { peerID: PeerID }) => {
   const { peerID } = props
 
-  const peerMediaChannelState = useMutableState(PeerMediaChannelState)[peerID]['cam']
+  const peerMediaChannelState = useMutableState(MediaChannelState)[peerID][webcamVideoMediaChannelType]
 
-  const { videoMediaStream } = peerMediaChannelState
+  const { stream } = peerMediaChannelState
 
   const ref = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    if (!ref.current || ref.current.srcObject || !videoMediaStream?.value) return
+    if (!ref.current || ref.current.srcObject || !stream?.value) return
 
     ref.current.id = `${peerID}_video_xrui`
     ref.current.autoplay = true
     ref.current.muted = true
     ref.current.setAttribute('playsinline', 'true')
 
-    const newVideoTrack = videoMediaStream.value.getVideoTracks()[0].clone()
+    const newVideoTrack = stream.value.getVideoTracks()[0].clone()
     ref.current.srcObject = new MediaStream([newVideoTrack])
     ref.current.play()
-  }, [ref.current, videoMediaStream])
+  }, [ref.current, stream])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      {videoMediaStream.value && (
+      {stream.value && (
         <video
           xr-layer="true"
           style={{ maxWidth: '100px', width: '100%', height: 'auto' }}
@@ -175,7 +158,7 @@ export const RecordingPeer = (props: { peerID: PeerID }) => {
 
 export const RecordingPeerList = () => {
   const mediaNetworkState = useMediaNetwork()
-  const peerMediaChannelState = useMutableState(PeerMediaChannelState)
+  const peerMediaChannelState = useMutableState(MediaChannelState)
   const recordingSchemaState = useMutableState(RecordingSchemaState)
 
   const recordingState = useMutableState(RecordingState)
@@ -205,7 +188,7 @@ export const RecordingPeerList = () => {
 
   useEffect(() => {
     const mediaNetwork = NetworkState.mediaNetwork
-    peerIDs.set(mediaNetwork?.users?.[Engine.instance.userID] ?? [])
+    peerIDs.set(mediaNetwork?.users?.[getState(EngineState).userID] ?? [])
   }, [mediaNetworkState?.peers, mediaNetworkState?.users])
 
   return (

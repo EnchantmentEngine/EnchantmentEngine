@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { PassThrough } from 'stream'
 
 import { FileBrowserContentType } from '@ir-engine/common/src/schemas/media/file-browser.schema'
@@ -89,7 +64,7 @@ export interface StorageListObjectInterface {
   /**
    * Metadata about each object returned.
    */
-  Contents: { Key: string; Size: number }[]
+  Contents: { Key: string; Size: number; Type?: string }[]
   /**
    * All of the keys (up to 1,000) rolled up into a common prefix count as a single return when calculating the number of returns. A response can contain CommonPrefixes only if you specify a delimiter.  CommonPrefixes contains all (if there are any) keys between Prefix and the next occurrence of the string specified by a delimiter.  CommonPrefixes lists keys that act like subdirectories in the directory specified by Prefix. For example, if the prefix is notes/ and the delimiter is a slash (/) as in notes/summer/july, the common prefix is notes/summer/. All of the keys that roll up into a common prefix count as a single return when calculating the number of returns.
    */
@@ -169,8 +144,9 @@ export interface StorageProviderInterface {
   /**
    * Invalidate items in the storage provider.
    * @param invalidationItems List of keys.
+   * @param useMediaCDN If using Google Cloud, indicates whether to invalidate a Media CDN item (otherwise invalidate Cloud CDN)
    */
-  createInvalidation(invalidationItems: string[]): Promise<any>
+  createInvalidation(invalidationItems: string[], useMediaCDN?: boolean): Promise<any>
 
   getOriginURLs(): Promise<string[]>
 
@@ -213,6 +189,12 @@ export interface StorageProviderInterface {
    * @returns {StorageObjectInterface}
    */
   getObject(key: string): Promise<StorageObjectInterface>
+
+  /**
+   * Get the content type of an object
+   * @returns {StorageProviderInterface}
+   */
+  getObjectContentType(key: string): Promise<string>
 
   /**
    * Get the instance of current storage provider.

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import type { SVGProps } from 'react'
 import * as React from 'react'
 import { Ref, forwardRef } from 'react'
@@ -44,7 +19,7 @@ const MoveMd = (props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => (
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.75}
-        d="m5.166 7.5-2.5 2.5m0 0 2.5 2.5m-2.5-2.5h16.667M8.499 4.167l2.5-2.5m0 0 2.5 2.5m-2.5-2.5v16.667m2.5-2.5-2.5 2.5m0 0-2.5-2.5M16.833 7.5l2.5 2.5m0 0-2.5 2.5"
+        d="M4.16602 7.50033L1.66602 10.0003M1.66602 10.0003L4.16602 12.5003M1.66602 10.0003H18.3327M7.49935 4.16699L9.99935 1.66699M9.99935 1.66699L12.4993 4.16699M9.99935 1.66699V18.3337M12.4993 15.8337L9.99935 18.3337M9.99935 18.3337L7.49935 15.8337M15.8327 7.50033L18.3327 10.0003M18.3327 10.0003L15.8327 12.5003"
       />
     </g>
     <defs>

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 // This must always be imported first
 import '@ir-engine/server-core/src/patchEngineNode'
 
@@ -36,6 +11,7 @@ import { ServerMode } from '@ir-engine/server-core/src/ServerState'
 import config from '@ir-engine/server-core/src/appconfig'
 import { createFeathersKoaApp, serverJobPipe } from '@ir-engine/server-core/src/createApp'
 import { updateAppConfig } from '@ir-engine/server-core/src/updateAppConfig'
+import { retry } from '@octokit/plugin-retry'
 import { Octokit } from '@octokit/rest'
 import { JwtPayload, verify } from 'jsonwebtoken'
 
@@ -70,7 +46,8 @@ const options = cli.parse({
   updateType: [false, 'Type of updating for project', 'string'],
   updateSchedule: [false, 'Schedule for auto-updating project', 'string'],
   jobId: [false, 'ID of Job record', 'string'],
-  token: [false, 'GitHub JWT', 'string']
+  token: [false, 'GitHub JWT', 'string'],
+  isDependency: [false, 'Whether this is a dependency update', 'string']
 })
 
 cli.main(async () => {
@@ -81,7 +58,13 @@ cli.main(async () => {
     const { userId, jobId, ...data } = options
     data.reset = data.reset === 'true'
     data.needsRebuild = data.needsRebuild === 'true'
-    const params = { isJob: true, jobId, appJWT: data.token, signedByAppJWT: true } as any
+    const params = {
+      isJob: true,
+      jobId,
+      appJWT: data.token,
+      signedByAppJWT: true,
+      isDependency: data.isDependency === 'true'
+    } as any
     if (data.token) {
       const appId = config.authentication.oauth.github.appId ? parseInt(config.authentication.oauth.github.appId) : null
       const token = data.token
@@ -91,7 +74,8 @@ cli.main(async () => {
       })! as JwtPayload
       if (jwtDecoded.iss == null || parseInt(jwtDecoded.iss) !== appId)
         throw new NotAuthenticated('Invalid app credentials')
-      const octoKit = new Octokit({ auth: token })
+      const retryOctokit = Octokit.plugin(retry)
+      const octoKit = new retryOctokit({ auth: token, retry: { enabled: process.env.TEST !== 'true' } })
       let appResponse
       try {
         appResponse = await octoKit.rest.apps.getAuthenticated()

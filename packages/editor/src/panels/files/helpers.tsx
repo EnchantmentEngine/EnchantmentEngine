@@ -1,29 +1,5 @@
-/*
-CPAL-1.0 License
+import { ImmutableArray, defineState, getMutableState, useHookstate } from '@ir-engine/hyperflux'
 
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { ImmutableArray } from '@hookstate/core'
 import { FileThumbnailJobState } from '@ir-engine/client-core/src/common/services/FileThumbnailJobState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { useFind, useMutation, useRealtime, useSearch } from '@ir-engine/common'
@@ -36,24 +12,39 @@ import {
 import { CommonKnownContentTypes } from '@ir-engine/common/src/utils/CommonKnownContentTypes'
 import { bytesToSize } from '@ir-engine/common/src/utils/btyesToSize'
 import { cleanFileNameFile } from '@ir-engine/common/src/utils/cleanFileName'
-import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
 import { NO_PROXY, useMutableState } from '@ir-engine/hyperflux'
-import React, { ReactNode, createContext, useContext } from 'react'
+import { FileToAssetExt } from '@ir-engine/spatial/src/resources/AssetType'
+import React, { ReactNode, createContext, useContext, useEffect, useMemo } from 'react'
 import { DnDFileType, FileDataType } from '../../constants/AssetTypes'
-import { filterExistingFiles, handleUploadFiles } from '../../functions/assetFunctions'
+import { filterExistingFiles, handleUploadFiles, validatedFiles } from '../../functions/assetFunctions'
+import { EditorState } from '../../services/EditorServices'
 import { FilesState } from '../../services/FilesState'
+import { ImportSettingsState } from '../../services/ImportSettingsState'
+import { AssetCategoryNode } from '../assets/categories'
 
 /* CONSTANTS */
 
 export const FILES_PAGE_LIMIT = 100 as const
 
-export const availableTableColumns = ['name', 'type', 'dateModified', 'size'] as const
+export const availableTableColumns = ['name', 'type', 'author', 'createdAt', 'statistics', 'size'] as const
+
+// refresh counter
+export const FileRefreshState = defineState({
+  name: 'FileRefreshState',
+  initial: () => ({
+    refreshCounter: 0
+  }),
+  triggerRefresh: () => {
+    getMutableState(FileRefreshState).refreshCounter.set((prev) => prev + 1)
+  }
+})
 
 /* HOOKS */
 
 const FilesQueryContext = createContext({
   filesQuery: null as null | ReturnType<typeof useFind<'file-browser'>>,
   files: [] as FileDataType[],
+  categories: [] as any,
   changeDirectoryByPath: (_path: string) => {},
   backDirectory: () => {},
   refreshDirectory: async () => {},
@@ -62,14 +53,24 @@ const FilesQueryContext = createContext({
 
 export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }) => {
   const filesState = useMutableState(FilesState)
+  const projectName = useMutableState(EditorState).projectName.value
+  const categories = useHookstate<any>([])
+  const directory = (
+    filesState.selectedDirectory.value !== '' ? filesState.selectedDirectory.value : '/projects/' + projectName
+  ).replace(/^\/+/, '')
 
   const filesQuery = useFind(fileBrowserPath, {
     query: {
       $limit: FILES_PAGE_LIMIT,
-      directory:
-        filesState.selectedDirectory.value != ''
-          ? filesState.selectedDirectory.value
-          : '/projects/' + filesState.projectName.value
+      directory,
+      recursive: !!filesState.searchText.value
+    }
+  })
+
+  const foldersQuery = useFind(fileBrowserPath, {
+    query: {
+      $limit: FILES_PAGE_LIMIT,
+      directory: `/projects/${projectName}/public/`
     }
   })
 
@@ -78,7 +79,7 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   useSearch(
     filesQuery,
     {
-      key: {
+      name: {
         $like: `%${filesState.searchText.value}%`
       }
     },
@@ -102,30 +103,108 @@ export const CurrentFilesQueryProvider = ({ children }: { children?: ReactNode }
   }
 
   const refreshDirectory = async () => {
-    await filesQuery.refetch()
+    filesQuery.refetch()
+    foldersQuery.refetch()
   }
 
-  const createNewFolder = () => fileService.create(`${filesState.selectedDirectory.value}New-Folder`)
+  useEffect(() => {
+    refreshDirectory()
+  }, [filesState.selectedDirectory])
 
-  const files = filesQuery.data.map((file) => {
-    const isFolder = file.type === 'folder'
-    const fullName = isFolder ? file.name : file.name + '.' + file.type
-
-    return {
-      ...file,
-      size: file.size ? bytesToSize(file.size) : '0',
-      path: isFolder ? file.key.split(file.name)[0] : file.key.split(fullName)[0],
-      fullName,
-      isFolder
+  const createNewFolder = () => {
+    let currentDirectory = filesState.selectedDirectory.value
+    const projectName = getMutableState(FilesState).projectName.get(NO_PROXY)
+    const importFolder = getMutableState(ImportSettingsState).importFolder.get(NO_PROXY)
+    if (currentDirectory.startsWith(`/projects/${projectName}${importFolder}`)) {
+      currentDirectory = currentDirectory.replace(importFolder, '/public/')
     }
-  })
+    fileService.create(`${currentDirectory}New-Folder`)
+  }
+
+  const files = useMemo(() => {
+    return filesQuery.data.map((file) => {
+      const isFolder = file.type === 'folder'
+      const fullName = isFolder ? file.name : file.name + '.' + file.type
+
+      return {
+        ...file,
+        size: file.size ? bytesToSize(file.size) : '0',
+        path: isFolder ? file.key.split(file.name)[0] : file.key.split(fullName)[0],
+        fullName,
+        isFolder
+      }
+    })
+  }, [filesQuery.data])
 
   useRealtime(staticResourcePath, filesQuery.refetch)
   FileThumbnailJobState.useGenerateThumbnails(filesQuery.data)
+  FileThumbnailJobState.useGenerateDimensions(filesQuery.data)
+
+  function buildHierarchy(paths: { key: string; name: string }[]): AssetCategoryNode[] {
+    const map = new Map<string, AssetCategoryNode>()
+    const roots: AssetCategoryNode[] = []
+
+    for (const { key: path } of paths) {
+      const parts = path
+        .split('/')
+        .slice(`/projects/${projectName}/public/**`.split('/').length - 2)
+        .filter(Boolean)
+      let currentPath = ''
+      let parentNode: AssetCategoryNode | null = null
+
+      for (let i = 0; i < parts.length; i++) {
+        currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i]
+
+        if (!map.has(currentPath)) {
+          const newNode: AssetCategoryNode = {
+            name: parts[i],
+            path: `/${path}`,
+            depth: currentPath.split('/').length - 1,
+            children: []
+          }
+          map.set(currentPath, newNode)
+
+          if (parentNode) {
+            parentNode.children.push(newNode)
+          } else {
+            roots.push(newNode)
+          }
+        }
+
+        parentNode = map.get(currentPath)!
+      }
+    }
+
+    return roots
+  }
+
+  const folders = React.useMemo(() => foldersQuery.data.filter((file) => file.type === 'folder'), [foldersQuery.data])
+
+  useEffect(() => {
+    if (foldersQuery.status === 'success') {
+      categories.set(buildHierarchy(folders))
+    }
+  }, [foldersQuery.data])
+
+  const refreshState = useHookstate(getMutableState(FileRefreshState))
+
+  useEffect(() => {
+    if (refreshState.refreshCounter.value > 0) {
+      refreshDirectory()
+    }
+  }, [refreshState.refreshCounter.value])
 
   return (
     <FilesQueryContext.Provider
-      value={{ filesQuery, files, changeDirectoryByPath, backDirectory, refreshDirectory, createNewFolder }}
+      value={{
+        categories,
+        filesQuery,
+        files,
+        changeDirectoryByPath,
+        backDirectory,
+        refreshDirectory,
+        createNewFolder
+      }}
     >
       {children}
     </FilesQueryContext.Provider>
@@ -152,6 +231,7 @@ export function useFileBrowserDrop() {
     isCopy = false
   ): Promise<void> => {
     if (isLoading) return
+    if (!isCopy && newPath.startsWith(`${oldPath}/`)) return
     try {
       await fileService.update(null, {
         oldProject: filesState.projectName.value,
@@ -162,7 +242,6 @@ export function useFileBrowserDrop() {
         newPath,
         isCopy
       })
-
       await currentFiles.refreshDirectory()
     } catch (error) {
       console.error('Error moving file:', error)
@@ -175,7 +254,7 @@ export function useFileBrowserDrop() {
     dropOn?: FileDataType,
     selectedFileKeys?: string[]
   ) => {
-    const destinationPath = dropOn?.isFolder ? `${dropOn.key}/` : filesState.selectedDirectory.value
+    const destinationPath = dropOn?.isFolder ? `${dropOn.key}` : filesState.selectedDirectory.value
 
     if (isFileDataType(data)) {
       if (dropOn?.isFolder) {
@@ -199,7 +278,7 @@ export function useFileBrowserDrop() {
       await Promise.all(
         data.files.map(async (file) => {
           file = cleanFileNameFile(file)
-          const assetType = !file.type || file.type.length === 0 ? AssetLoader.getAssetType(file.name) : file.type
+          const assetType = !file.type || file.type.length === 0 ? FileToAssetExt(file.name) : file.type
           if (!assetType || assetType === file.name) {
             await fileService.create(`${destinationPath}${file.name}`)
           } else {
@@ -211,7 +290,8 @@ export function useFileBrowserDrop() {
       if (filesToUpload.length) {
         try {
           const uniqueFiles = await filterExistingFiles(filesState.projectName.value, path, filesToUpload)
-          await handleUploadFiles(filesState.projectName.value, path, uniqueFiles)
+          const sanitizedFiles = validatedFiles(uniqueFiles)
+          await handleUploadFiles(filesState.projectName.value, path, sanitizedFiles)
         } catch (err) {
           NotificationService.dispatchNotify(err.message, { variant: 'error' })
         }
@@ -266,7 +346,10 @@ export const createStaticResourceDigest = (staticResources: ImmutableArray<Stati
     updatedAt: '',
 
     url: '',
-    userId: '' as UserID
+    userId: '' as UserID,
+    width: null,
+    height: null,
+    depth: null
   }
   for (const key in digest) {
     const allValues = new Set(staticResources.map((resource) => resource[key]))

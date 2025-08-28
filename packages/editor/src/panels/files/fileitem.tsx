@@ -1,60 +1,22 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { useFind } from '@ir-engine/common'
-import { staticResourcePath } from '@ir-engine/common/src/schema.type.module'
-import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunctions.ts'
-import {
-  FilesState,
-  FilesViewModeSettings,
-  FilesViewModeState,
-  SelectedFilesState
-} from '@ir-engine/editor/src/services/FilesState'
-import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { Tooltip } from '@ir-engine/ui'
-import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { usesCtrlKey } from '@ir-engine/common/src/utils/OperatingSystemFunctions'
+import { FilesState, FilesViewModeState, SelectedFilesState } from '@ir-engine/editor/src/services/FilesState'
+import { useMutableState } from '@ir-engine/hyperflux'
 import React, { MouseEventHandler, useEffect } from 'react'
 import { ConnectDragSource, ConnectDropTarget, useDrag, useDrop } from 'react-dnd'
 import { getEmptyImage } from 'react-dnd-html5-backend'
 import { useTranslation } from 'react-i18next'
 import { IoIosArrowForward } from 'react-icons/io'
+import { MdKeyboardArrowDown } from 'react-icons/md'
 import { VscBlank } from 'react-icons/vsc'
 import { twMerge } from 'tailwind-merge'
 import { FileDataType, SupportedFileTypes } from '../../constants/AssetTypes'
 import { ClickPlacementState } from '../../systems/ClickPlacementSystem'
+import { FileCard } from '../assets/resources'
 import { FileIcon } from './fileicon'
-import {
-  FILES_PAGE_LIMIT,
-  availableTableColumns,
-  canDropOnFileBrowser,
-  useCurrentFiles,
-  useFileBrowserDrop
-} from './helpers'
+import { availableTableColumns, canDropOnFileBrowser, useCurrentFiles, useFileBrowserDrop } from './helpers'
 
 type DisplayTypeProps = {
-  file: FileDataType
+  file: FileDataType & { [key: string]: unknown }
   onDoubleClick?: MouseEventHandler
   onClick?: MouseEventHandler
   isSelected: boolean
@@ -62,23 +24,34 @@ type DisplayTypeProps = {
   drop: ConnectDropTarget
   isOver: boolean
   onContextMenu: React.MouseEventHandler
+  className?: string
 }
 
-export function TableWrapper({ children }: { children: React.ReactNode }) {
+export function TableWrapper({
+  children,
+  handleSort
+}: {
+  children: React.ReactNode
+  handleSort: (header: (typeof availableTableColumns)[number]) => void
+}) {
   const { t } = useTranslation()
-  const selectedTableColumns = useHookstate(getMutableState(FilesViewModeSettings).list.selectedTableColumns).value
 
   return (
-    <table className="w-full">
-      <thead>
-        <tr className="h-8 text-left text-[#E7E7E7]">
-          {availableTableColumns
-            .filter((header) => selectedTableColumns[header])
-            .map((header) => (
-              <th key={header} className="table-cell text-xs font-normal dark:text-[#A3A3A3]">
-                {t(`editor:layout.filebrowser.table-list.headers.${header}`)}
-              </th>
-            ))}
+    <table className="w-full border-separate border-spacing-0">
+      <thead className="sticky top-0 z-20">
+        <tr className="h-8 divide-x divide-[#42454D] bg-ui-background text-left text-text-primary shadow-[inset_0_-1px_0_#42454D]">
+          {availableTableColumns.map((header) => (
+            <th
+              key={header}
+              onClick={() => handleSort(header)}
+              className="table-cell p-2 text-xs font-normal dark:text-[#A3A3A3]"
+            >
+              <div className="flex items-center justify-between">
+                <span className="whitespace-nowrap">{t(`editor:layout.filebrowser.table-list.headers.${header}`)}</span>
+                <MdKeyboardArrowDown />
+              </div>
+            </th>
+          ))}
         </tr>
       </thead>
       <tbody>{children}</tbody>
@@ -86,144 +59,129 @@ export function TableWrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
-function TableView({ file, onClick, onDoubleClick, isSelected, drag, drop, isOver, onContextMenu }: DisplayTypeProps) {
-  const filesViewModeSettings = useMutableState(FilesViewModeSettings)
-  const selectedTableColumns = filesViewModeSettings.list.selectedTableColumns.value
-  const fontSize = filesViewModeSettings.list.fontSize.value
-  const { files } = useCurrentFiles()
-  const { projectName } = useMutableState(FilesState)
-  const staticResourceModifiedDates = useHookstate<Record<string, string>>({})
-
-  const staticResourceData = useFind(staticResourcePath, {
-    query: {
-      key: {
-        $in: files.map((file) => file.key)
-      },
-      project: projectName.value,
-      $select: ['key', 'updatedAt'] as any,
-      $limit: FILES_PAGE_LIMIT
-    }
-  })
-
-  useEffect(() => {
-    if (staticResourceData.status !== 'success') return
-    const modifiedDates: Record<string, string> = {}
-    staticResourceData.data.forEach((data) => {
-      modifiedDates[data.key] = new Date(data.updatedAt).toLocaleString()
-    })
-    staticResourceModifiedDates.set(modifiedDates)
-  }, [staticResourceData.status])
-
+function FileItemRow({
+  file,
+  onClick,
+  onDoubleClick,
+  isSelected,
+  drag,
+  drop,
+  isOver,
+  onContextMenu,
+  className
+}: DisplayTypeProps) {
   const thumbnailURL = file?.thumbnailURL
 
   const tableColumns = {
     name: (
-      <span
-        className="flex h-7 max-h-7 flex-row items-center gap-2 font-figtree text-[#e7e7e7]"
-        style={{ fontSize: `${fontSize}px` }}
-      >
+      <span className="flex h-7 max-h-7 flex-row items-center gap-2 font-figtree text-sm text-text-primary">
         {file.isFolder ? <IoIosArrowForward /> : <VscBlank />}
         <FileIcon isMinified={true} thumbnailURL={thumbnailURL} type={file?.type} isFolder={file?.isFolder} />
-        {file?.fullName}
+        <span className="text-ellipsis text-nowrap">{file?.fullName}</span>
       </span>
     ),
     type: file?.type.toUpperCase(),
-    dateModified: staticResourceModifiedDates.value[file?.key] || '',
+    author: (file?.author as string) || '',
+    createdAt: (file?.createdAt as string) || '',
+    statistics: (file?.statistics as string) || '',
     size: file?.size
   }
+
   return (
     <tr
       key={file?.key}
       ref={(ref) => drag(drop(ref))}
       className={twMerge(
-        'h-9 rounded text-[#a3a3a3] hover:bg-[#212226]',
+        'z-10 h-9 rounded text-text-primary',
         isOver && 'border-2 border-gray-400',
-        isSelected && 'rounded bg-[#212226]'
+        className,
+        !isSelected ? 'hover:bg-ui-hover-background' : 'bg-ui-primary'
       )}
       onContextMenu={onContextMenu}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       data-testid="files-panel-file-item"
     >
-      {availableTableColumns
-        .filter((header) => selectedTableColumns[header])
-        .map((header, idx) => (
-          <td key={idx} style={{ fontSize: `${fontSize}px` }} data-testid={`files-panel-file-item-${header}`}>
-            {tableColumns[header]}
+      {availableTableColumns.map((header, idx) => {
+        let content = tableColumns[header]
+        if (header === 'statistics') {
+          content = (
+            <pre>
+              <code>{tableColumns[header]}</code>
+            </pre>
+          )
+        }
+        return (
+          <td key={idx} className="text-sm" data-testid={`files-panel-file-item-${header}`}>
+            {content}
           </td>
-        ))}
+        )
+      })}
     </tr>
   )
 }
 
-function GridView({ file, onDoubleClick, onClick, isSelected, drag, drop, isOver, onContextMenu }: DisplayTypeProps) {
-  const iconSize = useHookstate(getMutableState(FilesViewModeSettings).icons.iconSize).value
-  const thumbnailURL = file?.thumbnailURL
-
+function FileItemCard({
+  file,
+  onDoubleClick,
+  onClick,
+  isSelected,
+  drag,
+  drop,
+  isOver,
+  onContextMenu,
+  className
+}: DisplayTypeProps) {
   return (
     <div
       ref={(ref) => drag(drop(ref))}
-      className={twMerge('h-min', isOver && 'border-2 border-gray-400')}
+      className={twMerge('group box-border h-min', isOver && 'border-2 border-gray-400', className)}
       onContextMenu={onContextMenu}
     >
-      <div
-        className={twMerge(
-          'flex h-auto max-h-32 w-28 cursor-pointer flex-col items-center text-center',
-          isSelected && 'rounded bg-[#212226]'
-        )}
-        onDoubleClick={file?.isFolder ? onDoubleClick : undefined}
-        data-testid="files-panel-file-item"
+      <FileCard
+        item={file}
+        name={file?.fullName}
         onClick={onClick}
-      >
-        <div
-          className="mx-4 mt-2 font-figtree"
-          style={{
-            height: iconSize,
-            width: iconSize,
-            fontSize: iconSize
-          }}
-        >
-          <FileIcon thumbnailURL={thumbnailURL} type={file?.type} isFolder={file?.isFolder} color="text-[#375DAF]" />
-        </div>
-
-        <Tooltip content={file?.fullName}>
-          <Text
-            theme="secondary"
-            fontSize="sm"
-            className="mt-2 w-24 overflow-hidden text-ellipsis whitespace-nowrap"
-            data-testid="files-panel-file-item-name"
-          >
-            {file?.fullName}
-          </Text>
-        </Tooltip>
-      </div>
+        onDoubleClick={file?.isFolder ? onDoubleClick : undefined}
+        onLoad={undefined}
+        onLoadStart={undefined}
+        onContextMenu={() => {}}
+        isSelected={isSelected}
+        info={file?.size}
+        assetType={file?.type}
+        dataTestIdJson={{
+          fileNameId: 'files-panel-file-item-name',
+          fileItemId: 'files-panel-file-item'
+        }}
+        className=""
+      />
     </div>
   )
 }
 
 export default function FileItem({
   file,
-  onContextMenu
+  onContextMenu,
+  className
 }: {
   file: FileDataType
   onContextMenu: React.MouseEventHandler
+  className?: string
 }) {
   const filesViewMode = useMutableState(FilesViewModeState).viewMode
-  const isListView = filesViewMode.value === 'list'
   const filesState = useMutableState(FilesState)
+  const selectedFiles = useMutableState(SelectedFilesState)
+
+  const isListView = filesViewMode.value === 'list'
+
   const { changeDirectoryByPath, files } = useCurrentFiles()
   const dropOnFileBrowser = useFileBrowserDrop()
-  const selectedFiles = useMutableState(SelectedFilesState)
 
   const [_dragProps, drag, preview] = useDrag(() => ({
     type: file.type,
     item: file,
     multiple: false
   }))
-
-  useEffect(() => {
-    if (preview) preview(getEmptyImage(), { captureDraggingState: true })
-  }, [preview])
 
   const [{ isOver }, drop] = useDrop({
     accept: [...SupportedFileTypes],
@@ -241,6 +199,10 @@ export default function FileItem({
       isOver: monitor.canDrop() && monitor.isOver()
     })
   })
+
+  useEffect(() => {
+    if (preview) preview(getEmptyImage(), { captureDraggingState: true })
+  }, [preview])
 
   const handleSelectedFiles = (event: React.MouseEvent) => {
     event.stopPropagation()
@@ -291,8 +253,9 @@ export default function FileItem({
     drag,
     drop,
     isOver,
-    onContextMenu
+    onContextMenu,
+    className
   }
 
-  return isListView ? <TableView {...commonProps} /> : <GridView {...commonProps} />
+  return isListView ? <FileItemRow {...commonProps} /> : <FileItemCard {...commonProps} />
 }

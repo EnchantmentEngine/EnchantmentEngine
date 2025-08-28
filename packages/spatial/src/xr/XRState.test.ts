@@ -1,0 +1,583 @@
+import { createEngine, destroyEngine, UndefinedEntity } from '@ir-engine/ecs'
+import { getMutableState, getState, startReactor } from '@ir-engine/hyperflux'
+import { Quaternion, Vector3 } from 'three'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { destroyEmulatedXREngine, mockEmulatedXREngine } from '../../tests/util/mockEmulatedXREngine'
+import { CustomWebXRPolyfill } from '../../tests/webxr/emulator'
+import { DepthDataTexture } from './DepthDataTexture'
+import { onSessionEnd } from './XRSessionFunctions'
+import { ReferenceSpace, XRState } from './XRState'
+
+type SessionModes = 'inline' | 'immersive-ar' | 'immersive-vr' | 'none'
+const SessionMode = {
+  none: 'none' as SessionModes,
+  inline: 'inline' as SessionModes,
+  immersiveAR: 'immersive-ar' as SessionModes,
+  immersiveVR: 'immersive-vr' as SessionModes
+}
+
+const XRStateDefaults: typeof XRState._TYPE = {
+  sessionActive: false,
+  requestingSession: false,
+  scenePosition: new Vector3(),
+  sceneRotation: new Quaternion(),
+  sceneScale: 1,
+  sceneScaleAutoMode: true,
+  sceneScaleTarget: 1,
+  sceneRotationOffset: 0,
+  scenePlacementMode: 'unplaced' as 'unplaced' | 'placing' | 'placed',
+  supportedSessionModes: {
+    inline: false,
+    'immersive-ar': false,
+    'immersive-vr': false
+  },
+  avatarCameraMode: 'auto' as 'auto' | 'attached' | 'detached',
+  unassingedInputSources: [] as XRInputSource[],
+  session: null as XRSession | null,
+  sessionMode: 'none' as 'inline' | 'immersive-ar' | 'immersive-vr' | 'none',
+  depthDataTexture: null as DepthDataTexture | null,
+  is8thWallActive: false,
+  viewerPose: null as XRViewerPose | null | undefined,
+  userEyeHeight: 1.75,
+  userHeightRatio: 1,
+  xrFrame: null as XRFrame | null,
+  cameraAttachedEntity: UndefinedEntity
+}
+
+/** @note Runs once on the `describe` implied by vitest for this file */
+beforeAll(() => {
+  new CustomWebXRPolyfill()
+})
+
+describe('XRState', () => {
+  describe('Fields', () => {
+    it('should initialize the .name field with the expected value', () => {
+      expect(XRState.name).toBe('XRState')
+    })
+  }) //:: XRState Fields
+
+  describe('initial', () => {
+    it('should initialize the data with the expected values', () => {
+      const result = XRState.initial()
+      expect(result).deep.equal(XRStateDefaults)
+    })
+  }) //:: XRState.initial
+
+  describe('worldScale.get', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should return the world scale of XRState by multiplying XRState.sceneScale by XRState.userHeightRatio', () => {
+      const SceneScale = 21
+      const UserHeightRatio = 2
+      const Expected = 42
+      // Set the data as expected
+      getMutableState(XRState).sceneScale.set(SceneScale)
+      getMutableState(XRState).userHeightRatio.set(UserHeightRatio)
+      // Sanity check before running
+      const before = getState(XRState)
+      expect(before.sceneScale).toBe(SceneScale)
+      expect(before.userHeightRatio).toBe(UserHeightRatio)
+      // Run and Check the result
+      const result = XRState.worldScale
+      expect(result).toBe(Expected)
+    })
+  }) //:: XRState.worldScale.get
+
+  describe('isMovementControlsEnabled.get', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it("should return true if XRState.sessionMode is not 'immersive-ar' and XRState.sessionActive is true", () => {
+      const Expected = true
+      const Mode = SessionMode.inline
+      // Sanity check before running
+      const beforeState = getState(XRState)
+      expect(beforeState.sessionActive).toBe(true)
+      expect(beforeState.sessionMode).not.toBe(SessionMode.immersiveAR)
+      expect(beforeState.sessionMode).toBe(Mode)
+      // Run and Check the result
+      const result = XRState.isMovementControlsEnabled
+      expect(result).toBe(Expected)
+    })
+
+    it('should always return true when XRState.sessionActive is false', async () => {
+      const Expected = true
+      const Mode = SessionMode.none
+      // Set the data as expected
+      onSessionEnd()
+      // Sanity check before running
+      const beforeState = getState(XRState)
+      expect(beforeState.sessionActive).toBe(false)
+      expect(beforeState.sessionMode).not.toBe(SessionMode.immersiveAR)
+      expect(beforeState.sessionMode).toBe(Mode)
+      // Run and Check the result
+      const result = XRState.isMovementControlsEnabled
+      expect(result).toBe(Expected)
+    })
+
+    it("should return true if XRState.sceneScale is not 1, XRState.sessionMode is 'immersive-ar' and XRState.sessionActive is true", () => {
+      const Expected = true
+      const Mode = SessionMode.immersiveAR
+      // Set the data as expected
+      getMutableState(XRState).sessionMode.set(Mode)
+      getMutableState(XRState).sceneScale.set(0.5)
+      // Sanity check before running
+      const beforeState = getState(XRState)
+      expect(beforeState.sceneScale).not.toBe(1)
+      expect(beforeState.sessionMode).toBe(Mode)
+      expect(beforeState.sessionActive).toBe(true)
+      // Run and Check the result
+      const result = XRState.isMovementControlsEnabled
+      expect(result).toBe(Expected)
+    })
+
+    it("should return false if XRState.sceneScale is 1, XRState.sessionMode is 'immersive-ar' and XRState.sessionActive is true", () => {
+      const Expected = false
+      const Mode = SessionMode.immersiveAR
+      // Set the data as expected
+      getMutableState(XRState).sessionMode.set(Mode)
+      // Sanity check before running
+      const beforeState = getState(XRState)
+      expect(beforeState.sceneScale).toBe(1)
+      expect(beforeState.sessionMode).toBe(Mode)
+      expect(beforeState.sessionActive).toBe(true)
+      // Run and Check the result
+      const result = XRState.isMovementControlsEnabled
+      expect(result).toBe(Expected)
+    })
+  }) //:: XRState.isMovementControlsEnabled.get
+
+  describe('shouldViewerFollowController.get', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should return false when XRState.session is falsy', async () => {
+      const Expected = false
+      const PlacementMode = 'placing'
+      // Set the data as expected
+      onSessionEnd()
+      // Sanity check before running
+      expect(getState(XRState).session).toBeFalsy()
+      expect(getState(XRState).scenePlacementMode).not.toBe(PlacementMode)
+      // Run and Check the result
+      const result = XRState.shouldViewerFollowController
+      expect(result).toBe(Expected)
+    })
+
+    it("should return false when XRState.scenePlacementMode is 'placing'", () => {
+      const Expected = false
+      const PlacementMode = 'placing'
+      // Set the data as expected
+      getMutableState(XRState).scenePlacementMode.set(PlacementMode)
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).toBe(PlacementMode)
+      // Run and Check the result
+      const result = XRState.shouldViewerFollowController
+      expect(result).toBe(Expected)
+    })
+
+    it("should return true when XRState.avatarCameraMode is 'auto' and XRState.sceneScale is 1", () => {
+      const Expected = true
+      const PlacementMode = 'placing'
+      const AvatarMode = 'auto'
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe(PlacementMode)
+      expect(getState(XRState).avatarCameraMode).toBe(AvatarMode)
+      expect(getState(XRState).sceneScale).toBe(1)
+      // Run and Check the result
+      const result = XRState.shouldViewerFollowController
+      expect(result).toBe(Expected)
+    })
+
+    it("should return false when XRState.avatarCameraMode is 'auto' and XRState.sceneScale is not 1", () => {
+      const Expected = false
+      const PlacementMode = 'placing'
+      const AvatarMode = 'auto'
+      const Scale = 42
+      // Set the data as expected
+      getMutableState(XRState).sceneScale.set(Scale)
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe(PlacementMode)
+      expect(getState(XRState).avatarCameraMode).toBe(AvatarMode)
+      expect(getState(XRState).sceneScale).not.toBe(1)
+      expect(getState(XRState).sceneScale).toBe(Scale)
+      // Run and Check the result
+      const result = XRState.shouldViewerFollowController
+      expect(result).toBe(Expected)
+    })
+
+    it("should return true when XRState.avatarCameraMode is 'attached'", () => {
+      const Expected = true
+      const PlacementMode = 'placing'
+      const AvatarMode = 'attached'
+      // Set the data as expected
+      getMutableState(XRState).avatarCameraMode.set(AvatarMode)
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe(PlacementMode)
+      expect(getState(XRState).avatarCameraMode).not.toBe('auto')
+      expect(getState(XRState).avatarCameraMode).toBe(AvatarMode)
+      // Run and Check the result
+      const result = XRState.shouldViewerFollowController
+      expect(result).toBe(Expected)
+    })
+
+    it("should return false when XRState.avatarCameraMode is not 'attached'", () => {
+      const Expected = false
+      const PlacementMode = 'placing'
+      const AvatarMode = 'detached'
+      // Set the data as expected
+      getMutableState(XRState).avatarCameraMode.set(AvatarMode)
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe(PlacementMode)
+      expect(getState(XRState).avatarCameraMode).not.toBe('auto')
+      expect(getState(XRState).avatarCameraMode).toBe(AvatarMode)
+      // Run and Check the result
+      const result = XRState.shouldViewerFollowController
+      expect(result).toBe(Expected)
+    })
+  }) //:: XRState.shouldViewerFollowController.get
+
+  describe('setTrackingSpace', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should set XRState.userHeightRatio to 1 when XRState.xrFrame is falsy', () => {
+      const Expected = 1
+      const Initial = 42
+      // Set the data as expected
+      getMutableState(XRState).xrFrame.set(null) // undo the XRFrame mock init from mockEmulatedXREngine
+      getMutableState(XRState).userHeightRatio.set(Initial)
+      // Sanity check before running
+      expect(getState(XRState).xrFrame).toBeFalsy()
+      expect(getState(XRState).userHeightRatio).toBe(Initial)
+      expect(getState(XRState).userHeightRatio).not.toBe(Expected)
+      // Run and Check the result
+      XRState.setTrackingSpace()
+      const result = getState(XRState).userHeightRatio
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should set XRState.userHeightRatio to 1 when the xrFrame.getViewerPose(ReferenceSpace.localFloor!) is falsy', () => {
+      const Expected = 1
+      const Initial = 42
+      const ViewerPose = undefined as XRViewerPose | undefined
+      // Set the data as expected
+      const getViewerPoseMock = (_referenceSpace: XRReferenceSpace): XRViewerPose | undefined => {
+        return ViewerPose
+      }
+      const getViewerPoseSpy = vi.fn(getViewerPoseMock)
+      getMutableState(XRState).xrFrame.merge({ getViewerPose: getViewerPoseSpy })
+      getMutableState(XRState).userHeightRatio.set(Initial)
+      // Sanity check before running
+      expect(getState(XRState).xrFrame).toBeTruthy()
+      expect(getState(XRState).userHeightRatio).toBe(Initial)
+      expect(getState(XRState).userHeightRatio).not.toBe(Expected)
+      const pose = getState(XRState).xrFrame?.getViewerPose(ReferenceSpace.localFloor!)
+      expect(getViewerPoseSpy).toHaveBeenCalled()
+      expect(pose).toBeFalsy()
+      // Run and Check the result
+      XRState.setTrackingSpace()
+      const result = getState(XRState).userHeightRatio
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+
+    it('should set XRState.userHeightRatio to xrFrame.getViewerPose(ReferenceSpace.localFloor!).transform.position.y divided by XRState.userEyeHeight', () => {
+      const Initial = 42
+      const PositionY = Initial
+      const UserEyeHeight = 2
+      const Expected = PositionY / UserEyeHeight
+      const ViewerPose = { transform: { position: { y: PositionY } } } as XRViewerPose | undefined
+      // Set the data as expected
+      const getViewerPoseMock = (_referenceSpace: XRReferenceSpace): XRViewerPose | undefined => {
+        return ViewerPose
+      }
+      const getViewerPoseSpy = vi.fn(getViewerPoseMock)
+      getMutableState(XRState).xrFrame.merge({ getViewerPose: getViewerPoseSpy })
+      getMutableState(XRState).userHeightRatio.set(Initial)
+      getMutableState(XRState).userEyeHeight.set(UserEyeHeight)
+      // Sanity check before running
+      expect(getState(XRState).xrFrame).toBeTruthy()
+      expect(getState(XRState).userHeightRatio).toBe(Initial)
+      expect(getState(XRState).userHeightRatio).not.toBe(Expected)
+      const pose = getState(XRState).xrFrame?.getViewerPose(ReferenceSpace.localFloor!)
+      expect(getViewerPoseSpy).toHaveBeenCalled()
+      expect(pose).toBeTruthy()
+      // Run and Check the result
+      XRState.setTrackingSpace()
+      const result = getState(XRState).userHeightRatio
+      expect(result).not.toBe(Initial)
+      expect(result).toBe(Expected)
+    })
+  }) //:: XRState.setTrackingSpace
+
+  describe('useMovementControlsEnabled', () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it("should return true if XRState.sessionMode is not 'immersive-ar' and XRState.sessionActive is true", async () => {
+      const Expected = true
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useMovementControlsEnabled()
+        return null
+      }
+      // Sanity check before running
+      expect(getState(XRState).sessionMode).not.toBe('immersive-ar')
+      expect(getState(XRState).sessionActive).toBe(true)
+      expect(result).not.toBe(Expected)
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it('should always return true when XRState.sessionActive is false', async () => {
+      const Expected = true
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useMovementControlsEnabled()
+        return null
+      }
+      getMutableState(XRState).sessionActive.set(false)
+      // Sanity check before running
+      expect(getState(XRState).sessionMode).not.toBe('immersive-ar')
+      expect(getState(XRState).sessionActive).not.toBe(true)
+      expect(result).not.toBe(Expected)
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it("should return true if XRState.sceneScale is not 1, XRState.sessionMode is 'immersive-ar' and XRState.sessionActive is true", async () => {
+      const Expected = true
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useMovementControlsEnabled()
+        return null
+      }
+      getMutableState(XRState).sceneScale.set(0.5)
+      getMutableState(XRState).sessionMode.set('immersive-ar')
+      // Sanity check before running
+      expect(getState(XRState).sceneScale).not.toBe(1)
+      expect(getState(XRState).sessionMode).toBe('immersive-ar')
+      expect(getState(XRState).sessionActive).toBe(true)
+      expect(result).not.toBe(Expected)
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it("should return false if XRState.sceneScale is 1, XRState.sessionMode is 'immersive-ar' and XRState.sessionActive is true", async () => {
+      const Expected = false
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useMovementControlsEnabled()
+        return null
+      }
+      getMutableState(XRState).sessionMode.set('immersive-ar')
+      // Sanity check before running
+      expect(getState(XRState).sceneScale).toBe(1)
+      expect(getState(XRState).sessionMode).toBe('immersive-ar')
+      expect(getState(XRState).sessionActive).toBe(true)
+      expect(result).not.toBe(Expected)
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+  }) //:: XRState.useMovementControlsEnabled
+
+  describe('useShouldViewerFollowController', async () => {
+    beforeEach(async () => {
+      createEngine()
+      await mockEmulatedXREngine()
+    })
+
+    afterEach(() => {
+      destroyEmulatedXREngine()
+      destroyEngine()
+    })
+
+    it('should return false when XRState.session is falsy', async () => {
+      const Expected = false
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useShouldViewerFollowController()
+        return null
+      }
+      getMutableState(XRState).session.set(null)
+      // Sanity check before running
+      expect(getState(XRState).session).toBeFalsy()
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it("should return false when XRState.scenePlacementMode is 'placing'", async () => {
+      const Expected = false
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useShouldViewerFollowController()
+        return null
+      }
+      getMutableState(XRState).scenePlacementMode.set('placing')
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).toBe('placing')
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it("should return true when XRState.avatarCameraMode is 'auto' and XRState.sceneScale is 1", async () => {
+      const Expected = true
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useShouldViewerFollowController()
+        return null
+      }
+      getMutableState(XRState).avatarCameraMode.set('auto')
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe('placing')
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
+      expect(earlyExit).toBeFalsy()
+      expect(getState(XRState).avatarCameraMode).toBe('auto')
+      expect(getState(XRState).sceneScale).toBe(1)
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it("should return false when XRState.avatarCameraMode is 'auto' and XRState.sceneScale is not 1", async () => {
+      const Expected = false
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useShouldViewerFollowController()
+        return null
+      }
+      getMutableState(XRState).avatarCameraMode.set('auto')
+      getMutableState(XRState).sceneScale.set(0.5)
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe('placing')
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
+      expect(earlyExit).toBeFalsy()
+      expect(getState(XRState).avatarCameraMode).toBe('auto')
+      expect(getState(XRState).sceneScale).not.toBe(1)
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it("should return true when XRState.avatarCameraMode is 'attached'", async () => {
+      const Expected = true
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useShouldViewerFollowController()
+        return null
+      }
+      getMutableState(XRState).avatarCameraMode.set('attached')
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe('placing')
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
+      expect(earlyExit).toBeFalsy()
+      expect(getState(XRState).avatarCameraMode).not.toBe('auto')
+      expect(getState(XRState).avatarCameraMode).toBe('attached')
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+
+    it("should return false when XRState.avatarCameraMode is not 'attached'", async () => {
+      const Expected = false
+      // Set the data as expected
+      let result: boolean = !Expected
+      const Reactor = () => {
+        result = XRState.useShouldViewerFollowController()
+        return null
+      }
+      getMutableState(XRState).avatarCameraMode.set('detached')
+      // Sanity check before running
+      expect(getState(XRState).session).toBeTruthy()
+      expect(getState(XRState).scenePlacementMode).not.toBe('placing')
+      const earlyExit = !getState(XRState).session || getState(XRState).scenePlacementMode === 'placing'
+      expect(earlyExit).toBeFalsy()
+      expect(getState(XRState).avatarCameraMode).not.toBe('attached')
+      // Run and Check the result
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        expect(result).toBe(Expected)
+      })
+    })
+  }) //:: XRState.useShouldViewerFollowController
+}) //:: XRState

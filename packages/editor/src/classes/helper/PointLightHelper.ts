@@ -1,0 +1,157 @@
+import { useHookstate } from '@hookstate/core'
+import {
+  Easing,
+  Entity,
+  EntityTreeComponent,
+  UndefinedEntity,
+  createEntity,
+  getComponent,
+  hasComponent,
+  removeEntity,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs'
+import { PointLightComponent } from '@ir-engine/spatial'
+import { mergeBufferGeometries } from '@ir-engine/spatial/src/common/classes/BufferGeometryUtils'
+import { LineSegmentComponent } from '@ir-engine/spatial/src/renderer/components/LineSegmentComponent'
+import { BOUNDING_BOX_COLORS } from '@ir-engine/spatial/src/transform/components/BoundingBoxComponent'
+import { useEffect } from 'react'
+import { BufferGeometry, Float32BufferAttribute } from 'three'
+import { iconGizmoTransitionTimeout } from '../../constants/GizmoPresets'
+
+function createPointLightSphereGeometry(range: number): BufferGeometry {
+  const positions: number[] = []
+  const segments = 16
+  const rings = 8
+
+  for (let ring = 0; ring <= rings; ring++) {
+    const phi = (ring / rings) * Math.PI
+    const y = Math.cos(phi) * range
+    const ringRadius = Math.sin(phi) * range
+
+    if (ring === 0 || ring === rings) {
+      for (let i = 0; i < segments; i++) {
+        const angle1 = (i / segments) * Math.PI * 2
+        const angle2 = ((i + 1) / segments) * Math.PI * 2
+
+        const x1 = Math.cos(angle1) * ringRadius * 0.1
+        const z1 = Math.sin(angle1) * ringRadius * 0.1
+        const x2 = Math.cos(angle2) * ringRadius * 0.1
+        const z2 = Math.sin(angle2) * ringRadius * 0.1
+
+        positions.push(x1, y, z1)
+        positions.push(x2, y, z2)
+      }
+    } else {
+      for (let i = 0; i < segments; i++) {
+        const angle1 = (i / segments) * Math.PI * 2
+        const angle2 = ((i + 1) / segments) * Math.PI * 2
+
+        const x1 = Math.cos(angle1) * ringRadius
+        const z1 = Math.sin(angle1) * ringRadius
+        const x2 = Math.cos(angle2) * ringRadius
+        const z2 = Math.sin(angle2) * ringRadius
+
+        positions.push(x1, y, z1)
+        positions.push(x2, y, z2)
+      }
+    }
+  }
+
+  for (let i = 0; i < segments; i += 2) {
+    const angle = (i / segments) * Math.PI * 2
+    const x = Math.cos(angle)
+    const z = Math.sin(angle)
+
+    for (let ring = 0; ring < rings; ring++) {
+      const phi1 = (ring / rings) * Math.PI
+      const phi2 = ((ring + 1) / rings) * Math.PI
+
+      const y1 = Math.cos(phi1) * range
+      const r1 = Math.sin(phi1) * range
+      const y2 = Math.cos(phi2) * range
+      const r2 = Math.sin(phi2) * range
+
+      positions.push(x * r1, y1, z * r1)
+      positions.push(x * r2, y2, z * r2)
+    }
+  }
+
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  return geometry
+}
+
+function createPointLightGizmoGeometry(range: number): BufferGeometry {
+  const visualRange = range === 0 ? 5 : range
+
+  const sphereGeometry = createPointLightSphereGeometry(visualRange)
+
+  const mergedGeometry = mergeBufferGeometries([sphereGeometry])
+
+  sphereGeometry.dispose()
+
+  return mergedGeometry!
+}
+
+export const PointLightHelperReactor: React.FC = (props: { parentEntity; iconEntity; selected; hovered }) => {
+  const { parentEntity, iconEntity, selected, hovered } = props
+
+  const pointLight = useComponent(parentEntity, PointLightComponent)
+  const pointLightHelperEntity = useHookstate<Entity>(UndefinedEntity)
+
+  useEffect(() => {
+    if (!(selected || hovered)) return
+
+    const helperEntity = createEntity()
+    setComponent(helperEntity, EntityTreeComponent, { parentEntity })
+    setComponent(helperEntity, LineSegmentComponent, {
+      name: 'point-light-helper',
+      geometry: createPointLightGizmoGeometry(pointLight.range)?.clone(),
+      color: pointLight.color,
+      opacity: 0
+    })
+    pointLightHelperEntity.set(helperEntity)
+
+    // @ts-ignore causes issues with the type system value inferred as never
+
+    LineSegmentComponent.setTransition(helperEntity, 'opacity', 1, {
+      duration: iconGizmoTransitionTimeout,
+      easing: Easing.quadratic.inOut
+    })
+
+    return () => {
+      // @ts-ignore causes issues with the type system value inferred as never
+      LineSegmentComponent.setTransition(helperEntity, 'opacity', 0, {
+        duration: iconGizmoTransitionTimeout,
+        easing: Easing.quadratic.inOut
+      })
+
+      setTimeout(() => {
+        removeEntity(helperEntity)
+        pointLightHelperEntity.set(UndefinedEntity)
+      }, iconGizmoTransitionTimeout)
+    }
+  }, [selected, hovered])
+
+  useEffect(() => {
+    if (pointLightHelperEntity.value === UndefinedEntity) return
+
+    if (!hasComponent(pointLightHelperEntity.value, LineSegmentComponent)) return
+    setComponent(pointLightHelperEntity.value, LineSegmentComponent, {
+      color: hovered ? BOUNDING_BOX_COLORS.HOVERED : pointLight.color
+    })
+
+    const oldGeometry = getComponent(pointLightHelperEntity.value, LineSegmentComponent).geometry
+    if (oldGeometry) {
+      oldGeometry?.dispose()
+    }
+
+    const newGeometry = createPointLightGizmoGeometry(pointLight.range)
+    setComponent(pointLightHelperEntity.value, LineSegmentComponent, {
+      geometry: newGeometry
+    })
+  }, [pointLightHelperEntity.value, pointLight.color, pointLight.range, hovered])
+
+  return null
+}

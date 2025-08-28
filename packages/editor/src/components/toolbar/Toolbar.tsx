@@ -1,52 +1,36 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import AddEditLocationModal from '@ir-engine/client-core/src/admin/components/locations/AddEditLocationModal'
 import ProfilePill from '@ir-engine/client-core/src/common/components/ProfilePill'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
 import { RouterState } from '@ir-engine/client-core/src/common/services/RouterService'
-import { useProjectPermissions } from '@ir-engine/client-core/src/user/useUserProjectPermission'
+import { ThemeState } from '@ir-engine/client-core/src/common/services/ThemeService'
+import { useProjectPermissions } from '@ir-engine/client-core/src/hooks/useUserProjectPermission'
+import studioIconDark from '@ir-engine/client/src/assets/studio-icon-dark.svg'
+import studioIconLight from '@ir-engine/client/src/assets/studio-icon-light.svg'
 import { useFind } from '@ir-engine/common'
 import { ScopeType, locationPath, scopePath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
-import { GLTFModifiedState } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
+import { EngineState } from '@ir-engine/ecs'
+import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Button, DropdownItem } from '@ir-engine/ui'
+import { AddScene } from '@ir-engine/ui/src/components/editor/AddScene/AddScene'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
-import { ChevronDownSm, SquaresLg } from '@ir-engine/ui/src/icons'
+import { ChevronDownSm, File04Sm, UploadCloud02Sm } from '@ir-engine/ui/src/icons'
 import { t } from 'i18next'
-import React from 'react'
+import React, { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
-import { onNewScene, onSaveScene, saveSceneGLTF } from '../../functions/sceneFunctions'
+import {
+  confirmSceneExists,
+  onNewScene,
+  onSaveScene,
+  saveSceneGLTF,
+  useCanSaveScene
+} from '../../functions/sceneFunctions'
 import { cmdOrCtrlString } from '../../functions/utils'
 import { uploadFiles } from '../../panels/assets/topbar'
 import { EditorState } from '../../services/EditorServices'
 import { UIAddonsState } from '../../services/UIAddonsState'
 import CreatePrefabPanel from '../dialogs/CreatePrefabPanelDialog'
-import CreateSceneDialog from '../dialogs/CreateScenePanelDialog'
 import ImportSettingsPanel from '../dialogs/ImportSettingsPanelDialog'
 import SaveNewSceneDialog from '../dialogs/SaveNewSceneDialog'
 import QuitToDashboardConfirmationDialog from './../dialogs/QuitToDashboardConfirmationDialog'
@@ -64,11 +48,14 @@ const onImportAsset = async () => {
 }
 
 export const confirmSceneSaveIfModified = async () => {
+  const { sceneName } = getState(EditorState)
+  const isSceneExists = sceneName ? await confirmSceneExists(sceneName) : false
+
   const isModified = EditorState.isModified()
 
-  if (isModified) {
+  if (isModified && isSceneExists) {
     return new Promise((resolve) => {
-      PopoverState.showPopupover(<QuitToDashboardConfirmationDialog resolve={resolve} />)
+      ModalState.openModal(<QuitToDashboardConfirmationDialog resolve={resolve} />)
     })
   }
   return true
@@ -80,7 +67,8 @@ const onClickNewScene = async () => {
   const newSceneUIAddons = getState(UIAddonsState).editor.newScene
 
   if (Object.keys(newSceneUIAddons).length > 0) {
-    PopoverState.showPopupover(<CreateSceneDialog />)
+    const { projectName } = getState(EditorState)
+    ModalState.openModal(<AddScene projectName={projectName!} />)
   } else {
     onNewScene()
   }
@@ -90,7 +78,7 @@ export const onCloseProject = async () => {
   if (!(await confirmSceneSaveIfModified())) return
 
   const editorState = getMutableState(EditorState)
-  getMutableState(GLTFModifiedState).set({})
+  getMutableState(AssetModifiedState).set({})
   editorState.projectName.set(null)
   editorState.scenePath.set(null)
   editorState.sceneName.set(null)
@@ -117,15 +105,19 @@ const generateToolbarMenu = () => {
     {
       name: t('editor:menubar.saveScene'),
       hotkey: `${cmdOrCtrlString}+s`,
-      action: onSaveScene
+      action: onSaveScene,
+      enabledHook: useCanSaveScene,
+      showSpinner: true
     },
     {
       name: t('editor:menubar.saveAs'),
-      action: () => PopoverState.showPopupover(<SaveNewSceneDialog />)
+      action: () => ModalState.openModal(<SaveNewSceneDialog />),
+      enabledHook: useCanSaveScene,
+      showSpinner: true
     },
     {
       name: t('editor:menubar.importSettings'),
-      action: () => PopoverState.showPopupover(<ImportSettingsPanel />)
+      action: () => ModalState.openModal(<ImportSettingsPanel />)
     },
     {
       name: t('editor:menubar.importAsset'),
@@ -133,7 +125,11 @@ const generateToolbarMenu = () => {
     },
     {
       name: t('editor:menubar.exportLookdev'),
-      action: () => PopoverState.showPopupover(<CreatePrefabPanel isExportLookDev={true} />)
+      action: () => ModalState.openModal(<CreatePrefabPanel isExportLookDev={true} />, () => {})
+    },
+    {
+      name: t('editor:menubar.documentation'),
+      href: 'https://docs.ir.world'
     },
     {
       name: t('editor:menubar.quit'),
@@ -160,13 +156,16 @@ export default function Toolbar() {
   const { t } = useTranslation()
   const anchorEvent = useHookstate<null | React.MouseEvent<HTMLElement>>(null)
   const anchorPosition = useHookstate({ left: 0, top: 0 })
+  const themeState = useMutableState(ThemeState)
 
   const { projectName, sceneName, sceneAssetID } = useMutableState(EditorState)
+  const sceneNameSimplified = sceneName.value?.split('.').slice(0, -1).join('.')
+
   const isModified = EditorState.useIsModified()
 
   const locationScopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'location:write' as ScopeType
     }
   })
@@ -177,33 +176,51 @@ export default function Toolbar() {
   const locationQuery = useFind(locationPath, { query: { action: 'studio', sceneId: sceneAssetID.value } })
   const currentLocation = locationQuery.data[0]
 
+  // This is fine as long as toolbarMenu is a static object
+  const toolbarItemsEnabled = toolbarMenu.map((item) => {
+    if (!item.enabledHook) return true
+    return item.enabledHook()
+  })
+
   return (
     <>
-      <div className="flex h-10 items-center justify-between bg-theme-primary">
+      <div className="flex h-10 items-center justify-between px-4 py-0.5">
         <div className="flex items-center">
-          <div className="ml-3 mr-6 cursor-pointer" onClick={onCloseProject}>
-            <img src="ir-studio-icon.svg" alt="iR Engine Logo" className={`h-6 w-6`} />
+          <div className="cursor-pointer" data-testid="back-to-dashboard-button" onClick={onCloseProject}>
+            <img
+              src={themeState.theme.value === 'dark' ? studioIconDark : studioIconLight}
+              alt="Enchantment Engine Logo"
+              className="h-6 w-6"
+            />
           </div>
           <button
-            className="flex items-center justify-end gap-1 px-1 py-2 text-[#9CA0AA]"
+            data-testid="editor-main-menu-button"
             onClick={(event) => {
-              anchorPosition.set({ left: event.clientX - 5, top: event.clientY - 2 })
+              anchorPosition.set({ left: event.clientX - 20, top: event.clientY - 20 })
               anchorEvent.set(event)
             }}
           >
-            <SquaresLg />
             <ChevronDownSm />
           </button>
         </div>
         {/* TO BE ADDED */}
         {/* <div className="flex items-center gap-2.5 rounded-full bg-[#212226] p-0.5">
           <div className="rounded-2xl px-2.5">{t('editor:toolbar.lbl-simple')}</div>
-          <div className="rounded-2xl bg-blue-primary px-2.5">{t('editor:toolbar.lbl-advanced')}</div>
+          <div className="rounded-2xl px-2.5">{t('editor:toolbar.lbl-advanced')}</div>
         </div> */}
-        <div className="flex items-center gap-2.5">
-          <span className="text-[#B2B5BD]">{projectName.value}</span>
-          <span>/</span>
-          <span>{sceneName.value}</span>
+        <div className="flex items-center gap-2.5" data-testid="editor-breadcrumbs-container">
+          <File04Sm />
+          {projectName.value!.split('/').map((part, index) => (
+            <Fragment key={index}>
+              <span className="text-text-secondary" data-testid="editor-breadcrumbs-item">
+                {part}
+              </span>
+              <span className="text-text-secondary">{' / '}</span>
+            </Fragment>
+          ))}
+          <span className="text-text-primary" data-testid="editor-breadcrumbs-scene-name">
+            {sceneNameSimplified}
+          </span>
         </div>
 
         <div className="flex items-center justify-center gap-2">
@@ -215,7 +232,7 @@ export default function Toolbar() {
                 data-testid="publish-button"
                 disabled={!hasPublishAccess}
                 onClick={() =>
-                  PopoverState.showPopupover(
+                  ModalState.openModal(
                     <AddEditLocationModal
                       action="studio"
                       sceneID={sceneAssetID.value}
@@ -223,11 +240,13 @@ export default function Toolbar() {
                       inStudio={true}
                       sceneModified={isModified}
                       onPublish={onPublish}
-                    />
+                    />,
+                    () => {}
                   )
                 }
-                className="rounded-[32px] py-1 text-base"
+                className="rounded-[8px] py-1 text-base"
               >
+                <UploadCloud02Sm />
                 {t('editor:toolbar.lbl-publish')}
               </Button>
             </div>
@@ -239,11 +258,17 @@ export default function Toolbar() {
         onClose={() => anchorEvent.set(null)}
       >
         <div className="w-[180px]" tabIndex={0}>
-          {toolbarMenu.map(({ name, action, hotkey }, index) => (
+          {toolbarMenu.map(({ name, href, action = () => {}, hotkey, showSpinner = false }, index) => (
             <DropdownItem
+              key={name + '' + index}
+              disabled={!toolbarItemsEnabled[index]}
+              showSpinner={showSpinner}
               label={name}
+              href={href}
               secondaryText={hotkey}
+              data-testid={`editor-main-menu-item-${name.toLowerCase().replace(/\s+/g, '-')}`}
               onClick={() => {
+                if (!toolbarItemsEnabled[index]) return
                 action()
                 anchorEvent.set(null)
               }}

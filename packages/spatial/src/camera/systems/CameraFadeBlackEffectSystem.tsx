@@ -1,44 +1,18 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { Color, DoubleSide, Mesh, MeshBasicMaterial, SphereGeometry } from 'three'
 
+import { createEntity, entityExists, removeEntity } from '@ir-engine/ecs'
 import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, entityExists, removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineActionQueue, defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
 import React from 'react'
-import { EngineState } from '../../EngineState'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { NameComponent } from '../../common/NameComponent'
 import { createTransitionState } from '../../common/functions/createTransitionState'
-import { addObjectToGroup } from '../../renderer/components/GroupComponent'
+import { addObjectToGroup } from '../../renderer/components/ObjectComponent'
 import { setObjectLayers } from '../../renderer/components/ObjectLayerComponent'
 import { setVisibleComponent } from '../../renderer/components/VisibleComponent'
 import { ObjectLayers } from '../../renderer/constants/ObjectLayers'
@@ -58,18 +32,45 @@ const CameraFadeBlackEffectSystemState = defineState({
   }
 })
 
-const execute = () => {
-  const { transition, mesh, entity } = getState(CameraFadeBlackEffectSystemState)
-  if (!entity) return
+const createFadeEntity = () => {
+  const geometry = new SphereGeometry(10)
+  const material = new MeshBasicMaterial({
+    transparent: true,
+    side: DoubleSide,
+    depthWrite: true,
+    depthTest: false
+  })
 
+  const mesh = new Mesh(geometry, material)
+  mesh.layers.set(ObjectLayers.Camera)
+  mesh.scale.set(-1, 1, -1)
+  mesh.name = 'Camera Fade Transition'
+  const entity = createEntity()
+  setComponent(entity, NameComponent, mesh.name)
+  addObjectToGroup(entity, mesh)
+  mesh.renderOrder = 1
+  setObjectLayers(mesh, ObjectLayers.Camera)
+  const transition = createTransitionState(0.25, 'OUT')
+
+  getMutableState(CameraFadeBlackEffectSystemState).set({
+    transition,
+    mesh,
+    entity
+  })
+}
+
+const execute = () => {
   for (const action of fadeToBlackQueue()) {
+    /** Lazily create entity as needed */
+    if (!getState(CameraFadeBlackEffectSystemState).entity) createFadeEntity()
+    const { transition, mesh, entity } = getState(CameraFadeBlackEffectSystemState)
     transition.setState(action.in ? 'IN' : 'OUT')
     if (action.in) {
       setComponent(entity, ComputedTransformComponent, {
-        referenceEntities: [Engine.instance.cameraEntity],
+        referenceEntities: [getState(ReferenceSpaceState).viewerEntity],
         computeFunction: () => {
           getComponent(entity, TransformComponent).position.copy(
-            getComponent(Engine.instance.cameraEntity, TransformComponent).position
+            getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).position
           )
         }
       })
@@ -80,6 +81,10 @@ const execute = () => {
     mesh.material.needsUpdate = true
   }
 
+  if (!getState(CameraFadeBlackEffectSystemState).entity) return
+
+  const { entity, transition, mesh } = getState(CameraFadeBlackEffectSystemState)
+
   const deltaSeconds = getState(ECSState).deltaSeconds
   transition.update(deltaSeconds, (alpha) => {
     mesh.material.opacity = alpha
@@ -89,32 +94,8 @@ const execute = () => {
 
 const Reactor = () => {
   useEffect(() => {
-    const geometry = new SphereGeometry(10)
-    const material = new MeshBasicMaterial({
-      transparent: true,
-      side: DoubleSide,
-      depthWrite: true,
-      depthTest: false
-    })
-
-    const mesh = new Mesh(geometry, material)
-    mesh.layers.set(ObjectLayers.Camera)
-    mesh.scale.set(-1, 1, -1)
-    mesh.name = 'Camera Fade Transition'
-    const entity = createEntity()
-    setComponent(entity, NameComponent, mesh.name)
-    addObjectToGroup(entity, mesh)
-    mesh.renderOrder = 1
-    setObjectLayers(mesh, ObjectLayers.Camera)
-    const transition = createTransitionState(0.25, 'OUT')
-
-    getMutableState(CameraFadeBlackEffectSystemState).set({
-      transition,
-      mesh,
-      entity
-    })
-
     return () => {
+      const { entity } = getState(CameraFadeBlackEffectSystemState)
       if (entityExists(entity)) removeEntity(entity)
       getMutableState(CameraFadeBlackEffectSystemState).set({} as any)
     }
@@ -128,7 +109,7 @@ export const CameraFadeBlackEffectSystem = defineSystem({
   insert: { with: CameraSystem },
   execute,
   reactor: () => {
-    if (!useMutableState(EngineState).viewerEntity.value) return null
+    if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
     return <Reactor />
   }
 })

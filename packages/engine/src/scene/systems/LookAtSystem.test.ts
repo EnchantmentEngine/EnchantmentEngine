@@ -1,0 +1,165 @@
+import assert from 'assert'
+import { afterEach, beforeEach, describe, it } from 'vitest'
+
+import {
+  EntityID,
+  EntityTreeComponent,
+  SourceID,
+  SystemDefinitions,
+  SystemUUID,
+  UUIDComponent,
+  UndefinedEntity,
+  createEngine,
+  createEntity,
+  destroyEngine,
+  getComponent,
+  removeEntity,
+  setComponent
+} from '@ir-engine/ecs'
+import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
+import {
+  TransformDirtyCleanupSystem,
+  TransformDirtyUpdateSystem
+} from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+import { assertVec } from '@ir-engine/spatial/tests/util/assert'
+import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
+import { act, render } from '@testing-library/react'
+import { Matrix4, Quaternion, Vector3 } from 'three'
+import { LookAtComponent } from '../components/LookAtComponent'
+import { LookAtSystem } from './LookAtSystem'
+
+const sourceID = 'sourceID' as SourceID
+const facerNodeID = 'facerNodeID' as EntityID
+const testNodeID = 'testNodeID' as EntityID
+
+describe('LookAtSystem', () => {
+  const System = SystemDefinitions.get(LookAtSystem)!
+  const CleanupSystem = SystemDefinitions.get(TransformDirtyCleanupSystem)!
+
+  describe('Fields', () => {
+    it('should initialize the *System.uuid field with the expected value', () => {
+      assert.equal(System.uuid, 'ir.spatial.LookAtSystem')
+    })
+
+    it('should initialize the *System with the expected SystemUUID value', () => {
+      assert.equal(LookAtSystem, 'ir.spatial.LookAtSystem' as SystemUUID)
+    })
+
+    it('should initialize the ClientInputSystem.insert field with the expected value', () => {
+      assert.notEqual(System.insert, undefined)
+      assert.notEqual(System.insert!.before, undefined)
+      assert.equal(System.insert!.before!, TransformDirtyUpdateSystem)
+    })
+  }) //:: Fields
+
+  describe('execute', () => {
+    describe('when EngineState.viewerEntity is falsy', () => {
+      let testEntity = UndefinedEntity
+      let facerEntity = UndefinedEntity
+
+      beforeEach(async () => {
+        createEngine()
+        const source = createEntity()
+        setComponent(source, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'ID' as EntityID })
+        facerEntity = UUIDComponent.create(source, facerNodeID)
+        testEntity = UUIDComponent.create(source, testNodeID)
+        await act(() => render(null))
+      })
+
+      afterEach(() => {
+        removeEntity(testEntity)
+        removeEntity(facerEntity)
+        return destroyEngine()
+      })
+
+      it('should not do anything', () => {
+        const Initial = new Quaternion(2, 3, 4, 5).normalize()
+
+        setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42) })
+        setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22), rotation: Initial })
+        setComponent(testEntity, LookAtComponent, { target: getComponent(facerEntity, UUIDComponent).entityID })
+
+        System.execute()
+        const result = getComponent(testEntity, TransformComponent).rotation.clone()
+        assertVec.approxEq(result, Initial, 4)
+      })
+    })
+
+    describe('when EngineState.viewerEntity is truthy', () => {
+      describe('for every entity that has the components [LookAtComponent, TransformComponent] ...', () => {
+        let testEntity = UndefinedEntity
+        let facerEntity = UndefinedEntity
+
+        beforeEach(async () => {
+          createEngine()
+          mockSpatialEngine() // Set EngineState.viewerEntity
+          const source = createEntity()
+          setComponent(source, UUIDComponent, { entitySourceID: 'source' as SourceID, entityID: 'ID' as EntityID })
+          facerEntity = UUIDComponent.create(source, facerNodeID)
+          testEntity = UUIDComponent.create(source, testNodeID)
+          await act(() => render(null))
+        })
+
+        afterEach(() => {
+          removeEntity(testEntity)
+          removeEntity(facerEntity)
+          return destroyEngine()
+        })
+
+        it('should not do anything for that entity if its LookAtComponent.target nodeID is truthy but it does not point to a valid entity', () => {
+          const Initial = new Quaternion(2, 3, 4, 5).normalize()
+
+          setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42), rotation: Initial })
+          setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
+          setComponent(testEntity, LookAtComponent, { target: 'invalidTestNodeID' as EntityID })
+
+          System.execute()
+          const result = getComponent(facerEntity, TransformComponent).rotation.clone()
+          assertVec.approxEq(result, Initial, 4)
+        })
+
+        it('should not do anything for that entity if its LookAtComponent.target UUID is falsy', async () => {
+          const Initial = new Quaternion(2, 3, 4, 5).normalize()
+
+          setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42), rotation: Initial })
+          setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
+          setComponent(testEntity, LookAtComponent, { target: '' as EntityID })
+          System.execute()
+          const result = getComponent(facerEntity, TransformComponent).rotation.clone()
+          assertVec.approxEq(result, Initial, 4)
+        })
+
+        it('should set the entity.TransformComponent.rotation to the resulting lookAt rotation looking from (0,0,0) towards the difference of targetEntity.TransformComponent.position and entity.TransformComponent.position', async () => {
+          const Expected = new Quaternion(0.2721655269759087, 0.408248290463863, 0.5443310539518174, 0.6804138174397717)
+          const Initial = new Quaternion(2, 3, 4, 5).normalize()
+
+          setComponent(facerEntity, TransformComponent, { position: new Vector3().setScalar(42), rotation: Initial })
+          setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
+          setComponent(testEntity, LookAtComponent, { target: '' as EntityID })
+          System.execute()
+          const result = getComponent(facerEntity, TransformComponent).rotation.clone()
+          assertVec.approxEq(result, Expected, 4)
+        })
+
+        it('should call TransformComponent.updateFromWorldMatrix for the entity', () => {
+          const position = new Vector3(42, 43, 44)
+          const rotation = new Quaternion(45, 46, 47, 48).normalize()
+          const scale = new Vector3().setScalar(49)
+          const Initial = new Matrix4().compose(position, rotation, scale)
+
+          const parentEntity = createEntity()
+          setComponent(parentEntity, TransformComponent, { position: new Vector3().setScalar(123) })
+          setComponent(facerEntity, EntityTreeComponent, { parentEntity: parentEntity })
+          setComponent(facerEntity, TransformComponent, { matrixWorld: Initial })
+          setComponent(testEntity, TransformComponent, { position: new Vector3().setScalar(22) })
+          setComponent(testEntity, LookAtComponent, { target: getComponent(facerEntity, UUIDComponent).entityID })
+          CleanupSystem.execute()
+
+          System.execute()
+          const result = TransformComponent.dirty[testEntity]
+          assert.equal(result, 1)
+        })
+      })
+    })
+  }) //:: execute
+}) //:: LookAtSystem

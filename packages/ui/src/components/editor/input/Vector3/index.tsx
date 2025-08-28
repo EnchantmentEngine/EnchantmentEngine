@@ -1,32 +1,7 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useHookstate } from '@ir-engine/hyperflux'
 import { Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
+import { Lock01Lg, LockUnlocked01Lg } from '@ir-engine/ui/src/icons'
 import React from 'react'
-import { LuLock, LuUnlock } from 'react-icons/lu'
 import { twMerge } from 'tailwind-merge'
 import { Vector3 } from 'three'
 import Scrubber from '../../layout/Scrubber'
@@ -37,9 +12,9 @@ interface Vector3ScrubberProps {
   value: number
   onChange: (v: number) => void
   onRelease?: (v: number) => void
-  children?: any
   className?: string
   disabled?: boolean
+  axisLabel?: string
 }
 
 export const Vector3Scrubber = ({
@@ -47,37 +22,31 @@ export const Vector3Scrubber = ({
   disabled,
   onChange,
   onRelease,
+  axisLabel,
   value,
-  children,
   ...props
 }: Vector3ScrubberProps) => {
   const color = (() => {
     switch (axis) {
       case 'x':
-        return 'red-500'
+        return 'ui-error'
       case 'y':
-        return 'green-400'
+        return 'ui-success'
       case 'z':
-        return 'blue-400'
+        return 'ui-primary'
       default:
         return 'inherit'
     }
   })()
 
-  props.className = twMerge(`w-full text-${color}`)
-  const content = children ?? `${axis?.toUpperCase()} - `
+  props.className = twMerge(`w-fit whitespace-nowrap text-${color}`)
+  const label = axisLabel ? axisLabel : axis
+  const content = `${label?.toUpperCase()}`
+
   return (
     <Scrubber onChange={onChange} onRelease={onRelease} value={value} disabled={disabled} {...props}>
       {content}
     </Scrubber>
-  )
-}
-
-export const UniformButtonContainer: React.FC<{ children?: JSX.Element }> = ({ children }) => {
-  return (
-    <div className="flex w-6 items-center hover:text-[color:var(--blueHover)] [&>*:where(label)]:text-[color:var(--textColor)] [&>*:where(ul)]:w-full">
-      {children}
-    </div>
   )
 }
 
@@ -91,6 +60,7 @@ interface Vector3InputProp {
   onChange: (v: Vector3) => void
   onRelease?: (v: Vector3) => void
   disabled?: boolean
+  onToggleUniformScale?: (updatedValue: boolean) => void
 }
 
 export const Vector3Input = ({
@@ -103,12 +73,17 @@ export const Vector3Input = ({
   onChange,
   disabled,
   onRelease,
+  onToggleUniformScale,
   ...rest
 }: Vector3InputProp) => {
-  const uniformEnabled = useHookstate(false)
+  const uniformEnabled = useHookstate(uniformScaling ?? false)
 
   const onToggleUniform = () => {
     uniformEnabled.set((v) => !v)
+    const updatedValue = uniformEnabled.get()
+    if (onToggleUniformScale) {
+      onToggleUniformScale(updatedValue)
+    }
   }
 
   const toVec3 = (field: string, fieldValue: number): Vector3 => {
@@ -138,69 +113,75 @@ export const Vector3Input = ({
   const vz = value.z
 
   return (
-    <div className="flex flex-row flex-wrap justify-end gap-1.5">
-      {uniformScaling && (
-        <button onClick={onToggleUniform} className="p-0" tabIndex={-1} disabled={disabled}>
-          {uniformEnabled.value ? <LuLock /> : <LuUnlock />}
+    <div className="flex w-full items-center gap-x-1.5">
+      {uniformScaling !== undefined && (
+        <button onClick={onToggleUniform} className="w-fit" tabIndex={-1} disabled={disabled}>
+          {uniformEnabled.value ? (
+            <Lock01Lg className="text-text-secondary hover:text-text-primary" />
+          ) : (
+            <LockUnlocked01Lg className="text-text-secondary hover:text-text-primary" />
+          )}
         </button>
       )}
-      <NumericInput
-        {...rest}
-        value={vx}
-        disabled={disabled}
-        onChange={onChangeAxis('x')}
-        onRelease={onReleaseAxis('x')}
-        prefix={
-          hideLabels ? null : (
-            <Vector3Scrubber
-              {...rest}
-              disabled={disabled}
-              value={vx}
-              onChange={onChangeAxis('x')}
-              onRelease={onReleaseAxis('x')}
-              axis="x"
-            />
-          )
-        }
-      />
-      <NumericInput
-        {...rest}
-        value={vy}
-        disabled={disabled}
-        onChange={onChangeAxis('y')}
-        onRelease={onReleaseAxis('y')}
-        prefix={
-          hideLabels ? null : (
-            <Vector3Scrubber
-              {...rest}
-              disabled={disabled}
-              value={vy}
-              onChange={onChangeAxis('y')}
-              onRelease={onReleaseAxis('y')}
-              axis="y"
-            />
-          )
-        }
-      />
-      <NumericInput
-        {...rest}
-        value={vz}
-        disabled={disabled}
-        onChange={onChangeAxis('z')}
-        onRelease={onReleaseAxis('z')}
-        prefix={
-          hideLabels ? null : (
-            <Vector3Scrubber
-              {...rest}
-              disabled={disabled}
-              value={vz}
-              onChange={onChangeAxis('z')}
-              onRelease={onReleaseAxis('z')}
-              axis="z"
-            />
-          )
-        }
-      />
+      <div className="grid w-full grid-cols-3 gap-x-2">
+        <NumericInput
+          {...rest}
+          value={vx}
+          disabled={disabled}
+          onChange={onChangeAxis('x')}
+          onRelease={onReleaseAxis('x')}
+          prefix={
+            hideLabels ? null : (
+              <Vector3Scrubber
+                {...rest}
+                disabled={disabled}
+                value={vx}
+                onChange={onChangeAxis('x')}
+                onRelease={onReleaseAxis('x')}
+                axis="x"
+              />
+            )
+          }
+        />
+        <NumericInput
+          {...rest}
+          value={vy}
+          disabled={disabled}
+          onChange={onChangeAxis('y')}
+          onRelease={onReleaseAxis('y')}
+          prefix={
+            hideLabels ? null : (
+              <Vector3Scrubber
+                {...rest}
+                disabled={disabled}
+                value={vy}
+                onChange={onChangeAxis('y')}
+                onRelease={onReleaseAxis('y')}
+                axis="y"
+              />
+            )
+          }
+        />
+        <NumericInput
+          {...rest}
+          value={vz}
+          disabled={disabled}
+          onChange={onChangeAxis('z')}
+          onRelease={onReleaseAxis('z')}
+          prefix={
+            hideLabels ? null : (
+              <Vector3Scrubber
+                {...rest}
+                disabled={disabled}
+                value={vz}
+                onChange={onChangeAxis('z')}
+                onRelease={onReleaseAxis('z')}
+                axis="z"
+              />
+            )
+          }
+        />
+      </div>
     </div>
   )
 }

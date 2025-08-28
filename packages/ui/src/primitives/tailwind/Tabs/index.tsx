@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { ReactNode, useEffect } from 'react'
 import { twMerge } from 'tailwind-merge'
 
@@ -41,7 +16,6 @@ export interface TabProps extends React.HTMLAttributes<HTMLDivElement> {
     disabled?: boolean
   }[]
   backgroundTheme?: string
-  tabcontainerClassName?: string
   tabClassName?: string
   scrollable?: boolean
   currentTabIndex?: number
@@ -50,7 +24,6 @@ export interface TabProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Tabs = ({
   tabsData,
-  tabcontainerClassName,
   tabClassName,
   scrollable,
   currentTabIndex,
@@ -85,44 +58,34 @@ const Tabs = ({
   }, [currentTab])
 
   return (
-    <div className="relative overflow-y-auto">
+    <div className="relative">
       {tabsData[currentTab.value]?.title && (
-        <Text fontSize="xl" className="mb-6">
+        <Text fontSize="xl" className="mb-6 text-text-primary">
           {tabsData[currentTab.value]?.title}
         </Text>
       )}
       {tabsData[currentTab.value]?.topComponent}
-      <div className={'sticky top-0 flex justify-between'}>
-        <div className={twMerge('flex gap-4', tabcontainerClassName)} {...props}>
-          {tabsData.map((tab, index) => (
-            <button
-              key={index}
-              className={twMerge(
-                'p-3 text-sm text-theme-secondary disabled:cursor-not-allowed disabled:opacity-50 dark:hover:border-b dark:hover:border-b-blue-400',
-                currentTab.value === index ? 'border-b border-b-blue-primary font-semibold text-theme-primary' : '',
-                tab.disabled ? 'border-none' : '',
-                tabClassName
-              )}
-              disabled={tab.disabled}
-              onClick={() => {
-                currentTab.set(index)
-              }}
-            >
-              {tab.tabLabel}
-            </button>
-          ))}
-        </div>
+      <div className={'sticky top-0 z-50 mb-2 flex justify-between rounded-md bg-ui-background px-3 py-2'}>
+        {tabsData.map((tab, index) => (
+          <button
+            key={index}
+            className={twMerge(
+              'p-3 text-sm text-text-secondary hover:border-b hover:border-b-ui-primary disabled:cursor-not-allowed disabled:opacity-50',
+              currentTab.value === index ? 'border-b border-b-ui-select-primary font-semibold ' : '',
+              tab.disabled ? 'border-none' : '',
+              tabClassName
+            )}
+            disabled={tab.disabled}
+            onClick={() => {
+              currentTab.set(index)
+            }}
+          >
+            {tab.tabLabel}
+          </button>
+        ))}
         {tabsData[currentTab.value]?.rightComponent}
       </div>
-      {scrollable ? (
-        tabsData.map((tab, index) => (
-          <div className="mt-4" key={index}>
-            {tab.bottomComponent}
-          </div>
-        ))
-      ) : (
-        <div className="mt-4">{tabsData[currentTab.value]?.bottomComponent}</div>
-      )}
+      {scrollable ? tabsData.map((tab, index) => tab.bottomComponent) : tabsData[currentTab.value]?.bottomComponent}
     </div>
   )
 }

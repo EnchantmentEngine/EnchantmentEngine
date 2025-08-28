@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 //@ts-nocheck
 import {
   BufferAttribute,
@@ -179,7 +154,8 @@ function mergeBufferGeometries(geometries: Array<BufferGeometry>, useGroups = fa
       indexOffset += geometries[i].attributes.position.count
     }
 
-    mergedGeometry.setIndex(mergedIndex)
+    const mergedIndexArray = mergedIndex.length > 65535 ? new Uint32Array(mergedIndex) : new Uint16Array(mergedIndex)
+    mergedGeometry.setIndex(new BufferAttribute(mergedIndexArray, 1))
   }
 
   // merge attributes
@@ -229,6 +205,8 @@ function mergeBufferGeometries(geometries: Array<BufferGeometry>, useGroups = fa
     }
   }
 
+  mergedGeometry.morphTargetsRelative = morphTargetsRelative
+
   return mergedGeometry
 }
 
@@ -240,22 +218,16 @@ function mergeBufferAttributes(attributes) {
   let TypedArray
   let itemSize
   let normalized
+  let gpuType = -1
   let arrayLength = 0
 
   for (let i = 0; i < attributes.length; ++i) {
     const attribute = attributes[i]
 
-    if (attribute.isInterleavedBufferAttribute) {
-      console.error(
-        'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. InterleavedBufferAttributes are not supported.'
-      )
-      return null
-    }
-
     if (TypedArray === undefined) TypedArray = attribute.array.constructor
     if (TypedArray !== attribute.array.constructor) {
       console.error(
-        'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.'
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.'
       )
       return null
     }
@@ -263,7 +235,7 @@ function mergeBufferAttributes(attributes) {
     if (itemSize === undefined) itemSize = attribute.itemSize
     if (itemSize !== attribute.itemSize) {
       console.error(
-        'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.'
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.'
       )
       return null
     }
@@ -271,24 +243,48 @@ function mergeBufferAttributes(attributes) {
     if (normalized === undefined) normalized = attribute.normalized
     if (normalized !== attribute.normalized) {
       console.error(
-        'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.'
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.'
       )
       return null
     }
 
-    arrayLength += attribute.array.length
+    if (gpuType === -1) gpuType = attribute.gpuType
+    if (gpuType !== attribute.gpuType) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.gpuType must be consistent across matching attributes.'
+      )
+      return null
+    }
+
+    arrayLength += attribute.count * itemSize
   }
 
   const array = new TypedArray(arrayLength)
+  const result = new BufferAttribute(array, itemSize, normalized)
   let offset = 0
 
   for (let i = 0; i < attributes.length; ++i) {
-    array.set(attributes[i].array, offset)
+    const attribute = attributes[i]
+    if (attribute.isInterleavedBufferAttribute) {
+      const tupleOffset = offset / itemSize
+      for (let j = 0, l = attribute.count; j < l; j++) {
+        for (let c = 0; c < itemSize; c++) {
+          const value = attribute.getComponent(j, c)
+          result.setComponent(j + tupleOffset, c, value)
+        }
+      }
+    } else {
+      array.set(attribute.array, offset)
+    }
 
-    offset += attributes[i].array.length
+    offset += attribute.count * itemSize
   }
 
-  return new BufferAttribute(array, itemSize, normalized)
+  if (gpuType !== undefined) {
+    result.gpuType = gpuType
+  }
+
+  return result
 }
 
 /**
@@ -342,6 +338,69 @@ function interleaveAttributes(attributes) {
   }
 
   return res
+}
+
+// returns a new, non-interleaved version of the provided attribute
+function deinterleaveAttribute(attribute: InterleavedBufferAttribute): BufferAttribute | InstancedBufferAttribute {
+  const cons = attribute.data.array.constructor
+  const count = attribute.count
+  const itemSize = attribute.itemSize
+  const normalized = attribute.normalized
+
+  const array = new cons(count * itemSize)
+  let newAttribute: BufferAttribute | InstancedBufferAttribute
+  if (attribute.isInstancedInterleavedBufferAttribute) {
+    newAttribute = new InstancedBufferAttribute(array, itemSize, normalized, attribute.meshPerAttribute)
+  } else {
+    newAttribute = new BufferAttribute(array, itemSize, normalized)
+  }
+
+  for (let i = 0; i < count; i++) {
+    newAttribute.setX(i, attribute.getX(i))
+
+    if (itemSize >= 2) {
+      newAttribute.setY(i, attribute.getY(i))
+    }
+
+    if (itemSize >= 3) {
+      newAttribute.setZ(i, attribute.getZ(i))
+    }
+
+    if (itemSize >= 4) {
+      newAttribute.setW(i, attribute.getW(i))
+    }
+  }
+
+  return newAttribute
+}
+
+// deinterleaves all attributes on the geometry
+function deinterleaveGeometry(geometry: BufferGeometry) {
+  const attributes = geometry.attributes
+  const morphTargets = geometry.morphTargets
+  const attrMap = new Map<BufferAttribute | InterleavedBufferAttribute, BufferAttribute>()
+
+  for (const key in attributes) {
+    const attr = attributes[key]
+    if (attr.isInterleavedBufferAttribute) {
+      if (!attrMap.has(attr)) {
+        attrMap.set(attr, deinterleaveAttribute(attr))
+      }
+
+      attributes[key] = attrMap.get(attr)
+    }
+  }
+
+  for (const key in morphTargets) {
+    const attr = morphTargets[key]
+    if (attr.isInterleavedBufferAttribute) {
+      if (!attrMap.has(attr)) {
+        attrMap.set(attr, deinterleaveAttribute(attr))
+      }
+
+      morphTargets[key] = attrMap.get(attr)
+    }
+  }
 }
 
 /**
@@ -509,7 +568,8 @@ function toTrianglesDrawMode(geometry, drawMode) {
           indices.push(i)
         }
 
-        geometry.setIndex(indices)
+        const indexArray = position.count > 65535 ? new Uint32Array(indices) : new Uint16Array(indices)
+        geometry.setIndex(new BufferAttribute(indexArray, 1))
         index = geometry.getIndex()
       } else {
         console.error(
@@ -555,7 +615,8 @@ function toTrianglesDrawMode(geometry, drawMode) {
     // build final geometry
 
     const newGeometry = geometry.clone()
-    newGeometry.setIndex(newIndices)
+    const newIndexArray = newIndices.length > 65535 ? new Uint32Array(newIndices) : new Uint16Array(newIndices)
+    newGeometry.setIndex(new BufferAttribute(newIndexArray, 1))
     newGeometry.clearGroups()
 
     return newGeometry
@@ -840,6 +901,8 @@ function computeMorphedAttributes(object) {
 export {
   computeMorphedAttributes,
   computeTangents,
+  deinterleaveAttribute,
+  deinterleaveGeometry,
   estimateBytesUsed,
   interleaveAttributes,
   mergeBufferAttributes,

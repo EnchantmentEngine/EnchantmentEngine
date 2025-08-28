@@ -1,36 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BadRequest, NotAuthenticated } from '@feathersjs/errors'
 import { Paginated, ServiceInterface } from '@feathersjs/feathers'
 import { KnexAdapterParams } from '@feathersjs/knex'
-import https from 'https'
-import { Knex } from 'knex'
-import _ from 'lodash'
-import fetch from 'node-fetch'
-
 import {
   instanceAuthorizedUserPath,
   InstanceAuthorizedUserType
@@ -42,7 +12,12 @@ import { LocationID, locationPath, LocationType, RoomCode } from '@ir-engine/com
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
 import { UserID } from '@ir-engine/common/src/schemas/user/user.schema'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import { getState } from '@ir-engine/hyperflux'
+import https from 'https'
+import { Knex } from 'knex'
+import _ from 'lodash'
+import fetch from 'node-fetch'
 
 import { instanceAttendancePath, InstanceAttendanceType } from '@ir-engine/common/src/schema.type.module'
 import { Application } from '../../../declarations'
@@ -110,8 +85,13 @@ export async function getFreeInstanceserver({
   }
   logger.info('Getting free instanceserver')
   const k8AgonesClient = getState(ServerState).k8AgonesClient
-  const serverResult = await k8AgonesClient.listNamespacedCustomObject('agones.dev', 'v1', 'default', 'gameservers')
-  const readyServers = _.filter((serverResult.body as any).items, (server: any) => {
+  const serverResult = await k8AgonesClient.listNamespacedCustomObject({
+    group: 'agones.dev',
+    version: 'v1',
+    namespace: config.server.namespace,
+    plural: 'gameservers'
+  })
+  const readyServers = _.filter(serverResult.items, (server: any) => {
     const releaseMatch = releaseRegex.exec(server.metadata.name)
     let returned = server.status.state === 'Ready'
     if (returned && !provisionConstraints)
@@ -302,7 +282,7 @@ export async function checkForDuplicatedAssignments({
     }
     if (!isFirstAssignment) {
       //If this is not the first assignment to this IP, remove the assigned instance row
-      await app.service(instancePath).remove(assignResult.id)
+      if (isValidId(assignResult.id)) await app.service(instancePath).remove(assignResult.id)
       //If this is the 10th or more attempt to get a free instanceserver, then there probably aren't any free ones,
       if (iteration < 10) {
         return getFreeInstanceserver({
@@ -342,6 +322,11 @@ export async function checkForDuplicatedAssignments({
         new Date(instance.assignedAt).getTime() < new Date(assignResult.assignedAt).getTime()
       ) {
         isFirstAssignment = false
+        // Safety check for ipAddress (should not be null in this context, but adding for robustness)
+        if (!instance.ipAddress) {
+          logger.warn(`Instance ${instance.id} has null ipAddress in checkForDuplicatedAssignments`)
+          continue
+        }
         const ipSplit = instance.ipAddress.split(':')
         earlierInstance = {
           id: instance.id,
@@ -364,6 +349,10 @@ export async function checkForDuplicatedAssignments({
         const integerizedAssignResultId = parseInt(assignResult.id.replace(/-/g, ''), 16)
         if (integerizedAssignResultId < integerizedInstanceId) {
           isFirstAssignment = false
+          if (!instance.ipAddress) {
+            logger.warn(`Instance ${instance.id} has null ipAddress in checkForDuplicatedAssignments`)
+            continue
+          }
           const ipSplit = instance.ipAddress.split(':')
           earlierInstance = {
             id: instance.id,
@@ -378,7 +367,7 @@ export async function checkForDuplicatedAssignments({
     }
     if (!isFirstAssignment) {
       //If this is not the first assignment to this IP, remove the assigned instance row
-      await app.service(instancePath).remove(assignResult.id)
+      if (isValidId(assignResult.id)) await app.service(instancePath).remove(assignResult.id)
       return earlierInstance!
     }
   }
@@ -422,11 +411,14 @@ export async function checkForDuplicatedAssignments({
 
   if (!responsivenessCheck) {
     logger.warn(`Instanceserver at ${ipAddress} took too long to respond, assuming it is unresponsive and killing`)
-    await app.service(instancePath).remove(assignResult.id)
+    if (isValidId(assignResult.id)) await app.service(instancePath).remove(assignResult.id)
     const k8DefaultClient = getState(ServerState).k8DefaultClient
     if (config.kubernetes.enabled)
       try {
-        k8DefaultClient.deleteNamespacedPod(assignResult.podName, 'default')
+        k8DefaultClient.deleteNamespacedPod({
+          name: assignResult.podName,
+          namespace: config.server.namespace
+        })
       } catch (err) {
         //
       }
@@ -489,7 +481,9 @@ export async function getP2PInstance({
   })) as any as InstanceType[]
 
   const activeInstances = instances.filter(
-    (instance) => instance.currentUsers < config.instanceserver.p2pMaxConnections
+    (instance) =>
+      (instance.location ? instance.currentUsers < instance.location.maxUsersPerInstance : true) &&
+      instance.currentUsers < config['instance-server'].p2pMaxConnections
   )
   if (activeInstances.length > 0) {
     // console.log(`\n\n\nProvisioned existing P2P ${activeInstances[0].locationId ? 'world' : 'media'} instance`, activeInstances[0])
@@ -618,7 +612,21 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
         })
     }
     logger.info('IS existed, using it %o', instance)
-    const ipAddressSplit = instance.ipAddress!.split(':')
+    // Check if instance has a valid ipAddress (P2P instances have null ipAddress)
+    if (!instance.ipAddress) {
+      // If P2P is disabled but we have a P2P instance, redirect to get a new server instance
+      return getFreeInstanceserver({
+        app: this.app,
+        headers,
+        iteration: 0,
+        locationId,
+        channelId,
+        roomCode,
+        userId,
+        provisionConstraints
+      })
+    }
+    const ipAddressSplit = instance.ipAddress.split(':')
     return {
       id: instance.id,
       ipAddress: ipAddressSplit[0],
@@ -642,17 +650,17 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
 
   async isCleanup(instance: InstanceType): Promise<boolean> {
     const k8AgonesClient = getState(ServerState).k8AgonesClient
-    const instanceservers = await k8AgonesClient.listNamespacedCustomObject(
-      'agones.dev',
-      'v1',
-      'default',
-      'gameservers'
-    )
-    const isIds = (instanceservers?.body as any)?.items.map((is) =>
+    const instanceservers = await k8AgonesClient.listNamespacedCustomObject({
+      group: 'agones.dev',
+      version: 'v1',
+      namespace: config.server.namespace,
+      plural: 'gameservers'
+    })
+    const isIds = instanceservers?.items.map((is) =>
       isNameRegex.exec(is.metadata.name) != null ? isNameRegex.exec(is.metadata.name)![1] : null!
     )
     const [ip, port] = instance.ipAddress!.split(':')
-    const match = (instanceservers?.body as any)?.items?.find((is) => {
+    const match = instanceservers?.items?.find((is) => {
       const inputPort = is.status.ports?.find((port) => port.name === 'default')
       return is.status.address === ip && inputPort?.port?.toString() === port
     })
@@ -710,7 +718,7 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
           throw new BadRequest(`Invalid channel ID: ${channelId}`)
         }
 
-        if (config.instanceserver.p2pEnabled) {
+        if (config['instance-server'].p2pEnabled) {
           return getP2PInstance({
             app: this.app,
             headers: params.headers || {},
@@ -751,7 +759,18 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
               })
           }
           const actualInstance = channelInstance.data[0]
-          const ipAddressSplit = actualInstance.ipAddress!.split(':')
+          if (!actualInstance.ipAddress) {
+            return getFreeInstanceserver({
+              app: this.app,
+              headers: params.headers || {},
+              iteration: 0,
+              channelId,
+              roomCode,
+              userId,
+              provisionConstraints
+            })
+          }
+          const ipAddressSplit = actualInstance.ipAddress.split(':')
           return {
             id: actualInstance.id,
             ipAddress: ipAddressSplit[0],
@@ -778,7 +797,7 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
           } as InstanceParams
 
           // ensure that if we switch from p2p to non-p2p, we don't get a p2p instance
-          if (!config.instanceserver.p2pEnabled) {
+          if (!config['instance-server'].p2pEnabled) {
             instanceQuery.query!.ipAddress = {
               $ne: 'null'
             }
@@ -788,7 +807,7 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
         }
 
         if ((roomCode && (!instance || instance.ended)) || createPrivateRoom) {
-          if (config.instanceserver.p2pEnabled) {
+          if (config['instance-server'].p2pEnabled) {
             return getP2PInstance({
               app: this.app,
               headers: params.headers || {},
@@ -812,7 +831,7 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
         let isCleanup
 
         if (instance) {
-          if (config.instanceserver.p2pEnabled) {
+          if (config['instance-server'].p2pEnabled) {
             return getP2PInstance({
               app: this.app,
               headers: params.headers || {},
@@ -839,7 +858,18 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
                   userId
                 })
             }
-            const ipAddressSplit = instance.ipAddress!.split(':')
+            if (!instance.ipAddress) {
+              return getFreeInstanceserver({
+                app: this.app,
+                headers: params.headers || {},
+                iteration: 0,
+                locationId,
+                roomCode,
+                userId,
+                provisionConstraints
+              })
+            }
+            const ipAddressSplit = instance.ipAddress.split(':')
             return {
               id: instance.id,
               ipAddress: ipAddressSplit[0],
@@ -908,7 +938,7 @@ export class InstanceProvisionService implements ServiceInterface<InstanceProvis
         //   }
         // }
 
-        if (config.instanceserver.p2pEnabled) {
+        if (config['instance-server'].p2pEnabled) {
           return getP2PInstance({
             app: this.app,
             headers: params.headers || {},

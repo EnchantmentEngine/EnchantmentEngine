@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useId, useLayoutEffect, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { HelpIconSm } from '../../../icons'
@@ -83,6 +58,9 @@ const Input = (
     required,
     id,
     fullWidth,
+    disabled,
+    readOnly,
+    autoComplete = 'off',
     ...props
   }: InputProps,
   ref: React.ForwardedRef<HTMLInputElement>
@@ -121,13 +99,13 @@ const Input = (
           <label htmlFor={inputId} className="block text-xs font-medium" ref={labelRef}>
             <div className="flex flex-row items-center gap-x-1.5">
               <div className="flex flex-row items-center gap-x-0.5">
-                {required && <span className="text-sm text-[#E11D48]">*</span>}
-                <span className="text-xs text-[#D3D5D9]">{labelProps.text}</span>
+                {required && <span className="text-sm text-ui-error">*</span>}
+                <span className="whitespace-nowrap text-xs text-text-secondary">{labelProps.text}</span>
               </div>
 
               {labelProps?.infoText && (
                 <Tooltip content={labelProps.infoText}>
-                  <HelpIconSm className="text-[#9CA0AA]" />
+                  <HelpIconSm className="text-text-tertiary" />
                 </Tooltip>
               )}
             </div>
@@ -136,38 +114,42 @@ const Input = (
 
         <div
           className={twMerge(
-            'flex w-full items-center gap-x-2 rounded-md border-[0.5px] border-[#42454D] bg-[#141619] transition-colors duration-300',
+            'flex w-full items-center gap-x-2 rounded-md border-[0.5px] border-ui-outline',
+            'text-xs placeholder-text-tertiary transition-colors duration-300 dark:bg-ui-background',
             heights[height],
-            'hover:border-[#9CA0AA] hover:bg-[#191B1F]',
-            'has-[:focus]:border-[#375DAF] has-[:focus]:outline-none',
-            'has-[:disabled]:border-[#42454D] has-[:disabled]:bg-[#191B1F]',
-            state === 'success' && 'border-[#10B981]',
-            state === 'error' && 'border-[#C3324B]'
+            disabled
+              ? 'border-ui-inactive-outline bg-ui-inactive-background text-text-inactive'
+              : 'border-ui-outline bg-ui-background text-text-tertiary hover:border-ui-hover-outline hover:bg-ui-hover-background has-[:focus]:border-ui-primary has-[:focus]:bg-ui-select-background has-[:focus]:text-text-primary',
+            state === 'success' ? 'border-ui-success' : '',
+            state === 'error' ? 'border-ui-error' : ''
           )}
         >
           <input
             spellCheck={false}
-            className="peer order-2 h-full w-full bg-[#141619] text-[#9CA0AA] outline-none autofill:bg-red-500 focus:bg-[#141619] focus:text-[#F5F5F5] focus-visible:bg-[#141619] disabled:text-[#6B6F78]"
+            className={twMerge(
+              'placeholder-text-[#616161] dark:placeholder-text-text-tertiary',
+              'text-[#616161] dark:text-text-tertiary',
+              'peer order-2 h-full w-full bg-inherit pt-0.5 outline-none autofill:bg-inherit'
+            )}
             ref={ref}
             id={inputId}
+            disabled={disabled}
+            readOnly={readOnly}
+            autoComplete={autoComplete}
             {...props}
           />
           {startComponent && (
-            <div className="order-1 flex items-center justify-center text-[#9CA0AA] peer-disabled:text-[#42454D]">
-              {startComponent}
-            </div>
+            <div className="order-1 flex items-center justify-center text-text-tertiary">{startComponent}</div>
           )}
           {endComponent && (
-            <div className="order-3 flex items-center justify-center text-[#9CA0AA] peer-disabled:text-[#42454D]">
-              {endComponent}
-            </div>
+            <div className="order-3 flex items-center justify-center text-text-tertiary">{endComponent}</div>
           )}
         </div>
       </div>
 
       {helperText && (
         <span
-          className={`text-xs ${state === 'success' && 'text-[#0D9467]'} ${state === 'error' && 'text-[#C3324B]'}`}
+          className={`text-xs ${state === 'success' && 'text-ui-success'} ${state === 'error' && 'text-text-error'}`}
           style={{
             translate: helperOffset
           }}

@@ -1,0 +1,235 @@
+import React, { useRef } from 'react'
+
+import { useGet } from '@ir-engine/common'
+import { UserID, userPath } from '@ir-engine/common/src/schema.type.module'
+import { EngineState } from '@ir-engine/ecs'
+import {
+  getState,
+  HyperFlux,
+  MediaChannelState,
+  MediaChannelType,
+  MediaStreamInterface,
+  NetworkPeerState,
+  NetworkState,
+  NO_PROXY,
+  PeerID,
+  screenshareVideoMediaChannelType,
+  useMutableState,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
+import {
+  ArrowTopRightOnSquareLg,
+  Microphone01Md,
+  MicrophoneOff,
+  VideoRecorderLg,
+  VideoRecorderOffLg
+} from '@ir-engine/ui/src/icons'
+import { IoWarning } from 'react-icons/io5'
+
+import { useClickOutside, useTouchOutside } from '@ir-engine/common/src/utils/useClickOutside'
+import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
+import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { useTranslation } from 'react-i18next'
+import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
+import { ModalState } from '../../common/services/ModalState'
+import { useUserAvatarThumbnail } from '../../hooks/useUserAvatarThumbnail'
+import { LocationState } from '../../social/services/LocationService'
+import { ReportUserState } from '../../util/ReportUserState'
+import { FilteredUsersState } from '../../world/FilteredUsersSystem'
+import ReportMenu from '../menus/ReportMenu'
+import { AuthState } from '../services/AuthService'
+import { useUserMediaWindowHook } from './hook'
+import { SingleVideoWindow, SingleVideoWindowWidget } from './window'
+
+export type WindowType = { peerID: PeerID; userID?: UserID; type: 'cam' | 'screen' }
+
+const sortScreensBeforeCameras = (a: WindowType, b: WindowType) => {
+  if (a.type === 'screen' && b.type === 'cam') return -1
+  if (a.type === 'cam' && b.type === 'screen') return 1
+  return 0
+}
+
+export const useMediaWindows = () => {
+  const mediaChannelState = useMutableState(MediaChannelState)
+  const mediaNetworkInstanceState = useMediaNetwork()
+  const mediaNetwork = NetworkState.mediaNetwork
+  const networkPeerState = useMutableState(NetworkPeerState).value
+  const mediaNetworkUsers = mediaNetwork ? networkPeerState?.[mediaNetwork.id]?.users : undefined
+  const selfUser = useMutableState(AuthState).user
+  const mediaNetworkConnected = mediaNetwork && mediaNetworkInstanceState?.ready?.value
+
+  const consumers = Object.entries(mediaChannelState.get(NO_PROXY)) as [
+    PeerID,
+    { [channelType: MediaChannelType]: MediaStreamInterface }
+  ][]
+
+  const selfPeerID = HyperFlux.store.peerID
+  const selfUserID = useMutableState(EngineState).userID.value
+
+  const userPeers: Array<[UserID, PeerID[]]> =
+    mediaNetworkConnected && mediaNetworkUsers
+      ? (Object.entries(mediaNetworkUsers) as Array<[UserID, PeerID[]]>)
+      : [[selfUserID, [selfPeerID]]]
+
+  // reduce all userPeers to an array 'windows' of { peerID, type } objects, displaying screens first, then cams. if a user has no cameras, only include one peerID for that user
+  const windows = userPeers
+    .reduce((acc, [userID, peerIDs]) => {
+      const isSelfWindows = userID === selfUser.id.value
+      const userCams = consumers
+        .filter(
+          ([peerID, streams]) =>
+            peerIDs.includes(peerID) &&
+            (webcamAudioMediaChannelType in streams || webcamVideoMediaChannelType in streams) &&
+            Object.entries(streams).find(([, c]) => c.stream)
+        )
+        .map(([peerID]) => {
+          return { peerID, userID, type: 'cam' as const }
+        })
+
+      const userScreens = consumers
+        .filter(([peerID, streams]) => peerIDs.includes(peerID) && streams[screenshareVideoMediaChannelType]?.stream)
+        .map(([peerID]) => {
+          return { peerID, userID, type: 'screen' as const }
+        })
+
+      const userWindows = [...userScreens, ...userCams]
+      if (userWindows.length) {
+        if (isSelfWindows) acc.unshift(...userWindows)
+        else acc.push(...userWindows)
+      } else {
+        if (isSelfWindows) acc.unshift({ peerID: peerIDs[0], userID, type: 'cam' })
+        else acc.push({ peerID: peerIDs[0], userID, type: 'cam' })
+      }
+      return acc
+    }, [] as WindowType[])
+    .sort(sortScreensBeforeCameras)
+    .filter(({ peerID }) => mediaChannelState[peerID].value)
+
+  // if window doesnt exist for self, add it
+  if (
+    mediaNetworkConnected &&
+    mediaNetwork.users?.[selfUserID] &&
+    !windows.find(({ peerID }) => mediaNetwork.users[selfUserID]?.includes(peerID))
+  ) {
+    windows.unshift({ peerID: selfPeerID, userID: selfUser.id.value, type: 'cam' })
+  }
+
+  const filteredUsersState = useMutableState(FilteredUsersState)
+
+  const nearbyPeers = mediaNetwork?.users
+    ? filteredUsersState.nearbyLayerUsers.value.map((userID) => mediaNetwork.users[userID]).flat()
+    : []
+
+  const isNearby = (peerID: PeerID) => (NetworkState.worldNetwork ? nearbyPeers.includes(peerID) : true)
+
+  return windows.filter(
+    ({ peerID }) =>
+      (peerID === HyperFlux.store.peerID || mediaNetwork?.peers?.[peerID].userId === selfUserID || isNearby(peerID)) &&
+      mediaChannelState.value[peerID]
+  )
+}
+
+export const VideoWindows = () => {
+  const { reportedPeerId } = useMutableState(ReportUserState).value
+  const windows = useMediaWindows()
+  return (
+    <>
+      <div className="overflow-y scrollbar-hide flex h-[calc(100vh-48px)] flex-col gap-y-2 overflow-y-auto">
+        {windows.map(({ peerID, type }) => (
+          <SingleVideoWindow type={type} peerID={peerID} key={type + '-' + peerID} />
+        ))}
+      </div>
+      {reportedPeerId && <ReportUserWindow />}
+    </>
+  )
+}
+
+const ReportUserWindow = () => {
+  const { t } = useTranslation()
+  const { reportedPeerId } = useMutableState(ReportUserState)
+  const reportedUserId = NetworkState.mediaNetwork.peers?.[reportedPeerId.value!]?.userId
+  const avatarThumbnail = useUserAvatarThumbnail(reportedUserId)
+  const reportedUser = useGet(userPath, reportedUserId).data
+  const currentLocation = getState(LocationState).currentLocation.location
+  const { toggleVideo, toggleAudio, audioStreamPaused, videoStreamPaused, videoMediaStream, audioMediaStream } =
+    useUserMediaWindowHook({
+      peerID: reportedPeerId.value!,
+      type: 'cam'
+    })
+  const ref = useRef<HTMLDivElement>(null)
+
+  useClickOutside(ref, () => ReportUserState.resetPeerId())
+  useTouchOutside(ref, () => ReportUserState.resetPeerId())
+
+  if (!reportedPeerId || !reportedUserId || !reportedUser) return null
+
+  return (
+    <div
+      className="fixed right-[10%] top-[5%] z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 rounded-xl bg-surface-4 p-3 lg:right-[5%]"
+      ref={ref}
+    >
+      <div className="h-[100px] w-[100px]">
+        <AvatarImage size="fill" className="rounded-none" src={avatarThumbnail} />
+      </div>
+      <div className="grid grid-cols-1 gap-y-6">
+        <div className="col-span-1 flex items-center justify-between">
+          <Text className="text-text-primary" fontWeight="medium" fontSize="lg">
+            {reportedUser.name}
+          </Text>
+          <button
+            className="grid h-10 w-10 rotate-180 place-items-center text-[#585858]"
+            onClick={() => ReportUserState.resetPeerId()}
+          >
+            <ArrowTopRightOnSquareLg />
+          </button>
+        </div>
+        <div className="flex items-center gap-x-4">
+          <button
+            className="rounded-full bg-ui-secondary p-[15px] disabled:bg-ui-inactive-secondary"
+            disabled={!videoMediaStream}
+            onClick={() => toggleVideo()}
+          >
+            {videoStreamPaused || !videoMediaStream ? (
+              <VideoRecorderOffLg className="h-5 w-5 text-text-primary-button" />
+            ) : (
+              <VideoRecorderLg className="h-5 w-5 text-text-primary-button" />
+            )}
+          </button>
+          <button
+            className="rounded-full bg-ui-secondary p-[15px] disabled:bg-ui-inactive-secondary"
+            disabled={!audioMediaStream}
+            onClick={() => toggleAudio()}
+          >
+            {audioStreamPaused || !audioMediaStream ? (
+              <MicrophoneOff className="h-5 w-5 text-text-primary-button" />
+            ) : (
+              <Microphone01Md className="h-5 w-5 text-text-primary-button" />
+            )}
+          </button>
+          <button
+            className="rounded-full bg-ui-error p-[15px]"
+            title={t('user:videoWindows.reportUser')}
+            onClick={() =>
+              ModalState.openModal(<ReportMenu type="user" userId={reportedUserId} locationId={currentLocation.id} />)
+            }
+          >
+            <IoWarning className="h-5 w-5 text-text-primary-button" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export const VideoWindowsWidget = () => {
+  const windows = useMediaWindows()
+
+  return (
+    <div className="overflow-y scrollbar-hide flex h-[calc(100vh-48px)] flex-col gap-y-2 overflow-y-auto">
+      {windows.map(({ peerID, type }) => (
+        <SingleVideoWindowWidget type={type} peerID={peerID} key={type + '-' + peerID} />
+      ))}
+    </div>
+  )
+}

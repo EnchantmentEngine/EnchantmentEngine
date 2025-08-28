@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Ethereal Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Ethereal Engine team.
-
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2023 
-Ethereal Engine. All Rights Reserved.
-*/
-
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { boundingBoxHeuristic, findProximity, IntersectionData, meshHeuristic } from './ClientInputHeuristics'
@@ -31,30 +6,31 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
-  Engine,
+  EngineState,
   Entity,
+  EntityID,
+  EntityTreeComponent,
   EntityUUID,
-  getMutableComponent,
+  EntityUUIDPair,
   removeEntity,
   setComponent,
+  SourceID,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { getMutableState, UserID } from '@ir-engine/hyperflux'
+import { getMutableState, getState, UserID } from '@ir-engine/hyperflux'
 import { Box3, BoxGeometry, Mesh, Vector3 } from 'three'
 import { assertFloat } from '../../../tests/util/assert'
 import { mockSpatialEngine } from '../../../tests/util/mockSpatialEngine'
-import { EngineState } from '../../EngineState'
 import { destroySpatialEngine, destroySpatialViewer } from '../../initializeEngine'
-import { addObjectToGroup, GroupComponent } from '../../renderer/components/GroupComponent'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
+import { ObjectComponent } from '../../renderer/components/ObjectComponent'
+import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
-import { BoundingBoxComponent } from '../../transform/components/BoundingBoxComponents'
+import { BoundingBoxComponent } from '../../transform/components/BoundingBoxComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { computeTransformMatrix } from '../../transform/systems/TransformSystem'
 import { XRState } from '../../xr/XRState'
 import { InputComponent } from '../components/InputComponent'
-import { InputState } from '../state/InputState'
 
 describe('ClientInputHeuristics', () => {
   describe('findRaycastedInput', () => {
@@ -78,6 +54,7 @@ describe('ClientInputHeuristics', () => {
 
   describe('boundingBoxHeuristic', () => {
     let testEntity = UndefinedEntity
+    let viewerEntity = UndefinedEntity
 
     beforeEach(async () => {
       createEngine()
@@ -85,10 +62,15 @@ describe('ClientInputHeuristics', () => {
       testEntity = createEntity()
       setComponent(testEntity, TransformComponent)
       setComponent(testEntity, VisibleComponent)
+
+      viewerEntity = createEntity()
+      setComponent(viewerEntity, RendererComponent, { scenes: [viewerEntity] })
+      setComponent(testEntity, EntityTreeComponent, { parentEntity: viewerEntity })
     })
 
     afterEach(() => {
       removeEntity(testEntity)
+      removeEntity(viewerEntity)
       destroySpatialEngine()
       destroySpatialViewer()
       return destroyEngine()
@@ -97,8 +79,7 @@ describe('ClientInputHeuristics', () => {
     describe('for every entity stored in the InputState.inputBoundingBoxes Set<Entity> ...', () => {
       it('... should not run if casting the `@param ray` towards `@param hitTarget` would not intersect the boundingBox of the entity', () => {
         setComponent(testEntity, BoundingBoxComponent)
-        const inputState = getMutableState(InputState)
-        inputState.inputBoundingBoxes.set(new Set([testEntity]))
+        setComponent(testEntity, VisibleComponent)
 
         const rayOrigin = new Vector3()
         const rayDirection = new Vector3()
@@ -106,21 +87,19 @@ describe('ClientInputHeuristics', () => {
         const data = new Set<IntersectionData>()
 
         // Run and check that nothing was added
-        boundingBoxHeuristic(data, rayOrigin, rayDirection)
+        boundingBoxHeuristic(viewerEntity, data, rayOrigin, rayDirection)
         assert.equal(data.size, 0)
       })
 
       it('... should not run if the entity does not have a BoundingBoxComponent', () => {
         // setComponent(testEntity, BoundingBoxComponent)  // Dont add the component this time
-        const inputState = getMutableState(InputState)
-        inputState.inputBoundingBoxes.set(new Set([testEntity]))
 
         const rayOrigin = new Vector3()
         const rayDirection = new Vector3(2, 2, 2)
         const data = new Set<IntersectionData>()
 
         // Run and check that nothing was added
-        boundingBoxHeuristic(data, rayOrigin, rayDirection)
+        boundingBoxHeuristic(viewerEntity, data, rayOrigin, rayDirection)
         assert.equal(data.size, 0)
       })
 
@@ -129,17 +108,15 @@ describe('ClientInputHeuristics', () => {
         const boxMax = new Vector3(3, 3, 3)
         const box = new Box3(boxMin, boxMax)
 
-        setComponent(testEntity, BoundingBoxComponent)
-        getMutableComponent(testEntity, BoundingBoxComponent).box.set(box)
-
-        const inputState = getMutableState(InputState)
-        inputState.inputBoundingBoxes.set(new Set([testEntity]))
+        setComponent(testEntity, VisibleComponent)
+        setComponent(testEntity, BoundingBoxComponent, { box })
+        setComponent(testEntity, InputComponent)
 
         const rayOrigin = new Vector3(0, 2, 2)
         const rayDirection = new Vector3(1, 0, 0).normalize()
         const data = new Set<IntersectionData>()
 
-        boundingBoxHeuristic(data, rayOrigin, rayDirection)
+        boundingBoxHeuristic(viewerEntity, data, rayOrigin, rayDirection)
         assertFloat.approxEq(1, Array.from(data)[0].distance)
         assert.equal(data.size, 1)
         const result = [...data]
@@ -151,6 +128,7 @@ describe('ClientInputHeuristics', () => {
         const otherEntity = createEntity()
         setComponent(otherEntity, TransformComponent)
         setComponent(otherEntity, VisibleComponent)
+        setComponent(otherEntity, EntityTreeComponent, { parentEntity: viewerEntity })
         type OwnedBox = { entity: Entity; box: Box3 }
         const box1Min = new Vector3(1.1, 1.1, 1.1)
         const box1Max = new Vector3(3.1, 3.1, 3.1)
@@ -164,18 +142,16 @@ describe('ClientInputHeuristics', () => {
         ] as OwnedBox[]
 
         for (const box of boxes) {
-          setComponent(box.entity, BoundingBoxComponent)
-          getMutableComponent(box.entity, BoundingBoxComponent).box.set(box.box)
+          setComponent(box.entity, VisibleComponent)
+          setComponent(box.entity, BoundingBoxComponent, { box: box.box })
+          setComponent(box.entity, InputComponent)
         }
-
-        const inputState = getMutableState(InputState)
-        inputState.inputBoundingBoxes.set(new Set([testEntity, otherEntity]))
 
         const rayOrigin = new Vector3()
         const rayDirection = new Vector3(2, 2, 2)
         const data = new Set<IntersectionData>()
 
-        boundingBoxHeuristic(data, rayOrigin, rayDirection)
+        boundingBoxHeuristic(viewerEntity, data, rayOrigin, rayDirection)
         assert.equal(data.size, boxes.length)
         const result = [...data]
         for (let id = 0; id < boxes.length; ++id) {
@@ -187,12 +163,17 @@ describe('ClientInputHeuristics', () => {
   })
 
   describe('meshHeuristic', () => {
+    let viewerEntity = UndefinedEntity
+
     beforeEach(() => {
       createEngine()
       mockSpatialEngine()
+      viewerEntity = createEntity()
+      setComponent(viewerEntity, RendererComponent, { scenes: [viewerEntity] })
     })
 
     afterEach(() => {
+      removeEntity(viewerEntity)
       destroySpatialEngine()
       destroySpatialViewer()
       return destroyEngine()
@@ -205,13 +186,16 @@ describe('ClientInputHeuristics', () => {
         setComponent(one, TransformComponent, { position: new Vector3(1, 1, 1) })
         setComponent(one, VisibleComponent)
         setComponent(one, MeshComponent, box1)
-        addObjectToGroup(one, box1)
+        setComponent(one, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(one, InputComponent)
+
         const box2 = new Mesh(new BoxGeometry(0.5, 0.5, 0.5))
         const two = createEntity()
         setComponent(two, TransformComponent, { position: new Vector3(2, 2, 2) })
         setComponent(two, VisibleComponent)
         setComponent(two, MeshComponent, box2)
-        addObjectToGroup(two, box2)
+        setComponent(two, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(two, InputComponent)
         const KnownEntities = [one, two]
 
         getMutableState(EngineState).isEditing.set(true)
@@ -221,42 +205,13 @@ describe('ClientInputHeuristics', () => {
         const rayOrigin = new Vector3(0, 0, 0)
         const rayDirection = new Vector3(1, 1, 1).normalize()
 
-        meshHeuristic(data, rayOrigin, rayDirection)
+        meshHeuristic(viewerEntity, data, rayOrigin, rayDirection)
         /** @todo find out why there are 7 hits returned... */
         assert.notEqual(data.size, 0)
         for (const hit of [...data]) {
           assert.equal(KnownEntities.includes(hit.entity), true)
           assertFloat.approxNotEq(hit.distance, 0)
         }
-      })
-
-      it('should not do anything if the object hit does not have an entity or an ancestor with an entity', () => {
-        const box1 = new Mesh(new BoxGeometry(2, 2, 2))
-        const one = createEntity()
-        setComponent(one, TransformComponent, { position: new Vector3(3.1, 3.1, 3.1) })
-        setComponent(one, VisibleComponent)
-        setComponent(one, MeshComponent, box1)
-        setComponent(one, GroupComponent)
-        addObjectToGroup(one, box1)
-        const box2 = new Mesh(new BoxGeometry(2, 2, 2))
-        const two = createEntity()
-        setComponent(two, TransformComponent, { position: new Vector3(3.2, 3.2, 3.2) })
-        setComponent(two, VisibleComponent)
-        setComponent(two, MeshComponent, box2)
-        setComponent(two, GroupComponent)
-        addObjectToGroup(two, box2)
-
-        const data = new Set<IntersectionData>()
-
-        const rayOrigin = new Vector3(0, 0, 0)
-        const rayDirection = new Vector3(3.5, 3.5, 3.5).normalize()
-
-        // Remove the ancestor so that the `if (!parentObject) continue` code branch is hit
-        box1.entity = undefined! as Entity
-        box2.entity = undefined! as Entity
-        // Run and check that nothing was added
-        meshHeuristic(data, rayOrigin, rayDirection)
-        assert.equal(data.size, 0)
       })
     })
 
@@ -266,62 +221,32 @@ describe('ClientInputHeuristics', () => {
         const box1 = new Mesh(new BoxGeometry(2, 2, 2))
         const one = createEntity()
         setComponent(one, TransformComponent, { position: new Vector3(3.1, 3.1, 3.1) })
-        // setComponent(one, VisibleComponent)  // Do not make it visible, so it doesn't hit the meshesQuery
+        setComponent(one, VisibleComponent)
         setComponent(one, MeshComponent, box1)
-        setComponent(one, GroupComponent)
-        addObjectToGroup(one, box1)
+        setComponent(one, ObjectComponent, box1)
+        setComponent(one, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(one, InputComponent)
         const box2 = new Mesh(new BoxGeometry(2, 2, 2))
         const two = createEntity()
         setComponent(two, TransformComponent, { position: new Vector3(3.2, 3.2, 3.2) })
-        // setComponent(two, VisibleComponent)  // Do not make it visible, so it doesn't hit the meshesQuery
+        setComponent(two, VisibleComponent)
         setComponent(two, MeshComponent, box2)
-        setComponent(two, GroupComponent)
-        addObjectToGroup(two, box2)
+        setComponent(two, ObjectComponent, box2)
+        setComponent(two, EntityTreeComponent, { parentEntity: viewerEntity })
+        setComponent(two, InputComponent)
         const KnownEntities = [one, two]
-        getMutableState(InputState).inputMeshes.set(new Set(KnownEntities))
 
         const data = new Set<IntersectionData>()
 
         const rayOrigin = new Vector3(0, 0, 0)
         const rayDirection = new Vector3(3, 3, 3).normalize()
 
-        meshHeuristic(data, rayOrigin, rayDirection)
+        meshHeuristic(viewerEntity, data, rayOrigin, rayDirection)
         assert.notEqual(data.size, 0)
         for (const hit of [...data]) {
           assert.equal(KnownEntities.includes(hit.entity), true)
           assertFloat.approxNotEq(hit.distance, 0)
         }
-      })
-
-      it('should not do anything if the object hit does not have an entity or an ancestor with an entity', () => {
-        const box1 = new Mesh(new BoxGeometry(2, 2, 2))
-        const one = createEntity()
-        setComponent(one, TransformComponent, { position: new Vector3(3.1, 3.1, 3.1) })
-        // setComponent(one, VisibleComponent)  // Do not make it visible, so it doesn't hit the meshesQuery
-        setComponent(one, MeshComponent, box1)
-        setComponent(one, GroupComponent)
-        addObjectToGroup(one, box1)
-        const box2 = new Mesh(new BoxGeometry(2, 2, 2))
-        const two = createEntity()
-        setComponent(two, TransformComponent, { position: new Vector3(3.2, 3.2, 3.2) })
-        // setComponent(two, VisibleComponent)  // Do not make it visible, so it doesn't hit the meshesQuery
-        setComponent(two, MeshComponent, box2)
-        setComponent(two, GroupComponent)
-        addObjectToGroup(two, box2)
-        const KnownEntities = [one, two]
-        getMutableState(InputState).inputMeshes.set(new Set(KnownEntities))
-
-        const data = new Set<IntersectionData>()
-
-        const rayOrigin = new Vector3(0, 0, 0)
-        const rayDirection = new Vector3(3, 3, 3).normalize()
-
-        // Remove the ancestor so that the `if (!parentObject) continue` code branch is hit
-        box1.entity = undefined! as Entity
-        box2.entity = undefined! as Entity
-        // Run and check that nothing was added
-        meshHeuristic(data, rayOrigin, rayDirection)
-        assert.equal(data.size, 0)
       })
     })
   })
@@ -339,15 +264,15 @@ describe('ClientInputHeuristics', () => {
       return destroyEngine()
     })
 
-    describe('when both XRState.isCameraAttachedToAvatar and `@param isSpatialInput` are truthy ...', () => {
-      const isCameraAttachedToAvatar = true
+    describe('when both XRState.shouldViewerFollowController and `@param isSpatialInput` are truthy ...', () => {
+      const shouldViewerFollowController = true
       const isSpatialInput = true
-      const avatarCameraMode = isCameraAttachedToAvatar ? 'attached' : 'auto'
+      const avatarCameraMode = shouldViewerFollowController ? 'attached' : 'auto'
 
       it('... should store the inputEntity and its distanceSquared to the inputSourceEntity into the `@param intersectionData` for every spatialInputObjectQuery entity that is within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -366,16 +291,19 @@ describe('ClientInputHeuristics', () => {
       })
 
       it("... should not store the User's avatar entity into the `@param intersectionData` set, even when there is an inputSourceEntity that is within the proximity threshold", () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
         setComponent(sourceEntity, TransformComponent)
         const sorted = [] as IntersectionData[]
         const intersections = new Set<IntersectionData>()
-        const UUID = (Engine.instance.userID + '_avatar') as EntityUUID
+        const UUID = {
+          entitySourceID: getState(EngineState).userID as any as SourceID,
+          entityID: 'avatar' as EntityID
+        } as EntityUUIDPair
         const testEntity = createEntity()
         setComponent(testEntity, VisibleComponent)
         setComponent(testEntity, TransformComponent)
@@ -388,9 +316,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not find any intersections when `@param sourceEid` entity is undefined ', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = UndefinedEntity
@@ -403,9 +331,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should add the entity found to the first element of `@param sortedEntities` when there is only one entity within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -424,9 +352,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not add anything to `@param sortedEntities` if no entities were found within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -445,16 +373,16 @@ describe('ClientInputHeuristics', () => {
         sorted = [] as IntersectionData[]
 
         setComponent(sourceEntity, TransformComponent, { position: new Vector3(1, 1, 1) })
-        computeTransformMatrix(sourceEntity)
+        TransformComponent.computeTransformMatrix(sourceEntity)
         findProximity(isSpatialInput, sourceEntity, sorted, intersections)
         const afterTwo = sorted.length
         assert.equal(afterTwo, 1)
       })
 
       it('... should sort the entities by distance and add the closest entity found to the first element of `@param sortedEntities` when there is more than one entity within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -477,9 +405,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should only add one entity to the `@param sortedEntities` list when multiple entities are found within the proximity threshold', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -502,15 +430,15 @@ describe('ClientInputHeuristics', () => {
       })
     })
 
-    describe('when XRControlsState.isCameraAttachedToAvatar is truthy and `@param isSpatialInput` is falsy ...', () => {
-      const isCameraAttachedToAvatar = true
+    describe('when XRControlsState.shouldViewerFollowController is truthy and `@param isSpatialInput` is falsy ...', () => {
+      const shouldViewerFollowController = true
       const isSpatialInput = false
-      const avatarCameraMode = isCameraAttachedToAvatar ? 'attached' : 'auto'
+      const avatarCameraMode = shouldViewerFollowController ? 'attached' : 'auto'
 
       it('... should not store the avatarEntity into the `@param intersectionData`', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -524,7 +452,10 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Make the entity the selfAvatarEntity
         getMutableState(EngineState).userID.set('testUserID' as UserID)
-        const UUID = (Engine.instance.userID + '_avatar') as EntityUUID
+        const UUID = {
+          entitySourceID: getState(EngineState).userID as any,
+          entityID: 'avatar' as EntityID
+        } as EntityUUIDPair
         setComponent(testEntity, UUIDComponent, UUID)
 
         // Run and Check the result
@@ -534,9 +465,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it("... should not store the User's avatar entity into the `@param intersectionData` set, even when there is an inputSourceEntity that is within the proximity threshold", () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -550,7 +481,10 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Make the entity the selfAvatarEntity
         getMutableState(EngineState).userID.set('testUserID' as UserID)
-        const UUID = (Engine.instance.userID + '_avatar') as EntityUUID
+        const UUID = {
+          entitySourceID: getState(EngineState).userID as any,
+          entityID: 'avatar' as EntityID
+        } as EntityUUIDPair
         setComponent(testEntity, UUIDComponent, UUID)
 
         // Run and Check the result
@@ -560,9 +494,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not find any intersections when selfAvatarEntity entity is undefined', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -576,9 +510,9 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Do not make the testEntity an Avatar entity, so that it is undefined
         // getMutableState(EngineState).userID.set("testUserID" as UserID)
-        // const UUID = Engine.instance.userID + '_avatar' as EntityUUID
+        // const UUID = getState(EngineState).userID + '_avatar' as EntityUUID
         // setComponent(testEntity, UUIDComponent, UUID)
-        const selfAvatarEntity = UUIDComponent.getEntityByUUID((Engine.instance.userID + '_avatar') as EntityUUID)
+        const selfAvatarEntity = UUIDComponent.getEntityByUUID((getState(EngineState).userID + 'avatar') as EntityUUID)
         assert.equal(selfAvatarEntity, UndefinedEntity)
 
         // Run and Check the result
@@ -587,15 +521,15 @@ describe('ClientInputHeuristics', () => {
       })
     })
 
-    describe('when XRControlsState.isCameraAttachedToAvatar is falsy and `@param isSpatialInput` is truthy ...', () => {
-      const isCameraAttachedToAvatar = false
+    describe('when XRControlsState.shouldViewerFollowController is falsy and `@param isSpatialInput` is truthy ...', () => {
+      const shouldViewerFollowController = false
       const isSpatialInput = true
-      const avatarCameraMode = isCameraAttachedToAvatar ? 'attached' : 'auto'
+      const avatarCameraMode = shouldViewerFollowController ? 'attached' : 'auto'
 
       it('... should not store the avatarEntity into the `@param intersectionData`', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -609,7 +543,10 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Make the entity the selfAvatarEntity
         getMutableState(EngineState).userID.set('testUserID' as UserID)
-        const UUID = (Engine.instance.userID + '_avatar') as EntityUUID
+        const UUID = {
+          entitySourceID: getState(EngineState).userID as any,
+          entityID: 'avatar' as EntityID
+        } as EntityUUIDPair
         setComponent(testEntity, UUIDComponent, UUID)
 
         // Run and Check the result
@@ -619,9 +556,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it("... should not store the User's avatar entity into the `@param intersectionData` set, even when there is an inputSourceEntity that is within the proximity threshold", () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -631,7 +568,10 @@ describe('ClientInputHeuristics', () => {
 
         const testEntity = createEntity()
         getMutableState(EngineState).userID.set('testUserID' as UserID)
-        const UUID = (Engine.instance.userID + '_avatar') as EntityUUID
+        const UUID = {
+          entitySourceID: getState(EngineState).userID as any,
+          entityID: 'avatar' as EntityID
+        } as EntityUUIDPair
         setComponent(testEntity, UUIDComponent, UUID)
         setComponent(testEntity, VisibleComponent)
         setComponent(testEntity, TransformComponent)
@@ -643,9 +583,9 @@ describe('ClientInputHeuristics', () => {
       })
 
       it('... should not find any intersections when selfAvatarEntity entity is undefined', () => {
-        if (isCameraAttachedToAvatar) {
+        if (shouldViewerFollowController) {
           getMutableState(XRState).merge({ avatarCameraMode, session: {} as XRSession })
-          assert.equal(XRState.isCameraAttachedToAvatar, isCameraAttachedToAvatar)
+          assert.equal(XRState.shouldViewerFollowController, shouldViewerFollowController)
         }
 
         const sourceEntity = createEntity()
@@ -659,9 +599,9 @@ describe('ClientInputHeuristics', () => {
         setComponent(testEntity, InputComponent)
         // Do not make the testEntity an Avatar entity, so that it is undefined
         // getMutableState(EngineState).userID.set("testUserID" as UserID)
-        // const UUID = Engine.instance.userID + '_avatar' as EntityUUID
+        // const UUID = getState(EngineState).userID + '_avatar' as EntityUUID
         // setComponent(testEntity, UUIDComponent, UUID)
-        const selfAvatarEntity = UUIDComponent.getEntityByUUID((Engine.instance.userID + '_avatar') as EntityUUID)
+        const selfAvatarEntity = UUIDComponent.getEntityByUUID((getState(EngineState).userID + '_avatar') as EntityUUID)
         assert.equal(selfAvatarEntity, UndefinedEntity)
 
         // Run and Check the result

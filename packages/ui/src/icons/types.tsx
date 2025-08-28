@@ -1,0 +1,3 @@
+export type SVGIconType = React.ForwardRefExoticComponent<
+  Omit<React.SVGProps<SVGSVGElement>, 'ref'> & React.RefAttributes<SVGSVGElement>
+>

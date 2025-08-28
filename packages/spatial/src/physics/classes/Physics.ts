@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import RAPIER, {
   ActiveCollisionTypes,
   ActiveEvents,
@@ -43,6 +18,7 @@ import RAPIER, {
 import {
   Box3,
   BufferAttribute,
+  InterleavedBufferAttribute,
   Matrix4,
   OrthographicCamera,
   PerspectiveCamera,
@@ -51,25 +27,22 @@ import {
   Vector3
 } from 'three'
 
-import {
-  getComponent,
-  getOptionalComponent,
-  hasComponent,
-  setComponent,
-  useOptionalComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { getComponent, getOptionalComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import {
+  NetworkObjectAuthorityTag,
+  NetworkObjectComponent,
+  getAncestorWithComponents,
+  useAncestorWithComponents
+} from '@ir-engine/ecs'
 import { NO_PROXY, defineState, getMutableState, getState, none, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkObjectAuthorityTag, NetworkObjectComponent } from '@ir-engine/network'
+import { deinterleaveAttribute } from '../../common/classes/BufferGeometryUtils'
 import { Q_IDENTITY, Vector3_Zero } from '../../common/constants/MathConstants'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
-import { getAncestorWithComponents, useAncestorWithComponents } from '../../transform/components/EntityTree'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { computeTransformMatrix } from '../../transform/systems/TransformSystem'
 import { ColliderComponent } from '../components/ColliderComponent'
 import { CollisionComponent } from '../components/CollisionComponent'
 import { RigidBodyComponent } from '../components/RigidBodyComponent'
@@ -88,9 +61,8 @@ import {
 } from '../types/PhysicsTypes'
 
 export type PhysicsWorld = World & {
-  id: EntityUUID
+  id: Entity
   substeps: number
-  cameraAttachedRigidbodyEntity: Entity
   Colliders: Map<Entity, Collider>
   Rigidbodies: Map<Entity, RigidBody>
   Controllers: Map<Entity, KinematicCharacterController>
@@ -115,15 +87,14 @@ async function load() {
 
 export const RapierWorldState = defineState({
   name: 'ir.spatial.physics.RapierWorldState',
-  initial: {} as Record<EntityUUID, PhysicsWorld>
+  initial: {} as Record<Entity, PhysicsWorld>
 })
 
-function createWorld(id: EntityUUID, args = { gravity: { x: 0.0, y: -9.81, z: 0.0 }, substeps: 1 }) {
+function createWorld(id: Entity, args = { gravity: { x: 0.0, y: -9.81, z: 0.0 }, substeps: 1 }) {
   const world = new World(args.gravity) as PhysicsWorld
 
   world.id = id
   world.substeps = args.substeps
-  world.cameraAttachedRigidbodyEntity = UndefinedEntity
 
   const Colliders = new Map<Entity, Collider>()
   const Rigidbodies = new Map<Entity, RigidBody>()
@@ -142,7 +113,7 @@ function createWorld(id: EntityUUID, args = { gravity: { x: 0.0, y: -9.81, z: 0.
   return world
 }
 
-function destroyWorld(id: EntityUUID) {
+function destroyWorld(id: Entity) {
   const world = getState(RapierWorldState)[id]
   if (!world) throw new Error('Physics world not found')
   getMutableState(RapierWorldState)[id].set(none)
@@ -155,16 +126,13 @@ function destroyWorld(id: EntityUUID) {
 function getWorld(entity: Entity) {
   const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
   if (!sceneEntity) return
-  const sceneUUID = getOptionalComponent(sceneEntity, UUIDComponent)
-  if (!sceneUUID) return
-  return getState(RapierWorldState)[sceneUUID]
+  return getState(RapierWorldState)[sceneEntity]
 }
 
 function useWorld(entity: Entity) {
   const sceneEntity = useAncestorWithComponents(entity, [SceneComponent])
-  const sceneUUID = useOptionalComponent(sceneEntity, UUIDComponent)?.value
   const worlds = useHookstate(getMutableState(RapierWorldState))
-  return sceneUUID ? (worlds[sceneUUID].get(NO_PROXY) as PhysicsWorld) : undefined
+  return sceneEntity ? (worlds[sceneEntity].get(NO_PROXY) as PhysicsWorld) : undefined
 }
 
 function smoothKinematicBody(physicsWorld: PhysicsWorld, entity: Entity, dt: number, substep: number) {
@@ -222,11 +190,11 @@ const scale = new Vector3()
 const mat4 = new Matrix4()
 
 function createRigidBody(world: PhysicsWorld, entity: Entity) {
-  computeTransformMatrix(entity)
+  TransformComponent.computeTransformMatrix(entity)
   TransformComponent.getMatrixRelativeToScene(entity, mat4)
   mat4.decompose(position, rotation, scale)
 
-  TransformComponent.dirtyTransforms[entity] = false
+  TransformComponent.dirty[entity] = 0
 
   const rigidBody = getComponent(entity, RigidBodyComponent)
 
@@ -418,20 +386,12 @@ function applyImpulse(world: PhysicsWorld, entity: Entity, impulse: Vector3) {
   rigidBody.applyImpulse(impulse, true)
 }
 
-function createColliderDesc(
-  world: PhysicsWorld,
-  entity: Entity,
-  rootEntity: Entity,
-  colliderEntityOverride: Entity = UndefinedEntity
-) {
+function createColliderDesc(world: PhysicsWorld, entity: Entity, rootEntity: Entity) {
   if (!world.Rigidbodies.has(rootEntity)) return
 
   const mesh = getOptionalComponent(entity, MeshComponent)
 
-  const colliderComponent = getComponent(
-    colliderEntityOverride !== UndefinedEntity ? colliderEntityOverride : entity,
-    ColliderComponent
-  )
+  const colliderComponent = getComponent(entity, ColliderComponent)
 
   let shape: ShapeType
 
@@ -620,8 +580,13 @@ function createColliderDesc(
       if (!mesh?.geometry)
         return console.warn('[Physics]: Tried to load tri mesh but did not find a geometry', mesh) as any
       try {
-        const _buff = mesh.geometry.clone().scale(Math.abs(scale.x), Math.abs(scale.y), Math.abs(scale.z))
-        const vertices = new Float32Array((_buff.attributes.position as BufferAttribute).array)
+        /** @todo add support for interleaved buffers */
+        const _buff = mesh.geometry.clone().scale(scale.x, scale.y, scale.z)
+        let positionAttr = _buff.attributes.position
+        if ((positionAttr as InterleavedBufferAttribute).isInterleavedBufferAttribute) {
+          positionAttr = deinterleaveAttribute(positionAttr as InterleavedBufferAttribute)
+        }
+        const vertices = Float32Array.from(positionAttr.array)
         const indices = new Uint32Array(_buff.index!.array)
         colliderDesc = ColliderDesc.trimesh(vertices, indices)
         colliderDesc.setRotation(quaternionRelativeToRoot)
@@ -808,7 +773,7 @@ function removeCharacterController(world: PhysicsWorld, entity: Entity) {
 }
 
 /**
- * @deprecated - will be populated on AvatarControllerComponent
+ * @deprecated will be populated on AvatarControllerComponent
  */
 function getControllerOffset(world: PhysicsWorld, entity: Entity) {
   const controller = world.Controllers.get(entity)
@@ -865,7 +830,7 @@ const _vector3 = new Vector3()
  * Raycast from a world position and direction
  */
 function castRay(world: PhysicsWorld, raycastQuery: RaycastArgs, filterPredicate?: (collider: Collider) => boolean) {
-  const worldEntity = UUIDComponent.getEntityByUUID(world.id)
+  const worldEntity = world.id
   const worldTransform = getComponent(worldEntity, TransformComponent)
   _worldInverseMatrix.copy(worldTransform.matrixWorld).invert()
 
@@ -923,7 +888,7 @@ function castRayFromCamera(
   raycastQuery: RaycastArgs,
   filterPredicate?: (collider: Collider) => boolean
 ) {
-  const worldEntity = UUIDComponent.getEntityByUUID(world.id)
+  const worldEntity = world.id
   const worldTransform = getComponent(worldEntity, TransformComponent)
 
   if ((camera as PerspectiveCamera).isPerspectiveCamera) {
@@ -946,6 +911,47 @@ function castRayFromCamera(
     raycastQuery.direction.set(0, 0, -1).transformDirection(_orthographicCamera.matrixWorld)
   }
   return Physics.castRay(world, raycastQuery, filterPredicate)
+}
+
+function getIntersectionsWithRay(world: PhysicsWorld, raycastQuery: RaycastArgs) {
+  const worldEntity = world.id
+  const worldTransform = getComponent(worldEntity, TransformComponent)
+  _worldInverseMatrix.copy(worldTransform.matrixWorld).invert()
+
+  const ray = new Ray(
+    _origin.copy(raycastQuery.origin).applyMatrix4(_worldInverseMatrix),
+    _direction
+      .copy(raycastQuery.direction)
+      .applyQuaternion(_quaternion.copy(worldTransform.rotation).invert())
+      .multiply(_vector3.set(1 / worldTransform.scale.x, 1 / worldTransform.scale.y, 1 / worldTransform.scale.z))
+  )
+  const maxToi = raycastQuery.maxDistance
+  const solid = true // TODO: Add option for this in args
+  const groups = raycastQuery.groups
+  const flags = raycastQuery.flags
+
+  const hits = [] as RaycastHit[]
+
+  world.intersectionsWithRay(
+    ray,
+    maxToi,
+    solid,
+    (hit) => {
+      hits.push({
+        collider: hit.collider,
+        distance: hit.toi,
+        position: ray.pointAt(hit.toi),
+        normal: hit.normal,
+        body: hit.collider.parent() as RigidBody,
+        entity: hit.collider.parent()?.entity ?? UndefinedEntity
+      })
+      return true
+    },
+    flags,
+    groups
+  )
+
+  return hits
 }
 
 export type ShapecastArgs = {
@@ -1104,6 +1110,7 @@ export const Physics = {
   castRay,
   castRayFromCamera,
   castShape,
+  getIntersectionsWithRay,
   /** Collisions */
   createCollisionEventQueue,
   drainCollisionEventQueue,

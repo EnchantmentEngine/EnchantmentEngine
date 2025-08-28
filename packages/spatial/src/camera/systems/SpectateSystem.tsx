@@ -1,54 +1,31 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import { MathUtils } from 'three'
 
 import {
-  Engine,
+  EngineState,
   EntityUUID,
   getComponent,
   getOptionalComponent,
-  matchesEntityUUID,
+  matchesEntityID,
   removeComponent,
   setComponent,
-  UUIDComponent
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
 import {
   defineAction,
   defineState,
   getMutableState,
   getState,
+  matchesUserID,
+  NetworkTopics,
   none,
   useHookstate,
   useMutableState,
   UserID
 } from '@ir-engine/hyperflux'
-import { matchesUserID, NetworkTopics, WorldNetworkAction } from '@ir-engine/network'
 
-import { EngineState } from '../../EngineState'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { FlyControlComponent } from '../components/FlyControlComponent'
@@ -57,7 +34,7 @@ export class SpectateActions {
   static spectateEntity = defineAction({
     type: 'ee.engine.Engine.SPECTATE_USER' as const,
     spectatorUserID: matchesUserID,
-    spectatingEntity: matchesEntityUUID.optional(),
+    spectatingEntity: matchesEntityID.optional(),
     $topic: NetworkTopics.world
   })
 
@@ -96,17 +73,17 @@ export const SpectateEntityState = defineState({
   reactor: () => {
     const state = useMutableState(SpectateEntityState)
 
-    if (!state.value[Engine.instance.userID]) return null
+    if (!state.value[getState(EngineState).userID]) return null
 
     return <SpectatorReactor />
   }
 })
 
 const SpectatorReactor = () => {
-  const state = useHookstate(getMutableState(SpectateEntityState)[Engine.instance.userID])
+  const state = useHookstate(getMutableState(SpectateEntityState)[getState(EngineState).userID])
 
   useEffect(() => {
-    const cameraEntity = getState(EngineState).viewerEntity
+    const cameraEntity = getState(ReferenceSpaceState).viewerEntity
 
     if (!state.spectating.value) {
       setComponent(cameraEntity, FlyControlComponent, {
@@ -132,7 +109,7 @@ const SpectatingUserReactor = (props: { entityUUID: EntityUUID }) => {
   useEffect(() => {
     if (!spectateEntity) return
 
-    const cameraEntity = getState(EngineState).viewerEntity
+    const cameraEntity = getState(ReferenceSpaceState).viewerEntity
     const cameraTransform = getComponent(cameraEntity, TransformComponent)
     setComponent(cameraEntity, ComputedTransformComponent, {
       referenceEntities: [spectateEntity],

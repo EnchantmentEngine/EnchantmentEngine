@@ -1,69 +1,46 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { getAllEntities, getEntityComponents } from 'bitecs'
+import { getAllEntities, getEntityComponents } from '@ir-engine/ecs'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONTree } from 'react-json-tree'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { EntityTreeComponent, UUIDComponent, entityExists } from '@ir-engine/ecs'
 import {
   Component,
   ComponentMap,
+  Layers,
   getComponent,
   getOptionalComponent,
   hasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { entityExists } from '@ir-engine/ecs/src/EntityFunctions'
-import { defineQuery, removeQuery } from '@ir-engine/ecs/src/QueryFunctions'
+import { SuspendedQueryChildState, defineQuery, removeQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { GLTFSourceState } from '@ir-engine/engine/src/gltf/GLTFState'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import {
   HyperFlux,
   NO_PROXY,
   defineState,
-  getState,
   syncStateWithLocalStorage,
   useHookstate,
   useMutableState
 } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { Input } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { useFrameUpdate } from './useFrameUpdate'
 
-const renderEntityTreeRoots = () => {
+const renderEntityTreeRoots = (roots: Entity[]) => {
   return Object.fromEntries(
-    Object.values(getState(GLTFSourceState))
+    roots
       .map((entity, i) => {
         if (!entity || !entityExists(entity)) return []
         return [
-          `${entity} - ${getOptionalComponent(entity, NameComponent) ?? getOptionalComponent(entity, UUIDComponent)}`,
+          `${entity} - ${
+            getOptionalComponent(entity, NameComponent) ??
+            (hasComponent(entity, UUIDComponent) && UUIDComponent.get(entity)) ??
+            'Unknown'
+          }`,
           renderEntityTree(entity)
         ]
       })
@@ -81,7 +58,9 @@ const renderEntityTree = (entity: Entity) => {
             (r, child) =>
               Object.assign(r, {
                 [`${child} - ${
-                  getOptionalComponent(child, NameComponent) ?? getOptionalComponent(child, UUIDComponent)
+                  getOptionalComponent(child, NameComponent) ??
+                  (hasComponent(child, UUIDComponent) && UUIDComponent.get(child)) ??
+                  'Unknown'
                 }`]: renderEntityTree(child)
               }),
             {}
@@ -122,7 +101,9 @@ const renderAllEntities = (filter: string, queryString: string) => {
           if (!entityExists(eid)) return null!
 
           const label = `${eid} - ${
-            getOptionalComponent(eid, NameComponent) ?? getOptionalComponent(eid, UUIDComponent) ?? ''
+            getOptionalComponent(eid, NameComponent) ??
+            (hasComponent(eid, UUIDComponent) && UUIDComponent.get(eid)) ??
+            ''
           }`
 
           if (
@@ -147,17 +128,40 @@ const EntitySearchState = defineState({
   extension: syncStateWithLocalStorage(['search', 'query'])
 })
 
+const shouldExpandNodeInitially = (keyPath: any, data: any, level: number) => level < 2
+
+const simulationSources = defineQuery([GLTFComponent])
+const authoringSources = defineQuery([GLTFComponent], Layers.Authoring)
+
 export const EntityDebug = () => {
   const { t } = useTranslation()
 
+  useFrameUpdate()
+
   const namedEntities = useHookstate({})
   const erroredComponents = useHookstate([] as any[])
-  const entityTree = useHookstate({} as any)
+  const suspendedEntities = useMutableState(SuspendedQueryChildState)
+    .get(NO_PROXY)
+    .map((c) => [c.entity, { props: c.props, reactor: c.ChildEntityReactor }] as [Entity, any])
+    .reduce(
+      (acc, v) => {
+        const [entity, vals] = v
+        const entityLabel = `${
+          getOptionalComponent(entity, NameComponent) ?? getOptionalComponent(entity, UUIDComponent)
+        } - ${entity}`
+        if (!(entityLabel in acc)) acc[entityLabel] = []
+        acc[entityLabel].push(vals)
+        return acc
+      },
+      {} as Record<Entity, Array<any>>
+    )
+
+  const entityTree = useHookstate({ siimulation: {}, authoring: {} } as any)
   const entitySearch = useMutableState(EntitySearchState).search
   const entityQuery = useMutableState(EntitySearchState).query
 
   erroredComponents.set(
-    [...Engine.instance.store.activeReactors.values()]
+    [...HyperFlux.store.activeReactors.values()]
       .filter((reactor) => (reactor as any).entity && reactor.errors.length)
       .map((reactor) => {
         return reactor.errors.map((error) => {
@@ -174,7 +178,10 @@ export const EntityDebug = () => {
   useExecute(
     () => {
       namedEntities.set(renderAllEntities(entitySearch.value, entityQuery.value))
-      entityTree.set(renderEntityTreeRoots())
+      entityTree.set({
+        simulation: renderEntityTreeRoots(simulationSources()),
+        authoring: renderEntityTreeRoots(authoringSources())
+      })
     },
     { after: PresentationSystemGroup }
   )
@@ -182,11 +189,15 @@ export const EntityDebug = () => {
   return (
     <div className="m-1 bg-neutral-600 p-1">
       <div className="my-1">
-        <Text>{t('common:debug.scenes')}</Text>
-        <JSONTree data={entityTree.get(NO_PROXY)} postprocessValue={(v: any) => v?.value ?? v} />
+        <Text className="text-text-primary-button">{t('common:debug.scenes')}</Text>
+        <JSONTree
+          data={entityTree.get(NO_PROXY)}
+          shouldExpandNodeInitially={shouldExpandNodeInitially}
+          postprocessValue={(v: any) => v?.value ?? v}
+        />
       </div>
       <div className="my-1">
-        <Text>{t('common:debug.entities')}</Text>
+        <Text className="text-text-primary-button">{t('common:debug.entities')}</Text>
         <Input
           placeholder="Search..."
           value={entitySearch.value}
@@ -196,7 +207,11 @@ export const EntityDebug = () => {
         <JSONTree data={namedEntities.get(NO_PROXY)} />
       </div>
       <div className="my-1">
-        <Text>{t('common:debug.erroredEntities')}</Text>
+        <Text className="text-text-primary-button">{t('common:debug.suspendedEntities')}</Text>
+        <JSONTree data={suspendedEntities} />
+      </div>
+      <div className="my-1">
+        <Text className="text-text-primary-button">{t('common:debug.erroredEntities')}</Text>
         <JSONTree data={erroredComponents.get(NO_PROXY)} />
       </div>
     </div>

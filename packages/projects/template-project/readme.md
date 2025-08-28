@@ -1,3 +1,3 @@
-### iR Engine Project
+### Enchantment Engine Project
 
-This is an iR Engine project.
+This is an Enchantment Engine project.

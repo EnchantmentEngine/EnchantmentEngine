@@ -1,32 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BadRequest } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import { disallow, discard, discardQuery, iff, iffElse, isProvider, keepQuery } from 'feathers-hooks-common'
-
 import { locationAdminPath } from '@ir-engine/common/src/schemas/social/location-admin.schema'
 import { locationAuthorizedUserPath } from '@ir-engine/common/src/schemas/social/location-authorized-user.schema'
 import { locationSettingPath } from '@ir-engine/common/src/schemas/social/location-setting.schema'
@@ -40,7 +13,9 @@ import {
   LocationType
 } from '@ir-engine/common/src/schemas/social/location.schema'
 import { UserID } from '@ir-engine/common/src/schemas/user/user.schema'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import verifyScope from '@ir-engine/server-core/src/hooks/verify-scope'
+import { disallow, discard, discardQuery, iff, iffElse, isProvider, keepQuery } from 'feathers-hooks-common'
 
 import { projectHistoryPath, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { HookContext } from '../../../declarations'
@@ -151,6 +126,9 @@ const patchLocationSetting = async (context: HookContext<LocationService>) => {
         audioEnabled: data.locationSetting.audioEnabled,
         faceStreamingEnabled: data.locationSetting.faceStreamingEnabled,
         screenSharingEnabled: data.locationSetting.screenSharingEnabled,
+        /** @todo: Re-enable this when the engine has a working jump control/vr capabilities */
+        // jumpControlEnabled: data.locationSetting.jumpControlEnabled,
+        // vrEnabled: data.locationSetting.vrEnabled,
         locationType: data.locationSetting.locationType || 'public'
       },
       { query: { locationId: result.id } }
@@ -173,7 +151,8 @@ const removeLocationSetting = async (context: HookContext<LocationService>) => {
   if (context.id) {
     const location = await context.app.service(locationPath).get(context.id)
 
-    if (location.locationSetting) await context.app.service(locationSettingPath).remove(location.locationSetting.id)
+    if (location.locationSetting && isValidId(location.locationSetting.id))
+      await context.app.service(locationSettingPath).remove(location.locationSetting.id)
   }
 }
 

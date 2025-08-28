@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Paginated, RealTimeConnection } from '@feathersjs/feathers/lib'
 
 import '@feathersjs/transport-commons'
@@ -48,12 +23,21 @@ import {
   userPath,
   UserType
 } from '@ir-engine/common/src/schema.type.module'
-import { EntityUUID, getComponent, UUIDComponent } from '@ir-engine/ecs'
-import { Engine } from '@ir-engine/ecs/src/Engine'
+import { EntityID, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { GLTFAssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { dispatchAction, getMutableState, getState, HyperFlux, Identifiable, PeerID, State } from '@ir-engine/hyperflux'
-import { addNetwork, NetworkActions, NetworkState, NetworkTopics } from '@ir-engine/network'
+import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
+import {
+  dispatchAction,
+  getMutableState,
+  getState,
+  HyperFlux,
+  Identifiable,
+  NetworkActions,
+  NetworkState,
+  NetworkTopics,
+  PeerID,
+  State
+} from '@ir-engine/hyperflux'
 import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
 import { Application } from '@ir-engine/server-core/declarations'
 import config from '@ir-engine/server-core/src/appconfig'
@@ -65,7 +49,7 @@ import './InstanceServerModule'
 
 import { NotAuthenticated } from '@feathersjs/errors'
 import { projectsPath } from '@ir-engine/common/src/schemas/projects/projects.schema'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { EngineState } from '@ir-engine/ecs'
 import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine'
 import { InstanceServerState } from './InstanceServerState'
 import { authorizeUserToJoinServer, handleDisconnect, setupIPs } from './NetworkFunctions'
@@ -196,16 +180,14 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
   initializeSpatialEngine()
 
   await setupIPs()
-  const network = await initializeNetwork(app, hostId, Engine.instance.store.peerID, topic)
-
-  addNetwork(network)
+  const network = await initializeNetwork(app, hostId, HyperFlux.store.peerID, topic)
 
   dispatchAction(
     NetworkActions.peerJoined({
       $cache: true,
       $network: network.id,
       $topic: network.topic,
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       peerIndex: 0,
       userID: hostId
     })
@@ -230,13 +212,14 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
     const sceneUpdatedListener = async () => {
       const scene = await app.service(staticResourcePath).get(sceneId, { headers })
       if (unload) unload()
-      unload = GLTFAssetState.loadScene(scene.url, scene.id as EntityUUID)
-      const entity = UUIDComponent.getEntityByUUID(scene.id as EntityUUID)
-
+      unload = SceneState.loadScene(scene.url, scene.id)
+      const entity = UUIDComponent.getEntityByUUID(
+        UUIDComponent.join({ entityID: scene.id as EntityID, entitySourceID: 'root' as SourceID })
+      )
       /** @todo - quick hack to wait until scene has loaded */
       await new Promise<void>((resolve) => {
         const interval = setInterval(() => {
-          if (getComponent(entity, GLTFComponent).progress === 100) {
+          if (GLTFComponent.isSceneLoaded(entity)) {
             clearInterval(interval)
             resolve()
           }
@@ -425,7 +408,7 @@ const handleUserDisconnect = async ({
 
   app.channel(`instanceIds/${instanceId}`).leave(connection)
 
-  await new Promise((resolve) => setTimeout(resolve, config.instanceserver.shutdownDelayMs))
+  await new Promise((resolve) => setTimeout(resolve, config['instance-server'].shutdownDelayMs))
 
   const network = getServerNetwork(app)
 
@@ -505,9 +488,9 @@ export const onConnection = (app: Application) => async (connection: RealTimeCon
 
   if (userId) {
     const user = await app.service(userPath).get(userId)
-    // disallow users from joining media servers if they haven't accepted the TOS
-    if (channelId && !user.acceptedTOS) {
-      logger.warn('User tried to connect without accepting TOS')
+    // disallow users from joining media servers if they aren't age verified
+    if (channelId && !user.ageVerified) {
+      logger.warn('User tried to connect without specifying they are age verified')
       return
     }
   }

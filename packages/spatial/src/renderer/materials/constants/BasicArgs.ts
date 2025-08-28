@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   AdditiveBlending,
   AddOperation,
@@ -43,7 +18,7 @@ import {
 import { BoolArg, ColorArg, FloatArg, NormalizedFloatArg, SelectArg, TextureArg, Vec2Arg } from './DefaultArgs'
 
 export const BasicArgs = {
-  alphaTest: NormalizedFloatArg,
+  alphaTest: { ...NormalizedFloatArg, default: 0 },
   alphaMap: TextureArg,
   map: TextureArg,
   color: { ...ColorArg, default: new Color(1, 1, 1) },
@@ -70,9 +45,9 @@ export const BasicArgs = {
       { label: 'Both', value: DoubleSide }
     ]
   },
-  toneMapped: BoolArg,
-  transparent: BoolArg,
-  vertexColors: BoolArg
+  toneMapped: { default: true, type: 'boolean' },
+  transparent: { default: false, type: 'boolean' },
+  vertexColors: { default: false, type: 'boolean' }
 }
 
 export const BumpMapArgs = {
@@ -82,19 +57,19 @@ export const BumpMapArgs = {
 
 export const LightMapArgs = {
   lightMap: TextureArg,
-  lightMapIntensity: FloatArg
+  lightMapIntensity: { default: 1.0, type: 'float' }
 }
 
 export const DisplacementMapArgs = {
   displacementMap: TextureArg,
   displacementScale: { ...FloatArg, default: 1 },
-  displacementBias: FloatArg
+  displacementBias: { ...FloatArg, default: 0 }
 }
 
 export const EmissiveMapArgs = {
-  emissive: ColorArg,
+  emissive: { ...ColorArg, default: new Color(0, 0, 0) },
   emissiveMap: TextureArg,
-  emissiveIntensity: { ...FloatArg, default: 0 }
+  emissiveIntensity: { ...FloatArg, default: 1.0 }
 }
 
 export const EnvMapArgs = {
@@ -109,17 +84,17 @@ export const EnvMapArgs = {
   },
   envMap: TextureArg,
   envMapIntensity: { ...FloatArg, default: 1.0 },
-  reflectivity: FloatArg,
+  reflectivity: { ...FloatArg, default: 1 },
   refractionRatio: { ...FloatArg, default: 0.98 }
 }
 
 export const AoMapArgs = {
   aoMap: TextureArg,
-  aoMapIntensity: NormalizedFloatArg
+  aoMapIntensity: { ...NormalizedFloatArg, default: 1 }
 }
 
 export const MetalnessMapArgs = {
-  metalness: FloatArg,
+  metalness: { ...FloatArg, default: 0 },
   metalnessMap: TextureArg
 }
 

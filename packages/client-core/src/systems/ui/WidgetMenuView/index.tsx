@@ -1,42 +1,19 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 // import { VrIcon } from '../../../common/components/Icons/VrIcon'
 import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAvatar'
 import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
-import { createState, dispatchAction, getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getMutableState, hookstate, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
-import Icon from '@ir-engine/ui/src/primitives/mui/Icon'
 import { RegisteredWidgets, WidgetAppActions, WidgetAppState } from '../../WidgetAppService'
 
+import { MediaStreamState } from '@ir-engine/hyperflux'
+import { Microphone01, MicrophoneOff, Refresh2Lg, User01Lg } from '@ir-engine/ui/src/icons'
+import { SVGIconType } from '@ir-engine/ui/src/icons/types'
+import { IconType } from 'react-icons'
 import { useMediaInstance } from '../../../common/services/MediaInstanceConnectionService'
-import { MediaStreamState } from '../../../media/MediaStreamState'
 import XRIconButton from '../../components/XRIconButton'
 import HandSVG from './back_hand_24px.svg?react'
 import styleString from './index.scss?inline'
@@ -46,17 +23,17 @@ export function createWidgetButtonsView() {
 }
 
 function createWidgetButtonsState() {
-  return createState({})
+  return hookstate({})
 }
 
 type WidgetButtonProps = {
-  icon: any
+  Icon: SVGIconType | IconType
   toggle: () => any
   label: string
   disabled?: boolean
 }
 
-const WidgetButton = ({ icon, toggle, label, disabled }: WidgetButtonProps) => {
+const WidgetButton = ({ Icon, toggle, label, disabled }: WidgetButtonProps) => {
   const mouseOver = useHookstate(false)
   return (
     <XRIconButton
@@ -64,7 +41,7 @@ const WidgetButton = ({ icon, toggle, label, disabled }: WidgetButtonProps) => {
       size="large"
       content={
         <>
-          {<Icon type={icon} className="svgIcon" />}
+          {<Icon className="svgIcon" />}
           {mouseOver.value && <div>{label}</div>}
         </>
       }
@@ -111,7 +88,7 @@ const HandednessWidgetButton = () => {
   )
 }
 
-const WidgetButtons = () => {
+export const WidgetButtons = () => {
   const widgetMutableState = useMutableState(WidgetAppState)
   const sessionMode = useHookstate(getMutableState(XRState).sessionMode)
   const mediaInstanceState = useMediaInstance()
@@ -174,14 +151,14 @@ const WidgetButtons = () => {
     <>
       <style>{styleString}</style>
       <div className="container" style={{ gridTemplateColumns }} xr-pixel-ratio="8" xr-layer="true">
-        <WidgetButton icon="Refresh" toggle={handleRespawnAvatar} label={'Respawn'} />
+        <WidgetButton Icon={Refresh2Lg} toggle={handleRespawnAvatar} label={'Respawn'} />
         {sessionMode.value !== 'none' && (
-          <WidgetButton icon="Person" toggle={handleHeightAdjustment} label={'Reset Height'} />
+          <WidgetButton Icon={User01Lg} toggle={handleHeightAdjustment} label={'Reset Height'} />
         )}
         <HandednessWidgetButton />
         {mediaInstanceState?.value && (
           <WidgetButton
-            icon={isCamAudioEnabled ? 'Mic' : 'MicOff'}
+            Icon={isCamAudioEnabled ? Microphone01 : MicrophoneOff}
             toggle={MediaStreamState.toggleMicrophonePaused}
             label={isCamAudioEnabled ? 'Audio on' : 'Audio Off'}
           />
@@ -192,7 +169,7 @@ const WidgetButtons = () => {
           label={engineState.xrSessionStarted.value ? 'Exit VR' : 'Enter VR'}
         /> */}
         {activeWidgets.map((widget, i) => (
-          <WidgetButton key={i} icon={widget.icon} toggle={toggleWidget(widget)} label={widget.label} />
+          <WidgetButton key={i} Icon={widget.icon!} toggle={toggleWidget(widget)} label={widget.label} />
         ))}
       </div>
     </>

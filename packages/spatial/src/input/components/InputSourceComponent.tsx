@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Raycaster } from 'three'
 
 import { defineQuery } from '@ir-engine/ecs'
@@ -30,29 +5,36 @@ import { defineComponent, getComponent, setComponent } from '@ir-engine/ecs/src/
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getState } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
+import { isTouchAvailable } from '../../common/functions/DetectFeatures'
 import { XRHandComponent, XRSpaceComponent } from '../../xr/XRComponents'
 import { ReferenceSpace, XRState } from '../../xr/XRState'
 import { ButtonStateMap } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
-import { DefaultButtonAlias } from './InputComponent'
+import { DefaultButtonBindings } from './InputComponent'
 
 export const InputSourceComponent = defineComponent({
   name: 'InputSourceComponent',
 
-  schema: S.Object({
-    source: S.Type<XRInputSource>({} as XRInputSource),
-    buttons: S.Type<Readonly<ButtonStateMap<typeof DefaultButtonAlias>>>({}),
-    raycaster: S.Class(() => new Raycaster()),
-    intersections: S.Array(
-      S.Object({
-        entity: S.Entity(),
-        distance: S.Number()
+  schema: Schema.Object({
+    sourceEntity: EntitySchema.Entity(),
+    source: Schema.Type<XRInputSource>({ default: {} as XRInputSource }),
+    buttons: Schema.Type<Readonly<ButtonStateMap<typeof DefaultButtonBindings>>>({ default: {} }),
+    raycaster: Schema.Class(() => new Raycaster()),
+    intersections: Schema.Array(
+      Schema.Object({
+        entity: EntitySchema.Entity(),
+        distance: Schema.Number()
       })
     )
   }),
 
-  onSet: (entity, component, args: { source?: XRInputSource; gamepad?: Gamepad } = {}) => {
+  onSet: (
+    entity,
+    component,
+    args: { sourceEntity?: Entity; buttons?: ButtonStateMap<any>; source?: XRInputSource; gamepad?: Gamepad } = {}
+  ) => {
     const source =
       args.source ??
       ({
@@ -69,7 +51,7 @@ export const InputSourceComponent = defineComponent({
             hapticActuators: [],
             id: 'emulated-gamepad-' + entity,
             index: 0,
-            mapping: '',
+            mapping: isTouchAvailable ? 'xr-standard' : '',
             timestamp: performance.now(),
             vibrationActuator: null
           } as unknown as Gamepad),
@@ -77,7 +59,7 @@ export const InputSourceComponent = defineComponent({
         hand: undefined
       } as XRInputSource)
 
-    component.source.set(source)
+    component.source = source
 
     // if we have a real input source, we should add the XRSpaceComponent
     if (args.source?.targetRaySpace) {
@@ -91,6 +73,14 @@ export const InputSourceComponent = defineComponent({
 
     if (source.hand) {
       setComponent(entity, XRHandComponent)
+    }
+
+    if (args.buttons) {
+      component.buttons = args.buttons
+    }
+
+    if (typeof args.sourceEntity === 'number') {
+      component.sourceEntity = args.sourceEntity
     }
   },
 

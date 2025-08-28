@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import appRootPath from 'app-root-path'
 import chargebeeInst from 'chargebee'
 import fs from 'fs'
@@ -43,8 +18,11 @@ import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identit
 import { loginPath } from '@ir-engine/common/src/schemas/user/login.schema'
 
 import { HookContext } from '@feathersjs/feathers'
-import { instanceSignalingPath, projectsPath } from '@ir-engine/common/src/schema.type.module'
+import { MediaSettingsType } from '@ir-engine/common/src/config'
+import { defaultWebRTCSettings } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
+import { EngineSettingType, instanceSignalingPath, projectsPath } from '@ir-engine/common/src/schema.type.module'
 import { jwtPublicKeyPath } from '@ir-engine/common/src/schemas/user/jwt-public-key.schema'
+import { parseValue } from '@ir-engine/common/src/utils/dataTypeUtils'
 import { createHash } from 'crypto'
 import {
   APPLE_SCOPES,
@@ -52,7 +30,7 @@ import {
   GITHUB_SCOPES,
   GOOGLE_SCOPES,
   LINKEDIN_SCOPES
-} from './setting/authentication-setting/authentication-setting.seed'
+} from './setting/engine-setting/engine-setting.seed'
 
 const logger = multiLogger.child({ component: 'server-core:config' })
 
@@ -60,7 +38,7 @@ const kubernetesEnabled = process.env.KUBERNETES === 'true'
 const testEnabled = process.env.TEST === 'true'
 
 if (!testEnabled) {
-  register()
+  if (process.env.APP_ENV === 'development' || process.env.LOCAL === 'true') register()
 
   // ensure process fails properly
   process.on('exit', async (code) => {
@@ -129,6 +107,29 @@ db.url =
   `mysql://${db.username}:${db.password}@${db.host}:${db.port}/${db.database}`
 
 /**
+ * Vector Database (PostgreSQL with PGVector)
+ */
+export const vectordb = {
+  enabled: process.env.VECTORDB_ENABLED === 'true',
+  username: testEnabled ? process.env.POSTGRES_TEST_USER! : process.env.POSTGRES_USER!,
+  password: testEnabled ? process.env.POSTGRES_TEST_PASSWORD! : process.env.POSTGRES_PASSWORD!,
+  database: testEnabled ? process.env.POSTGRES_TEST_DATABASE! : process.env.POSTGRES_DATABASE!,
+  host: testEnabled ? process.env.POSTGRES_TEST_HOST! : process.env.POSTGRES_HOST!,
+  port: testEnabled ? process.env.POSTGRES_TEST_PORT! : process.env.POSTGRES_PORT!,
+  dialect: 'postgres',
+  forceRefresh: process.env.FORCE_DB_REFRESH === 'true',
+  url: '',
+  charset: 'utf8',
+  pool: {
+    max: parseInt(process.env.POSTGRES_POOL_MAX || '5')
+  }
+}
+
+vectordb.url =
+  (testEnabled ? process.env.POSTGRES_TEST_URL : process.env.POSTGRES_URL) ||
+  `postgres://${vectordb.username}:${vectordb.password}@${vectordb.host}:${vectordb.port}/${vectordb.database}`
+
+/**
  * Server / backend
  */
 const server = {
@@ -136,6 +137,8 @@ const server = {
   hostname: process.env.SERVER_HOST!,
   port: process.env.SERVER_PORT!,
   clientHost: process.env.APP_HOST!,
+  // DNS Provider Config
+  dnsProvider: process.env.DNS_PROVIDER || 'aws',
   // Public directory (used for favicon.ico, logo, etc)
   rootDir:
     process.env.BUILD_MODE! === 'individual'
@@ -166,10 +169,19 @@ const server = {
   local: process.env.LOCAL === 'true',
   releaseName: process.env.RELEASE_NAME || 'local',
   matchmakerEmulationMode: process.env.MATCHMAKER_EMULATION_MODE === 'true',
-  edgeCachingEnabled: process.env.STORAGE_PROVIDER! === 's3' && process.env.S3_DEV_MODE! !== 'local',
+  edgeCachingEnabled:
+    (process.env.STORAGE_PROVIDER! === 's3' && process.env.S3_DEV_MODE! !== 'local') ||
+    process.env.STORAGE_PROVIDER === 'gcs',
   instanceserverUnreachableTimeoutSeconds: process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS
     ? parseInt(process.env.INSTANCESERVER_UNREACHABLE_TIMEOUT_SECONDS)
-    : 10
+    : 10,
+  namespace: (process.env.NAMESPACE as string) || 'default',
+  requireAgeVerification:
+    typeof process.env.REQUIRE_AGE_VERIFICATION === 'string' ? process.env.REQUIRE_AGE_VERIFICATION === 'true' : true,
+  ipGeolocation: {
+    apiUrl: process.env.IP_GEOLOCATION_API_URL || 'https://api.ipinfo.io/lite',
+    apiToken: process.env.IP_GEOLOCATION_API_TOKEN || ''
+  }
 }
 const obj = kubernetesEnabled ? { protocol: 'https', hostname: server.hostname } : { protocol: 'https', ...server }
 server.url = process.env.SERVER_URL || url.format(obj)
@@ -210,6 +222,10 @@ const instanceserver = {
   shutdownDelayMs: parseInt(process.env.INSTANCESERVER_SHUTDOWN_DELAY_MS!) || 0
 }
 
+const instanceServerWebRtc = {
+  webRTCSettings: defaultWebRTCSettings
+}
+
 /**
  * Task server generator
  */
@@ -231,19 +247,18 @@ const email = {
       pass: process.env.SMTP_PASS!
     }
   },
-  // Name and email of default sender (for login emails, etc)
   from: `${process.env.SMTP_FROM_NAME}` + ` <${process.env.SMTP_FROM_EMAIL}>`,
   subject: {
-    // Subject of the Login Link email
-    'new-user': 'IR Engine Signup',
-    location: 'IR Engine Location invitation',
-    instance: 'IR Engine Location invitation',
-    login: 'IR Engine Login link',
-    friend: 'IR Engine Friend request',
-    channel: 'IR Engine Channel invitation'
+    'new-user': 'Enchantment Engine Signup',
+    location: 'Enchantment Engine Location invitation',
+    instance: 'Enchantment Engine Location invitation',
+    login: 'Enchantment Engine Login link',
+    friend: 'Enchantment Engine Friend request',
+    channel: 'Enchantment Engine Channel invitation'
   },
   smsNameCharacterLimit: 20
 }
+export type EmailConfigType = typeof email
 
 type WhiteListItem = {
   path: string
@@ -348,6 +363,7 @@ const authentication = {
     }
   }
 }
+export type AuthenticationConfig = typeof authentication
 
 if (authentication.jwtPublicKey && typeof authentication.jwtPublicKey === 'string')
   (authentication.jwtOptions as any).keyid = createHash('sha3-256').update(authentication.jwtPublicKey).digest('hex')
@@ -362,19 +378,17 @@ const aws = {
     endpoint: process.env.STORAGE_S3_ENDPOINT!,
     staticResourceBucket: testEnabled
       ? process.env.STORAGE_S3_TEST_RESOURCE_BUCKET!
-      : process.env.STORAGE_S3_STATIC_RESOURCE_BUCKET!,
-    region: process.env.STORAGE_S3_REGION!,
+      : process.env.STORAGE_STATIC_RESOURCE_BUCKET!,
+    region: process.env.STORAGE_REGION!,
     avatarDir: process.env.STORAGE_S3_AVATAR_DIRECTORY!,
     s3DevMode: process.env.STORAGE_S3_DEV_MODE!,
     roleArn: process.env.STORAGE_AWS_ROLE_ARN
   },
   cloudfront: {
     domain:
-      process.env.SERVE_CLIENT_FROM_STORAGE_PROVIDER === 'true'
-        ? server.clientHost
-        : process.env.STORAGE_CLOUDFRONT_DOMAIN!,
+      process.env.SERVE_CLIENT_FROM_STORAGE_PROVIDER === 'true' ? server.clientHost : process.env.STORAGE_CDN_DOMAIN!,
     distributionId: process.env.STORAGE_CLOUDFRONT_DISTRIBUTION_ID!,
-    region: process.env.STORAGE_CLOUDFRONT_REGION || process.env.STORAGE_S3_REGION
+    region: process.env.STORAGE_CLOUDFRONT_REGION || process.env.STORAGE_REGION
   },
   eks: {
     accessKeyId: process.env.EKS_AWS_ACCESS_KEY_ID!,
@@ -388,6 +402,21 @@ const aws = {
     senderId: process.env.AWS_SMS_SENDER_ID!,
     secretAccessKey: process.env.AWS_SMS_SECRET_ACCESS_KEY!
   }
+}
+export type AwsConfig = typeof aws
+
+/**
+ * GCP
+ */
+
+const gcp = {
+  gcs: {
+    cacheDomain: process.env.STORAGE_CDN_DOMAIN,
+    bucket: process.env.STORAGE_STATIC_RESOURCE_BUCKET,
+    edgeCacheService: process.env.GCP_EDGE_CACHE_SERVICE,
+    urlMap: process.env.GCP_URL_MAP
+  },
+  project: process.env.GCP_PROJECT
 }
 
 const chargebee = {
@@ -418,10 +447,6 @@ const blockchain = {
   blockchainUrlSecret: process.env.BLOCKCHAIN_URL_SECRET
 }
 
-const ipfs = {
-  enabled: process.env.USE_IPFS
-}
-
 const zendesk = {
   name: process.env.ZENDESK_KEY_NAME,
   secret: process.env.ZENDESK_SECRET,
@@ -436,19 +461,35 @@ const metabase = {
 }
 
 /**
+ * Monitoring
+ */
+const monitoring = {
+  metrics: {
+    enabled: process.env.PROMETHEUS_METRICS_ENABLED === 'true',
+    endpoint: process.env.METRICS_ENDPOINT || '/metrics',
+    // For GCP Cloud Monitoring integration
+    gcpProject: process.env.GCP_PROJECT,
+    useCloudMonitoring: process.env.USE_CLOUD_MONITORING === 'true'
+  }
+  // Note: Tracing configuration will be added in a separate PR
+}
+
+/**
  * Full config
  */
 const config = {
   deployStage: process.env.DEPLOY_STAGE!,
   authentication,
   aws,
+  gcp,
   chargebee,
   client,
   coil,
   db,
+  vectordb,
   email,
-  instanceserver,
-  ipfs,
+  'instance-server': instanceserver,
+  'instance-server-webrtc': instanceServerWebRtc,
   server,
   'task-server': taskserver,
   redis,
@@ -467,7 +508,8 @@ const config = {
     typeof process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'undefined' || process.env.ALLOW_OUT_OF_DATE_PROJECTS === 'true',
   fsProjectSyncEnabled: process.env.FS_PROJECT_SYNC_ENABLED === 'false' ? false : true,
   zendesk,
-  metabase
+  metabase,
+  monitoring
 }
 
 chargebeeInst.configure({
@@ -481,7 +523,8 @@ chargebeeInst.configure({
  * @param value - The value to set for the nested configuration.
  * @param category - The category of the configuration.
  */
-export function updateNestedConfig(appConfig: Record<string, any>, key: string, value: string, category: string) {
+export function updateNestedConfig(appConfig: Record<string, any>, setting: EngineSettingType) {
+  const { key, value, dataType, category } = setting
   const keys = key.split('.')
   if (keys.length !== 2) {
     return
@@ -489,7 +532,58 @@ export function updateNestedConfig(appConfig: Record<string, any>, key: string, 
   if (!appConfig[category][keys[0]]) {
     appConfig[category][keys[0]] = {}
   }
-  appConfig[category][keys[0]][keys[1]] = value
+  appConfig[category][keys[0]][keys[1]] = parseValue(value, dataType)
 }
 
 export default config
+
+export type ClientEngineSettingType = {
+  // Basic settings
+  logo: string
+  title: string
+  shortTitle: string
+  startPath: string
+  url: string
+  releaseName: string
+  siteDescription: string
+
+  // Icons and favicons
+  appleTouchIcon: string
+  favicon32px: string
+  favicon16px: string
+  icon192px: string
+  icon512px: string
+  siteManifest: string
+  safariPinnedTab: string
+  favicon: string
+  webmanifestLink: string
+  swScriptLink: string
+
+  // App appearance
+  appBackground: string
+  appTitle: string
+  appSubtitle: string
+  appDescription: string
+
+  // Google Tag Manager
+  gtmContainerId: string
+  gtmAuth?: string
+  gtmPreview?: string
+
+  // Social and legal
+  appSocialLinks: Array<{
+    link: string
+    icon: string
+  }>
+  privacyPolicy: string
+  termsOfService: string
+  assistanceLink: string
+
+  // Homepage settings
+  homepageLinkButtonEnabled: boolean
+  homepageLinkButtonRedirect: string
+  homepageLinkButtonText: string
+
+  // Media settings
+  mediaSettings: MediaSettingsType
+}

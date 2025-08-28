@@ -1,0 +1,191 @@
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { API } from '@ir-engine/common'
+import {
+  avatarPath,
+  engineSettingPath,
+  identityProviderPath,
+  projectSettingPath,
+  scopePath,
+  staticResourcePath,
+  userApiKeyPath,
+  userAvatarPath,
+  UserName
+} from '@ir-engine/common/src/schema.type.module'
+import { createEngine, destroyEngine } from '@ir-engine/ecs'
+import { EventDispatcher, getMutableState, UserID } from '@ir-engine/hyperflux'
+import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
+import { v4 as uuidv4 } from 'uuid'
+import UserMenus from '.'
+import { ViewerMenuState } from '../../util/ViewerMenuState'
+import { AuthState } from '../services/AuthService'
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key
+  })
+}))
+
+let eventDispatcher: EventDispatcher
+let db: Record<string, Record<string, any>>
+const userID = 'user id' as UserID
+const username = 'Test User' as UserName
+const sceneID = 'scene id'
+const sceneURL = '/empty.gltf'
+
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+describe('SettingsMenu component', () => {
+  beforeEach(async () => {
+    createEngine()
+
+    db = {
+      [staticResourcePath]: [
+        {
+          id: sceneID,
+          url: sceneURL
+        }
+      ],
+      [userAvatarPath]: [
+        {
+          id: uuidv4(),
+          userId: userID,
+          avatarId: uuidv4(),
+          avatar: {
+            modelResource: {
+              url: '/avatar.gltf'
+            }
+          }
+        }
+      ],
+      [avatarPath]: [],
+      [engineSettingPath]: [
+        {
+          id: 'auth-setting-id',
+          authStrategies: [
+            {
+              google: true,
+              discord: true,
+              github: true
+            }
+          ]
+        }
+      ]
+    }
+
+    const createService = (path: string) => {
+      return {
+        find: () => {
+          return new Promise((resolve) => {
+            console.log(`[MOCK API] find() called for path: ${path}`)
+            resolve(
+              JSON.parse(
+                JSON.stringify({
+                  data: db[path],
+                  limit: 10,
+                  skip: 0,
+                  total: db[path].length
+                })
+              )
+            )
+          })
+        },
+        get: (id) => {
+          return new Promise((resolve) => {
+            const data = db[path].find((entry) => entry.id === id)
+            resolve(data ? JSON.parse(JSON.stringify(data)) : null)
+          })
+        },
+        on: (serviceName, cb) => {
+          eventDispatcher.addEventListener(serviceName, cb)
+        },
+        off: (serviceName, cb) => {
+          eventDispatcher.removeEventListener(serviceName, cb)
+        }
+      }
+    }
+
+    const apis = {
+      [staticResourcePath]: createService(staticResourcePath),
+      [userAvatarPath]: createService(userAvatarPath),
+      [avatarPath]: createService(avatarPath),
+      [userApiKeyPath]: createService(userApiKeyPath),
+      [projectSettingPath]: createService(projectSettingPath),
+      [scopePath]: createService(scopePath),
+      [identityProviderPath]: createService(identityProviderPath),
+      [engineSettingPath]: createService(engineSettingPath)
+    }
+    eventDispatcher = new EventDispatcher()
+    ;(API.instance as any) = {
+      service: (path: string) => {
+        const existing = apis[path]
+        if (!existing) throw new Error(`Missing mock service for path: ${path}`)
+        return existing
+      }
+    }
+
+    getMutableState(ViewerMenuState).userMenus.set({
+      profile: true,
+      settings: false,
+      readyplayer: false,
+      avaturn: false,
+      avatarselect: false,
+      avatarmodify: false,
+      share: true,
+      emote: true,
+      friends: false,
+      social: true,
+      embedframe: true
+    } as Record<string, boolean>)
+
+    getMutableState(AuthState).user.set({
+      id: userID,
+      name: username,
+      ageVerified: true,
+      isGuest: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    })
+
+    render(
+      <MemoryRouter>
+        <UserMenus />
+      </MemoryRouter>
+    )
+  })
+
+  afterEach(() => {
+    cleanup()
+    destroyEngine()
+  })
+
+  it('should render a button with the data-testid attribute "open-profile-menu"', async () => {
+    const openProfileMenuButton = screen.getByTestId('open-profile-menu')
+    // @ts-expect-error
+    expect(openProfileMenuButton).toBeInTheDocument()
+  })
+
+  it('should render a button with the data-testid attribute "send-location-button"', async () => {
+    const sendLocationButton = screen.getByTestId('send-location-button')
+    // @ts-expect-error
+    expect(sendLocationButton).toBeInTheDocument()
+  })
+
+  it('should render a button with the data-testid attribute "open-emote-menu"', async () => {
+    const openEmoteMenu = screen.getByTestId('open-emote-menu')
+    // @ts-expect-error
+    expect(openEmoteMenu).toBeInTheDocument()
+  })
+
+  it('should render a button with the data-testid attribute "open-friends-menu"', async () => {
+    const openFriendsMenu = screen.getByTestId('open-friends-menu')
+    // @ts-expect-error
+    expect(openFriendsMenu).toBeInTheDocument()
+  })
+})

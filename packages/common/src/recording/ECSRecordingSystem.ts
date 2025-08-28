@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { decode, encode } from 'msgpackr'
 import { PassThrough } from 'stream'
 import matches, { Validator } from 'ts-matches'
@@ -39,14 +14,25 @@ import { checkScope } from '@ir-engine/common/src/utils/checkScope'
 import {
   defineSystem,
   ECSState,
-  Engine,
+  EngineState,
   EntityUUID,
-  getComponent,
+  NetworkSchemaState,
   PresentationSystemGroup,
-  UUIDComponent
+  SerializationSchema,
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
+import {
+  ECSDeserializer,
+  ECSSerialization,
+  ECSSerializer,
+  SerializedChunk
+} from '@ir-engine/ecs/src/network/ECSSerializerSystem'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import {
+  addDataChannelHandler,
+  DataChannelRegistryState,
+  DataChannelType,
   defineAction,
   defineActionQueue,
   defineState,
@@ -55,35 +41,23 @@ import {
   getState,
   HyperFlux,
   isClient,
-  PeerID,
-  Topic,
-  UserID
-} from '@ir-engine/hyperflux'
-import {
-  addDataChannelHandler,
-  DataChannelRegistryState,
-  DataChannelType,
   matchesUserID,
   Network,
   NetworkActions,
   NetworkState,
   NetworkTopics,
+  PeerID,
   removeDataChannelHandler,
-  SerializationSchema,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType,
-  WorldNetworkAction
-} from '@ir-engine/network'
-import {
-  ECSDeserializer,
-  ECSSerialization,
-  ECSSerializer,
-  SerializedChunk
-} from '@ir-engine/network/src/serialization/ECSSerializerSystem'
+  Topic,
+  UserID,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { PhysicsSerialization } from '@ir-engine/spatial/src/physics/PhysicsSerialization'
 
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { mocapDataChannelType } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 export class ECSRecordingActions {
   static startRecording = defineAction({
@@ -183,8 +157,8 @@ export const RecordingState = defineState({
       Object.entries(peerSchema.peers).forEach(([peerID, value]) => {
         const peerSchema = [] as string[]
         if (value.Mocap) peerSchema.push(mocapDataChannelType)
-        if (value.Video) peerSchema.push(webcamVideoDataChannelType)
-        if (value.Audio) peerSchema.push(webcamAudioDataChannelType)
+        if (value.Video) peerSchema.push(webcamVideoMediaChannelType)
+        if (value.Audio) peerSchema.push(webcamAudioMediaChannelType)
         if (peerSchema.length) schema.peers[peerID] = peerSchema
       })
 
@@ -410,7 +384,7 @@ export const onStartRecording = async (action: ReturnType<typeof ECSRecordingAct
 
   if (NetworkState.worldNetwork) {
     const serializationSchema = schema.user
-      .map((component) => getState(NetworkState).networkSchema[component] as SerializationSchema)
+      .map((component) => getState(NetworkSchemaState)[component] as SerializationSchema)
       .filter(Boolean)
 
     activeRecording.serializer = ECSSerialization.createSerializer({
@@ -609,14 +583,15 @@ export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActi
     id: recording.id,
     chunks: entityChunks,
     schema: schema.user
-      .map((component) => getState(NetworkState).networkSchema[component] as SerializationSchema)
+      .map((component) => getState(NetworkSchemaState)[component] as SerializationSchema)
       .filter(Boolean),
     onChunkStarted: (chunkIndex) => {
       if (!entityChunks[chunkIndex]) return
       for (let i = 0; i < entityChunks[chunkIndex].entities.length; i++) {
         const uuid = entityChunks[chunkIndex].entities[i]
         // override entity ID such that it is actually unique, by appendig the recording id
-        const entityID = ((isClone ? uuid + '_' + recording.id : uuid) ?? Engine.instance.userID) as UserID & EntityUUID
+        const entityID = ((isClone ? uuid + '_' + recording.id : uuid) ?? getState(EngineState).userID) as UserID &
+          EntityUUID
         entityChunks[chunkIndex].entities[i] = entityID
         api
           .service(userPath)
@@ -652,11 +627,12 @@ export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActi
                 .then((userAvatars) => {
                   dispatchAction(
                     AvatarNetworkAction.spawn({
-                      parentUUID: getComponent(Engine.instance.originEntity, UUIDComponent),
+                      parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).originEntity),
                       ownerID: entityID,
-                      entityUUID: (entityID + '_avatar') as EntityUUID,
                       avatarURL: userAvatars.data[0].avatar.modelResource!.url!,
-                      name: user.name + "'s Clone"
+                      name: user.name + "'s Clone",
+                      entityID: AvatarComponent.entityID,
+                      entitySourceID: entityID
                     })
                   )
                   entitiesSpawned.push(entityID)
@@ -835,7 +811,7 @@ const execute = () => {
         const encodedData = encode(frame.data)
 
         /** PeerID must be the original peerID if server playback, otherwise it is our peerID */
-        const peerID = isClient ? Engine.instance.store.peerID : chunks.fromPeerID
+        const peerID = isClient ? HyperFlux.store.peerID : chunks.fromPeerID
         if (isClient) {
           const dataChannelFunctions = getState(DataChannelRegistryState)[dataChannel]
           if (dataChannelFunctions) {
@@ -851,6 +827,6 @@ const execute = () => {
 
 export const ECSRecordingSystem = defineSystem({
   uuid: 'ee.engine.ECSRecordingSystem',
-  insert: { after: PresentationSystemGroup },
-  execute
+  insert: { after: PresentationSystemGroup }
+  // execute
 })

@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Bounds } from './classes/Bounds'
 import { Edges } from './classes/Edges'
 import { traverseChildElements } from './dom-utils'
@@ -35,12 +10,29 @@ export class WebLayer {
   isVideoElement = false
   isCanvasElement = false
 
-  constructor(
-    public manager: WebLayerManagerBase,
-    public element: Element,
-    public eventCallback: EventCallback
-  ) {
+  manager: WebLayerManagerBase
+  element: Element
+  eventCallback: EventCallback
+
+  constructor(manager: WebLayerManagerBase, element: Element, eventCallback: EventCallback) {
+    this.manager = manager
+    this.element = element
+    this.eventCallback = eventCallback
     if (!manager) throw new Error('WebLayerManager must be initialized')
+
+    // Initialize properties that were previously class fields
+    this.desiredPseudoState = {
+      hover: false,
+      active: false,
+      focus: false,
+      target: false
+    }
+
+    this.needsRefresh = true
+    this.needsRemoval = false
+    this.childLayers = []
+    this.allStateHashes = new Set<string>()
+
     WebRenderer.layers.set(element, this)
     element.setAttribute(WebRenderer.LAYER_ATTRIBUTE, '')
     this.parentLayer = WebRenderer.getClosestLayer(this.element, false)
@@ -55,11 +47,11 @@ export class WebLayer {
     // }
   }
 
-  desiredPseudoState = {
-    hover: false,
-    active: false,
-    focus: false,
-    target: false
+  desiredPseudoState: {
+    hover: boolean
+    active: boolean
+    focus: boolean
+    target: boolean
   }
 
   //Only supports digits right now
@@ -93,17 +85,17 @@ export class WebLayer {
   //   console.log(this.prerasterizedImages)
   // }
 
-  needsRefresh = true
+  needsRefresh: boolean
 
   setNeedsRefresh(recurse = false) {
     this.needsRefresh = true
     if (recurse) for (const c of this.childLayers) c.setNeedsRefresh(recurse)
   }
 
-  needsRemoval = false
+  needsRemoval: boolean
 
   parentLayer?: WebLayer
-  childLayers = [] as WebLayer[]
+  childLayers: WebLayer[]
 
   set pixelRatio(val: number | null) {
     const isNumber = typeof val === 'number'
@@ -123,7 +115,7 @@ export class WebLayer {
     return this.pixelRatio ?? this.parentLayer?.computedPixelRatio ?? 1.5
   }
 
-  allStateHashes = new Set<string>()
+  allStateHashes: Set<string>
 
   previousDOMStateKey?: string | HTMLMediaElement
 

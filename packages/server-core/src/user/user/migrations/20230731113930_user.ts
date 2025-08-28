@@ -1,30 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import type { Knex } from 'knex'
 
+import { locationPath } from '@ir-engine/common/src/schemas/social/location.schema'
 import { userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 
 /**
@@ -41,8 +17,7 @@ export async function up(knex: Knex): Promise<void> {
 
   if (tableExists) {
     const hasIdColum = await knex.schema.hasColumn(userPath, 'id')
-    const hasAvatarIdColumn = await knex.schema.hasColumn(userPath, 'avatarId')
-    if (!(hasIdColum && hasAvatarIdColumn)) {
+    if (!hasIdColum) {
       await knex.schema.dropTable(userPath)
       tableExists = false
     }
@@ -56,13 +31,21 @@ export async function up(knex: Knex): Promise<void> {
       table.boolean('isGuest').notNullable().defaultTo(true)
       table.string('inviteCode', 255).nullable().unique()
       table.string('did', 255).nullable()
-      //@ts-ignore
-      table.uuid('avatarId').collate('utf8mb4_bin').nullable().index()
+      table.boolean('ageVerified').nullable().defaultTo(false)
+      table.boolean('isDeactivated').defaultTo(false)
+      table.dateTime('deactivatedAt').nullable()
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
-
-      table.foreign('avatarId').references('id').inTable('avatar').onDelete('SET NULL').onUpdate('CASCADE')
     })
+
+    const updatedByLocationColumnExists = await knex.schema.hasColumn(locationPath, 'updatedBy')
+    if (updatedByLocationColumnExists === false) {
+      await knex.schema.alterTable(locationPath, async (table) => {
+        //@ts-ignore
+        table.uuid('updatedBy', 36).collate('utf8mb4_bin')
+        table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+      })
+    }
   }
 
   await knex.raw('SET FOREIGN_KEY_CHECKS=1')

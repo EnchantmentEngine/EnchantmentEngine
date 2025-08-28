@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import '../../patchEngineNode'
 
 import { Paginated } from '@feathersjs/feathers'
@@ -267,7 +242,7 @@ describe('project-permission.test', () => {
         }, new BadRequest('validation failed'))
       })
 
-      it('should not allow a user who does not have owner permission on a project to create new permissions for that project', async function () {
+      it('should not allow a user who does not have owner permission on a project to create new owner permissions for that project', async function () {
         const params = {
           headers: {
             authorization: `Bearer ${apiKey2.token}`
@@ -275,19 +250,16 @@ describe('project-permission.test', () => {
           provider: 'rest'
         }
 
-        await assert.rejects(
-          async () => {
-            const res = await app.service(projectPermissionPath).create(
-              {
-                projectId: project1.id,
-                userId: user3.id,
-                type: 'editor'
-              },
-              params
-            )
-          },
-          new Forbidden('Missing required project permission for ' + project1.name)
-        )
+        await assert.rejects(async () => {
+          const res = await app.service(projectPermissionPath).create(
+            {
+              projectId: project1.id,
+              userId: user3.id,
+              type: 'owner'
+            },
+            params
+          )
+        }, new Forbidden(`You don't have permission to set an owner permission`))
       })
 
       it('should not allow a user with no permission on a project to create new permissions for that project', async function () {
@@ -299,7 +271,7 @@ describe('project-permission.test', () => {
         }
 
         await assert.rejects(async () => {
-          await app.service(projectPermissionPath).create(
+          const perm = await app.service(projectPermissionPath).create(
             {
               projectId: project1.id,
               userId: user3.id,
@@ -308,6 +280,30 @@ describe('project-permission.test', () => {
             params
           )
         }, new Forbidden('Project permission not found'))
+      })
+
+      it('should allow a user who has editor permission on a project to create new editor permissions for that project', async function () {
+        const params = {
+          headers: {
+            authorization: `Bearer ${apiKey2.token}`
+          },
+          provider: 'rest'
+        }
+
+        const projectPermission = await app.service(projectPermissionPath).create(
+          {
+            projectId: project1.id,
+            userId: user3.id,
+            type: 'editor'
+          },
+          params
+        )
+        assert.ok(projectPermission)
+        assert.strictEqual(projectPermission.projectId, project1.id)
+        assert.strictEqual(projectPermission.userId, user3.id)
+        assert.strictEqual(projectPermission.type, 'editor')
+
+        await app.service(projectPermissionPath)._remove(projectPermission.id)
       })
 
       it('should allow an admin user to create new permissions for a project', async function () {
@@ -378,7 +374,7 @@ describe('project-permission.test', () => {
         assert.strictEqual(update.userId, user2.id)
       })
 
-      it('should not allow a user who does not have owner permission on a project to patch permissions for that project', async function () {
+      it('should not allow a user who does not have owner permission on a project to patch permissions an owner for that project', async function () {
         const params = {
           headers: {
             authorization: `Bearer ${apiKey2.token}`
@@ -386,18 +382,15 @@ describe('project-permission.test', () => {
           provider: 'rest'
         }
 
-        await assert.rejects(
-          async () => {
-            await app.service(projectPermissionPath).patch(
-              project1Permission2.id,
-              {
-                type: ''
-              },
-              params
-            )
-          },
-          new Forbidden('Missing required project permission for ' + project1.name)
-        )
+        await assert.rejects(async () => {
+          await app.service(projectPermissionPath).patch(
+            project1Permission1.id,
+            {
+              type: 'editor'
+            },
+            params
+          )
+        }, new Forbidden('You cannot remove the owner permission'))
       })
 
       it('should not allow a user with no permission on a project to patch permissions for that project', async function () {
@@ -408,26 +401,18 @@ describe('project-permission.test', () => {
           provider: 'rest'
         }
 
-        const permissions = await app.service(projectPermissionPath).find({
-          query: {
-            projectId: project1.id
-          },
-          paginate: false
-        })
         await assert.rejects(async () => {
           await app.service(projectPermissionPath).patch(
             project1Permission2.id,
             {
-              type: ''
+              type: 'editor'
             },
             params
           )
         }, new Forbidden('Project permission not found'))
       })
-    })
 
-    describe('remove', () => {
-      it('should not allow a user who does not have owner permission on a project to remove permissions for that project', async function () {
+      it('should allow a user with editor permission on a project to patch non owner permissions for that project', async function () {
         const params = {
           headers: {
             authorization: `Bearer ${apiKey2.token}`
@@ -435,12 +420,34 @@ describe('project-permission.test', () => {
           provider: 'rest'
         }
 
-        await assert.rejects(
-          async () => {
-            await app.service(projectPermissionPath).remove(project1Permission2.id, params)
+        const permission = (await app.service(projectPermissionPath).patch(
+          project1Permission2.id,
+          {
+            type: 'editor'
           },
-          new Forbidden('Missing required project permission for ' + project1.name)
-        )
+          params
+        )) as any as ProjectPermissionType
+
+        assert.ok(permission)
+        assert.strictEqual(permission.id, project1Permission2.id)
+        assert.strictEqual(permission.userId, user2.id)
+        assert.strictEqual(permission.projectId, project1.id)
+        assert.strictEqual(permission.type, 'editor')
+      })
+    })
+
+    describe('remove', () => {
+      it('should not allow a user who does not have owner permission on a project to remove owner permissions for that project', async function () {
+        const params = {
+          headers: {
+            authorization: `Bearer ${apiKey2.token}`
+          },
+          provider: 'rest'
+        }
+
+        await assert.rejects(async () => {
+          await app.service(projectPermissionPath).remove(project1Permission1.id, params)
+        }, new Forbidden('You cannot remove the owner permission'))
       })
 
       it('should not allow a user with no permission on a project to remove permissions for that project', async function () {

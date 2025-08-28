@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BadRequest, Forbidden } from '@feathersjs/errors'
 import { Paginated } from '@feathersjs/feathers'
 import { hooks as schemaHooks } from '@feathersjs/schema'
@@ -40,6 +15,7 @@ import {
   ChannelType
 } from '@ir-engine/common/src/schemas/social/channel.schema'
 import { userRelationshipPath, UserRelationshipType } from '@ir-engine/common/src/schemas/user/user-relationship.schema'
+import { UserID } from '@ir-engine/common/src/schemas/user/user.schema'
 import setLoggedInUser from '@ir-engine/server-core/src/hooks/set-loggedin-user-in-body'
 
 import { HookContext } from '../../../declarations'
@@ -182,28 +158,50 @@ const checkExistingChannel = async (context: HookContext<ChannelService>) => {
   const { users, instanceId } = context.data as ChannelData
   const userId = context.params.user?.id
 
-  if (!instanceId && users?.length) {
-    // get channel that contains the same users
-    const userIds = users.filter(Boolean)
-    if (userId) userIds.push(userId)
+  if (instanceId || !users?.length) return context
 
-    const knexClient: Knex = context.app.get('knexClient')
-    const existingChannel: ChannelType = await knexClient(channelPath)
-      .select(`${channelPath}.*`)
-      .leftJoin(channelUserPath, `${channelPath}.id`, '=', `${channelUserPath}.channelId`)
-      .whereNull(`${channelPath}.instanceId`)
-      .andWhere((builder) => {
-        builder.whereIn(`${channelUserPath}.userId`, userIds)
-      })
-      .groupBy(`${channelPath}.id`)
-      .havingRaw('count(*) = ?', [userIds.length])
-      .first()
+  // get channel that contains the same users
+  const userIds = users.filter(Boolean)
+  if (userId) userIds.push(userId)
 
-    if (existingChannel) {
-      context.result = existingChannel
-      context.existingData = true
-    }
+  const knexClient: Knex = context.app.get('knexClient')
+
+  // Find channels that have exactly the right users (regardless of order)
+  const existingChannels = await knexClient
+    .with('channel_user_counts', (qb) => {
+      qb.select(`${channelPath}.id`)
+        .count(`${channelUserPath}.userId as user_count`)
+        .from(channelPath)
+        .leftJoin(channelUserPath, `${channelPath}.id`, '=', `${channelUserPath}.channelId`)
+        .whereNull(`${channelPath}.instanceId`)
+        .groupBy(`${channelPath}.id`)
+        .having('user_count', '=', userIds.length)
+    })
+    .select(`${channelPath}.*`)
+    .from(channelPath)
+    .join('channel_user_counts', `channel_user_counts.id`, '=', `${channelPath}.id`)
+    .whereNotExists(function () {
+      this.select(knexClient.raw('1'))
+        .from(channelUserPath)
+        .where(`${channelUserPath}.channelId`, '=', knexClient.raw(`${channelPath}.id`))
+        .whereNotIn(`${channelUserPath}.userId`, userIds)
+    })
+    .whereExists(function () {
+      const subquery = this.select(knexClient.raw('count(*)'))
+        .from(channelUserPath)
+        .where(`${channelUserPath}.channelId`, '=', knexClient.raw(`${channelPath}.id`))
+        .whereIn(`${channelUserPath}.userId`, userIds)
+
+      return subquery.having(knexClient.raw('count(*)'), '=', userIds.length)
+    })
+    .first()
+
+  if (existingChannels) {
+    context.result = existingChannels
+    context.existingData = true
   }
+
+  return context
 }
 
 /**
@@ -261,10 +259,10 @@ const createChannelUsers = async (context: HookContext<ChannelService>) => {
   const process = async (item: ChannelData) => {
     if (item.users) {
       await Promise.all(
-        context.actualData.users.map(async (user) =>
+        context.actualData.users.map(async (user: string) =>
           context.app.service(channelUserPath).create({
             channelId: result[0].id as ChannelID,
-            userId: user
+            userId: user as UserID
           })
         )
       )

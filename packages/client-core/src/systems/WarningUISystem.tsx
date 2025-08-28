@@ -1,41 +1,15 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MeshBasicMaterial } from 'three'
 
+import { removeEntity } from '@ir-engine/ecs'
 import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { removeEntity } from '@ir-engine/ecs/src/EntityFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
@@ -205,9 +179,9 @@ const execute = () => {
 
   if (transition.state === 'IN') {
     setComponent(ui.entity, ComputedTransformComponent, {
-      referenceEntities: [Engine.instance.viewerEntity],
+      referenceEntities: [getState(ReferenceSpaceState).viewerEntity],
       computeFunction: () => {
-        const camera = getComponent(Engine.instance.viewerEntity, CameraComponent)
+        const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
         const distance = camera.near * 1.1 // 10% in front of camera
         ObjectFitFunctions.attachObjectInFrontOfCamera(ui.entity, 0.3, distance)
       }
@@ -239,12 +213,15 @@ const Reactor = () => {
   return <TransitionReactor />
 }
 
+/**
+ * @todo disabled until this system is used
+ */
 export const WarningUISystem = defineSystem({
   uuid: 'ee.client.WarningUISystem',
-  insert: { after: PresentationSystemGroup },
-  execute,
-  reactor: () => {
-    if (!useMutableState(EngineState).viewerEntity.value) return null
-    return <Reactor />
-  }
+  insert: { after: PresentationSystemGroup }
+  // execute,
+  // reactor: () => {
+  //   if (!useMutableState(ReferenceSpaceState).viewerEntity.value) return null
+  //   return <Reactor />
+  // }
 })

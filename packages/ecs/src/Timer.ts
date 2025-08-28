@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 const performance: Performance = window.performance
 
 /**
@@ -48,7 +23,7 @@ export function profile(): () => number {
   }
 }
 
-export function Timer(update: TimerUpdateCallback, serverTickRate = 60) {
+export function Timer(onFrame: TimerUpdateCallback, serverTickRate = 60) {
   const animation = 'requestAnimationFrame' in self ? createAnimationLoop() : createServerLoop(serverTickRate)
 
   animation.setContext(self)
@@ -75,15 +50,15 @@ export function Timer(update: TimerUpdateCallback, serverTickRate = 60) {
   let timerRuns = 0
   let prevTimerRuns = 0
 
-  function onFrame(time: number, xrFrame: XRFrame | null) {
+  function onFrameWithTPS(time: number, xrFrame: XRFrame | null) {
     timerRuns += 1
     const itsTpsReportTime = TPS_REPORT_INTERVAL_MS && nextTpsReportTime <= time
-    if (TPS_REPORTS_ENABLED && itsTpsReportTime) {
+    if (itsTpsReportTime) {
       tpsPrintReport(time)
     }
 
     tpsSubMeasureStart('update')
-    update(time, xrFrame)
+    onFrame(time, xrFrame)
     tpsSubMeasureEnd('update')
   }
 
@@ -164,7 +139,7 @@ export function Timer(update: TimerUpdateCallback, serverTickRate = 60) {
   }
 
   function start() {
-    animation.setAnimationLoop(onFrame)
+    animation.setAnimationLoop(TPS_REPORTS_ENABLED ? onFrameWithTPS : onFrame)
     animation.start()
     tpsReset()
   }
@@ -199,13 +174,14 @@ export class ServerLoop {
   _running: boolean
   _step: number
   _deltas: Array<number>
-  constructor(
-    update = () => {},
-    public _times: number = 10,
-    public _option?: Option
-  ) {
+  _times: number
+  _option?: Option
+
+  constructor(update = () => {}, times: number = 10, option?: Option) {
     this._update = update
     this._running = false
+    this._times = times
+    this._option = option
     this._step = 1000 / this._times
     this._lastFrameTime = this._time()
     this._deltas = Array<number>()

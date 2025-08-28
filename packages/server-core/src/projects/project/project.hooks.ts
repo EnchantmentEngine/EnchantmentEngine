@@ -1,36 +1,6 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
 import { BadRequest, Forbidden } from '@feathersjs/errors'
 import { Paginated } from '@feathersjs/feathers'
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import appRootPath from 'app-root-path'
-import { discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
-import fs from 'fs'
-import { Knex } from 'knex'
-import path from 'path'
-
 import { ManifestJson } from '@ir-engine/common/src/interfaces/ManifestJson'
 import { GITHUB_URL_REGEX } from '@ir-engine/common/src/regex'
 import { apiJobPath } from '@ir-engine/common/src/schemas/cluster/api-job.schema'
@@ -57,7 +27,13 @@ import { identityProviderPath, IdentityProviderType } from '@ir-engine/common/sr
 import { checkScope } from '@ir-engine/common/src/utils/checkScope'
 import { cleanString } from '@ir-engine/common/src/utils/cleanString'
 import { getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import templateManifestJson from '@ir-engine/projects/template-project/manifest.json'
+import appRootPath from 'app-root-path'
+import { discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
+import fs from 'fs'
+import { Knex } from 'knex'
+import path from 'path'
 
 import { HookContext } from '../../../declarations'
 import config from '../../appconfig'
@@ -282,7 +258,7 @@ const checkIfProjectExists = async (context: HookContext<ProjectService>) => {
  */
 const checkIfNameIsValid = async (context: HookContext<ProjectService>) => {
   if (
-    (!config.db.forceRefresh && context.projectName === 'ir-engine/default-project') ||
+    (!config.db.forceRefresh && context.projectName === 'enchantmentengine/default-project') ||
     context.projectName === 'template-project'
   )
     throw new Error(`[Projects]: Project name ${context.projectName} not allowed`)
@@ -460,7 +436,9 @@ const removeLocationFromProject = async (context: HookContext<ProjectService>) =
     }
   })
   await Promise.all(
-    removingLocations.data.map((removingLocation) => context.app.service(locationPath).remove(removingLocation.id))
+    removingLocations.data.map((removingLocation) =>
+      isValidId(removingLocation.id) ? context.app.service(locationPath).remove(removingLocation.id) : Promise.resolve()
+    )
   )
 }
 
@@ -491,9 +469,9 @@ const removeAvatarsFromProject = async (context: HookContext<ProjectService>) =>
   })) as any as AvatarType[]
 
   await Promise.all(
-    avatarItems.map(async (avatar) => {
-      await context.app.service(avatarPath).remove(avatar.id)
-    })
+    avatarItems.map(async (avatar) =>
+      isValidId(avatar.id) ? await context.app.service(avatarPath).remove(avatar.id) : Promise.resolve()
+    )
   )
 }
 
@@ -511,7 +489,8 @@ const removeStaticResourcesFromProject = async (context: HookContext<ProjectServ
   })) as any as StaticResourceType[]
   staticResourceItems.length &&
     staticResourceItems.forEach(async (staticResource) => {
-      await context.app.service(staticResourcePath).remove(staticResource.id, { ignoreResourcesJson: true })
+      if (isValidId(staticResource.id))
+        await context.app.service(staticResourcePath).remove(staticResource.id, { ignoreResourcesJson: true })
     })
 }
 
@@ -536,7 +515,11 @@ const updateProjectJob = async (context: HookContext) => {
     throw new BadRequest(`${context.path} service only works for data in ${context.method}`)
   }
 
+  const returnJob = context.params.query?.returnJob
+  delete context.params.query?.returnJob
+
   const data: ProjectBuildUpdateItemType = context.data as ProjectBuildUpdateItemType
+
   if (!config.kubernetes.enabled || context.params?.isJob)
     context.result = await updateProject(context.app, context.data, context.params)
   else {
@@ -560,13 +543,18 @@ const updateProjectJob = async (context: HookContext) => {
       context.app,
       newJob.id,
       context.params!.user?.id,
-      context.params!.appJWT
+      context.params!.appJWT,
+      context.params!.isDependency
     )
     await context.app.service(apiJobPath).patch(newJob.id, {
       name: jobBody.metadata!.name
     })
     const jobLabelSelector = `ir-engine/projectField=${projectJobName},ir-engine/release=${process.env.RELEASE_NAME},ir-engine/autoUpdate=false`
     const jobFinishedPromise = createExecutorJob(context.app, jobBody, jobLabelSelector, 1000, newJob.id)
+    if (returnJob) {
+      context.result = await context.app.service(apiJobPath).get(newJob.id)
+      return
+    }
     try {
       await jobFinishedPromise
       const result = (await context.app.service(projectPath).find({
@@ -584,8 +572,8 @@ const updateProjectJob = async (context: HookContext) => {
       returned.hasLocalChanges = false
       context.result = returned
     } catch (err) {
-      console.log('Error: project did not exist after completing update', projectName, err)
-      throw err
+      console.log('Error: project did not update properly', projectName, err)
+      return new BadRequest(`Project ${projectName} did not update properly`, err)
     }
   }
 }

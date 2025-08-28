@@ -1,34 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { forwardRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HiMinus, HiPlusSmall } from 'react-icons/hi2'
 
 import { useFind, useMutation } from '@ir-engine/common'
-import { AuthenticationSettingType, authenticationSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { engineSettingPath, EngineSettingType } from '@ir-engine/common/src/schema.type.module'
 import { State, useHookstate } from '@ir-engine/hyperflux'
 import { Button, Input } from '@ir-engine/ui'
 import PasswordInput from '@ir-engine/ui/src/components/tailwind/PasswordInput'
@@ -37,8 +11,10 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import Toggle from '@ir-engine/ui/src/primitives/tailwind/Toggle'
 
+import { getDataType } from '@ir-engine/common/src/utils/dataTypeUtils'
+import { flattenObjectToArray, unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
+import { AuthenticationConfig } from '@ir-engine/server-core/src/appconfig'
 import { initialAuthState } from '../../../../common/initialAuthState'
-import { NotificationService } from '../../../../common/services/NotificationService'
 
 const OAUTH_TYPES = {
   APPLE: 'apple',
@@ -53,12 +29,19 @@ const OAUTH_TYPES = {
 const AuthenticationTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefObject<HTMLDivElement>) => {
   const { t } = useTranslation()
 
-  const authSetting = useFind(authenticationSettingPath).data.at(0) as AuthenticationSettingType
-  const id = authSetting?.id
   const loadingState = useHookstate({
     loading: false,
     errorMessage: ''
   })
+  const engineSettingData = useFind(engineSettingPath, {
+    query: {
+      category: 'authentication',
+      paginate: false
+    }
+  })
+  const authSetting = unflattenArrayToObject(
+    engineSettingData.data.map((el) => ({ key: el.key, value: el.value, dataType: el.dataType }))
+  ) as AuthenticationConfig
   const state = useHookstate(initialAuthState)
   const holdAuth = useHookstate(initialAuthState)
   const keySecret = useHookstate({
@@ -70,10 +53,10 @@ const AuthenticationTab = forwardRef(({ open }: { open: boolean }, ref: React.Mu
     linkedin: authSetting?.oauth?.linkedin,
     facebook: authSetting?.oauth?.facebook
   })
-  const patchAuthSettings = useMutation(authenticationSettingPath).patch
+  const authSettingMutation = useMutation(engineSettingPath)
 
   useEffect(() => {
-    if (authSetting) {
+    if (engineSettingData.status === 'success') {
       const tempAuthState = { ...initialAuthState }
       authSetting?.authStrategies?.forEach((el) => {
         Object.entries(el).forEach(([strategyName, strategy]) => {
@@ -96,27 +79,66 @@ const AuthenticationTab = forwardRef(({ open }: { open: boolean }, ref: React.Mu
       )
       keySecret.set(tempKeySecret)
     }
-  }, [authSetting])
+  }, [engineSettingData.status])
 
   const handleSubmit = () => {
     loadingState.loading.set(true)
-    const auth = Object.keys(state.value)
-      .filter((item) => (state[item].value ? item : null))
-      .filter(Boolean)
-      .map((prop) => ({ [prop]: state[prop].value }))
+    // Create a map of all strategies with their current values
+    const currentStrategiesMap = Object.keys(state.value).reduce(
+      (acc, item) => {
+        acc[item] = state[item].value
+        return acc
+      },
+      {} as Record<string, boolean>
+    )
+
+    // Preserve order by using authStrategiesInDb as reference
+    const updatedAuthStrategies = authSetting.authStrategies.map((strategy) => {
+      const [key] = Object.keys(strategy)
+      return { [key]: currentStrategiesMap[key] ?? false }
+    })
+
+    // Add any new strategies that weren't in authStrategiesInDb
+    Object.keys(currentStrategiesMap).forEach((key) => {
+      if (!updatedAuthStrategies.some((strategy) => Object.keys(strategy)[0] === key)) {
+        updatedAuthStrategies.push({ [key]: currentStrategiesMap[key] })
+      }
+    })
 
     const oauth = { ...authSetting.oauth, ...(keySecret.value as any) }
 
-    for (const key of Object.keys(oauth)) {
-      oauth[key] = JSON.parse(JSON.stringify(oauth[key]))
-    }
+    const updatedSettings = flattenObjectToArray({ oauth: oauth, authStrategies: updatedAuthStrategies })
 
-    patchAuthSettings(id, { authStrategies: auth, oauth: oauth })
+    const authOperationPromises: Promise<EngineSettingType | EngineSettingType[]>[] = []
+
+    updatedSettings.forEach((setting) => {
+      const settingInDb = engineSettingData.data.find((el) => el.key === setting.key)
+      if (!settingInDb) {
+        authOperationPromises.push(
+          authSettingMutation.create({
+            key: setting.key,
+            category: 'authentication',
+            dataType: getDataType(setting.value),
+            value: `${setting.value}`,
+            type: 'private'
+          })
+        )
+      } else if (settingInDb.value != setting.value) {
+        authOperationPromises.push(
+          authSettingMutation.patch(settingInDb.id, {
+            key: setting.key,
+            category: 'authentication',
+            dataType: getDataType(setting.value),
+            value: setting.value,
+            type: 'private'
+          })
+        )
+      }
+    })
+
+    Promise.all(authOperationPromises)
       .then(() => {
         loadingState.set({ loading: false, errorMessage: '' })
-        NotificationService.dispatchNotify(t('admin:components.setting.authSettingsRefreshNotification'), {
-          variant: 'warning'
-        })
       })
       .catch((e) => {
         loadingState.set({ loading: false, errorMessage: e.message })
@@ -184,8 +206,6 @@ const AuthenticationTab = forwardRef(({ open }: { open: boolean }, ref: React.Mu
     <Accordion
       title={t('admin:components.setting.authentication.header')}
       subtitle={t('admin:components.setting.authentication.subtitle')}
-      expandIcon={<HiPlusSmall />}
-      shrinkIcon={<HiMinus />}
       ref={ref}
       open={open}
     >
@@ -252,9 +272,6 @@ const AuthenticationTab = forwardRef(({ open }: { open: boolean }, ref: React.Mu
           return (
             <Toggle
               key={i}
-              className="col-span-1 capitalize"
-              containerClassName="justify-start"
-              labelClassName="capitalize"
               label={displayStrategyName}
               value={state[strategyName].value}
               disabled={strategyName === 'jwt'}
@@ -294,7 +311,7 @@ const AuthenticationTab = forwardRef(({ open }: { open: boolean }, ref: React.Mu
         />
       </div>
 
-      <hr className="my-6 border border-theme-primary" />
+      <hr className="my-6 border " />
       <div className="grid grid-cols-3 gap-4">
         {holdAuth?.apple?.value && (
           <div className="col-span-1 grid gap-y-2">
@@ -573,7 +590,7 @@ const AuthenticationTab = forwardRef(({ open }: { open: boolean }, ref: React.Mu
       </div>
 
       <div className="mt-6 grid grid-cols-8 gap-6">
-        <Button size="sm" className="text-primary col-span-1 bg-theme-highlight" onClick={handleCancel} fullWidth>
+        <Button size="sm" className="text-primary col-span-1 " onClick={handleCancel} fullWidth>
           {t('admin:components.common.reset')}
         </Button>
 

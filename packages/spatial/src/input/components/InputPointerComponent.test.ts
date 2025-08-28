@@ -1,32 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/EtherealEngine/etherealengine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Ethereal Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Ethereal Engine team.
-
-All portions of the code written by the Ethereal Engine team are Copyright © 2021-2023 
-Ethereal Engine. All Rights Reserved.
-*/
-
 import {
   Entity,
-  ReactiveQuerySystem,
-  SystemDefinitions,
   UndefinedEntity,
   createEngine,
   createEntity,
@@ -37,12 +10,11 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { getState, startReactor } from '@ir-engine/hyperflux'
-import { act, render } from '@testing-library/react'
 import assert from 'assert'
 import { useEffect } from 'react'
 import sinon from 'sinon'
 import { Vector2 } from 'three'
-import { afterEach, beforeEach, describe, it } from 'vitest'
+import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 import { CameraPointerHash, InputPointerComponent, InputPointerState } from './InputPointerComponent'
 
 const InputPointerComponentDefaults = {
@@ -140,7 +112,6 @@ describe('InputPointerComponent', () => {
   }) // << onInit
 
   describe('onSet', () => {
-    const PointerID = 42
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
@@ -153,7 +124,7 @@ describe('InputPointerComponent', () => {
       return destroyEngine()
     })
 
-    it("should set the given values into the component's data", () => {
+    it("should set the given values into the component's data", async () => {
       const DummyPointerID = 123
       const DummyEntity = 456 as Entity
       const Expected = {
@@ -162,13 +133,15 @@ describe('InputPointerComponent', () => {
         cameraEntity: DummyEntity
       }
       setComponent(testEntity, InputPointerComponent, Expected)
-      const after = getComponent(testEntity, InputPointerComponent)
-      assert.deepEqual(after, Expected)
-      assert.equal(after.pointerId, DummyPointerID)
-      assert.equal(after.cameraEntity, DummyEntity)
+      await vi.waitFor(() => {
+        const after = getComponent(testEntity, InputPointerComponent)
+        assert.deepEqual(after, Expected)
+        assert.equal(after.pointerId, DummyPointerID)
+        assert.equal(after.cameraEntity, DummyEntity)
+      })
     })
 
-    it('should set the entity into the InputPointerState with the expected hash id', () => {
+    it('should set the entity into the InputPointerState with the expected hash id', async () => {
       const DummyPointerID = 123
       const DummyEntity = 456 as Entity
       const PointerData = {
@@ -178,8 +151,10 @@ describe('InputPointerComponent', () => {
       }
       const ExpectedHash = InputPointerState.createCameraPointerHash(PointerData.cameraEntity, PointerData.pointerId)
       setComponent(testEntity, InputPointerComponent, PointerData)
-      const result = getState(InputPointerState).pointers.get(ExpectedHash)
-      assert.equal(result, testEntity)
+      await vi.waitFor(() => {
+        const result = getState(InputPointerState).pointers.get(ExpectedHash)
+        assert.equal(result, testEntity)
+      })
     })
   }) // << onSet
 
@@ -196,7 +171,7 @@ describe('InputPointerComponent', () => {
       return destroyEngine()
     })
 
-    it('should remove the camera entity from the InputPointerState.pointers Map', () => {
+    it('should remove the camera entity from the InputPointerState.pointers Map', async () => {
       const DummyPointerID = 123
       const DummyEntity = 456 as Entity
       const PointerData = {
@@ -207,8 +182,10 @@ describe('InputPointerComponent', () => {
       const ExpectedHash = InputPointerState.createCameraPointerHash(PointerData.cameraEntity, PointerData.pointerId)
       setComponent(testEntity, InputPointerComponent, PointerData)
       removeComponent(testEntity, InputPointerComponent)
-      const result = getState(InputPointerState).pointers.get(ExpectedHash)
-      assert.equal(result, undefined)
+      await vi.waitFor(() => {
+        const result = getState(InputPointerState).pointers.get(ExpectedHash)
+        assert.equal(result, undefined)
+      })
     })
   }) // << onRemove
 
@@ -257,20 +234,20 @@ describe('InputPointerComponent', () => {
       const Expected = UndefinedEntity
       const Camera = 42 as Entity
       const Pointer = 21
-      const DummyData = { cameraEntity: Camera, pointerId: Pointer }
-      // setComponent(testEntity, InputPointerComponent, DummyData)  // Do not set the component, so the InputPointerState Map is empty
       const result = InputPointerComponent.getPointerByID(Camera, Pointer)
       assert.equal(result, Expected)
     })
 
-    it('should return the entity stored at CameraPointerHash(cameraEntity, pointerId)', () => {
+    it('should return the entity stored at CameraPointerHash(cameraEntity, pointerId)', async () => {
       const Expected = testEntity
       const Camera = 42 as Entity
       const Pointer = 21
       const DummyData = { cameraEntity: Camera, pointerId: Pointer }
       setComponent(testEntity, InputPointerComponent, DummyData)
-      const result = InputPointerComponent.getPointerByID(Camera, Pointer)
-      assert.equal(result, Expected)
+      await vi.waitFor(() => {
+        const result = InputPointerComponent.getPointerByID(Camera, Pointer)
+        assert.equal(result, Expected)
+      })
     })
   }) // << getPointerByID
 
@@ -283,7 +260,7 @@ describe('InputPointerComponent', () => {
       return destroyEngine()
     })
 
-    it('should return an array of entities for which all of their InputPointerComponent.cameraEntity properties are the same entity as the `@param cameraEntity`', () => {
+    it('should return an array of entities for which all of their InputPointerComponent.cameraEntity properties are the same entity as the `@param cameraEntity`', async () => {
       const cameraEntity = createEntity()
       const Dummy = { pointerId: 12356, cameraEntity: createEntity() }
       const pointerEntity1 = createEntity()
@@ -305,14 +282,16 @@ describe('InputPointerComponent', () => {
         useEffect(effectSpy, [cameraPointers.length])
         return null
       }
-      const root = startReactor(Reactor)
-      assert.equal(reactorSpy.callCount, 1)
-      assert.equal(effectSpy.callCount, 1)
-      // Check that the assumptions are correct
-      assert.equal(cameraPointers.length, 2)
-      for (const pointer of cameraPointers) {
-        assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
-      }
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        assert.equal(reactorSpy.callCount, 2)
+        assert.equal(effectSpy.callCount, 1)
+        // Check that the assumptions are correct
+        assert.equal(cameraPointers.length, 2)
+        for (const pointer of cameraPointers) {
+          assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
+        }
+      })
     })
 
     it('should be possible to use the returned array reactively', async () => {
@@ -337,23 +316,24 @@ describe('InputPointerComponent', () => {
         useEffect(effectSpy, [cameraPointers.length])
         return null
       }
-      const root = startReactor(Reactor)
-      assert.equal(reactorSpy.callCount, 1)
-      assert.equal(effectSpy.callCount, 1)
-      // Check the basic assumptions
-      assert.equal(cameraPointers.length, 2)
-      for (const pointer of cameraPointers) {
-        assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
-      }
+      startReactor(Reactor)
+      await vi.waitFor(() => {
+        assert.equal(reactorSpy.callCount, 2)
+        assert.equal(effectSpy.callCount, 1)
+        // Check the basic assumptions
+        assert.equal(cameraPointers.length, 2)
+        for (const pointer of cameraPointers) {
+          assert.equal(getComponent(pointer, InputPointerComponent).cameraEntity, cameraEntity)
+        }
+      })
       // Update the components and Check the results
       removeComponent(pointerEntity2, InputPointerComponent)
 
-      SystemDefinitions.get(ReactiveQuerySystem)!.execute()
-      await act(async () => render(null))
-
-      assert.equal(reactorSpy.callCount, 2)
-      assert.equal(effectSpy.callCount, 2)
-      assert.equal(cameraPointers.length, 1)
+      await vi.waitFor(() => {
+        assert.equal(reactorSpy.callCount, 3)
+        assert.equal(effectSpy.callCount, 2)
+        assert.equal(cameraPointers.length, 1)
+      })
     })
   }) // << usePointersForCamera
 })

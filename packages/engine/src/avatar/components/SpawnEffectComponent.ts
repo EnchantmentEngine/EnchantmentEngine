@@ -1,62 +1,28 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { Easing, Tween } from '@tweenjs/tween.js'
 import { useEffect } from 'react'
 import { AdditiveBlending, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three'
 
-import {
-  defineComponent,
-  getComponent,
-  getMutableComponent,
-  removeComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { Easing, EntitySchema, EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ObjectDirection, Vector3_Right, Vector3_Up } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { Physics, RaycastArgs } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { AvatarCollisionMask, CollisionGroups } from '@ir-engine/spatial/src/physics/enums/CollisionGroups'
 import { getInteractionGroups } from '@ir-engine/spatial/src/physics/functions/getInteractionGroups'
 import { SceneQueryType } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
-import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
 
 export const SpawnEffectComponent = defineComponent({
   name: 'SpawnEffectComponent',
 
-  schema: S.Object({
-    sourceEntity: S.Entity(),
-    opacityMultiplier: S.Number(1),
-    plateEntity: S.Entity(),
-    lightEntities: S.Array(S.Entity())
+  schema: Schema.Object({
+    sourceEntity: EntitySchema.Entity(),
+    opacityMultiplier: Schema.Number({ default: 1 }),
+    plateEntity: EntitySchema.Entity(),
+    lightEntities: Schema.Array(EntitySchema.Entity())
   }),
 
   reactor: () => {
@@ -94,42 +60,17 @@ export const SpawnEffectComponent = defineComponent({
   },
 
   fadeIn: (entity: Entity) => {
-    const effectComponent = getComponent(entity, SpawnEffectComponent)
-    setComponent(
-      entity,
-      TweenComponent,
-      new Tween<any>(effectComponent)
-        .to(
-          {
-            opacityMultiplier: 1
-          },
-          1000
-        )
-        .easing(Easing.Exponential.Out)
-        .start()
-        .onComplete(() => {
-          removeComponent(entity, TweenComponent)
-        })
-    )
+    SpawnEffectComponent.setTransition(entity, 'opacityMultiplier', 1, {
+      duration: 1000,
+      easing: Easing.exponential.out
+    })
   },
 
   fadeOut: (entity: Entity) => {
-    const effectComponent = getComponent(entity, SpawnEffectComponent)
-    setComponent(
-      entity,
-      TweenComponent,
-      new Tween<any>(effectComponent)
-        .to(
-          {
-            opacityMultiplier: 0
-          },
-          2000
-        )
-        .start()
-        .onComplete(() => {
-          removeEntity(entity)
-        })
-    )
+    /** @todo use proper transition callback API */
+    setTimeout(() => {
+      removeEntity(entity)
+    })
   },
 
   lightMesh: new Mesh(
@@ -157,12 +98,12 @@ const createPlateEntity = (entity: Entity) => {
   const plateEntity = createEntity()
   setComponent(plateEntity, NameComponent, 'Spawn Plate ' + entity)
   setComponent(plateEntity, EntityTreeComponent, { parentEntity: entity })
-  addObjectToGroup(plateEntity, plateMesh)
+  setComponent(plateEntity, MeshComponent, plateMesh)
   setVisibleComponent(plateEntity, true)
   const transform = getComponent(plateEntity, TransformComponent)
   transform.rotation.setFromAxisAngle(Vector3_Right, -0.5 * Math.PI)
   transform.position.y = 0.01
-  getMutableComponent(entity, SpawnEffectComponent).plateEntity.set(plateEntity)
+  getComponent(entity, SpawnEffectComponent).plateEntity = plateEntity
 }
 
 const createRayEntities = (entity: Entity) => {
@@ -175,10 +116,10 @@ const createRayEntities = (entity: Entity) => {
     const rayEntity = createEntity()
     setComponent(rayEntity, NameComponent, 'Spawn Ray ' + entity)
     setComponent(rayEntity, EntityTreeComponent, { parentEntity: entity })
-    addObjectToGroup(rayEntity, ray)
+    setComponent(rayEntity, MeshComponent, ray)
     const transform = getComponent(rayEntity, TransformComponent)
     setVisibleComponent(rayEntity, true)
-    getMutableComponent(entity, SpawnEffectComponent).lightEntities.merge([rayEntity])
+    getComponent(entity, SpawnEffectComponent).lightEntities.push(rayEntity)
 
     const a = (2 * Math.PI * i) / rayCount
     const r = R * Math.random()

@@ -1,39 +1,15 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { t } from 'i18next'
 import { useEffect } from 'react'
 
 import { LocationService, LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
 import { useFind } from '@ir-engine/common'
 import { staticResourcePath } from '@ir-engine/common/src/schema.type.module'
-import { GLTFAssetState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { getMutableState, useMutableState } from '@ir-engine/hyperflux'
+import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
+import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { NotificationService } from '../../common/services/NotificationService'
 import { RouterState } from '../../common/services/RouterService'
-import { WarningUIService } from '../../systems/WarningUISystem'
 import { ClientContextState } from '../../util/ClientContextState'
 
 export const useLoadLocation = (props: { locationName: string }) => {
@@ -49,25 +25,26 @@ export const useLoadLocation = (props: { locationName: string }) => {
 
   useEffect(() => {
     if (locationState.invalidLocation.value) {
-      WarningUIService.openWarning({
-        title: t('common:instanceServer.invalidLocation'),
-        body: `${t('common:instanceServer.cantFindLocation')} '${locationState.locationName.value}'. ${t(
+      NotificationService.dispatchNotify(
+        `${t('common:instanceServer.cantFindLocation')} '${locationState.locationName.value}'. ${t(
           'common:instanceServer.misspelledOrNotExist'
         )}`,
-        action: () => RouterState.navigate('/')
-      })
+        { variant: 'error' }
+      )
+      RouterState.navigate('/')
     }
   }, [locationState.invalidLocation])
 
-  useEffect(() => {
-    if (locationState.currentLocation.selfNotAuthorized.value) {
-      WarningUIService.openWarning({
-        title: t('common:instanceServer.notAuthorizedAtLocationTitle'),
-        body: t('common:instanceServer.notAuthorizedAtLocation'),
-        action: () => RouterState.navigate('/')
-      })
-    }
-  }, [locationState.currentLocation.selfNotAuthorized])
+  /** @todo disabled */
+  // useEffect(() => {
+  //   if (locationState.currentLocation.selfNotAuthorized.value) {
+  //     WarningUIService.openWarning({
+  //       title: t('common:instanceServer.notAuthorizedAtLocationTitle'),
+  //       body: t('common:instanceServer.notAuthorizedAtLocation'),
+  //       action: () => RouterState.navigate('/')
+  //     })
+  //   }
+  // }, [locationState.currentLocation.selfNotAuthorized])
 
   /**
    * Once we have the location, fetch the current scene data
@@ -82,7 +59,8 @@ export const useLoadLocation = (props: { locationName: string }) => {
       return
     const sceneURL = locationState.currentLocation.location.sceneURL.value
     const sceneID = locationState.currentLocation.location.sceneId.value
-    return GLTFAssetState.loadScene(sceneURL, sceneID)
+    const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+    return SceneState.loadScene(sceneURL, sceneID, viewerEntity)
   }, [locationState.currentLocation.location.sceneId, locationState.currentLocation.location.sceneURL])
 }
 
@@ -99,7 +77,8 @@ export const useLoadScene = (props: { projectName: string; sceneName: string }) 
     const resource = resourceQuery.data[0]
     getMutableState(LocationState).currentLocation.location.sceneId.set(resource.id)
     getMutableState(LocationState).currentLocation.location.sceneURL.set(resource.url)
-    const unload = GLTFAssetState.loadScene(resource.url, resource.id)
+    const viewerEntity = getState(ReferenceSpaceState).viewerEntity
+    const unload = SceneState.loadScene(resource.url, resource.id, viewerEntity)
     return () => {
       getMutableState(LocationState).currentLocation.location.sceneId.set('')
       getMutableState(LocationState).currentLocation.location.sceneURL.set('')

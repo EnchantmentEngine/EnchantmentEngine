@@ -1,44 +1,42 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import * as bitECS from 'bitecs'
-import React, { ErrorInfo, FC, memo, Suspense, useLayoutEffect, useMemo } from 'react'
+import React, { ErrorInfo, FC, memo, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
+import * as bitECSLegacy from './bitecsLegacy'
 
-import { getState, HyperFlux, NO_PROXY_STEALTH, useHookstate } from '@ir-engine/hyperflux'
+import {
+  defineState,
+  getMutableState,
+  HyperFlux,
+  ImmutableArray,
+  NO_PROXY,
+  startReactor,
+  State,
+  useForceUpdate,
+  useHookstate
+} from '@ir-engine/hyperflux'
 
-import { Component } from './ComponentFunctions'
+import { OpReturnType } from 'bitecs'
+import {
+  Component,
+  EntityContext,
+  LayerComponent,
+  LayerComponents,
+  LayerID,
+  Layers,
+  useOptionalComponent
+} from './ComponentFunctions'
 import { Entity } from './Entity'
-import { EntityContext } from './EntityFunctions'
-import { defineSystem } from './SystemFunctions'
-import { PresentationSystemGroup } from './SystemGroups'
-import { SystemState } from './SystemState'
 
-export function defineQuery(components: (bitECS.Component | bitECS.QueryModifier)[]) {
-  const query = bitECS.defineQuery(components) as bitECS.Query
-  const enterQuery = bitECS.enterQuery(query)
-  const exitQuery = bitECS.exitQuery(query)
+export const $opType = Symbol.for('bitecs-opType')
+export const $opTerms = Symbol.for('bitecs-opTerms')
+
+export type { QueryTerm } from 'bitecs'
+
+export const queries = [] as ReturnType<typeof defineQuery>[]
+
+export function defineQuery(components: bitECS.QueryTerm[], layer: LayerID = Layers.Simulation) {
+  const query = bitECSLegacy.defineQuery([...components, LayerComponents[layer]])
+  const enterQuery = bitECSLegacy.enterQuery(query)
+  const exitQuery = bitECSLegacy.exitQuery(query)
 
   const wrappedQuery = () => {
     return query(HyperFlux.store) as Entity[]
@@ -53,85 +51,196 @@ export function defineQuery(components: (bitECS.Component | bitECS.QueryModifier
   wrappedQuery._query = query
   wrappedQuery._enterQuery = enterQuery
   wrappedQuery._exitQuery = exitQuery
+
+  queries.push(wrappedQuery)
+
   return wrappedQuery
 }
 
-export function removeQuery(query: ReturnType<typeof defineQuery>) {
-  bitECS.removeQuery(HyperFlux.store, query._query)
-  bitECS.removeQuery(HyperFlux.store, query._enterQuery)
-  bitECS.removeQuery(HyperFlux.store, query._exitQuery)
+export function removeQuery(queryOrTerms: ReturnType<typeof defineQuery> | bitECS.QueryTerm[]) {
+  try {
+    bitECS.removeQuery(HyperFlux.store, Array.isArray(queryOrTerms) ? queryOrTerms : queryOrTerms._query.components)
+    if ('_enterQuery' in queryOrTerms) queryOrTerms._enterQuery.unsubscribe()
+    if ('_exitQuery' in queryOrTerms) queryOrTerms._exitQuery.unsubscribe()
+  } catch (e) {
+    // console.log('Caught error', e, 'likely due to cleaning up a query that doesnt exist')
+  }
 }
 
-export type QueryComponents = (Component<any> | bitECS.QueryModifier | bitECS.Component)[]
+export const query = (queryTerms: bitECS.QueryTerm[]) => bitECS.query(HyperFlux.store, queryTerms) as readonly Entity[]
 
-export const ReactiveQuerySystem = defineSystem({
-  uuid: 'ee.hyperflux.ReactiveQuerySystem',
-  insert: { after: PresentationSystemGroup },
-  execute: () => {
-    for (const { query, entities } of getState(SystemState).reactiveQueryStates) {
-      const entitiesAdded = query.enter().length
-      const entitiesRemoved = query.exit().length
-      if (entitiesAdded || entitiesRemoved) entities.set([...query()])
-    }
-  }
-})
+const UseQuerySubreactorEntityCache = {} as Record<string, Set<State<Entity[]>>>
+const UseQuerySubreactorCache = {} as Record<string, ReturnType<typeof startReactor>>
 
-/**
- * Use a query in a reactive context (a React component)
- * - "components" argument must not change
- */
-export function useQuery(components: QueryComponents) {
-  const state = useHookstate(() => {
-    const query = defineQuery(components)
-    return {
-      query,
-      entities: query()
-    }
+const sortAndJoinComponents = (components: bitECS.QueryTerm[]) =>
+  components
+    .map((c) => c.name)
+    .sort()
+    .join()
+
+export function useQuery(components: bitECS.QueryTerm[], layer: LayerID = Layers.Simulation) {
+  const entitiesState = useHookstate(() => {
+    return [...query([...components, LayerComponents[layer]])] as Entity[]
   })
 
-  // Use a layout effect to ensure that `queryState`
-  // is deleted from the `reactiveQueryStates` map immediately when the current
-  // component is unmounted, before any other code attempts to set it
-  // (component state can't be modified after a component is unmounted)
-  useLayoutEffect(() => {
-    const queryState = { query: state.get(NO_PROXY_STEALTH).query, entities: state.entities, components }
-    getState(SystemState).reactiveQueryStates.add(queryState)
+  useEffect(() => {
+    const componentsWithLayer = [...components, LayerComponents[layer]]
+
+    const key = sortAndJoinComponents(componentsWithLayer)
+
+    const exists = !!UseQuerySubreactorEntityCache[key]
+    if (!UseQuerySubreactorEntityCache[key]) UseQuerySubreactorEntityCache[key] = new Set()
+
+    const cache = UseQuerySubreactorEntityCache[key]
+    cache.add(entitiesState)
+    if (!exists) {
+      const subreactor = startReactor(() => {
+        const update = useForceUpdate()
+
+        const entities = query(componentsWithLayer) as Entity[]
+        useEffect(() => {
+          for (const state of cache) {
+            state.set([...entities])
+          }
+        }, [JSON.stringify(entities)])
+
+        useLayoutEffect(() => {
+          const componentsWithLayer = [...components, LayerComponents[layer]]
+
+          const unsubAdd = bitECS.observe(HyperFlux.store, bitECS.onAdd(...componentsWithLayer), update)
+          const unsubRemove = bitECS.observe(HyperFlux.store, bitECS.onRemove(...componentsWithLayer), update)
+
+          const unsubscribe = () => {
+            unsubAdd()
+            unsubRemove()
+          }
+
+          return () => {
+            unsubscribe()
+            removeQuery(componentsWithLayer)
+          }
+        }, [])
+
+        return null
+      }, 'useQuery ' + key)
+
+      UseQuerySubreactorCache[key] = subreactor
+    }
+
     return () => {
-      removeQuery(queryState.query)
-      getState(SystemState).reactiveQueryStates.delete(queryState)
+      cache.delete(entitiesState)
+      if (cache.size === 0) {
+        const subreactor = UseQuerySubreactorCache[key]
+        subreactor.stop()
+        delete UseQuerySubreactorEntityCache[key]
+      }
     }
   }, [])
 
-  return state.entities.value as Entity[]
+  const entities = entitiesState.get(NO_PROXY) as Entity[]
+
+  return useMemo(() => [...entities], [JSON.stringify(entities)])
 }
 
 export type Query = ReturnType<typeof defineQuery>
 
-const QuerySubReactor = memo((props: { entity: Entity; ChildEntityReactor: FC; props?: any }) => {
-  return (
-    <>
-      <QueryReactorErrorBoundary>
-        <Suspense fallback={null}>
-          <EntityContext.Provider value={props.entity}>
-            <props.ChildEntityReactor {...props.props} />
-          </EntityContext.Provider>
-        </Suspense>
-      </QueryReactorErrorBoundary>
-    </>
-  )
+export const SuspendedQueryChildState = defineState({
+  name: 'ir.ecs.SuspendedQueryChildState',
+  initial: [] as Array<{ entity: Entity; ChildEntityReactor: FC; props?: any }>
 })
 
-export const QueryReactor = memo((props: { Components: QueryComponents; ChildEntityReactor: FC; props?: any }) => {
-  const entities = useQuery(props.Components)
-  const MemoChildEntityReactor = useMemo(() => memo(props.ChildEntityReactor), [props.ChildEntityReactor])
-  return (
-    <>
-      {entities.map((entity) => (
-        <QuerySubReactor key={entity} entity={entity} ChildEntityReactor={MemoChildEntityReactor} props={props.props} />
-      ))}
-    </>
-  )
-})
+const Suspended = (props: any) => {
+  useEffect(() => {
+    const state = getMutableState(SuspendedQueryChildState)
+    state.merge([props])
+    return () => {
+      state.set((v) => v.filter((v) => v !== props))
+    }
+  }, [])
+  return null
+}
+
+export const EntityArrayBoundary = memo(
+  (props: { entities: Entity[] | ImmutableArray<Entity>; ChildEntityReactor: FC; props?: any }) => {
+    const MemoChildEntityReactor = useMemo(() => memo(props.ChildEntityReactor), [props.ChildEntityReactor])
+    return (
+      <>
+        {props.entities.map((entity) => {
+          const layer = LayerComponent.get(entity)
+          const id = LayerComponents[layer].counterMap[entity]?.identifier
+          return (
+            <QueryReactorErrorBoundary key={id}>
+              <Suspense fallback={<Suspended {...props} />}>
+                <EntityContext.Provider value={entity}>
+                  <MemoChildEntityReactor key={id} {...props.props} entity={entity} />
+                </EntityContext.Provider>
+              </Suspense>
+            </QueryReactorErrorBoundary>
+          )
+        })}
+      </>
+    )
+  }
+)
+
+const QuerySubReactor = memo(
+  (props: { entity: Entity; ChildEntityReactor: FC; Components: bitECS.QueryTerm[]; props?: any }) => {
+    const components = [] as Component[]
+    for (const queryTerm of props.Components) {
+      if (queryTerm.isComponent) {
+        components.push(queryTerm)
+      } else {
+        const q = queryTerm[$opType] ? queryTerm : (queryTerm() as OpReturnType)
+        const type = q[$opType]
+        if (type === 'Or' || type === 'And') {
+          components.push(...q[$opTerms])
+        }
+      }
+    }
+
+    const ids = [] as string[]
+    for (const c of components) {
+      useOptionalComponent(props.entity, c)
+      const id = c.counterMap[props.entity]?.identifier
+      if (id) ids.push(id)
+    }
+    const id = ids.join('_')
+
+    return (
+      <>
+        <QueryReactorErrorBoundary>
+          <Suspense fallback={<Suspended {...props} />}>
+            <EntityContext.Provider value={props.entity}>
+              <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
+            </EntityContext.Provider>
+          </Suspense>
+        </QueryReactorErrorBoundary>
+      </>
+    )
+  }
+)
+
+export const QueryReactor = memo(
+  (props: { Components: bitECS.QueryTerm[]; ChildEntityReactor: FC; props?: any; layer?: LayerID }) => {
+    const entities = useQuery(props.Components, props.layer)
+    const MemoChildEntityReactor = useMemo(() => memo(props.ChildEntityReactor), [props.ChildEntityReactor])
+    return (
+      <>
+        {entities.map((entity) => {
+          return (
+            <QuerySubReactor
+              key={entity}
+              entity={entity}
+              Components={props.Components}
+              ChildEntityReactor={MemoChildEntityReactor}
+              props={props.props}
+            />
+          )
+        })}
+      </>
+    )
+  }
+)
 
 interface ErrorState {
   error: Error | null

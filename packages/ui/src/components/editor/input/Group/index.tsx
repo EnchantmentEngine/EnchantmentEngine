@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 
 import { LuInfo } from 'react-icons/lu'
@@ -104,7 +79,6 @@ export interface InputGroupProps {
   disabled?: boolean
   children: React.ReactNode
   containerClassName?: string
-  labelClassName?: string
   infoClassName?: string
   className?: string
   dataTestId?: string
@@ -118,31 +92,22 @@ export function InputGroup({
   info,
   label,
   containerClassName,
-  labelClassName,
   infoClassName,
   className,
   disabled,
   dataTestId
 }: InputGroupProps) {
   return (
-    <div className={twMerge('my-1 flex flex-wrap items-center justify-end', containerClassName)}>
-      <div className="mr-2 flex">
-        <Label
-          className={twMerge(
-            'mr-2.5 text-wrap text-end text-xs ',
-            labelClassName,
-            disabled ? 'text-[#6B6F78]' : 'text-[#A0A1A2]'
-          )}
-        >
-          {label}
-        </Label>
+    <div className={twMerge('flex w-full flex-col gap-y-2 py-1.5 pl-8 pr-3.5', containerClassName)}>
+      <div className="flex w-full justify-between">
+        <Label>{label}</Label>
         {info && (
           <Tooltip content={info}>
-            <LuInfo className={twMerge('h-5 w-5', disabled ? 'text-[#42454D]' : 'text-[#A0A1A2]', infoClassName)} />
+            <LuInfo className={twMerge('h-5 w-5 text-text-inactive hover:text-text-primary', infoClassName)} />
           </Tooltip>
         )}
       </div>
-      <div className={twMerge('w-3/5', className)} data-testid={dataTestId || ''}>
+      <div className={twMerge('w-full', className)} data-testid={dataTestId || ''}>
         {children}
       </div>
     </div>

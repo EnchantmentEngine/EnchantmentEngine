@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 
 import { uploadToFeathersService } from '@ir-engine/client-core/src/util/upload'
@@ -33,7 +8,7 @@ import {
 } from '@ir-engine/engine/src/assets/constants/CompressionParms'
 import { ImmutableArray, useHookstate } from '@ir-engine/hyperflux'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { Button, Checkbox, Input, Select } from '@ir-engine/ui'
 import { Slider } from '@ir-engine/ui/editor'
 import InputGroup from '@ir-engine/ui/src/components/editor/input/Group'
@@ -81,7 +56,7 @@ export default function ImageCompressionPanel({
     await refreshDirectory()
 
     compressionLoading.set(false)
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
   const uploadImage = async (props: FileDataType, data: ArrayBuffer) => {
@@ -96,7 +71,7 @@ export default function ImageCompressionPanel({
       await uploadToFeathersService(fileBrowserUploadPath, [file], {
         args: [
           {
-            project: projectName,
+            project: orgName + '/' + projectName,
             path: relativePath + file.name,
             contentType: file.type
           }
@@ -121,7 +96,7 @@ export default function ImageCompressionPanel({
         <Button
           variant="tertiary"
           className="absolute right-0 border-0 dark:bg-transparent dark:text-[#A3A3A3]"
-          onClick={() => PopoverState.hidePopupover()}
+          onClick={() => ModalState.closeModal()}
         >
           <MdClose />
         </Button>
@@ -130,7 +105,6 @@ export default function ImageCompressionPanel({
       <div className="mx-auto grid w-4/5 min-w-[400px] justify-center gap-y-2">
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
-          labelClassName="w-24 text-theme-gray3"
           name="mode"
           label={t('editor:properties.model.transform.dst')}
         >
@@ -139,8 +113,7 @@ export default function ImageCompressionPanel({
         <div className="w-full border border-[#2B2C30]" />
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
-          labelClassName="w-20 text-theme-gray3"
-          infoClassName="text-theme-gray3"
+          infoClassName=""
           name="mode"
           label={t('editor:properties.model.transform.mode')}
           info={t('editor:properties.model.transform.modeTooltip')}
@@ -156,8 +129,7 @@ export default function ImageCompressionPanel({
         </InputGroup>
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
-          labelClassName="w-20 text-theme-gray3"
-          infoClassName="text-theme-gray3"
+          infoClassName=""
           className="w-min"
           name="flipY"
           label={t('editor:properties.model.transform.flipY')}
@@ -167,8 +139,7 @@ export default function ImageCompressionPanel({
         </InputGroup>
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
-          labelClassName="w-20 text-theme-gray3"
-          infoClassName="text-theme-gray3"
+          infoClassName=""
           className="w-min"
           name="linear"
           label={t('editor:properties.model.transform.srgb')}
@@ -178,8 +149,7 @@ export default function ImageCompressionPanel({
         </InputGroup>
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
-          labelClassName="w-20 text-theme-gray3"
-          infoClassName="text-theme-gray3"
+          infoClassName=""
           name="mipmaps"
           className="w-min"
           label={t('editor:properties.model.transform.mipmaps')}
@@ -189,8 +159,7 @@ export default function ImageCompressionPanel({
         </InputGroup>
         <InputGroup
           containerClassName="w-full justify-start flex-nowrap"
-          labelClassName="w-20 text-theme-gray3"
-          infoClassName="text-theme-gray3"
+          infoClassName=""
           name="normalMap"
           className="w-min"
           label={t('editor:properties.model.transform.normalMap')}
@@ -202,8 +171,7 @@ export default function ImageCompressionPanel({
           <>
             <InputGroup
               containerClassName="w-full justify-start flex-nowrap"
-              labelClassName="w-20 text-theme-gray3"
-              infoClassName="text-theme-gray3"
+              infoClassName=""
               name="quality"
               label={t('editor:properties.model.transform.quality')}
               info={t('editor:properties.model.transform.qualityTooltip')}
@@ -220,8 +188,7 @@ export default function ImageCompressionPanel({
             </InputGroup>
             <InputGroup
               containerClassName="w-full justify-start flex-nowrap"
-              labelClassName="w-20 text-theme-gray3"
-              infoClassName="text-theme-gray3"
+              infoClassName=""
               name="compressionLevel"
               label={t('editor:properties.model.transform.compressionLevel')}
               info={t('editor:properties.model.transform.compressionLevelTooltip')}
@@ -242,8 +209,7 @@ export default function ImageCompressionPanel({
           <>
             <InputGroup
               containerClassName="w-full justify-start flex-nowrap"
-              labelClassName="w-20 text-theme-gray3"
-              infoClassName="text-theme-gray3"
+              infoClassName=""
               name="uastcFlags"
               label={t('editor:properties.model.transform.uastcFlags')}
               info={t('editor:properties.model.transform.uastcFlagsTooltip')}
@@ -256,8 +222,7 @@ export default function ImageCompressionPanel({
             </InputGroup>
             <InputGroup
               containerClassName="w-full justify-start flex-nowrap"
-              labelClassName="w-20 text-theme-gray3"
-              infoClassName="text-theme-gray3"
+              infoClassName=""
               name="uastcZstandard"
               label={t('editor:properties.model.transform.uastcZstandard')}
               info={t('editor:properties.model.transform.uastcZstandardTooltip')}

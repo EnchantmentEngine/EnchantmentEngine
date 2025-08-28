@@ -1,29 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import config from '@ir-engine/common/src/config'
+import { MediaSettingsType } from '@ir-engine/common/src/config'
+import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
 import multiLogger from '@ir-engine/common/src/logger'
 import {
   MediasoupMediaProducerActions,
@@ -31,26 +7,24 @@ import {
   MediasoupMediaProducersConsumersObjectsState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
 import { MediasoupTransportState } from '@ir-engine/common/src/transports/mediasoup/MediasoupTransportState'
-import { PresentationSystemGroup, defineSystem } from '@ir-engine/ecs'
+import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
 import {
   defineState,
   dispatchAction,
   getMutableState,
   getState,
-  useHookstate,
-  useMutableState
-} from '@ir-engine/hyperflux'
-import {
+  MediaStreamState,
   NetworkState,
+  screenshareAudioMediaChannelType,
+  screenshareVideoMediaChannelType,
+  useHookstate,
+  useMutableState,
   VideoConstants,
-  screenshareAudioDataChannelType,
-  screenshareVideoDataChannelType,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType
-} from '@ir-engine/network'
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { MediaInstanceState, useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
-import { MediaStreamState } from '../../media/MediaStreamState'
 import { clientContextParams } from '../../util/ClientContextState'
 import { ProducerExtension, WebRTCTransportExtension } from './MediasoupClientFunctions'
 
@@ -78,6 +52,8 @@ const MicrophoneReactor = () => {
   const mediasoupSelfProducerState = useMutableState(MediasoupSelfProducerState)
   const camAudioProducer = mediasoupSelfProducerState.camAudioProducer.value
 
+  const mediaSettings = useEngineSetting('client').data?.mediaSettings as MediaSettingsType | undefined
+
   const mediaStreamAudioSourceNode = useHookstate(null as MediaStreamAudioSourceNode | null)
 
   useEffect(() => {
@@ -93,7 +69,6 @@ const MicrophoneReactor = () => {
     const transport = MediasoupTransportState.getTransport(network.id, 'send') as WebRTCTransportExtension
 
     const codecOptions = { ...VideoConstants.CAM_AUDIO_CODEC_OPTIONS }
-    const mediaSettings = config.client.mediaSettings
     if (mediaSettings?.audio) codecOptions.opusMaxAverageBitrate = mediaSettings.audio.maxBitrate * 1000
 
     const abortController = new AbortController()
@@ -102,7 +77,7 @@ const MicrophoneReactor = () => {
       .produce({
         track: mediaStreamState.microphoneDestinationNode.value!.stream!.getAudioTracks()[0],
         codecOptions,
-        appData: { mediaTag: webcamAudioDataChannelType, channelId: channelId }
+        appData: { mediaTag: webcamAudioMediaChannelType, channelId: channelId }
       })
       .then((prod) => {
         if (abortController.signal.aborted) return
@@ -144,9 +119,7 @@ const MicrophoneReactor = () => {
   return null
 }
 
-const getCodecEncodings = (service: 'video' | 'screenshare') => {
-  const mediaSettings = config.client.mediaSettings
-  const settings = mediaSettings[service]
+const getCodecEncodings = (settings?: MediaSettingsType['screenshare'] | MediaSettingsType['video']) => {
   let codec, encodings
   if (settings) {
     switch (settings.codec) {
@@ -181,6 +154,7 @@ const WebcamReactor = () => {
   const ready = mediaNetworkState?.ready?.value
   const mediasoupSelfProducerState = useMutableState(MediasoupSelfProducerState)
   const camVideoProducer = mediasoupSelfProducerState.camVideoProducer.value
+  const mediaSettings = useEngineSetting('client').data?.mediaSettings as MediaSettingsType | undefined
 
   useEffect(() => {
     if (!webcamEnabled || !ready || !webcamMediaStream) return
@@ -195,7 +169,7 @@ const WebcamReactor = () => {
 
     const transport = MediasoupTransportState.getTransport(network.id, 'send') as WebRTCTransportExtension
 
-    const { codec, encodings } = getCodecEncodings('video')
+    const { codec, encodings } = getCodecEncodings(mediaSettings?.video)
 
     const abortController = new AbortController()
 
@@ -205,7 +179,7 @@ const WebcamReactor = () => {
         encodings,
         codecOptions: VideoConstants.CAM_VIDEO_SIMULCAST_CODEC_OPTIONS,
         codec,
-        appData: { mediaTag: webcamVideoDataChannelType, channelId: channelId }
+        appData: { mediaTag: webcamVideoMediaChannelType, channelId: channelId }
       })
       .then((prod) => {
         if (abortController.signal.aborted) return
@@ -252,6 +226,7 @@ const ScreenshareReactor = () => {
   const screenVideoProducer = mediasoupSelfProducerState.screenVideoProducer.value
   const screenAudioProducer = mediasoupSelfProducerState.screenAudioProducer.value
   const screenShareAudioPaused = mediaStreamState.screenShareAudioPaused.value
+  const mediaSettings = useEngineSetting('client').data?.mediaSettings as MediaSettingsType | undefined
 
   useEffect(() => {
     if (!screenshareEnabled || !ready || !screenshareMediaStream) return
@@ -269,7 +244,7 @@ const ScreenshareReactor = () => {
 
     const transport = MediasoupTransportState.getTransport(network.id, 'send') as WebRTCTransportExtension
 
-    const { codec, encodings } = getCodecEncodings('screenshare')
+    const { codec, encodings } = getCodecEncodings(mediaSettings?.screenshare)
 
     const abortController = new AbortController()
 
@@ -279,7 +254,7 @@ const ScreenshareReactor = () => {
         encodings,
         codecOptions: VideoConstants.CAM_VIDEO_SIMULCAST_CODEC_OPTIONS,
         codec,
-        appData: { mediaTag: screenshareVideoDataChannelType, channelId }
+        appData: { mediaTag: screenshareVideoMediaChannelType, channelId }
       })
       .then((producer) => {
         if (abortController.signal.aborted) {
@@ -305,7 +280,7 @@ const ScreenshareReactor = () => {
       transport
         .produce({
           track: audioTracks[0],
-          appData: { mediaTag: screenshareAudioDataChannelType, channelId }
+          appData: { mediaTag: screenshareAudioMediaChannelType, channelId }
         })
         .then((producer) => {
           if (abortController.signal.aborted) {
@@ -358,7 +333,7 @@ const ScreenshareReactor = () => {
 
     if (screenShareAudioPaused) MediasoupMediaProducerConsumerState.pauseProducer(network, screenAudioProducer.id)
     else MediasoupMediaProducerConsumerState.resumeConsumer(network, screenAudioProducer.id)
-    logger.info({ event_name: 'screenshare', value: screenShareAudioPaused })
+    logger.analytics({ event_name: 'screenshare', value: screenShareAudioPaused })
   }, [screenShareAudioPaused])
 
   return null

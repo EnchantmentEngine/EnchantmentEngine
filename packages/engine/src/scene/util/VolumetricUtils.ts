@@ -1,32 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { Engine, getComponent } from '@ir-engine/ecs'
-import { ImmutableArray, State, getState } from '@ir-engine/hyperflux'
+import { Entity, getChildrenWithComponents, getComponent, setComponent } from '@ir-engine/ecs'
+import { ImmutableArray, getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
-import { RendererComponent } from '@ir-engine/spatial/src/renderer/WebGLRendererSystem'
+import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
+import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
+import { KTX2LoaderState } from '@ir-engine/spatial/src/resources/loaders/ktx2/KTX2LoaderState'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import {
   BufferGeometry,
@@ -40,8 +18,9 @@ import {
   UniformsUtils,
   Vector2
 } from 'three'
-import { GLTF } from '../../assets/loaders/gltf/GLTFLoader'
 import { AssetLoaderState } from '../../assets/state/AssetLoaderState'
+import { AssetState } from '../../gltf/GLTFState'
+import { PlaylistComponent } from '../components/PlaylistComponent'
 import {
   ASTCTextureTarget,
   AudioFileFormat,
@@ -56,7 +35,6 @@ import {
   TextureType,
   UniformSolveTarget
 } from '../constants/UVOLTypes'
-import getFirstMesh from './meshUtils'
 
 export const getBufferGeometrySize = (geometry: BufferGeometry) => {
   const attributes = geometry.attributes
@@ -84,7 +62,7 @@ export const getGLTFGeometrySize = (mesh: Mesh) => {
 export const getKTX2TextureSize = (texture: CompressedTexture) => {
   let size = 0
   if (texture.image) {
-    texture.mipmaps.map((mipmap) => {
+    texture.mipmaps!.map((mipmap) => {
       size += mipmap.data.byteLength
     })
   }
@@ -163,11 +141,7 @@ export const loadCorto = (url: string, byteStart: number, byteEnd: number) => {
 }
 
 export const loadDraco = (url: string) => {
-  const gltfLoader = getState(AssetLoaderState).gltfLoader
-  if (!gltfLoader) {
-    throw new Error('loadDraco:GLTFLoader is not available')
-  }
-  const dracoLoader = gltfLoader.dracoLoader
+  const dracoLoader = getState(AssetLoaderState).dracoLoader
   if (!dracoLoader) {
     throw new Error('loadDraco:DracoLoader is not available')
   }
@@ -192,40 +166,29 @@ export const loadDraco = (url: string) => {
 }
 
 export const loadGLTF = (url: string) => {
-  const gltfLoader = getState(AssetLoaderState).gltfLoader
-  if (!gltfLoader) {
-    throw new Error('loadDraco:GLTFLoader is not available')
-  }
-
   return new Promise<{ mesh: Mesh<BufferGeometry, Material>; fetchTime: number; memoryOccupied: number }>(
     (resolve, reject) => {
       const startTime = performance.now()
-      gltfLoader.load(
-        url,
-        ({ scene }: GLTF) => {
-          const mesh = getFirstMesh(scene)!
+      AssetState.loadAsync(url, true)
+        .then((rootEntity) => {
+          const [meshEntity] = getChildrenWithComponents(rootEntity, [MeshComponent])
+          const mesh = getComponent(meshEntity, MeshComponent)
           resolve({
             mesh: mesh as Mesh<BufferGeometry, Material>,
             fetchTime: performance.now() - startTime,
             memoryOccupied: getGLTFGeometrySize(mesh)
           })
-        },
-        undefined,
-        (err) => {
+        })
+        .catch((err) => {
           console.error('Error loading geometry: ', url, err)
           reject(`loadGLTF:Error loading geometry from ${url}: ${err.message}`)
-        }
-      )
+        })
     }
   )
 }
 
 export const loadKTX2 = (url: string, _repeat?: Vector2, _offset?: Vector2) => {
-  const gltfLoader = getState(AssetLoaderState).gltfLoader
-  if (!gltfLoader) {
-    throw new Error('loadKTX2:GLTFLoader is not available')
-  }
-  const ktx2Loader = gltfLoader.ktx2Loader
+  const ktx2Loader = getState(KTX2LoaderState)
   if (!ktx2Loader) {
     throw new Error('loadKTX2:KTX2Loader is not available')
   }
@@ -353,14 +316,14 @@ out vec2 custom_vUv;`,
 
       '#include <begin_vertex>': `
       vec3 transformed = vec3(position);
-      transformed.x += mix(keyframeAPosition.x, keyframeBPosition.x, mixRatio); 
+      transformed.x += mix(keyframeAPosition.x, keyframeBPosition.x, mixRatio);
       transformed.y += mix(keyframeAPosition.y, keyframeBPosition.y, mixRatio);
       transformed.z += mix(keyframeAPosition.z, keyframeBPosition.z, mixRatio);
-      
+
       #ifdef USE_ALPHAHASH
-      
+
         vPosition = vec3( transformed );
-      
+
       #endif`,
 
       '#include <beginnormal_vertex>': `
@@ -423,12 +386,12 @@ interface GetResourceURLBasicProps {
 
 interface GetResourceURLCortoGeometryProps extends GetResourceURLBasicProps {
   type: 'geometry'
-  geometryType: GeometryType.Corto
+  geometryType: typeof GeometryType.Corto
 }
 
 interface GetResourceURLNewGeometryProps extends GetResourceURLBasicProps {
   type: 'geometry'
-  geometryType: GeometryType.Draco | GeometryType.Unify
+  geometryType: typeof GeometryType.Draco | typeof GeometryType.Unify
   path: string
   target: string
   index: number
@@ -483,14 +446,14 @@ export const getResourceURL = (props: GetResourceURLProps) => {
         throw new Error('getResourceURL:Invalid manifest path for Corto geometry')
       }
     } else {
-      const absolutePlaceholderPath = combineURLs(props.manifestPath, props.path)
+      const absolutePlaceholderPath = combineURLs(props.manifestPath, (props as GetResourceURLNewGeometryProps).path)
       const padLength = countHashes(absolutePlaceholderPath)
       const paddedString = '[' + '#'.repeat(padLength) + ']'
-      const paddedIndex = props.index.toString().padStart(padLength, '0')
+      const paddedIndex = (props as GetResourceURLNewGeometryProps).index.toString().padStart(padLength, '0')
 
       const absolutePath = replaceSubstrings(absolutePlaceholderPath, {
-        '[ext]': FORMAT_TO_EXTENSION[props.format],
-        '[target]': props.target,
+        '[ext]': FORMAT_TO_EXTENSION[(props as GetResourceURLNewGeometryProps).format],
+        '[target]': (props as GetResourceURLNewGeometryProps).target,
         [paddedString]: paddedIndex
       })
 
@@ -534,16 +497,16 @@ interface GetGeometryModernProps extends GetGeometryBaseProps {
 }
 
 interface GetGeometryUnifyProps extends GetGeometryModernProps {
-  geometryType: GeometryType.Unify
+  geometryType: typeof GeometryType.Unify
   keyframeName: 'keyframeA' | 'keyframeB'
 }
 
 interface GetGeometryNonUnifyProps extends GetGeometryModernProps {
-  geometryType: GeometryType.Draco
+  geometryType: typeof GeometryType.Draco
 }
 
 interface GetGeometryCortoProps extends GetGeometryBaseProps {
-  geometryType: GeometryType.Corto
+  geometryType: typeof GeometryType.Corto
   frameRate: number
 }
 
@@ -659,19 +622,20 @@ export const getTexture = ({
   return false
 }
 
-interface handleAutoplayProps {
+interface HandleAutoplayProps {
   audioContext: AudioContext
   media: HTMLMediaElement
-  paused: State<boolean>
+  entity: Entity
 }
 
-export const handleMediaAutoplay = ({ audioContext, media, paused }: handleAutoplayProps) => {
+export const handleMediaAutoplay = ({ audioContext, media, entity }: HandleAutoplayProps) => {
   const attachEventListeners = () => {
-    const canvas = getComponent(Engine.instance.viewerEntity, RendererComponent).canvas!
+    const canvas = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).canvas!
     const playMedia = () => {
       media.play()
       audioContext.resume()
-      paused.set(false)
+      setComponent(entity, PlaylistComponent, { paused: false })
+      setComponent
       window.removeEventListener('pointerdown', playMedia)
       window.removeEventListener('keypress', playMedia)
       window.removeEventListener('touchstart', playMedia)
@@ -696,6 +660,6 @@ export const handleMediaAutoplay = ({ audioContext, media, paused }: handleAutop
     })
     .then(() => {
       console.log('Media playback started by handleAutoplay')
-      paused.set(false)
+      setComponent(entity, PlaylistComponent, { paused: false })
     })
 }

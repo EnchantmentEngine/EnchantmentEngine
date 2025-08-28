@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   DescribeImagesCommand as DescribePrivateImagesCommand,
   ECRClient,
@@ -32,7 +7,8 @@ import { DescribeImagesCommand, ECRPUBLICClient } from '@aws-sdk/client-ecr-publ
 import { fromIni } from '@aws-sdk/credential-providers'
 import { BadRequest, Forbidden, NotFound } from '@feathersjs/errors'
 import { Paginated } from '@feathersjs/feathers'
-import * as k8s from '@kubernetes/client-node'
+import { v1 } from '@google-cloud/artifact-registry'
+import { V1CronJob, V1Job } from '@kubernetes/client-node'
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import appRootPath from 'app-root-path'
 import { exec } from 'child_process'
@@ -43,8 +19,13 @@ import path from 'path'
 import semver from 'semver'
 import { promisify } from 'util'
 
-import { INSTALLATION_SIGNED_REGEX, PUBLIC_SIGNED_REGEX } from '@ir-engine/common/src/regex'
-import { AssetType, FileToAssetType } from '@ir-engine/engine/src/assets/constants/AssetType'
+import {
+  BUILDER_CHART_REGEX,
+  INSTALLATION_SIGNED_REGEX,
+  NPM_GIT_REFERENCE,
+  PUBLIC_SIGNED_REGEX
+} from '@ir-engine/common/src/regex'
+import { FileToAssetType } from '@ir-engine/spatial/src/resources/AssetType'
 
 import { ManifestJson } from '@ir-engine/common/src/interfaces/ManifestJson'
 import { ProjectPackageJsonType } from '@ir-engine/common/src/interfaces/ProjectPackageJsonType'
@@ -67,13 +48,13 @@ import {
   deleteFolderRecursive,
   getFilesRecursive
 } from '@ir-engine/common/src/utils/fsHelperFunctions'
-import { AssetLoader } from '@ir-engine/engine/src/assets/classes/AssetLoader'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import { getState } from '@ir-engine/hyperflux'
 import { ProjectConfigInterface, ProjectEventHooks } from '@ir-engine/projects/ProjectConfigInterface'
 
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
-import { BUILDER_CHART_REGEX } from '@ir-engine/common/src/regex'
 import { engineSettingPath } from '@ir-engine/common/src/schema.type.module'
+import { retry } from '@octokit/plugin-retry'
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
 import { getPodsData } from '../../cluster/pods/pods-helper'
@@ -90,12 +71,35 @@ import { getGitConfigData, getGitHeadData, getGitOrigHeadData } from '../../util
 import { useGit } from '../../util/gitHelperFunctions'
 import { getAuthenticatedRepo, getOctokitForChecking, getUserRepos } from './github-helper'
 import { ProjectParams } from './project.class'
+// Define DockerImage type
+type DockerImage = any
+
+// Types for dependency resolution
+type DependencySpec =
+  | string
+  | {
+      name: string
+      repository?: string
+      commit?: string
+      tag?: string
+      branch?: string
+    }
+
+type ResolvedDependency = {
+  name: string
+  ref: string
+  refType: 'branch' | 'commit' | 'tag'
+  repository: string
+  manifest?: ManifestJson
+}
 
 export const dockerHubRegex = /^[\w\d\s\-_]+\/[\w\d\s\-_]+:([\w\d\s\-_.]+)$/
 export const publicECRRepoRegex = /^public.ecr.aws\/[a-zA-Z0-9]+\/([a-z0-9\-_\\]+)$/
 export const publicECRTagRegex = /^public.ecr.aws\/[a-zA-Z0-9]+\/[a-z0-9\-_\\]+:([\w\d\s\-_.]+?)$/
 export const privateECRRepoRegex = /^[a-zA-Z0-9]+.dkr.ecr.([\w\d\s\-_]+).amazonaws.com\/([a-z0-9\-_\\]+)$/
 export const privateECRTagRegex = /^[a-zA-Z0-9]+.dkr.ecr.([\w\d\s\-_]+).amazonaws.com\/[a-z0-9\-_\\]+:([\w\d\s\-_.]+)$/
+export const gcpArtifactRegistryTagRegex =
+  /^([a-z0-9-]+)-docker\.pkg\.dev\/([a-zA-Z0-9-_]+)\/([a-zA-Z0-9-_]+)\/([a-zA-Z0-9-_\/]+)(?::([\w\d\s\-_.]+)|@sha256:([a-f0-9]{64}))$/
 
 const BRANCH_PER_PAGE = 100
 const COMMIT_PER_PAGE = 10
@@ -104,6 +108,8 @@ const awsPath = './.aws/eks'
 const credentialsPath = `${awsPath}/credentials`
 
 const execAsync = promisify(exec)
+
+const ArtifactRegistryClient = v1.ArtifactRegistryClient
 
 interface GitHubFile {
   status: number
@@ -127,6 +133,12 @@ interface GitHubFile {
       html: string
     }
   }
+}
+
+const getParent = (repoName: string) => {
+  const repoSplit = repoName.split('/')
+  const region = repoSplit[0].replace('-docker.pkg.dev', '')
+  return `projects/${repoSplit[1]}/locations/${region}/repositories/${repoSplit[2]}`
 }
 
 export const updateBuilder = async (
@@ -161,39 +173,30 @@ export const updateBuilder = async (
   const helmMain = helmSettings.find((setting) => setting.key === EngineSettings.Helm.Builder)?.value
 
   const builderDeploymentName = `${config.server.releaseName}-builder`
-  const k8sAppsClient = getState(ServerState).k8AppsClient
+  const k8AppsClient = getState(ServerState).k8AppsClient
   const k8BatchClient = getState(ServerState).k8BatchClient
 
   if (k8BatchClient && config.server.releaseName !== 'local') {
     try {
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
-      const builderJob = await k8BatchClient.listNamespacedJob(
-        'default',
-        undefined,
-        false,
-        undefined,
-        undefined,
-        builderLabelSelector
-      )
+      const builderJob = await k8BatchClient.listNamespacedJob({
+        namespace: config.server.namespace,
+        labelSelector: builderLabelSelector
+      })
 
-      const builderDeployments = await k8sAppsClient.listNamespacedDeployment(
-        'default',
-        undefined,
-        false,
-        undefined,
-        undefined,
-        builderLabelSelector
-      )
+      const builderDeployments = await k8AppsClient.listNamespacedDeployment({
+        namespace: config.server.namespace,
+        labelSelector: builderLabelSelector
+      })
 
-      const isJob = builderJob && builderJob.body.items.length > 0
-      const isDeployment = builderDeployments && builderDeployments.body.items.length > 0
+      const isJob = builderJob && builderJob.items.length > 0
+      const isDeployment = builderDeployments && builderDeployments.items.length > 0
 
-      if (isJob)
-        await execAsync(`kubectl delete job --ignore-not-found=true ${builderJob.body.items[0].metadata!.name}`)
+      if (isJob) await execAsync(`kubectl delete job --ignore-not-found=true ${builderJob.items[0].metadata!.name}`)
       else if (isDeployment)
         await execAsync(
-          `kubectl delete deployment --ignore-not-found=true ${builderDeployments.body.items[0].metadata!.name}`
+          `kubectl delete deployment --ignore-not-found=true ${builderDeployments.items[0].metadata!.name}`
         )
 
       if (helmSettings.length > 0 && helmBuilder && helmBuilder.length > 0)
@@ -238,57 +241,39 @@ export const checkBuilderService = async (
 
       const builderLabelSelector = `app.kubernetes.io/instance=${config.server.releaseName}-builder`
 
-      const builderJob = await k8BatchClient.listNamespacedJob(
-        'default',
-        undefined,
-        false,
-        undefined,
-        undefined,
-        builderLabelSelector
-      )
+      const builderJob = await k8BatchClient.listNamespacedJob({
+        namespace: config.server.namespace,
+        labelSelector: builderLabelSelector
+      })
 
-      if (builderJob && builderJob.body.items.length > 0) {
-        const succeeded = builderJob.body.items.filter((item) => item.status && item.status.succeeded === 1)
-        const failed = builderJob.body.items.filter((item) => item.status && item.status.failed === 1)
-        const running = builderJob.body.items.filter((item) => item.status && item.status.active === 1)
+      if (builderJob && builderJob.items.length > 0) {
+        const succeeded = builderJob.items.filter((item) => item.status && item.status.succeeded === 1)
+        const failed = builderJob.items.filter((item) => item.status && item.status.failed === 1)
+        const running = builderJob.items.filter((item) => item.status && item.status.active === 1)
         jobStatus.succeeded = succeeded.length > 0
         jobStatus.failed = failed.length > 0
         jobStatus.running = running.length > 0
       } else {
         const containerName = 'ir-engine-builder'
 
-        const builderPods = await k8DefaultClient.listNamespacedPod(
-          'default',
-          undefined,
-          false,
-          undefined,
-          undefined,
-          builderLabelSelector
-        )
+        const builderPods = await k8DefaultClient.listNamespacedPod({
+          namespace: config.server.namespace,
+          labelSelector: builderLabelSelector
+        })
 
-        const runningBuilderPods = builderPods.body.items.filter(
-          (item) => item.status && item.status.phase === 'Running'
-        )
+        const runningBuilderPods = builderPods.items.filter((item) => item.status && item.status.phase === 'Running')
 
         if (runningBuilderPods.length > 0) {
           const podName = runningBuilderPods[0].metadata?.name
 
-          const builderLogs = await k8DefaultClient.readNamespacedPodLog(
-            podName!,
-            'default',
-            containerName,
-            undefined,
-            false,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )
+          const builderLogs = await k8DefaultClient.readNamespacedPodLog({
+            name: podName!,
+            namespace: config.server.namespace,
+            container: containerName,
+            insecureSkipTLSVerifyBackend: false
+          })
 
-          jobStatus.succeeded = builderLogs.body.includes('sleep infinity')
+          jobStatus.succeeded = builderLogs.includes('sleep infinity')
           jobStatus.running = true
         }
       }
@@ -364,8 +349,13 @@ export const getProjectManifestFromRemote = async (
       Buffer.from((blobResponse.data as { content: string }).content, 'base64').toString()
     ) as ManifestJson
   } catch (err) {
-    logger.error("Error getting commit's package.json %s/%s %s", owner, repo, err.toString())
-    return Promise.reject(err)
+    logger.error("Error getting commit's manifest.json %s/%s %s", owner, repo, err.toString())
+    return {
+      name: `${owner}/${repo}`,
+      version: '1.0.0',
+      engineVersion: '1.0.0',
+      repoEmpty: true
+    }
   }
 }
 
@@ -436,7 +426,14 @@ export const checkUnfetchedSourceCommit = async (app: Application, sourceURL: st
     } as ProjectCheckUnfetchedCommitType
   } catch (err) {
     logger.error("Error getting commit's manifest.json %s/%s %s", owner, repo, err.toString())
-    return Promise.reject(err)
+    return {
+      error: 'Manifest Fetch failed',
+      text: err.toString(),
+      commitSHA: '',
+      name: `${owner}/${repo}`,
+      version: '1.0.0',
+      engineVersion: '1.0.0'
+    }
   }
 }
 
@@ -595,7 +592,7 @@ export const checkDestination = async (app: Application, url: string, params?: P
 
     if (!repoAccessible) {
       returned.error = 'invalidDestinationURL'
-      returned.text = `You do not appear to have access to this repository. If this seems wrong, click the button 
+      returned.text = `You do not appear to have access to this repository. If this seems wrong, click the button
       "Refresh GitHub Repo Access" and try again. If you are only in the organization that owns this repo, make sure that the
       organization has installed the OAuth app associated with this installation, and that your personal GitHub account
       has granted access to the organization: https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-your-membership-in-organizations/requesting-organization-approval-for-oauth-apps`
@@ -614,8 +611,12 @@ export const checkDestination = async (app: Application, url: string, params?: P
       logger.error('destination package fetch error %o', err)
       if (err.status !== 404) throw err
     }
-    if (destinationManifest) returned.projectName = destinationManifest.name
-    else returned.repoEmpty = true
+    if (destinationManifest) {
+      if (destinationManifest.repoEmpty) {
+        delete destinationManifest.repoEmpty
+        returned.repoEmpty = true
+      } else returned.projectName = destinationManifest.name
+    } else returned.repoEmpty = true
 
     if (inputProjectURL?.length > 0) {
       const projectOctokitResponse = await getOctokitForChecking(app, inputProjectURL, params!)
@@ -793,11 +794,12 @@ export const findBuilderTags = async (): Promise<Array<ProjectBuilderTagsType>> 
   const builderRepo = `${process.env.SOURCE_REPO_URL}/${process.env.SOURCE_REPO_NAME_STEM}-builder`
   const publicECRExec = publicECRRepoRegex.exec(builderRepo)
   const privateECRExec = privateECRRepoRegex.exec(builderRepo)
+  const isGCP = config.server.storageProvider === 'gcs'
   if (publicECRExec) {
     const awsCredentials = `[default]\naws_access_key_id=${config.aws.eks.accessKeyId}\naws_secret_access_key=${config.aws.eks.secretAccessKey}\n[role]\nrole_arn = ${config.aws.eks.roleArn}\nsource_profile = default`
 
     if (!fs.existsSync(awsPath)) fs.mkdirSync(awsPath, { recursive: true })
-    if (!fs.existsSync(credentialsPath)) fs.writeFileSync(credentialsPath, Buffer.from(awsCredentials))
+    if (!fs.existsSync(credentialsPath)) fs.writeFileSync(credentialsPath, awsCredentials)
 
     const ecr = new ECRPUBLICClient({
       credentials: fromIni({
@@ -835,7 +837,7 @@ export const findBuilderTags = async (): Promise<Array<ProjectBuilderTagsType>> 
     const awsCredentials = `[default]\naws_access_key_id=${config.aws.eks.accessKeyId}\naws_secret_access_key=${config.aws.eks.secretAccessKey}\n[role]\nrole_arn = ${config.aws.eks.roleArn}\nsource_profile = default`
 
     if (!fs.existsSync(awsPath)) fs.mkdirSync(awsPath, { recursive: true })
-    if (!fs.existsSync(credentialsPath)) fs.writeFileSync(credentialsPath, Buffer.from(awsCredentials))
+    if (!fs.existsSync(credentialsPath)) fs.writeFileSync(credentialsPath, awsCredentials)
 
     const ecr = new ECRClient({
       credentials: fromIni({
@@ -872,6 +874,61 @@ export const findBuilderTags = async (): Promise<Array<ProjectBuilderTagsType>> 
     } catch (err) {
       logger.error('Failure to get private ECR images')
       logger.error('Command that was sent %o', result)
+      logger.error(err)
+      return []
+    }
+  } else if (isGCP) {
+    const arClient = new ArtifactRegistryClient()
+    let images = [] as DockerImage[]
+    let gcpBuilderRepo = `${process.env.SOURCE_REPO_URL}/${process.env.SOURCE_REPO_NAME_STEM}-builder`
+    switch (config.server.releaseName) {
+      case 'mt-qat-dev':
+      case 'mt-dev':
+      case 'mt-int':
+      case 'mt-stg':
+      case 'mt-prd':
+        gcpBuilderRepo += '-mt'
+        break
+    }
+    switch (config.server.releaseName) {
+      case 'qat-dev':
+      case 'mt-qat-dev':
+        gcpBuilderRepo += '-qat'
+        break
+      case 'mt-int':
+        gcpBuilderRepo += '-int'
+        break
+    }
+    gcpBuilderRepo += `/${process.env.SOURCE_REPO_NAME_STEM}-builder`
+    const input = {
+      parent: getParent(gcpBuilderRepo)
+    } as any
+    try {
+      const iterableResponse = arClient.listDockerImagesAsync(input)
+      for await (const item of iterableResponse) images = images.concat(item)
+      return images
+        .filter(
+          (image) =>
+            image.uri &&
+            new RegExp(builderRepo).test(image.uri) &&
+            image.tags &&
+            image.tags.length > 0 &&
+            image.uploadTime
+        )
+        .sort((a, b) => (b.uploadTime!.seconds as number) - (a.uploadTime!.seconds as number))
+        .map((image) => {
+          const tag = image.tags!.find((tag) => !/latest/.test(tag)) as string
+          const tagSplit = tag ? tag.split('_') : ''
+          return {
+            tag,
+            commitSHA: tagSplit.length === 1 ? tagSplit[0] : tagSplit[1],
+            engineVersion: tagSplit.length === 1 ? 'unknown' : tagSplit[0],
+            pushedAt: new Date(parseInt(image.uploadTime!.seconds as string) * 1000).toJSON() as string
+          }
+        })
+    } catch (err) {
+      logger.error('Failure to get GCP Artifact Registry Images')
+      logger.error('Repo that was fetched from %s', builderRepo)
       logger.error(err)
       return []
     }
@@ -966,12 +1023,12 @@ export async function getProjectUpdateJobBody(
   app: Application,
   jobId: string,
   userId?: string,
-  token?: string
-): Promise<k8s.V1Job> {
+  token?: string,
+  isDependency = false
+): Promise<V1Job> {
   const command = [
     'npx',
-    'ts-node',
-    '--swc',
+    'tsx',
     'scripts/update-project.ts',
     '--sourceURL',
     data.sourceURL,
@@ -982,7 +1039,9 @@ export async function getProjectUpdateJobBody(
     '--sourceBranch',
     data.sourceBranch,
     '--jobId',
-    jobId
+    jobId,
+    '--isDependency',
+    isDependency.toString()
   ]
   if (data.updateType) {
     command.push('--updateType')
@@ -1034,11 +1093,10 @@ export async function getProjectPushJobBody(
   jobId: string,
   commitSHA?: string,
   storageProviderName?: string
-): Promise<k8s.V1Job> {
+): Promise<V1Job> {
   const command = [
     'npx',
-    'ts-node',
-    '--swc',
+    'tsx',
     'scripts/push-project.ts',
     `--userId`,
     user.id,
@@ -1075,7 +1133,8 @@ export async function getProjectPushJobBody(
 
 export const getCronJobBody = (project: ProjectType, image: string): object => {
   const projectJobName = cleanProjectName(project.name)
-  return {
+
+  const jobSpec: V1CronJob = {
     metadata: {
       name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectJobName}`),
       labels: {
@@ -1083,11 +1142,11 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
         'ir-engine/autoUpdate': 'true',
         'ir-engine/projectField': projectJobName,
         'ir-engine/projectId': project.id,
-        'ir-engine/release': process.env.RELEASE_NAME
+        'ir-engine/release': process.env.RELEASE_NAME!
       }
     },
     spec: {
-      schedule: project.updateSchedule,
+      schedule: project.updateSchedule!,
       concurrencyPolicy: 'Replace',
       successfulJobsHistoryLimit: 1,
       failedJobsHistoryLimit: 2,
@@ -1100,7 +1159,7 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
                 'ir-engine/autoUpdate': 'true',
                 'ir-engine/projectField': projectJobName,
                 'ir-engine/projectId': project.id,
-                'ir-engine/release': process.env.RELEASE_NAME
+                'ir-engine/release': process.env.RELEASE_NAME!
               }
             },
             spec: {
@@ -1110,7 +1169,7 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
                   name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${project.name.toLowerCase()}`),
                   image,
                   imagePullPolicy: 'IfNotPresent',
-                  command: ['npx', 'ts-node', '--swc', 'scripts/auto-update-project.ts', '--projectName', project.name],
+                  command: ['npx', 'tsx', 'scripts/auto-update-project.ts', '--projectName', project.name],
                   env: Object.entries(process.env).map(([key, value]) => {
                     return { name: key, value: value }
                   })
@@ -1123,23 +1182,33 @@ export const getCronJobBody = (project: ProjectType, image: string): object => {
       }
     }
   }
+
+  // Only add cloud sql auth proxy if GOOGLE_PROJECT_ID is not an empty string
+  if (process.env.GOOGLE_PROJECT_ID) {
+    jobSpec.spec!.jobTemplate.spec!.template.spec!.initContainers = [
+      {
+        name: 'cloud-sql-proxy',
+        image: 'gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1',
+        restartPolicy: 'Always',
+        args: [
+          '--private-ip',
+          '--structured-logs',
+          '--port=3306',
+          '--auto-iam-authn',
+          `${process.env.GOOGLE_PROJECT_ID}:us-central1:${process.env.NAMESPACE}-mysql`
+        ],
+        securityContext: {
+          runAsNonRoot: true
+        }
+      }
+    ]
+  }
+
+  return jobSpec
 }
 
-export async function getDirectoryArchiveJobBody(
-  app: Application,
-  projectName: string,
-  jobId: string
-): Promise<k8s.V1Job> {
-  const command = [
-    'npx',
-    'ts-node',
-    '--swc',
-    'scripts/archive-directory.ts',
-    `--project`,
-    projectName,
-    '--jobId',
-    jobId
-  ]
+export async function getDirectoryArchiveJobBody(app: Application, projectName: string, jobId: string): Promise<V1Job> {
+  const command = ['npx', 'tsx', 'scripts/archive-directory.ts', `--project`, projectName, '--jobId', jobId]
 
   const projectJobName = cleanProjectName(projectName)
 
@@ -1178,24 +1247,17 @@ export const createOrUpdateProjectUpdateJob = async (app: Application, projectNa
 
   if (k8BatchClient) {
     try {
-      await k8BatchClient.patchNamespacedCronJob(
-        getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-        'default',
-        getCronJobBody(project, image),
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        {
-          headers: {
-            'content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH
-          }
-        }
-      )
+      await k8BatchClient.patchNamespacedCronJob({
+        name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
+        namespace: config.server.namespace,
+        body: getCronJobBody(project, image)
+      })
     } catch (err) {
       logger.error('Could not find cronjob %o', err)
-      await k8BatchClient.createNamespacedCronJob('default', getCronJobBody(project, image))
+      await k8BatchClient.createNamespacedCronJob({
+        namespace: config.server.namespace,
+        body: getCronJobBody(project, image)
+      })
     }
   }
 }
@@ -1204,10 +1266,10 @@ export const removeProjectUpdateJob = async (app: Application, projectName: stri
   try {
     const k8BatchClient = getState(ServerState).k8BatchClient
     if (k8BatchClient)
-      await k8BatchClient.deleteNamespacedCronJob(
-        getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
-        'default'
-      )
+      await k8BatchClient.deleteNamespacedCronJob({
+        name: getValidPodName(`${process.env.RELEASE_NAME}-auto-update-${projectName}`),
+        namespace: config.server.namespace
+      })
   } catch (err) {
     logger.error('Failed to remove project update cronjob %o', err)
   }
@@ -1261,11 +1323,227 @@ export const checkProjectAutoUpdate = async (app: Application, projectName: stri
 }
 
 export const copyDefaultProject = () => {
-  deleteFolderRecursive(path.join(projectsRootFolder, `ir-engine/default-project`))
+  deleteFolderRecursive(path.join(projectsRootFolder, `enchantmentengine/default-project`))
   copyFolderRecursiveSync(
     path.join(appRootPath.path, 'packages/projects/default-project'),
-    path.join(projectsRootFolder, 'ir-engine')
+    path.join(projectsRootFolder, 'enchantmentengine')
   )
+}
+
+/**
+ * Fetches a manifest.json file from a remote GitHub repository
+ */
+const fetchRemoteManifest = async (
+  app: Application,
+  repository: string,
+  ref: string,
+  refType: 'branch' | 'commit' | 'tag',
+  params?: ProjectParams
+): Promise<ManifestJson> => {
+  const url = repository.replace('.git', '')
+  const { owner, repo, octoKit } = await getOctokitForChecking(app, url, params!)
+
+  try {
+    let sha: string | undefined
+
+    if (refType === 'commit') {
+      sha = ref
+    } else if (refType === 'tag') {
+      const tagResponse = await octoKit.rest.git.getRef({
+        owner,
+        repo,
+        ref: `tags/${ref}`
+      })
+      sha = tagResponse.data.object.sha
+    } else {
+      // branch
+      const branchResponse = await octoKit.rest.repos.getBranch({
+        owner,
+        repo,
+        branch: ref
+      })
+      sha = branchResponse.data.commit.sha
+    }
+
+    if (!owner) throw new Error('Missing owner')
+    if (!repo) throw new Error('Missing repo')
+    return await getProjectManifestFromRemote(octoKit, owner, repo, sha)
+  } catch (err) {
+    logger.error(`Error fetching manifest from ${repository} at ${refType} ${ref}:`, err)
+    throw new Error(err)
+  }
+}
+
+/**
+ * Normalizes a dependency specification into a resolved dependency
+ */
+export const normalizeDependency = (dep: DependencySpec): Omit<ResolvedDependency, 'manifest'> => {
+  if (typeof dep === 'string') {
+    if (NPM_GIT_REFERENCE.test(dep)) {
+      const url = dep.split('+')[1].replace('.git', '')
+      return {
+        name: url.replace('https://github.com/', ''),
+        repository: url,
+        ref: 'main',
+        refType: 'branch'
+      }
+    }
+    return {
+      name: dep,
+      repository: `https://github.com/${dep}`,
+      ref: 'main',
+      refType: 'branch'
+    }
+  }
+
+  let { name, commit, tag, branch } = dep
+  let repository: string
+  let ref: string
+  let refType: 'branch' | 'commit' | 'tag'
+
+  if (NPM_GIT_REFERENCE.test(name)) {
+    repository = name.split('+')[1].replace('.git', '')
+    name = repository.replace('https://github.com/', '')
+  } else repository = `https://github.com/${dep.name}`
+
+  // Determine ref and refType based on priority: tag > commit > branch
+  if (tag) {
+    ref = tag
+    refType = 'tag'
+  } else if (commit) {
+    ref = commit
+    refType = 'commit'
+  } else {
+    ref = branch || 'main'
+    refType = 'branch'
+  }
+
+  return {
+    name,
+    repository,
+    ref,
+    refType
+  }
+}
+
+/**
+ * Resolves all dependencies recursively and checks for conflicts
+ */
+/**
+ * Resolves a branch reference to its HEAD commit SHA
+ */
+const resolveBranchToCommit = async (
+  app: Application,
+  repository: string,
+  branch: string,
+  params?: ProjectParams
+): Promise<string> => {
+  const url = repository.replace('.git', '')
+  const { owner, repo, octoKit } = await getOctokitForChecking(app, url, params!)
+
+  try {
+    const branchResponse = await octoKit.rest.repos.getBranch({
+      owner,
+      repo,
+      branch
+    })
+    return branchResponse.data.commit.sha
+  } catch (err) {
+    logger.error(`Error resolving branch ${branch} to commit for ${repository}:`, err)
+    throw new Error(`Failed to resolve branch ${branch} for ${repository}: ${err.message}`)
+  }
+}
+
+const resolveDependencies = async (
+  app: Application,
+  initialManifest: ManifestJson,
+  params?: ProjectParams
+): Promise<{ dependencies: ResolvedDependency[]; conflicts: string[] }> => {
+  const resolvedDeps = new Map<string, ResolvedDependency>()
+  const conflicts: string[] = []
+  const visited = new Set<string>()
+
+  const processDependencies = async (manifest: ManifestJson, projectName: string) => {
+    if (visited.has(projectName)) return
+    visited.add(projectName)
+
+    if (!manifest.dependencies) return
+
+    for (const dep of manifest.dependencies) {
+      const normalized = normalizeDependency(dep)
+      const existing = resolvedDeps.get(normalized.name)
+
+      if (existing) {
+        // Resolve both dependencies to commit SHAs for accurate conflict detection
+        let existingCommitSha = existing.ref
+        let normalizedCommitSha = normalized.ref
+
+        // If existing dependency is a branch, resolve to commit SHA
+        if (existing.refType === 'branch') {
+          try {
+            existingCommitSha = await resolveBranchToCommit(app, existing.repository, existing.ref, params)
+          } catch (err) {
+            logger.warn(`Could not resolve existing branch ${existing.ref} to commit for conflict detection:`, err)
+          }
+        }
+
+        // If new dependency is a branch, resolve to commit SHA
+        if (normalized.refType === 'branch') {
+          try {
+            normalizedCommitSha = await resolveBranchToCommit(app, normalized.repository, normalized.ref, params)
+          } catch (err) {
+            logger.warn(`Could not resolve new branch ${normalized.ref} to commit for conflict detection:`, err)
+          }
+        }
+
+        // Check for conflicts using resolved commit SHAs
+        if (existingCommitSha !== normalizedCommitSha) {
+          const existingDesc =
+            existing.refType === 'branch'
+              ? `${existing.refType} ${existing.ref} (${existingCommitSha})`
+              : `${existing.refType} ${existing.ref}`
+          const normalizedDesc =
+            normalized.refType === 'branch'
+              ? `${normalized.refType} ${normalized.ref} (${normalizedCommitSha})`
+              : `${normalized.refType} ${normalized.ref}`
+
+          conflicts.push(`Conflict for ${normalized.name}: ${existingDesc} vs ${normalizedDesc}`)
+        }
+        continue
+      }
+
+      try {
+        // Fetch the dependency's manifest
+        const depManifest = await fetchRemoteManifest(
+          app,
+          normalized.repository,
+          normalized.ref,
+          normalized.refType,
+          params
+        )
+
+        const resolvedDep: ResolvedDependency = {
+          ...normalized,
+          manifest: depManifest
+        }
+
+        resolvedDeps.set(normalized.name, resolvedDep)
+
+        // Recursively process this dependency's dependencies
+        await processDependencies(depManifest, normalized.name)
+      } catch (err) {
+        logger.error(`Failed to resolve dependency ${normalized.name}:`, err)
+        throw err
+      }
+    }
+  }
+
+  await processDependencies(initialManifest, initialManifest.name)
+
+  return {
+    dependencies: Array.from(resolvedDeps.values()),
+    conflicts
+  }
 }
 
 export const getGitProjectData = (project) => {
@@ -1314,9 +1592,9 @@ export const updateProject = async (
   },
   params?: ProjectParams
 ) => {
-  if (data.sourceURL === 'ir-engine/default-project') {
+  if (data.sourceURL === 'enchantmentengine/default-project') {
     copyDefaultProject()
-    await uploadLocalProjectToProvider(app, 'ir-engine/default-project')
+    await uploadLocalProjectToProvider(app, 'enchantmentengine/default-project')
     if (params?.jobId) {
       const date = await getDateTimeSql()
       await app.service(apiJobPath).patch(params.jobId as string, {
@@ -1328,7 +1606,7 @@ export const updateProject = async (
       (await app.service(projectPath).find({
         query: {
           action: 'admin',
-          name: 'ir-engine/default-project',
+          name: 'enchantmentengine/default-project',
           $limit: 1
         }
       })) as Paginated<ProjectType>
@@ -1365,7 +1643,8 @@ export const updateProject = async (
     signingToken,
     usesInstallationToken = false
   if (params?.appJWT) {
-    const octokit = new Octokit({ auth: params.appJWT })
+    const retryOctokit = Octokit.plugin(retry)
+    const octokit = new retryOctokit({ auth: params.appJWT, retry: { enabled: process.env.TEST !== 'true' } })
     let repoInstallation
     try {
       repoInstallation = await octokit.rest.apps.getRepoInstallation({
@@ -1439,6 +1718,126 @@ export const updateProject = async (
     }
     logger.error(err)
     throw err
+  }
+
+  // Handle project dependencies
+  let dependencyUpdatePromises: Promise<any>[] = []
+
+  if (!params?.isDependency)
+    try {
+      const manifest = getProjectManifest(projectName)
+
+      if (manifest.dependencies && manifest.dependencies.length > 0) {
+        logger.info(`Resolving dependencies for project ${projectName}`)
+
+        const { dependencies, conflicts } = await resolveDependencies(app, manifest, params)
+
+        if (conflicts.length > 0) {
+          const conflictMessage = `Dependency conflicts detected:\n${conflicts.join('\n')}`
+          logger.error(conflictMessage)
+
+          if (params?.jobId) {
+            const date = await getDateTimeSql()
+            await app.service(apiJobPath).patch(params.jobId as string, {
+              status: 'failed',
+              returnData: conflictMessage,
+              endTime: date
+            })
+          }
+
+          throw new Error(conflictMessage)
+        }
+
+        if (dependencies.length > 0) {
+          logger.info(
+            `Found ${dependencies.length} dependencies to install: ${dependencies.map((d) => d.name).join(', ')}`
+          )
+
+          // Create update promises for all dependencies
+          dependencyUpdatePromises = dependencies.map(async (dep) => {
+            const depExists = await app.service(projectPath).find({
+              query: {
+                action: 'admin',
+                name: dep.name,
+                $limit: 1
+              }
+            })
+            if (depExists.total > 0) {
+              const project = depExists.data[0]
+              let commitSHA = dep.ref
+              if (dep.refType === 'branch')
+                commitSHA = await resolveBranchToCommit(app, dep.repository, dep.ref, params)
+              if (project.commitSHA === commitSHA) {
+                logger.info(`Dependency ${dep.name} is already up to date, skipping`)
+                return Promise.resolve()
+              }
+            }
+
+            const depParams = {
+              ...params,
+              isJob: false, // Ensure this doesn't create a job
+              isDependency: true
+            }
+
+            const depData = {
+              sourceURL: `https://github.com/${dep.name}`,
+              destinationURL: `https://github.com/${dep.name}`,
+              name: dep.name, // Extract project name from namespace/project
+              needsRebuild: true,
+              reset: true,
+              updateType: 'none' as ProjectType['updateType'],
+              updateSchedule: '',
+              sourceBranch: dep.refType === 'branch' ? dep.ref : 'main',
+              ...(dep.refType === 'commit' && { commitSHA: dep.ref })
+            }
+
+            logger.info(`Starting dependency update for ${dep.name} (${dep.refType}: ${dep.ref})`)
+
+            try {
+              return await app.service(projectPath).update('', depData, depParams)
+            } catch (error) {
+              logger.error(`Failed to update dependency ${dep.name}:`, error)
+              throw new Error(`Failed to update dependency ${dep.name}: ${error.message}`)
+            }
+          })
+        }
+      }
+    } catch (error) {
+      logger.error('Error processing dependencies:', error)
+
+      if (params?.jobId) {
+        const date = await getDateTimeSql()
+        await app.service(apiJobPath).patch(params.jobId as string, {
+          status: 'failed',
+          returnData: error.message,
+          endTime: date
+        })
+      }
+
+      throw error
+    }
+
+  // Wait for all dependency updates to complete before finishing
+  if (dependencyUpdatePromises.length > 0) {
+    logger.info(`Waiting for ${dependencyUpdatePromises.length} dependency updates to complete...`)
+
+    try {
+      await Promise.all(dependencyUpdatePromises)
+      logger.info(`All dependency updates completed successfully for project ${projectName}`)
+    } catch (error) {
+      logger.error(`One or more dependency updates failed for project ${projectName}:`, error)
+
+      if (params?.jobId) {
+        const date = await getDateTimeSql()
+        await app.service(apiJobPath).patch(params.jobId as string, {
+          status: 'failed',
+          returnData: `Dependency update failed: ${error.message}`,
+          endTime: date
+        })
+      }
+
+      throw error
+    }
   }
 
   const { assetsOnly } = await uploadLocalProjectToProvider(app, projectName)
@@ -1578,7 +1977,7 @@ export const deleteProjectFilesInStorageProvider = async (
 ) => {
   const storageProvider = getStorageProvider(storageProviderName)
   try {
-    const existingFiles = await getFileKeysRecursive(`projects/${projectName}`)
+    const existingFiles = await getFileKeysRecursive(`projects/${projectName}/`)
     if (existingFiles.length) {
       await storageProvider.deleteResources(existingFiles)
       if (config.server.edgeCachingEnabled)
@@ -1616,13 +2015,16 @@ const migrateResourcesJson = (projectName: string, resourceJsonPath: string) => 
             name: item.name,
             attribution: item.attribution,
             thumbnailKey: (item as any).thumbnailURL, // old fields
-            thumbnailMode: (item as any).thumbnailType // old fields
+            thumbnailMode: (item as any).thumbnailType, // old fields,
+            width: item.width,
+            height: item.height,
+            depth: item.depth
           }
         ]
       })
     ) as ResourcesJson
   }
-  if (newManifest) fs.writeFileSync(resourceJsonPath, Buffer.from(JSON.stringify(newManifest, null, 2)))
+  if (newManifest) fs.writeFileSync(resourceJsonPath, JSON.stringify(newManifest, null, 2))
 }
 
 const getResourceType = (key: string, resource?: ResourceType) => {
@@ -1630,22 +2032,13 @@ const getResourceType = (key: string, resource?: ResourceType) => {
   if (key.startsWith('public/thumbnails') || key.endsWith('.thumbnail.jpg')) return 'thumbnail'
   if (key.startsWith('public/scenes') && (key.endsWith('.gltf') || key.endsWith('.scene.json'))) return 'scene'
   if (!resource) return 'file'
-  if (staticResourceClasses.includes(FileToAssetType(key))) return 'asset'
   if (resource.type) return resource.type
+  if (staticResourceClasses.includes(FileToAssetType(key))) return 'asset'
   if (resource.tags) return 'asset'
   return 'file'
 }
 
-const staticResourceClasses = [
-  AssetType.Audio,
-  AssetType.Image,
-  AssetType.Model,
-  AssetType.Video,
-  AssetType.Volumetric,
-  AssetType.Lookdev,
-  AssetType.Material,
-  AssetType.Prefab
-]
+const staticResourceClasses = ['Audio', 'Image', 'Model', 'Video', 'Volumetric', 'Lookdev', 'Material', 'Prefab']
 
 const ignoreFiles = ['.ds_store']
 
@@ -1748,7 +2141,7 @@ export const uploadLocalProjectToProvider = async (
       }
 
       const isScene = oldManifestScenes && oldManifestScenes.includes(filePathRelative)
-      const thisFileClass = AssetLoader.getAssetClass(key)
+      const thisFileClass = FileToAssetType(key)
       const hash = createStaticResourceHash(fileResult)
       const stats = await getStats(fileResult, contentType)
       const resourceInfo = resourcesJson?.[filePathRelative]
@@ -1780,7 +2173,10 @@ export const uploadLocalProjectToProvider = async (
             name: resourceInfo?.name ?? undefined,
             attribution: resourceInfo?.attribution ?? undefined,
             thumbnailKey,
-            thumbnailMode: resourceInfo?.thumbnailMode ?? undefined
+            thumbnailMode: resourceInfo?.thumbnailMode ?? undefined,
+            width: resourceInfo?.width ?? undefined,
+            height: resourceInfo?.height ?? undefined,
+            depth: resourceInfo?.depth ?? undefined
           },
           { ignoreResourcesJson: true }
         )
@@ -1801,7 +2197,10 @@ export const uploadLocalProjectToProvider = async (
             name: resourceInfo?.name ?? undefined,
             attribution: resourceInfo?.attribution ?? undefined,
             thumbnailKey,
-            thumbnailMode: resourceInfo?.thumbnailMode ?? undefined
+            thumbnailMode: resourceInfo?.thumbnailMode ?? undefined,
+            width: resourceInfo?.width ?? undefined,
+            height: resourceInfo?.height ?? undefined,
+            depth: resourceInfo?.depth ?? undefined
           },
           { ignoreResourcesJson: true }
         )
@@ -1818,7 +2217,7 @@ export const uploadLocalProjectToProvider = async (
   await Promise.all(
     Array.from(existingKeySet.values()).map(async (id) => {
       try {
-        await app.service(staticResourcePath).remove(id, { ignoreResourcesJson: true })
+        if (isValidId(id)) await app.service(staticResourcePath).remove(id, { ignoreResourcesJson: true })
       } catch (error) {
         logger.warn(`Error deleting resource: ${error}`)
       }

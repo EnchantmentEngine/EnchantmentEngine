@@ -1,45 +1,16 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Matrix4, Quaternion, Vector3 } from 'three'
 
-import { useEntityContext } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  getComponent,
-  getOptionalComponent,
-  useComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { EntityTreeComponent, getAncestorWithComponents, hasComponent } from '@ir-engine/ecs'
+import { defineComponent, getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { useImmediateEffect } from '@ir-engine/hyperflux'
-import { EntityTreeComponent, getAncestorWithComponents } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { ComputedTransformComponent } from './ComputedTransformComponent'
 
-import { ECSSchema } from '@ir-engine/ecs/src/schemas/ECSSchemas'
+import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
+import { Schema } from '@ir-engine/hyperflux'
 import { isZero } from '../../common/functions/MathFunctions'
-import { QuaternionProxyDirty, Vec3ProxyDirty } from '../../common/proxies/createThreejsProxy'
+import { proxifyQuaternionWithDirty, proxifyVector3WithDirty } from '../../common/proxies/createThreejsProxy'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
+import { T } from '../../schema/schemaFunctions'
 
 export type TransformComponentType = {
   position: Vector3
@@ -49,42 +20,75 @@ export type TransformComponentType = {
   matrixWorld: Matrix4
 }
 
-export const PoseECS = {
-  position: ECSSchema.Vec3,
-  rotation: ECSSchema.Quaternion
-}
-export const TransformECS = {
-  position: ECSSchema.Vec3,
-  rotation: ECSSchema.Quaternion,
-  scale: ECSSchema.Vec3
-  // There might be a way to make this a performance gain, but in testing it's about 15% slower than JS arrays
-  // matrix: ECSSchema.Mat4,
-  // matrixWorld: ECSSchema.Mat4
-}
+const assignPosition = (entity: Entity): Vector3 =>
+  proxifyVector3WithDirty(TransformComponent.position, entity, TransformComponent.dirty)
+
+const assignRotation = (entity: Entity): Quaternion =>
+  proxifyQuaternionWithDirty(TransformComponent.rotation, entity, TransformComponent.dirty)
+
+const assignScale = (entity: Entity): Vector3 =>
+  proxifyVector3WithDirty(TransformComponent.scale, entity, TransformComponent.dirty, new Vector3(1, 1, 1))
 
 export const TransformComponent = defineComponent({
   name: 'TransformComponent',
-  jsonID: 'EE_transform',
-  schema: TransformECS,
 
-  onInit: (initial) => {
-    const entity = initial.entity
-    const dirtyTransforms = TransformComponent.dirtyTransforms
-    const component = {
-      position: Vec3ProxyDirty(initial.position, entity, dirtyTransforms),
-      rotation: QuaternionProxyDirty(initial.rotation, entity, dirtyTransforms),
-      scale: Vec3ProxyDirty(initial.scale, entity, dirtyTransforms, { x: 1, y: 1, z: 1 }),
-      matrix: new Matrix4(),
-      matrixWorld: new Matrix4()
-    } as TransformComponentType
-    return component
+  jsonID: 'IR_transform',
+
+  schema: Schema.Object({
+    position: T.Vec3(),
+    rotation: T.Quaternion(),
+    scale: T.Vec3(),
+    matrix: T.Mat4(undefined, { serialized: false }),
+    matrixWorld: T.Mat4(undefined, { serialized: false })
+  }),
+
+  storage: {
+    position: {
+      x: createResizableTypeArray(Float64Array),
+      y: createResizableTypeArray(Float64Array),
+      z: createResizableTypeArray(Float64Array)
+    },
+    rotation: {
+      x: createResizableTypeArray(Float64Array),
+      y: createResizableTypeArray(Float64Array),
+      z: createResizableTypeArray(Float64Array),
+      w: createResizableTypeArray(Float64Array)
+    },
+    scale: {
+      x: createResizableTypeArray(Float64Array),
+      y: createResizableTypeArray(Float64Array),
+      z: createResizableTypeArray(Float64Array)
+    },
+    dirty: createResizableTypeArray(Uint8Array)
+  },
+
+  onInit(entity, initial) {
+    initial.position = assignPosition(entity)
+    initial.rotation = assignRotation(entity)
+    initial.scale = assignScale(entity)
+    return initial
   },
 
   onSet: (entity, component, json) => {
     if (!json) return
-    if (json.position) component.position.value.copy(json.position)
-    if (json.rotation) component.rotation.value.copy(json.rotation)
-    if (json.scale && !isZero(json.scale)) component.scale.value.copy(json.scale)
+    if (json.position) component.position.copy(json.position)
+    if (json.rotation) component.rotation.copy(json.rotation)
+    if (json.scale && !isZero(json.scale)) component.scale.copy(json.scale)
+
+    composeMatrix(entity)
+    const entityTree = getOptionalComponent(entity, EntityTreeComponent)
+    const parentEntity = entityTree?.parentEntity
+    if (parentEntity) {
+      const parentTransform = getOptionalComponent(parentEntity, TransformComponent)
+      if (parentTransform)
+        component.matrixWorld.multiplyMatrices(parentTransform.matrixWorld, component.matrix as Matrix4)
+    } else {
+      component.matrixWorld.copy(component.matrix as Matrix4)
+    }
+  },
+
+  onRemove: (entity, component) => {
+    TransformComponent.dirty[entity] = 0
   },
 
   toJSON: (component) => {
@@ -93,30 +97,6 @@ export const TransformComponent = defineComponent({
       rotation: component.rotation,
       scale: component.scale
     }
-  },
-
-  reactor: () => {
-    const entity = useEntityContext()
-    const transformComponent = useComponent(entity, TransformComponent)
-
-    useImmediateEffect(() => {
-      const transform = transformComponent.value as TransformComponentType
-      composeMatrix(entity)
-      const entityTree = getOptionalComponent(entity, EntityTreeComponent)
-      const parentEntity = entityTree?.parentEntity
-      if (parentEntity) {
-        const parentTransform = getOptionalComponent(parentEntity, TransformComponent)
-        if (parentTransform) transform.matrixWorld.multiplyMatrices(parentTransform.matrixWorld, transform.matrix)
-      } else {
-        transform.matrixWorld.copy(transform.matrix)
-      }
-
-      return () => {
-        delete TransformComponent.dirtyTransforms[entity]
-      }
-    }, [])
-
-    return null
   },
 
   getWorldPosition: (entity: Entity, vec3: Vector3) => {
@@ -210,6 +190,13 @@ export const TransformComponent = defineComponent({
     return vec3
   },
 
+  getSceneRotation: (entity: Entity, quaternion: Quaternion) => {
+    const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
+    if (!sceneEntity) return quaternion.set(0, 0, 0, 1)
+    TransformComponent.getMatrixRelativeToEntity(entity, sceneEntity, _m1)
+    return TransformComponent.getWorldRotation(entity, quaternion)
+  },
+
   getSceneScale: (entity: Entity, vec3: Vector3) => {
     const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
     if (!sceneEntity) return vec3.set(1, 1, 1)
@@ -247,7 +234,7 @@ export const TransformComponent = defineComponent({
       transform.matrix.copy(transform.matrixWorld)
     }
     decomposeMatrix(entity)
-    TransformComponent.dirtyTransforms[entity] = true
+    TransformComponent.dirty[entity] = 1
   },
 
   /**
@@ -326,9 +313,50 @@ export const TransformComponent = defineComponent({
     return outVector
   },
 
-  dirtyTransforms: {} as Record<Entity, boolean>,
-  transformsNeedSorting: false
+  transformsNeedSorting: false,
+
+  /**
+   * Computes the transform matrix for an entity
+   * @param entity
+   */
+  computeTransformMatrix: (entity: Entity) => {
+    const transform = getComponent(entity, TransformComponent)
+    getOptionalComponent(entity, ComputedTransformComponent)?.computeFunction()
+    composeMatrix(entity)
+
+    const entityTree = getOptionalComponent(entity, EntityTreeComponent)
+    const parentEntity = entityTree?.parentEntity
+    if (parentEntity) {
+      const parentTransform = getOptionalComponent(parentEntity, TransformComponent)
+      if (parentTransform) transform.matrixWorld.multiplyMatrices(parentTransform.matrixWorld, transform.matrix)
+    } else {
+      transform.matrixWorld.copy(transform.matrix)
+    }
+  },
+
+  /**
+   * Computes the transform matrix for an entity and all its children
+   * @param entity
+   */
+  computeTransformMatrixWithChildren: (entity: Entity) => {
+    hasComponent(entity, TransformComponent) && TransformComponent.computeTransformMatrix(entity)
+    for (const child of getOptionalComponent(entity, EntityTreeComponent)?.children ?? []) {
+      TransformComponent.computeTransformMatrixWithChildren(child)
+    }
+  },
+
+  getDistanceSquaredFromTarget: (entity: Entity, targetPosition: Vector3) => {
+    return TransformComponent.getWorldPosition(entity, _tempDistSqrVec3).distanceToSquared(targetPosition)
+  },
+
+  getLocalPositionRelativeToEntity: (worldPosition: Vector3, relativeEntity: Entity, outVector: Vector3) => {
+    const relativeTransform = getComponent(relativeEntity, TransformComponent)
+    const inverseMatrix = new Matrix4().copy(relativeTransform.matrixWorld).invert()
+    return outVector.copy(worldPosition).applyMatrix4(inverseMatrix)
+  }
 })
+
+const _tempDistSqrVec3 = new Vector3()
 
 const vec3 = new Vector3()
 const vec3_2 = new Vector3()
@@ -475,3 +503,17 @@ export const setFromRotationMatrix = (entity: Entity, m: Matrix4) => {
 }
 
 export const TransformGizmoTagComponent = defineComponent({ name: 'TransformGizmoTagComponent' })
+
+/**
+ * @description
+ * Sets the `@param entity` as dirty and recursively sets all children entities as dirty.
+ *
+ * @param entity Entity Node where traversal will start
+ */
+export function setChildrenDirtyFast(entity: Entity) {
+  TransformComponent.dirty[entity] = 1
+  const children = getComponent(entity, EntityTreeComponent).children
+  for (const child of children) {
+    setChildrenDirtyFast(child)
+  }
+}

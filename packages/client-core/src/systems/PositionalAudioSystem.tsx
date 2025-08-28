@@ -1,43 +1,23 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { Not } from 'bitecs'
 import React, { useEffect } from 'react'
 import { Vector3 } from 'three'
 
+import { ECSState, NetworkObjectComponent, NetworkObjectOwnedTag, Not, useEntityContext } from '@ir-engine/ecs'
 import { ComponentType, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { QueryReactor, defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
-import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
-import { NetworkObjectComponent, NetworkObjectOwnedTag, NetworkState } from '@ir-engine/network'
+import {
+  MediaChannelState,
+  NetworkState,
+  getMutableState,
+  getState,
+  useHookstate,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
+import { hasComponent } from '@ir-engine/ecs'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import {
   addPannerNode,
@@ -52,8 +32,7 @@ import {
   MediaElementComponent,
   createAudioNodeGroup
 } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { PeerMediaChannelState } from '../media/PeerMediaChannelState'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 const _vec3 = new Vector3()
 const _rot = new Vector3()
@@ -89,7 +68,7 @@ const execute = () => {
    */
   if (audioContext.state !== 'running') return
 
-  const peerMediaState = getState(PeerMediaChannelState)
+  const peerMediaState = getState(MediaChannelState)
 
   /**
    * Avatars
@@ -97,7 +76,7 @@ const execute = () => {
    */
   const networkedAvatarAudioEntities = networkedAvatarAudioQuery()
   for (const entity of networkedAvatarAudioEntities) {
-    if (!network) continue
+    if (!network?.peers) continue
 
     const networkObject = getComponent(entity, NetworkObjectComponent)
     const ownerID = networkObject.ownerId
@@ -109,15 +88,16 @@ const execute = () => {
       continue
     }
 
-    const videoMediaStream = peerMediaState[peer.peerID].cam.videoMediaStream
+    const videoMediaStream = peerMediaState[peer.peerID][webcamVideoMediaChannelType].stream
     if (!videoMediaStream) {
       if (avatarAudioStreams.has(networkObject)) avatarAudioStreams.delete(networkObject)
       continue
     }
     const track = videoMediaStream.getVideoTracks()[0]
+    const audioTrack = videoMediaStream.getAudioTracks()[0]
 
     // avatar still exists but audio stream does not
-    if (!track) {
+    if (!track || !audioTrack) {
       if (avatarAudioStreams.has(networkObject)) avatarAudioStreams.delete(networkObject)
       continue
     }
@@ -134,9 +114,7 @@ const execute = () => {
       continue
     }
 
-    // get existing stream - need to wait for UserWindowMedia to populate
-    /** @todo we need to properly handle this */
-    const existingAudioObject = document.getElementById(`${ownerID}_audio`)! as HTMLAudioElement
+    const existingAudioObject = peerMediaState[peer.peerID][webcamVideoMediaChannelType].element
     if (!existingAudioObject) continue
 
     // mute existing stream
@@ -192,8 +170,10 @@ const execute = () => {
     updateAudioPanner(panner, _vec3, rotation, endTime, mediaSettings)
   }
 
-  const viewerEntity = getState(EngineState).viewerEntity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
+
+  if (!hasComponent(viewerEntity, TransformComponent)) return
 
   /**
    * Update camera listener position
@@ -227,8 +207,8 @@ function PositionalAudioPannerReactor() {
   const positionalAudio = useComponent(entity, PositionalAudioComponent)
 
   useEffect(() => {
-    const audioGroup = AudioNodeGroups.get(mediaElement.element.value as HTMLMediaElement)! // is it safe to assume this?
-    addPannerNode(audioGroup, positionalAudio.value)
+    const audioGroup = AudioNodeGroups.get(mediaElement.element)! // is it safe to assume this?
+    addPannerNode(audioGroup, positionalAudio)
     return () => removePannerNode(audioGroup)
   }, [mediaElement, positionalAudio])
 

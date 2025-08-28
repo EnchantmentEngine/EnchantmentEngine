@@ -1,29 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { Tween } from '@tweenjs/tween.js'
 import {
   AdditiveAnimationBlendMode,
   AnimationActionLoopStyles,
@@ -31,35 +5,22 @@ import {
   LoopOnce,
   LoopPingPong,
   LoopRepeat,
-  Material,
   MathUtils,
-  Mesh,
-  NormalAnimationBlendMode,
-  Object3D
+  NormalAnimationBlendMode
 } from 'three'
 
-import {
-  getComponent,
-  getMutableComponent,
-  getOptionalComponent,
-  hasComponent,
-  removeComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
+import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { AnimationState } from '@ir-engine/engine/src/avatar/AnimationManager'
 import { LoopAnimationComponent } from '@ir-engine/engine/src/avatar/components/LoopAnimationComponent'
 import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
-import { PlayMode } from '@ir-engine/engine/src/scene/constants/PlayMode'
+import { PlayMode, PlayModeType } from '@ir-engine/engine/src/scene/constants/PlayMode'
 import { dispatchAction, getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
-import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
-import { GroupComponent } from '@ir-engine/spatial/src/renderer/components/GroupComponent'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
 import { ContentFitType } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import { endXRSession, requestXRSession } from '@ir-engine/spatial/src/xr/XRSessionFunctions'
 import { NodeCategory, makeFlowNodeDefinition, makeFunctionNodeDefinition } from '@ir-engine/visual-script'
@@ -111,7 +72,7 @@ export const playVideo = makeFlowNodeDefinition({
     const autoplay = read<boolean>('autoplay')
     volume = MathUtils.clamp(read('volume') ?? volume, 0, 1)
     const videoFit: ContentFitType = read('videoFit')
-    const playMode = read<PlayMode>('playMode')
+    const playMode = read<PlayModeType>('playMode')
 
     setComponent(entity, VideoComponent, { fit: videoFit }) // play
     setComponent(entity, MediaComponent, {
@@ -164,7 +125,7 @@ export const playAudio = makeFlowNodeDefinition({
     resources = media ? [media, ...resources] : resources
     const autoplay = read<boolean>('autoplay')
     volume = MathUtils.clamp(read('volume') ?? volume, 0, 1)
-    const playMode = read<PlayMode>('playMode')
+    const playMode = read<PlayModeType>('playMode')
     const paused = read<boolean>('paused')
     const seekTime = read<number>('seekTime')
     setComponent(entity, MediaComponent, {
@@ -174,8 +135,7 @@ export const playAudio = makeFlowNodeDefinition({
       playMode: playMode!,
       seekTime: seekTime
     }) // play
-    const component = getMutableComponent(entity, MediaComponent)
-    component.paused.set(paused)
+    setComponent(entity, MediaComponent, { paused })
     commit('flow')
   }
 })
@@ -373,7 +333,7 @@ export const setCameraZoom = makeFlowNodeDefinition({
   out: { flow: 'flow' },
   initialState: undefined,
   triggered: ({ read, commit }) => {
-    const entity = Engine.instance.cameraEntity
+    const entity = getState(ReferenceSpaceState).viewerEntity
     const zoom = read<number>('zoom')
     setComponent(entity, FollowCameraComponent, { targetDistance: zoom })
     commit('flow')
@@ -459,81 +419,3 @@ export const redirectToURL = makeFlowNodeDefinition({
     window.location.assign(url)
   }
 })
-
-/**
- * fadeMesh: fade in/out mesh
- */
-export const fadeMesh = makeFlowNodeDefinition({
-  typeName: 'engine/fadeMesh',
-  category: NodeCategory.Engine,
-  label: 'Fade Mesh',
-  in: {
-    flow: 'flow',
-    entity: 'entity',
-    fadeOut: 'boolean',
-    duration: 'float'
-  },
-  out: { flow: 'flow' },
-  initialState: undefined,
-  triggered: ({ read, commit }) => {
-    const entity = read<Entity>('entity')
-    const fadeOut = read<boolean>('fadeOut')
-    const duration = read<number>('duration')
-
-    const obj3d: Object3D | null = getOptionalComponent(entity, GroupComponent)?.[0] ?? null
-    const meshMaterials = obj3d
-      ? iterateObject3D(
-          obj3d,
-          (child: Mesh) => {
-            const result = child.material as Material
-            result.transparent = true
-            return result
-          },
-          (child: Mesh) =>
-            child?.isMesh &&
-            !!child.material &&
-            !Array.isArray(child.material) &&
-            typeof child.material.transparent === 'boolean'
-        )
-      : []
-
-    const opacitySlider: { opacity: number; _opacity: number } = { opacity: 1, _opacity: 1 }
-    Object.defineProperty(opacitySlider, 'opacity', {
-      get: () => opacitySlider._opacity,
-      set: (value) => {
-        opacitySlider._opacity = value
-        for (const material of meshMaterials) {
-          material.opacity = value
-        }
-      }
-    })
-    if (fadeOut) {
-      opacitySlider.opacity = 1
-      setComponent(
-        entity,
-        TweenComponent,
-        new Tween<any>(opacitySlider)
-          .to({ opacity: 0 }, duration * 1000)
-          .start()
-          .onComplete(() => {
-            removeComponent(entity, TweenComponent)
-          })
-      )
-    } else {
-      opacitySlider.opacity = 0
-      setComponent(
-        entity,
-        TweenComponent,
-        new Tween<any>(opacitySlider)
-          .to({ opacity: 1 }, duration * 1000)
-          .start()
-          .onComplete(() => {
-            removeComponent(entity, TweenComponent)
-          })
-      )
-    }
-    commit('flow')
-  }
-})
-
-//scene transition

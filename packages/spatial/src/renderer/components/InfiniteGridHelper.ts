@@ -1,56 +1,34 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import {
   BufferAttribute,
   BufferGeometry,
   DoubleSide,
   LineBasicMaterial,
+  Mesh,
   NormalBlending,
-  Plane,
   PlaneGeometry,
   ShaderMaterial
 } from 'three'
 
-import { Entity } from '@ir-engine/ecs'
-import { defineComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
-import { useMutableState } from '@ir-engine/hyperflux'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { Entity, EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import {
+  defineComponent,
+  getComponent,
+  removeComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '../../common/NameComponent'
 import { setVisibleComponent } from '../../renderer/components/VisibleComponent'
-import { useResource } from '../../resources/resourceHooks'
 import { T } from '../../schema/schemaFunctions'
 import { RendererState } from '../RendererState'
 import LogarithmicDepthBufferMaterialChunk from '../constants/LogarithmicDepthBufferMaterialChunk'
 import { ObjectLayerMasks } from '../constants/ObjectLayers'
 import { LineSegmentComponent } from './LineSegmentComponent'
-import { useMeshComponent } from './MeshComponent'
+import { MeshComponent } from './MeshComponent'
 import { ObjectLayerMaskComponent } from './ObjectLayerComponent'
 
 /**
@@ -133,10 +111,10 @@ void main() {
 export const InfiniteGridComponent = defineComponent({
   name: 'InfiniteGridComponent',
 
-  schema: S.Object({
-    size: S.Number(1),
+  schema: Schema.Object({
+    size: Schema.Number({ default: 1 }),
     color: T.Color(0x535353),
-    distance: S.Number(200)
+    distance: Schema.Number({ default: 200 })
   }),
 
   reactor: () => {
@@ -144,59 +122,69 @@ export const InfiniteGridComponent = defineComponent({
 
     const component = useComponent(entity, InfiniteGridComponent)
     const engineRendererSettings = useMutableState(RendererState)
-    const mesh = useMeshComponent(
-      entity,
-      () => new PlaneGeometry(2, 2, 1, 1),
-      () =>
-        new ShaderMaterial({
-          side: DoubleSide,
-          uniforms: {},
-          transparent: true,
-          vertexShader: vertexShaderGrid,
-          fragmentShader: fragmentShaderGrid,
-          polygonOffset: true,
-          polygonOffsetFactor: -1,
-          polygonOffsetUnits: 0.01,
-          extensions: {
-            derivatives: true
-          }
-        })
-    )
-    const [plane] = useResource(() => new Plane(mesh.up.value), entity)
+
+    const mesh = useHookstate(() => {
+      setComponent(
+        entity,
+        MeshComponent,
+        new Mesh(
+          new PlaneGeometry(2, 2, 1, 1),
+
+          new ShaderMaterial({
+            side: DoubleSide,
+            uniforms: {
+              uColor: { value: component.color },
+              uSize1: { value: component.size },
+              uSize2: { value: component.size * 10 },
+              uDistance: { value: component.distance }
+            },
+            transparent: true,
+            vertexShader: vertexShaderGrid,
+            fragmentShader: fragmentShaderGrid,
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+            polygonOffsetUnits: 0.01
+            // extensions: {
+            //   derivatives: true
+            // }
+          })
+        )
+      )
+      return getComponent(entity, MeshComponent)
+    }).value as Mesh<PlaneGeometry, ShaderMaterial>
 
     useEffect(() => {
-      mesh.position.y.set(engineRendererSettings.gridHeight.value)
-      mesh.value.updateMatrixWorld(true)
+      return () => {
+        removeComponent(entity, MeshComponent)
+      }
+    }, [])
+
+    useEffect(() => {
+      mesh.position.y = engineRendererSettings.gridHeight.value
+      mesh.updateMatrixWorld(true)
     }, [engineRendererSettings.gridHeight])
 
     useEffect(() => {
-      mesh.material.uniforms.uColor.set({
-        value: component.color.value
-      })
+      mesh.material.uniforms.uColor.value = component.color
     }, [component.color])
 
     useEffect(() => {
-      const size = component.size.value
-      mesh.material.uniforms.uSize1.set({
-        value: size
-      })
-      mesh.material.uniforms.uSize2.set({
-        value: size * 10
-      })
+      const size = component.size
+      mesh.material.uniforms.uSize1.value = size
+      mesh.material.uniforms.uSize2.value = size * 10
     }, [component.size])
 
     useEffect(() => {
-      mesh.material.uniforms.uDistance.set({
-        value: component.distance.value
-      })
+      if (!mesh) return
+      mesh.material.uniforms.uDistance.value = component.distance
 
       const lineEntities = [] as Entity[]
       const lineColors = ['red', 'green', 'blue']
       for (let i = 0; i < lineColors.length; i++) {
         const lineGeometry = new BufferGeometry()
         const floatArray = [0, 0, 0, 0, 0, 0]
-        floatArray[i] = -component.distance.value
-        floatArray[i + 3] = component.distance.value
+        floatArray[i] = -component.distance
+        floatArray[i + 3] = component.distance
         const linePositions = new Float32Array(floatArray)
         lineGeometry.setAttribute('position', new BufferAttribute(linePositions, 3))
         const lineMaterial = new LineBasicMaterial({

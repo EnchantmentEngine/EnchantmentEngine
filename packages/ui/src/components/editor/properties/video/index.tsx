@@ -1,55 +1,72 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
+import {
+  getComponent,
+  getSimulationCounterpart,
+  hasComponent,
+  useComponent,
+  useHasComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { MediaComponent, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
+import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineVideoCamera } from 'react-icons/hi2'
 
-import { EntityUUID, UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, hasComponent, useComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { MediaComponent, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
-import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-
-import { useQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
+import { ItemTypes } from '@ir-engine/editor/src/constants/AssetTypes'
 import { EditorControlFunctions } from '@ir-engine/editor/src/functions/EditorControlFunctions'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
-import { Checkbox } from '@ir-engine/ui'
-import { BackSide, ClampToEdgeWrapping, DoubleSide, FrontSide, MirroredRepeatWrapping, RepeatWrapping } from 'three'
+import { PlayMode } from '@ir-engine/engine/src/scene/constants/PlayMode'
+import {
+  BackSide,
+  ClampToEdgeWrapping,
+  DoubleSide,
+  FrontSide,
+  MirroredRepeatWrapping,
+  RepeatWrapping,
+  Vector3
+} from 'three'
+
+import { TransformComponent } from '@ir-engine/spatial'
+import { twMerge } from 'tailwind-merge'
+import Checkbox from '../../../../primitives/tailwind/Checkbox'
 import InputGroup from '../../input/Group'
-import NumericInput from '../../input/Numeric'
+import SegmentedControlInput from '../../input/SegmentedControl'
 import SelectInput from '../../input/Select'
 import Vector2Input from '../../input/Vector2'
+import Slider from '../../Slider'
+import { MediaInput, MediaMode } from '../media'
+
+const PlayModeOptions = [
+  {
+    label: 'Single',
+    value: PlayMode.single
+  },
+  {
+    label: 'Random',
+    value: PlayMode.random
+  },
+  {
+    label: 'Loop',
+    value: PlayMode.loop
+  },
+  {
+    label: 'SingleLoop',
+    value: PlayMode.singleloop
+  }
+]
+
+const audioModeOptions = [
+  { label: 'Positional', value: 'positional' },
+  { label: 'Ambient', value: 'ambient' }
+]
 
 const fitOptions = [
   { label: 'Cover', value: 'cover' },
   { label: 'Contain', value: 'contain' },
-  { label: 'Vertical', value: 'vertical' },
-  { label: 'Horizontal', value: 'horizontal' }
+  { label: 'Stretch', value: 'stretch' },
+  { label: 'Horizontal', value: 'horizontal' },
+  { label: 'Vertical', value: 'vertical' }
 ]
 
 const projectionOptions = [
@@ -69,17 +86,21 @@ const wrappingOptions = [
 export const VideoNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
 
-  const video = useComponent(props.entity, VideoComponent)
-  const mediaUUID = video.mediaUUID.value
-  const mediaEntity = UUIDComponent.getEntityByUUID(mediaUUID)
-  const mediaElement = useOptionalComponent(mediaEntity, MediaElementComponent)
-  const mediaEntities = useQuery([MediaComponent])
-  const mediaOptions = mediaEntities
-    .filter((entity) => entity !== props.entity)
-    .map((entity) => {
-      return { label: getComponent(entity, NameComponent), value: getComponent(entity, UUIDComponent) }
-    })
-  mediaOptions.unshift({ label: 'Self', value: '' as EntityUUID })
+  const simulationEntity = getSimulationCounterpart(props.entity)
+  const video = useComponent(simulationEntity, VideoComponent)
+  const mediaElement = useHasComponent(simulationEntity, MediaElementComponent)
+
+  const resizeVideoToMatchAspectRatio = () => {
+    const transformComponent = getComponent(props.entity, TransformComponent)
+    const videoSize = video.currentVideoSize
+    const videoRatio = videoSize.x / videoSize.y
+    const scale = transformComponent.scale
+    const newX = scale.y * videoRatio
+    const newY = scale.y
+    const newZ = 1
+    const newScale = new Vector3(newX, newY, newZ)
+    commitProperty(TransformComponent, 'scale')(newScale)
+  }
 
   useEffect(() => {
     if (!hasComponent(props.entity, MediaComponent)) {
@@ -95,32 +116,40 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
       description={t('editor:properties.video.description')}
       Icon={VideoNodeEditor.iconComponent}
     >
-      {/*<ProgressBar
-        value={0}
-        paused={false}
-        totalTime={0}
-      />*/}
-      <InputGroup
-        name="Media"
-        label={t('editor:properties.video.lbl-media')}
-        info={t('editor:properties.video.lbl-media-info')}
-      >
-        <SelectInput
-          value={video.mediaUUID.value}
-          onChange={commitProperty(VideoComponent, 'mediaUUID')}
-          options={mediaOptions}
-        />
+      <MediaInput
+        mediaMode={MediaMode.video}
+        entity={props.entity}
+        mediaNodeId={video.mediaUUID}
+        OnMediaSourceUpdate={commitProperty(VideoComponent, 'mediaUUID')}
+        dropTypes={[...ItemTypes.Videos]}
+      />
+
+      <InputGroup name="Aspect Ratio" label={t('editor:properties.video.lbl-aspect-ratio')}>
+        <button
+          className={twMerge(
+            'w-full flex-auto rounded-md  px-10 py-1 ',
+            mediaElement ? ' bg-surface-1 text-text-primary' : 'bg-surface-2 text-text-inactive'
+          )}
+          onClick={resizeVideoToMatchAspectRatio}
+          disabled={!mediaElement}
+        >
+          {t('editor:properties.video.lbl-match-aspect-ratio')}
+        </button>
       </InputGroup>
 
       <InputGroup
-        name="Video Size"
-        label={t('editor:properties.video.lbl-size')}
-        info={t('editor:properties.video.lbl-size-info')}
+        name="Video Fit"
+        label={t('editor:properties.video.lbl-fit')}
+        info={t('editor:properties.video.lbl-fit-info')}
       >
-        <Vector2Input
-          value={video.size.value}
-          onChange={updateProperty(VideoComponent, 'size')}
-          onRelease={commitProperty(VideoComponent, 'size')}
+        <SelectInput value={video.fit} onChange={commitProperty(VideoComponent, 'fit')} options={fitOptions} />
+      </InputGroup>
+
+      <InputGroup name="Projection" label={t('editor:properties.video.lbl-projection')}>
+        <SegmentedControlInput
+          value={video.projection}
+          onChange={commitProperty(VideoComponent, 'projection')}
+          options={projectionOptions}
         />
       </InputGroup>
 
@@ -129,8 +158,8 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         label={t('editor:properties.video.lbl-side')}
         info={t('editor:properties.video.lbl-side-info')}
       >
-        <SelectInput
-          value={video.side.value}
+        <SegmentedControlInput
+          value={video.side}
           onChange={commitProperty(VideoComponent, 'side')}
           options={[
             { label: 'Front', value: FrontSide },
@@ -146,9 +175,10 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.video.lbl-uv-offset-info')}
       >
         <Vector2Input
-          value={video.uvOffset.value}
+          value={video.uvOffset}
           onChange={updateProperty(VideoComponent, 'uvOffset')}
           onRelease={commitProperty(VideoComponent, 'uvOffset')}
+          axisClassNames={['w-1/2', 'w-1/2']}
         />
       </InputGroup>
 
@@ -158,113 +188,80 @@ export const VideoNodeEditor: EditorComponentType = (props) => {
         info={t('editor:properties.video.lbl-uv-scale-info')}
       >
         <Vector2Input
-          value={video.uvScale.value}
+          value={video.uvScale}
           onChange={updateProperty(VideoComponent, 'uvScale')}
           onRelease={commitProperty(VideoComponent, 'uvScale')}
+          axisClassNames={['w-1/2', 'w-1/2']}
         />
       </InputGroup>
-
       <InputGroup
-        name="Wrap S"
-        label={t('editor:properties.video.lbl-wrap-s')}
-        info={t('editor:properties.video.lbl-wrap-s-info')}
+        name="Wrap"
+        label={t('editor:properties.video.lbl-wrap')}
+        info={t('editor:properties.video.lbl-wrap-info')}
       >
-        <SelectInput
-          value={video.wrapS.value}
-          onChange={commitProperty(VideoComponent, 'wrapS')}
-          options={wrappingOptions}
-        />
+        <div className="flex w-full">
+          <div className="flex w-1/2">
+            <SelectInput
+              value={video.wrapS}
+              onChange={commitProperty(VideoComponent, 'wrapS')}
+              options={wrappingOptions}
+            />
+          </div>
+          <div className="flex w-1/2">
+            <SelectInput
+              value={video.wrapT}
+              onChange={commitProperty(VideoComponent, 'wrapT')}
+              options={wrappingOptions}
+            />
+          </div>
+        </div>
       </InputGroup>
-
-      <InputGroup
-        name="Wrap T"
-        label={t('editor:properties.video.lbl-wrap-t')}
-        info={t('editor:properties.video.lbl-wrap-t-info')}
-      >
-        <SelectInput
-          value={video.wrapT.value}
-          onChange={commitProperty(VideoComponent, 'wrapT')}
-          options={wrappingOptions}
-        />
-      </InputGroup>
-
       <InputGroup
         name="Use Alpha"
         label={t('editor:properties.video.lbl-use-alpha')}
         info={t('editor:properties.video.lbl-use-alpha-info')}
       >
-        <Checkbox checked={video.useAlpha.value} onChange={commitProperty(VideoComponent, 'useAlpha')} />
-      </InputGroup>
+        <Checkbox
+          label={t('editor:properties.video.lbl-use-alphaEnable')}
+          variantTextPlacement={'right'}
+          checked={video.useAlpha}
+          onChange={commitProperty(VideoComponent, 'useAlpha')}
+        />
 
-      {video.useAlpha.value && (
-        <>
-          <InputGroup
-            name="Alpha Threshold"
-            label={t('editor:properties.video.lbl-alpha-threshold')}
-            info={t('editor:properties.video.lbl-alpha-threshold-info')}
-          >
-            <NumericInput
-              value={video.alphaThreshold.value}
+        {video.useAlpha && (
+          <>
+            <Checkbox
+              label={t('editor:properties.video.lbl-use-alphaInvert')}
+              variantTextPlacement={'right'}
+              checked={video.useAlphaInvert}
+              onChange={commitProperty(VideoComponent, 'useAlphaInvert')}
+            />
+
+            <Slider
+              label={t('editor:properties.video.lbl-alpha-threshold')}
+              min={0}
+              max={1}
+              step={0.01}
+              value={video.alphaThreshold}
               onChange={updateProperty(VideoComponent, 'alphaThreshold')}
               onRelease={commitProperty(VideoComponent, 'alphaThreshold')}
+              aria-label="alphaThreshold"
             />
-          </InputGroup>
 
-          <InputGroup
-            name="Use Alpha UV Transform"
-            label={t('editor:properties.video.lbl-use-alpha-uv-transform')}
-            info={t('editor:properties.video.lbl-use-alpha-uv-transform-info')}
-          >
-            <Checkbox
-              checked={video.useAlphaUVTransform.value}
-              onChange={commitProperty(VideoComponent, 'useAlphaUVTransform')}
-            />
-          </InputGroup>
-
-          {video.useAlphaUVTransform.value && (
-            <>
-              <InputGroup
-                name="Alpha UV Offset"
-                label={t('editor:properties.video.lbl-alpha-uv-offset')}
-                info={t('editor:properties.video.lbl-alpha-uv-offset-info')}
-              >
-                <Vector2Input
-                  value={video.alphaUVOffset.value}
-                  onChange={updateProperty(VideoComponent, 'alphaUVOffset')}
-                  onRelease={commitProperty(VideoComponent, 'alphaUVOffset')}
-                />
-              </InputGroup>
-
-              <InputGroup
-                name="Alpha UV Scale"
-                label={t('editor:properties.video.lbl-alpha-uv-scale')}
-                info={t('editor:properties.video.lbl-alpha-uv-scale-info')}
-              >
-                <Vector2Input
-                  value={video.alphaUVScale.value}
-                  onChange={updateProperty(VideoComponent, 'alphaUVScale')}
-                  onRelease={commitProperty(VideoComponent, 'alphaUVScale')}
-                />
-              </InputGroup>
-            </>
-          )}
-        </>
-      )}
-
-      <InputGroup name="Projection" label={t('editor:properties.video.lbl-projection')}>
-        <SelectInput
-          value={video.projection.value}
-          onChange={commitProperty(VideoComponent, 'projection')}
-          options={projectionOptions}
-        />
-      </InputGroup>
-
-      <InputGroup
-        name="Video Fit"
-        label={t('editor:properties.video.lbl-fit')}
-        info={t('editor:properties.video.lbl-fit-info')}
-      >
-        <SelectInput value={video.fit.value} onChange={commitProperty(VideoComponent, 'fit')} options={fitOptions} />
+            <InputGroup
+              label={t('editor:properties.video.lbl-use-alpha-uv-transform')}
+              info={t('editor:properties.video.lbl-use-alpha-uv-transform-info')}
+            >
+              <Vector2Input
+                value={video.alphaUVOffset}
+                onChange={updateProperty(VideoComponent, 'alphaUVOffset')}
+                onRelease={commitProperty(VideoComponent, 'alphaUVOffset')}
+                axisLabels={['U', 'V']}
+                axisClassNames={['w-1/2', 'w-1/2']}
+              />
+            </InputGroup>
+          </>
+        )}
       </InputGroup>
     </NodeEditor>
   )

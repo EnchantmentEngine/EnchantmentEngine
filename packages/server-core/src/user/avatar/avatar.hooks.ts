@@ -1,32 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BadRequest, Forbidden } from '@feathersjs/errors'
 import { hooks as schemaHooks } from '@feathersjs/schema'
-import { disallow, discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
-
 import { staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
 import {
   avatarDataValidator,
@@ -40,8 +13,9 @@ import {
 import { userAvatarPath } from '@ir-engine/common/src/schemas/user/user-avatar.schema'
 import { userPath } from '@ir-engine/common/src/schemas/user/user.schema'
 import { checkScope } from '@ir-engine/common/src/utils/checkScope'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import setLoggedInUser from '@ir-engine/server-core/src/hooks/set-loggedin-user-in-body'
-
+import { disallow, discardQuery, iff, iffElse, isProvider } from 'feathers-hooks-common'
 import { HookContext } from '../../../declarations'
 import disallowNonId from '../../hooks/disallow-non-id'
 import isAction from '../../hooks/is-action'
@@ -169,13 +143,14 @@ const removeAvatarResources = async (context: HookContext<AvatarService>) => {
   const avatar = await context.app.service(avatarPath).get(context.id!, context.params)
 
   try {
-    await context.app.service(staticResourcePath).remove(avatar.modelResourceId)
+    if (isValidId(avatar.modelResourceId)) await context.app.service(staticResourcePath).remove(avatar.modelResourceId)
   } catch (err) {
     logger.error(err)
   }
 
   try {
-    await context.app.service(staticResourcePath).remove(avatar.thumbnailResourceId)
+    if (isValidId(avatar.thumbnailResourceId))
+      await context.app.service(staticResourcePath).remove(avatar.thumbnailResourceId)
   } catch (err) {
     logger.error(err)
   }
@@ -199,8 +174,9 @@ const updateUserAvatars = async (context: HookContext<AvatarService>) => {
   })
 
   if (avatars.data.length > 0) {
+    avatars.data = avatars.data.filter((avatar) => avatar.modelResource && avatar.thumbnailResource)
     const randomReplacementAvatar = avatars.data[Math.floor(Math.random() * avatars.data.length)]
-    await context.app.service(userAvatarPath).patch(
+    await context.app.service(userAvatarPath)._patch(
       null,
       {
         avatarId: randomReplacementAvatar.id as AvatarID
@@ -208,8 +184,7 @@ const updateUserAvatars = async (context: HookContext<AvatarService>) => {
       {
         query: {
           avatarId: context.id?.toString() as AvatarID
-        },
-        user: context.params.user
+        }
       }
     )
   }

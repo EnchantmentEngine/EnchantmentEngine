@@ -5,7 +5,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsanimationsdefault_skeleton.vrm-thumbnail.png",
+    "name": "default_skeleton.vrm",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsanimationsdefault_skeleton.vrm-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/animations/emotes.glb": {
@@ -13,7 +14,8 @@
     "tags": [
       "Model"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "name": "emotes.glb"
   },
   "assets/animations/locomotion.glb": {
     "type": "asset",
@@ -21,7 +23,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsanimationslocomotion.glb-thumbnail.png",
+    "name": "locomotion.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsanimationslocomotion.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/animations/optional/seated.fbx": {
@@ -29,7 +32,8 @@
     "tags": [
       "Model"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "name": "seated.fbx"
   },
   "assets/apartment_skybox.jpg": {
     "type": "asset",
@@ -37,7 +41,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsapartment_skybox.jpg-thumbnail.png",
+    "name": "apartment_skybox.jpg",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsapartment_skybox.jpg-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/apartment-CubemapBake.png": {
@@ -46,7 +51,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_apartment-CubemapBake.png-thumbnail.png",
+    "name": "apartment-CubemapBake.png",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/assets_apartment-CubemapBake.png-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/apartment.glb": {
@@ -55,186 +61,9 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsapartment.glb-thumbnail.png",
+    "name": "apartment.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsapartment.glb-thumbnail.png",
     "thumbnailMode": "automatic"
-  },
-  "assets/avatars/female_01.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsfemale_01.png-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/female_01.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/female_01.png"
-    ]
-  },
-  "assets/avatars/female_02.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsfemale_02.png-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/female_02.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/female_02.png"
-    ]
-  },
-  "assets/avatars/female_03.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsfemale_03.png-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/female_03.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/female_03.png"
-    ],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsfemale_03.vrm-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/female_04.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": []
-  },
-  "assets/avatars/female_04.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/female_04.png"
-    ]
-  },
-  "assets/avatars/female_05.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": []
-  },
-  "assets/avatars/female_05.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/female_05.png"
-    ]
-  },
-  "assets/avatars/female_06.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": []
-  },
-  "assets/avatars/female_06.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/female_06.png"
-    ]
-  },
-  "assets/avatars/male_01.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsmale_01.png-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/male_01.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/male_01.png"
-    ],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsmale_01.vrm-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/male_02.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": []
-  },
-  "assets/avatars/male_02.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/male_02.png"
-    ],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsmale_02.vrm-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/male_03.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsmale_03.png-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/male_03.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/male_03.png"
-    ],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsavatarsmale_03.vrm-thumbnail.png",
-    "thumbnailMode": "automatic"
-  },
-  "assets/avatars/male_04.png": {
-    "type": "asset",
-    "tags": [
-      "Image"
-    ],
-    "dependencies": []
-  },
-  "assets/avatars/male_04.vrm": {
-    "type": "asset",
-    "tags": [
-      "Model"
-    ],
-    "dependencies": [
-      "projects/ir-engine/default-project/assets/avatars/male_04.png"
-    ]
   },
   "assets/cloud.png": {
     "type": "asset",
@@ -242,7 +71,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetscloud.png-thumbnail.png",
+    "name": "cloud.png",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetscloud.png-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/collisioncube.glb": {
@@ -251,7 +81,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetscollisioncube.glb-thumbnail.png",
+    "name": "collisioncube.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetscollisioncube.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/controllers/left_controller.glb": {
@@ -260,7 +91,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetscontrollersleft_controller.glb-thumbnail.png",
+    "name": "left_controller.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetscontrollersleft_controller.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/controllers/left.glb": {
@@ -269,7 +101,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetscontrollersleft.glb-thumbnail.png",
+    "name": "left.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetscontrollersleft.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/controllers/right_controller.glb": {
@@ -277,7 +110,8 @@
     "tags": [
       "Model"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "name": "right_controller.glb"
   },
   "assets/controllers/right.glb": {
     "type": "asset",
@@ -285,7 +119,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetscontrollersright.glb-thumbnail.png",
+    "name": "right.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetscontrollersright.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/default-silhouette.svg": {
@@ -293,15 +128,17 @@
     "tags": [
       "unknown"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "name": "default-silhouette.svg"
   },
-  "assets/drop-shadow.png": {
+  "assets/drop-shadow.ktx2": {
     "type": "asset",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsdrop-shadow.png-thumbnail.png",
+    "name": "drop-shadow.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsdrop-shadow.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/galaxyTexture.jpg": {
@@ -310,7 +147,18 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsgalaxyTexture.jpg-thumbnail.png",
+    "name": "galaxyTexture.jpg",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsgalaxyTexture.jpg-thumbnail.png",
+    "thumbnailMode": "automatic"
+  },
+  "assets/generic_midday_02.ktx2": {
+    "type": "file",
+    "tags": [
+      "Image"
+    ],
+    "dependencies": [],
+    "name": "generic_midday_02.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/assets_generic_midday_02.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/generic_midday_02.png": {
@@ -319,7 +167,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_generic_midday_02.png-thumbnail.png",
+    "name": "generic_midday_02.png",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/assets_generic_midday_02.png-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/keycard.glb": {
@@ -328,7 +177,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetskeycard.glb-thumbnail.png",
+    "name": "keycard.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetskeycard.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/platform.glb": {
@@ -337,7 +187,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_platform.glb-thumbnail.png",
+    "name": "platform.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/assets_platform.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/portal_frame.glb": {
@@ -346,7 +197,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsportal_frame.glb-thumbnail.png",
+    "name": "portal_frame.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsportal_frame.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/prefabs/3d-model.prefab.gltf": {
@@ -355,7 +207,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "3d-model.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/ambient-light.prefab.gltf": {
@@ -364,7 +217,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "ambient-light.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/body.prefab.gltf": {
@@ -373,7 +227,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "body.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/box-collider.prefab.gltf": {
@@ -382,7 +237,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "box-collider.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/camera.prefab.gltf": {
@@ -391,7 +247,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "camera.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/cylinder-collider.prefab.gltf": {
@@ -400,7 +257,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "cylinder-collider.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/directional-light.prefab.gltf": {
@@ -409,7 +267,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "directional-light.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/fog.prefab.gltf": {
@@ -418,7 +277,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "fog.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/geo.prefab.gltf": {
@@ -427,7 +287,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "geo.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/ground-plane.prefab.gltf": {
@@ -436,7 +297,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "ground-plane.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/hemisphere-light.prefab.gltf": {
@@ -445,7 +307,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "hemisphere-light.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/image.prefab.gltf": {
@@ -454,7 +317,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "image.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/mesh-collider.prefab.gltf": {
@@ -463,8 +327,17 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "mesh-collider.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
+  },
+  "assets/prefabs/model-variants.prefab.gltf": {
+    "type": "asset",
+    "tags": [
+      "Prefab"
+    ],
+    "dependencies": [],
+    "name": "model-variants.prefab.gltf"
   },
   "assets/prefabs/point-light.prefab.gltf": {
     "type": "asset",
@@ -472,7 +345,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "point-light.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/postprocessing.prefab.gltf": {
@@ -481,7 +355,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "postprocessing.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/skybox.prefab.gltf": {
@@ -490,7 +365,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "skybox.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/sphere-collider.prefab.gltf": {
@@ -499,7 +375,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "sphere-collider.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/spot-light.prefab.gltf": {
@@ -508,7 +385,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "spot-light.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/text.prefab.gltf": {
@@ -517,7 +395,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "text.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/title.prefab.gltf": {
@@ -526,7 +405,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "title.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/prefabs/video.prefab.gltf": {
@@ -535,7 +415,8 @@
       "Default Prefab"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/Component_thumb_placeholder.png",
+    "name": "video.prefab.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/Component_thumb_placeholder.png",
     "thumbnailMode": "custom"
   },
   "assets/rings.glb": {
@@ -544,7 +425,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/assets_rings.glb-thumbnail.png",
+    "name": "rings.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/assets_rings.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/sample_etc1s.ktx2": {
@@ -553,7 +435,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetssample_etc1s.ktx2-thumbnail.png",
+    "name": "sample_etc1s.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetssample_etc1s.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/SampleAudio.mp3": {
@@ -561,7 +444,8 @@
     "tags": [
       "Audio"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "name": "SampleAudio.mp3"
   },
   "assets/SampleVideo.mp4": {
     "type": "asset",
@@ -569,7 +453,8 @@
       "Video"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsSampleVideo.mp4-thumbnail.png",
+    "name": "SampleVideo.mp4",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsSampleVideo.mp4-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/sky_skybox.jpg": {
@@ -578,7 +463,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetssky_skybox.jpg-thumbnail.png",
+    "name": "sky_skybox.jpg",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetssky_skybox.jpg-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/Skybase.glb": {
@@ -587,7 +473,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsSkybase.glb-thumbnail.png",
+    "name": "Skybase.glb",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsSkybase.glb-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/skyboxsun25deg/negx.jpg": {
@@ -596,7 +483,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsskyboxsun25degnegx.jpg-thumbnail.png",
+    "name": "negx.jpg",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsskyboxsun25degnegx.jpg-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/skyboxsun25deg/negy.jpg": {
@@ -604,7 +492,8 @@
     "tags": [
       "Image"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "name": "negy.jpg"
   },
   "assets/skyboxsun25deg/negz.jpg": {
     "type": "asset",
@@ -612,7 +501,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsskyboxsun25degnegz.jpg-thumbnail.png",
+    "name": "negz.jpg",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsskyboxsun25degnegz.jpg-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/skyboxsun25deg/posx.jpg": {
@@ -621,7 +511,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsskyboxsun25degposx.jpg-thumbnail.png",
+    "name": "posx.jpg",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsskyboxsun25degposx.jpg-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/skyboxsun25deg/posy.jpg": {
@@ -630,7 +521,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsskyboxsun25degposy.jpg-thumbnail.png",
+    "name": "posy.jpg",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsskyboxsun25degposy.jpg-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "assets/skyboxsun25deg/posz.jpg": {
@@ -638,7 +530,8 @@
     "tags": [
       "Image"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "name": "posz.jpg"
   },
   "assets/UV.png": {
     "type": "asset",
@@ -646,17 +539,17 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/default-projectassetsUV.png-thumbnail.png",
+    "name": "UV.png",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/default-projectassetsUV.png-thumbnail.png",
     "thumbnailMode": "automatic"
   },
-  "public/scenes/apartment-New-EnvMap Bake.ktx2": {
+  "public/scenes/apartment-New-EnvMap_Bake.ktx2": {
     "type": "asset",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_apartment-New-EnvMap-Bake.ktx2-thumbnail.png",
-    "thumbnailMode": "automatic"
+    "name": "apartment-New-EnvMap_Bake.ktx2"
   },
   "public/scenes/apartment-Portal.ktx2": {
     "type": "asset",
@@ -664,7 +557,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_apartment-Portal.ktx2-thumbnail.png",
+    "name": "apartment-Portal.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/public_scenes_apartment-Portal.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "public/scenes/apartment.envmap.ktx2": {
@@ -673,7 +567,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_apartment.envmap.ktx2-thumbnail.png",
+    "name": "apartment.envmap.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/public_scenes_apartment.envmap.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "public/scenes/apartment.gltf": {
@@ -682,7 +577,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/scenes/apartment.thumbnail.jpg"
+    "name": "apartment.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/scenes/apartment.thumbnail.jpg"
   },
   "public/scenes/apartment.loadingscreen.ktx2": {
     "type": "asset",
@@ -690,7 +586,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_apartment.loadingscreen.ktx2-thumbnail.png",
+    "name": "apartment.loadingscreen.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/public_scenes_apartment.loadingscreen.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "public/scenes/default.envmap.ktx2": {
@@ -699,7 +596,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_default.envmap.ktx2-thumbnail.png",
+    "name": "default.envmap.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/public_scenes_default.envmap.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "public/scenes/default.gltf": {
@@ -708,7 +606,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/scenes/default.thumbnail.jpg"
+    "name": "default.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/scenes/default.thumbnail.jpg"
   },
   "public/scenes/default.loadingscreen.ktx2": {
     "type": "asset",
@@ -716,35 +615,33 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_default.loadingscreen.ktx2-thumbnail.png",
+    "name": "default.loadingscreen.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/public_scenes_default.loadingscreen.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
-  "public/scenes/sky-station-Portal-- Sky Station Exterior.ktx2": {
+  "public/scenes/sky-station-Portal--_Sky Station Exterior.ktx2": {
     "type": "asset",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_sky-station-Portal---Sky-Station-Exterior.ktx2-thumbnail.png",
-    "thumbnailMode": "automatic"
+    "name": "sky-station-Portal--_Sky Station Exterior.ktx2"
   },
-  "public/scenes/sky-station-Portal-- Sky Station Interior.ktx2": {
+  "public/scenes/sky-station-Portal--_Sky Station Interior.ktx2": {
     "type": "asset",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_sky-station-Portal---Sky-Station-Interior.ktx2-thumbnail.png",
-    "thumbnailMode": "automatic"
+    "name": "sky-station-Portal--_Sky Station Interior.ktx2"
   },
-  "public/scenes/sky-station-Portal-- to Apartment.ktx2": {
+  "public/scenes/sky-station-Portal--_to Apartment.ktx2": {
     "type": "asset",
     "tags": [
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_sky-station-Portal---to-Apartment.ktx2-thumbnail.png",
-    "thumbnailMode": "automatic"
+    "name": "sky-station-Portal--_to Apartment.ktx2"
   },
   "public/scenes/sky-station.envmap.ktx2": {
     "type": "asset",
@@ -752,7 +649,8 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_sky-station.envmap.ktx2-thumbnail.png",
+    "name": "sky-station.envmap.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/public_scenes_sky-station.envmap.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
   },
   "public/scenes/sky-station.gltf": {
@@ -761,7 +659,8 @@
       "Model"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/scenes/sky-station.thumbnail.jpg"
+    "name": "sky-station.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/scenes/sky-station.thumbnail.jpg"
   },
   "public/scenes/sky-station.loadingscreen.ktx2": {
     "type": "asset",
@@ -769,7 +668,35 @@
       "Image"
     ],
     "dependencies": [],
-    "thumbnailKey": "projects/ir-engine/default-project/public/thumbnails/public_scenes_sky-station.loadingscreen.ktx2-thumbnail.png",
+    "name": "sky-station.loadingscreen.ktx2",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/thumbnails/public_scenes_sky-station.loadingscreen.ktx2-thumbnail.png",
     "thumbnailMode": "automatic"
+  },
+  "assets/avatars/irRobot.vrm": {
+    "type": "asset",
+    "tags": [
+      "Model"
+    ],
+    "dependencies": [
+      "projects/enchantmentengine/default-project/assets/avatars/irRobot.png"
+    ],
+    "name": "irRobot.vrm"
+  },
+  "assets/noise-offset.material.gltf": {
+    "type": "asset",
+    "tags": [
+      "Material"
+    ],
+    "dependencies": [],
+    "name": "noise-offset.material.gltf"
+  },
+  "public/scenes/sponza.gltf": {
+    "type": "scene",
+    "tags": [
+      "Model"
+    ],
+    "dependencies": [],
+    "name": "sponza.gltf",
+    "thumbnailKey": "projects/enchantmentengine/default-project/public/scenes/sponza.thumbnail.jpg"
   }
 }

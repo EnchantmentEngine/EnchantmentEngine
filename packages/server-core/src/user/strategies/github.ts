@@ -1,40 +1,14 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { AuthenticationRequest, AuthenticationResult } from '@feathersjs/authentication'
 import { Paginated } from '@feathersjs/feathers'
-
 import { apiJobPath } from '@ir-engine/common/src/schemas/cluster/api-job.schema'
 import { githubRepoAccessRefreshPath } from '@ir-engine/common/src/schemas/user/github-repo-access-refresh.schema'
 import { identityProviderPath } from '@ir-engine/common/src/schemas/user/identity-provider.schema'
+import { loginTokenPath } from '@ir-engine/common/src/schemas/user/login-token.schema'
 import { userApiKeyPath, UserApiKeyType } from '@ir-engine/common/src/schemas/user/user-api-key.schema'
 import { InviteCode, UserName, userPath } from '@ir-engine/common/src/schemas/user/user.schema'
-import { getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-
-import { loginTokenPath } from '@ir-engine/common/src/schemas/user/login-token.schema'
-import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { getDateTimeSql, toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
+import { retry } from '@octokit/plugin-retry'
 import moment from 'moment/moment'
 import { Octokit } from 'octokit'
 import { Application } from '../../../declarations'
@@ -86,7 +60,11 @@ export class GithubStrategy extends CustomOAuthStrategy {
     if (profile.email) {
       email = profile.email
     } else {
-      const octoKit = new Octokit({ auth: `token ${params.access_token}` })
+      const retryOctokit = Octokit.plugin(retry)
+      const octoKit = new retryOctokit({
+        auth: `token ${params.access_token}`,
+        retry: { enabled: process.env.TEST !== 'true' }
+      })
       const githubEmails = await octoKit.rest.users.listEmailsForAuthenticatedUser()
 
       email = githubEmails.data.filter((githubEmail: any) => githubEmail.primary === true)[0].email
@@ -114,7 +92,8 @@ export class GithubStrategy extends CustomOAuthStrategy {
         const newUser = await this.app.service(userPath).create({
           name: '' as UserName,
           isGuest: false,
-          inviteCode: code
+          inviteCode: code,
+          ageVerified: true
         })
         entity.userId = newUser.id
         await this.app.service(identityProviderPath)._patch(entity.id, {
@@ -135,7 +114,8 @@ export class GithubStrategy extends CustomOAuthStrategy {
     await makeInitialAdmin(this.app, user.id)
     if (user.isGuest)
       await this.app.service(userPath).patch(entity.userId, {
-        isGuest: false
+        isGuest: false,
+        ageVerified: true
       })
     const apiKey = (await this.app.service(userApiKeyPath).find({
       query: {
@@ -147,11 +127,18 @@ export class GithubStrategy extends CustomOAuthStrategy {
         userId: entity.userId
       })
     if (entity.type !== 'guest' && identityProvider.type === 'guest') {
-      await this.app.service(identityProviderPath)._remove(identityProvider.id)
-      await this.app.service(userPath).remove(identityProvider.userId)
+      const existingUser = await this.app.service(userPath).get(entity.userId)
+      if (isValidId(identityProvider.id)) await this.app.service(identityProviderPath)._remove(identityProvider.id)
+      if (isValidId(identityProvider.userId)) await this.app.service(userPath).remove(identityProvider.userId)
       if (!config.kubernetes.enabled)
-        await this.app.service(githubRepoAccessRefreshPath).find(Object.assign({}, params, { user }))
-      else await this.createRefreshJob(user.id)
+        await this.app.service(githubRepoAccessRefreshPath).find(Object.assign({}, params, { user: existingUser }))
+      else await this.createRefreshJob(existingUser.id)
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: entity.userId
+        }
+      })
       await this.userLoginEntry(entity, params)
 
       return super.updateEntity(entity, profile, params)
@@ -163,47 +150,66 @@ export class GithubStrategy extends CustomOAuthStrategy {
       profile.oauthRefreshToken = params.refresh_token
       const newIP = await super.createEntity(profile, params)
       if (entity.type === 'guest') {
-        const profileEmail = profile.email
-        const existingIdentityProviders = await this.app.service(identityProviderPath).find({
-          query: {
-            $or: [
-              {
-                email: profileEmail
-              },
-              {
-                token: profileEmail
+        if (newIP.email) {
+          const profileEmail = newIP.email
+          const existingIdentityProviders = await this.app.service(identityProviderPath).find({
+            query: {
+              $or: [
+                {
+                  email: profileEmail
+                },
+                {
+                  token: profileEmail
+                }
+              ],
+              id: {
+                $ne: newIP.id
               }
-            ],
-            id: {
-              $ne: newIP.id
+            }
+          })
+          if (existingIdentityProviders.total > 0) {
+            // Filter out identity providers associated with deactivated users
+            const activeIdentityProviders = await this.filterActiveIdentityProviders(existingIdentityProviders.data)
+
+            if (activeIdentityProviders.length > 0) {
+              const loginToken = await this.app.service(loginTokenPath).create({
+                identityProviderId: newIP.id,
+                associateUserId: activeIdentityProviders[0].userId,
+                expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
+              })
+              return {
+                ...entity,
+                associateEmail: profileEmail,
+                loginId: loginToken.id,
+                loginToken: loginToken.token,
+                promptForConnection: true
+              }
             }
           }
-        })
-        if (existingIdentityProviders.total > 0) {
-          const loginToken = await this.app.service(loginTokenPath).create({
-            identityProviderId: newIP.id,
-            associateUserId: existingIdentityProviders.data[0].userId,
-            expiresAt: toDateTimeSql(moment().utc().add(10, 'minutes').toDate())
-          })
-          return {
-            ...entity,
-            associateEmail: profileEmail,
-            loginId: loginToken.id,
-            loginToken: loginToken.token,
-            promptForConnection: true
-          }
         }
-        await this.app.service(identityProviderPath).remove(entity.id)
+        if (isValidId(entity.id)) await this.app.service(identityProviderPath).remove(entity.id)
       }
       if (!config.kubernetes.enabled)
         await this.app.service(githubRepoAccessRefreshPath).find(Object.assign({}, params, { user }))
       else await this.createRefreshJob(user.id)
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: entity.userId
+        }
+      })
       await this.userLoginEntry(newIP, params)
       return newIP
     } else if (existingEntity.userId === identityProvider.userId) {
       if (!config.kubernetes.enabled)
         await this.app.service(githubRepoAccessRefreshPath).find(Object.assign({}, params, { user }))
       else await this.createRefreshJob(user.id)
+      await this.app.service(identityProviderPath).remove(null, {
+        query: {
+          type: 'guest',
+          userId: existingEntity.userId
+        }
+      })
       await this.userLoginEntry(existingEntity, params)
       return existingEntity
     } else {
@@ -261,7 +267,9 @@ export class GithubStrategy extends CustomOAuthStrategy {
     const entity: string = this.configuration.entity
     const { provider, ...params } = originalParams
     const profile = await super.getProfile(authentication, params)
-    const existingEntity = (await super.findEntity(profile, params)) || (await super.getCurrentEntity(params))
+
+    let existingEntity = (await super.findEntity(profile, params)) || (await super.getCurrentEntity(params))
+    existingEntity = await this.checkDeactivatedUser(existingEntity)
 
     const authEntity = !existingEntity
       ? await this.createEntity(profile, params)

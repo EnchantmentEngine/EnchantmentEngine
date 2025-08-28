@@ -1,7 +1,7 @@
 {
   "name": "@ir-engine/instanceserver",
   "description": "Multiplayer Instanceserver for Infinite Reality Engine",
-  "version": "1.6.0",
+  "version": "1.0.3",
   "private": true,
   "homepage": "",
   "main": "./src",
@@ -28,28 +28,27 @@
     "config": "config/"
   },
   "engines": {
-    "node": ">= 18.12.0"
+    "node": ">= 22.11.0"
   },
   "scripts": {
     "check-errors": "tsc --noemit",
-    "start": "cross-env APP_ENV=production ts-node --swc src/index.ts",
-    "start-channel": "cross-env APP_ENV=production INSTANCESERVER_PORT=3032 DEV_CHANNEL=true ts-node --swc src/index.ts",
-    "dev": "cross-env APP_ENV=development NODE_OPTIONS='--inspect=2995' ts-node --swc src/index.ts",
-    "dev-channel": " cross-env APP_ENV=development NODE_OPTIONS='--inspect=2996' DEV_CHANNEL=true INSTANCESERVER_PORT=3032 ts-node --swc src/index.ts",
-    "dev-nossl": "cross-env NOSSL=true ts-node --swc src/index.ts",
+    "start": "cross-env APP_ENV=production tsx src/index.ts",
+    "start-channel": "cross-env APP_ENV=production INSTANCESERVER_PORT=3032 DEV_CHANNEL=true tsx src/index.ts",
+    "dev": "cross-env APP_ENV=development NODE_OPTIONS='--inspect=2995' tsx src/index.ts",
+    "dev-channel": " cross-env APP_ENV=development NODE_OPTIONS='--inspect=2996' DEV_CHANNEL=true INSTANCESERVER_PORT=3032 tsx src/index.ts",
+    "dev-nossl": "cross-env NOSSL=true tsx src/index.ts",
     "test": "cross-env TEST=true vitest run --config=../../vitest.server.config.ts",
     "validate": "npm run build && npm run test"
   },
   "types": "lib/",
   "dependencies": {
-    "@ir-engine/common": "^1.6.0",
-    "@ir-engine/ecs": "^1.6.0",
-    "@ir-engine/engine": "^1.6.0",
-    "@ir-engine/hyperflux": "^1.6.0",
-    "@ir-engine/network": "^1.6.0",
-    "@ir-engine/projects": "^1.6.0",
-    "@ir-engine/server-core": "^1.6.0",
-    "@ir-engine/spatial": "^1.6.0",
+    "@ir-engine/common": "^1.0.3",
+    "@ir-engine/ecs": "^1.0.3",
+    "@ir-engine/engine": "^1.0.3",
+    "@ir-engine/hyperflux": "^1.0.3",
+    "@ir-engine/projects": "^1.0.3",
+    "@ir-engine/server-core": "^1.0.3",
+    "@ir-engine/spatial": "^1.0.3",
     "@feathersjs/feathers": "5.0.5",
     "@feathersjs/koa": "5.0.5",
     "@feathersjs/primus-client": "4.5.15",
@@ -65,7 +64,7 @@
     "primus": "^8.0.7",
     "ps-list": "7.2.0",
     "trace-unhandled": "2.0.1",
-    "typescript": "5.4.5",
+    "typescript": "5.8.3",
     "uuid": "9.0.0"
   },
   "devDependencies": {

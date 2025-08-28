@@ -1,174 +1,303 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { useLayoutEffect } from 'react'
-
 import {
+  AnimationSystemGroup,
+  defineQuery,
   defineSystem,
+  EngineState,
   getComponent,
-  getOptionalComponent,
   InputSystemGroup,
   UndefinedEntity,
+  useEntityContext,
   useExecute
 } from '@ir-engine/ecs'
-import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
+import {
+  defineComponent,
+  getOptionalComponent,
+  hasComponent,
+  removeComponent,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity, EntityID } from '@ir-engine/ecs/src/Entity'
 import { getState, useHookstate } from '@ir-engine/hyperflux'
-import { EngineState } from '../../EngineState'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema, getAncestorWithComponents, isAncestor } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { HighlightComponent } from '../../renderer/components/HighlightComponent'
-import { getAncestorWithComponents, isAncestor } from '../../transform/components/EntityTree'
 import {
   AnyAxis,
   AnyButton,
   AxisMapping,
   AxisValueMap,
+  ButtonState,
   ButtonStateMap,
+  createInitialButtonState,
   KeyboardButton,
   MouseButton,
   MouseScroll,
+  StandardGamepadButton,
   XRStandardGamepadAxes,
   XRStandardGamepadButton
 } from '../state/ButtonState'
 import { InputState } from '../state/InputState'
 import { InputSinkComponent } from './InputSinkComponent'
 import { InputSourceComponent } from './InputSourceComponent'
+// Types for input bindings
+export type ButtonBinding = AnyButton | AnyButton[]
+export type AxisBinding = AnyAxis
+export type InputButtonBindings = Record<string, ButtonBinding[]>
+export type InputAxisBindings = Record<string, AxisBinding[]>
 
-export type InputAlias = Record<string, (string | number)[]>
-
-export const DefaultButtonAlias = {
+export const DefaultButtonBindings = {
   Interact: [MouseButton.PrimaryClick, XRStandardGamepadButton.XRStandardGamepadTrigger, KeyboardButton.KeyE],
   FollowCameraModeCycle: [KeyboardButton.KeyV],
   FollowCameraFirstPerson: [KeyboardButton.KeyF],
   FollowCameraShoulderCam: [KeyboardButton.KeyC]
-} satisfies Record<string, Array<AnyButton>>
+} satisfies InputButtonBindings
 
-export const DefaultAxisAlias = {
-  FollowCameraZoomScroll: [
-    MouseScroll.VerticalScroll,
-    XRStandardGamepadAxes.XRStandardGamepadThumbstickY,
-    XRStandardGamepadAxes.XRStandardGamepadTouchpadY
-  ],
+export const DefaultAxisBindings = {
+  FollowCameraZoomScroll: [MouseScroll.VerticalScroll, XRStandardGamepadAxes.XRStandardGamepadTouchpadY],
   FollowCameraShoulderCamScroll: [MouseScroll.HorizontalScroll]
-} satisfies Record<string, Array<AnyAxis>>
+} satisfies InputAxisBindings
+
+const ButtonSchema = Schema.Union([
+  Schema.Enum(KeyboardButton, {
+    $comment:
+      "Likely a string enum, ie. one of the following values: 'Backspace', 'Tab', 'Enter', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'Pause', 'CapsLock', 'Escape', 'Space', 'PageUp', 'PageDown', 'End', 'Home', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'PrintScreen', 'Insert', 'Delete', 'Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'KeyA', 'KeyB', 'KeyC', 'KeyD', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyM', 'KeyN', 'KeyO', 'KeyP', 'KeyQ', 'KeyR', 'KeyS', 'KeyT', 'KeyU', 'KeyV', 'KeyW', 'KeyX', 'KeyY', 'KeyZ'"
+  }),
+  Schema.Enum(MouseButton, {
+    $comment:
+      "Likely a string enum, ie. one of the following values: 'PrimaryClick', 'AuxiliaryClick', 'SecondaryClick'"
+  }),
+  Schema.Enum(StandardGamepadButton, {
+    $comment:
+      "A number enum, where: 0 represents 'StandardGamepadButtonA', 1 represents 'StandardGamepadButtonB', 2 represents 'StandardGamepadButtonX', 3 represents 'StandardGamepadButtonY', 4 represents 'StandardGamepadLeft1', 5 represents 'StandardGamepadRight1', 6 represents 'StandardGamepadLeft2', 7 represents 'StandardGamepadRight2', 8 represents 'StandardGamepadButtonBack', 9 represents 'StandardGamepadButtonStart', 10 represents 'StandardGamepadLeftStick', 11 represents 'StandardGamepadRightStick', 12 represents 'StandardGamepadDPadUp', 13 represents 'StandardGamepadDPadDown', 14 represents 'StandardGamepadDPadLeft', 15 represents 'StandardGamepadDPadRight', 16 represents 'StandardGamepadButtonHome'"
+  }),
+  Schema.Enum(XRStandardGamepadButton, {
+    $comment:
+      "A number enum, where: 0 represents 'XRStandardGamepadTrigger', 1 represents 'XRStandardGamepadSqueeze', 2 represents 'XRStandardGamepadPad', 3 represents 'XRStandardGamepadStick', 4 represents 'XRStandardGamepadButtonA', 5 represents 'XRStandardGamepadButtonB'"
+  })
+])
+
+/**
+ * Execute a function based on input with configurable order and edit mode behavior
+ * @param executeOnInput Function to execute
+ * @param order Order of execution relative to the input system group
+ * @param executeWhenEditing Whether to execute when in edit mode
+ */
+function useExecuteWithInput(executeOnInput: () => void, order?: InputExecutionOrder, executeWhenEditing?: boolean)
+
+/**
+ * @deprecated Use the new parameter order: (executeOnInput, order, executeWhenEditing)
+ */
+function useExecuteWithInput(executeOnInput: () => void, executeWhenEditing: boolean, order: InputExecutionOrder)
+
+// Implementation
+function useExecuteWithInput(
+  executeOnInput: () => void,
+  orderOrExecuteWhenEditing?: InputExecutionOrder | boolean,
+  executeWhenEditingOrOrder?: boolean | InputExecutionOrder
+) {
+  const entity = useEntityContext()
+
+  // Determine if we're using the deprecated parameter order
+  let order: InputExecutionOrder = InputExecutionOrder.With
+  let executeWhenEditing = false
+
+  if (typeof orderOrExecuteWhenEditing === 'boolean') {
+    // Old parameter order
+    executeWhenEditing = orderOrExecuteWhenEditing
+    order = executeWhenEditingOrOrder as InputExecutionOrder
+  } else {
+    // New parameter order
+    order = (orderOrExecuteWhenEditing as InputExecutionOrder) ?? InputExecutionOrder.With
+    executeWhenEditing = (executeWhenEditingOrOrder as boolean) ?? false
+  }
+
+  useExecute(() => {
+    const isEditing = getState(EngineState).isEditing
+    const capturingEntity = getState(InputState).capturingEntity
+
+    // Don't execute if:
+    // 1. We don't want to execute when editing and we are editing
+    // 2. The entity is not an ancestor of the capturing entity
+    if ((!executeWhenEditing && isEditing) || (capturingEntity && !isAncestor(capturingEntity, entity, true))) {
+      return
+    }
+
+    executeOnInput()
+  }, getInputExecutionInsert(order))
+}
 
 export const InputComponent = defineComponent({
   name: 'InputComponent',
   jsonID: 'EE_input',
 
-  schema: S.Object({
-    inputSinks: S.Array(S.EntityUUID(), ['Self']),
-    activationDistance: S.Number(2),
-    highlight: S.Bool(false),
-    grow: S.Bool(false),
-
+  schema: Schema.Object({
+    inputSinks: Schema.Array(EntitySchema.EntityID(), { default: ['Self' as EntityID] }),
+    activationDistance: Schema.Number({ default: 2 }),
+    highlight: Schema.Bool({ default: false }),
+    grow: Schema.Bool({ default: false }),
+    buttonBindings: Schema.Record(
+      Schema.String(),
+      Schema.Array(Schema.Union([ButtonSchema, Schema.Array(ButtonSchema)])),
+      {
+        default: { ...DefaultButtonBindings }
+      }
+    ),
     //internal
     /** populated automatically by ClientInputSystem */
-    inputSources: S.NonSerialized(S.Array(S.Entity()))
+    inputSources: Schema.Array(EntitySchema.Entity(), { serialized: false }),
+    cachedButtons: Schema.Type<ButtonStateMap<any>>({ serialized: false, default: {} }),
+
+    /** if true, the input component will automatically capture input when a button is consumed */
+    autoCapture: Schema.Bool({ default: false }),
+
+    buttons: Schema.Type<ButtonStateMap<any>>({ serialized: false })
   }),
 
-  useExecuteWithInput(
-    executeOnInput: () => void,
-    executeWhenEditing = false,
-    order: InputExecutionOrder = InputExecutionOrder.With
-  ) {
-    const entity = useEntityContext()
+  onInit(entity, initial) {
+    // Helper function to find first unconsumed button state
+    const findButtonState = (button: AnyButton): ButtonState | undefined => {
+      const inputComponent = getComponent(entity, InputComponent)
+      for (const sourceEntity of inputComponent.inputSources) {
+        const inputSourceComponent = getOptionalComponent(sourceEntity, InputSourceComponent)
+        if (!inputSourceComponent) continue
+        const state = inputSourceComponent.buttons[button] as ButtonState
+        // if (state?.consumed)
+        //   console.warn(
+        //     `button ${button} checked by ${entity} - ${getComponent(entity, NameComponent)} consumed by ${
+        //       state.consumed
+        //     } - ${getComponent(state.consumed, NameComponent)}`
+        //   )
+        if (state && !state.consumed) {
+          return state
+        }
+      }
+      return undefined
+    }
 
-    return useExecute(() => {
-      const capturingEntity = getState(InputState).capturingEntity
-      if (
-        (!executeWhenEditing && getState(EngineState).isEditing) ||
-        (capturingEntity && !isAncestor(capturingEntity, entity, true))
-      )
-        return
-      executeOnInput()
-    }, getInputExecutionInsert(order))
+    initial.buttons = new Proxy(
+      {},
+      {
+        get: (target: ButtonStateMap<any>, prop: string) => {
+          if (typeof prop === 'symbol') {
+            return target[prop]
+          }
+
+          // Check cache first
+          const inputComponent = getComponent(entity, InputComponent)
+          const cachedButtons = inputComponent.cachedButtons
+          if (Object.hasOwn(cachedButtons, prop)) {
+            if (!cachedButtons[prop]) return undefined
+            if (cachedButtons[prop] && cachedButtons[prop].consumed) {
+              if (inputComponent.autoCapture && cachedButtons[prop].pressed) {
+                InputState.setCapturingEntity(entity)
+              }
+              return cachedButtons[prop]
+            }
+          }
+
+          let result = cachedButtons[prop]
+
+          // First check mapped button states since they define the mapping from alias to actual buttons
+          const buttonBindings = inputComponent.buttonBindings
+          if (buttonBindings && prop in buttonBindings) {
+            const bindings = buttonBindings[prop]
+            for (const b of bindings) {
+              if (Array.isArray(b)) {
+                // For combo buttons, check if all buttons in the combo are available
+                const states = b.map(findButtonState).filter((s): s is ButtonState => s !== undefined)
+
+                /** @todo we need to figure out how to distinguish when a combo matches exactly, eg CTRL+Z will fire if SHIFT is down too */
+                const isActive = states.length === b.length
+
+                if (!result && isActive) {
+                  // All buttons in combo are active and not consumed, consume them and set the result
+                  states.forEach((s) => (s.consumed = entity))
+                  result = cachedButtons[prop] = createInitialButtonState(states[0].inputSourceEntity)
+                }
+
+                if (result && isActive) {
+                  result.pressed = states.every((s) => s.pressed)
+                  result.down = states.some((s) => s.down) && result.pressed
+                  result.touched = states.every((s) => s.touched)
+                  result.value = Math.max(...states.map((s) => s.value))
+                  result.dragging = states.some((s) => s.dragging)
+                  result.rotating = states.some((s) => s.rotating)
+                  result.up = false
+                  result.consumed = entity
+                  if (inputComponent.autoCapture && result?.pressed) {
+                    InputState.setCapturingEntity(entity)
+                  }
+                  return result
+                } else if (result) {
+                  result.up = true
+                  result.consumed = entity
+                }
+              } else {
+                // For single button bindings, just return that button
+                result = cachedButtons[prop] = findButtonState(b)
+                if (result) result.consumed = entity
+                if (inputComponent.autoCapture && result?.pressed) {
+                  InputState.setCapturingEntity(entity)
+                }
+                if (result !== undefined) return result
+              }
+            }
+            // If we get here, the button in the binding is not available, so set the state to undefined
+            return (cachedButtons[prop] = undefined)
+          }
+
+          // Otherwise check if this exact button exists and is not consumed
+          const rawState = (cachedButtons[prop] = findButtonState(prop as AnyButton))
+          if (rawState) rawState.consumed = entity
+          if (rawState && inputComponent.autoCapture && rawState.pressed) {
+            InputState.setCapturingEntity(entity)
+          }
+          return rawState
+        }
+      }
+    )
+
+    return initial
   },
 
-  getInputEntities(entityContext: Entity): Entity[] {
-    const inputSinkEntity = getAncestorWithComponents(entityContext, [InputSinkComponent])
-    const closestInputEntity = getAncestorWithComponents(entityContext, [InputComponent])
-    const inputSinkInputEntities = getOptionalComponent(inputSinkEntity, InputSinkComponent)?.inputEntities ?? []
-    const inputEntities = [closestInputEntity, ...inputSinkInputEntities]
-    return inputEntities.filter(
-      (entity, index) => inputEntities.indexOf(entity) === index && entity !== UndefinedEntity
-    ) // remove duplicates
+  getInputEntity(entityContext: Entity): Entity {
+    const closestInputEntity = getAncestorWithComponents(entityContext, [InputComponent], true, true)
+    if (closestInputEntity) return closestInputEntity
+    const inputSinkEntity = getAncestorWithComponents(entityContext, [InputSinkComponent], true, true)
+    const inputSinkInputEntity = getOptionalComponent(inputSinkEntity, InputSinkComponent)?.inputEntity
+    return inputSinkInputEntity ?? UndefinedEntity
   },
 
   getInputSourceEntities(entityContext: Entity) {
-    const inputEntities = InputComponent.getInputEntities(entityContext)
-    return inputEntities.reduce<Entity[]>((prev, eid) => {
-      return [...prev, ...getComponent(eid, InputComponent).inputSources]
-    }, [])
+    const inputEntity = InputComponent.getInputEntity(entityContext)
+    if (inputEntity === UndefinedEntity) return []
+    return getComponent(inputEntity, InputComponent).inputSources
   },
 
-  getMergedButtons<AliasType extends InputAlias = typeof DefaultButtonAlias>(
+  getButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
-    inputAlias: AliasType = DefaultButtonAlias as unknown as AliasType
+    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType,
+    autoCapture = true
   ) {
-    const inputSourceEntities = InputComponent.getInputSourceEntities(entityContext)
-    return InputComponent.getMergedButtonsForInputSources(inputSourceEntities, inputAlias)
-  },
-
-  getMergedAxes<AliasType extends InputAlias = typeof DefaultAxisAlias>(
-    entityContext: Entity,
-    inputAlias: AliasType = DefaultAxisAlias as unknown as AliasType
-  ) {
-    const inputSourceEntities = InputComponent.getInputSourceEntities(entityContext)
-    return InputComponent.getMergedAxesForInputSources(inputSourceEntities, inputAlias)
-  },
-
-  /**
-   * @description Returns an object that:
-   * - Contains all of the buttons described by the InputSourceComponent.buttons of all `@param inputSourceEntities`
-   * - Has synchronized the state of the buttons described by all entries of `@param inputAlias` into fields of the same name.  */
-  getMergedButtonsForInputSources<AliasType extends InputAlias = typeof DefaultButtonAlias>(
-    inputSourceEntities: Entity[],
-    inputAlias: AliasType = DefaultButtonAlias as unknown as AliasType
-  ) {
-    const buttons = Object.assign(
-      {},
-      ...inputSourceEntities.map((eid) => {
-        return getComponent(eid, InputSourceComponent).buttons
-      })
-    ) as ButtonStateMap<AliasType>
-
-    for (const key of Object.keys(inputAlias)) {
-      const k = key as keyof AliasType
-      buttons[k] = inputAlias[key].reduce((acc: any, alias) => acc || buttons[alias], undefined)
+    const inputEntity = InputComponent.getInputEntity(entityContext)
+    if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>
+    const input = getComponent(inputEntity, InputComponent)
+    if (inputBindings) {
+      for (const binding of Object.keys(inputBindings)) {
+        if (!input.buttonBindings[binding]) input.buttonBindings[binding] = inputBindings[binding] as any
+      }
     }
-
-    return buttons
+    input.autoCapture = autoCapture
+    return input.buttons as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
   },
 
-  getMergedAxesForInputSources<AliasType extends InputAlias = typeof DefaultAxisAlias>(
-    inputSourceEntities: Entity[],
-    inputAlias: AliasType = DefaultAxisAlias as unknown as AliasType
+  getAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
+    entityContext: Entity,
+    inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
   ) {
+    const inputSourceEntities = InputComponent.getInputSourceEntities(entityContext)
+
     const axes = {
       0: 0,
       1: 0,
@@ -183,86 +312,54 @@ export const InputComponent = defineComponent({
         for (let i = 0; i < 4; i++) {
           const newAxis = inputSource.source.gamepad.axes[i] ?? 0
           axes[i] = getLargestMagnitudeNumber(axes[i] ?? 0, newAxis)
-          axes[mapping[i]] = axes[i]
+          axes[Object.keys(mapping)[i]] = axes[i]
         }
       }
     }
 
-    for (const key of Object.keys(inputAlias)) {
-      axes[key as any] = inputAlias[key].reduce<number>((prev, alias) => {
-        return getLargestMagnitudeNumber(prev, axes[alias] ?? 0)
+    for (const key of Object.keys(inputBindings)) {
+      const bindings = inputBindings[key]
+      axes[key] = bindings.reduce<number>((prev, binding) => {
+        return getLargestMagnitudeNumber(prev, axes[binding] ?? 0)
       }, 0)
     }
 
-    return axes as AxisValueMap<AliasType>
+    return axes as AxisValueMap<BindingsType>
   },
 
-  useHasFocus() {
-    const entity = useEntityContext()
+  /** @deprecated use getButtons instead  */
+  getMergedButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
+    entityContext: Entity,
+    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
+  ) {
+    return InputComponent.getButtons(entityContext, inputBindings)
+  },
+
+  /** @deprecated use getAxes instead */
+  getMergedAxes<BindingsType extends InputAxisBindings = typeof DefaultAxisBindings>(
+    entityContext: Entity,
+    inputBindings: BindingsType = DefaultAxisBindings as unknown as BindingsType
+  ) {
+    return InputComponent.getAxes(entityContext, inputBindings)
+  },
+
+  useExecuteWithInput,
+
+  useHasFocus(entityContext?: Entity) {
+    const entity = entityContext ?? useEntityContext()
     const hasFocus = useHookstate(() => {
       return InputComponent.getInputSourceEntities(entity).length > 0
     })
     useExecute(
       () => {
-        const inputSources = InputComponent.getInputSourceEntities(entity)
-        hasFocus.set(inputSources.length > 0)
+        const focus = InputComponent.getInputSourceEntities(entity).length > 0
+        if (focus !== hasFocus.value) hasFocus.set(focus)
       },
       // we want to evaluate input sources after the input system group has run, after all input systems
       // have had a chance to respond to input and/or capture input sources
       { after: InputSystemGroup }
     )
-    return hasFocus
-  },
-
-  reactor: () => {
-    const entity = useEntityContext()
-    const input = useComponent(entity, InputComponent)
-
-    useLayoutEffect(() => {
-      if (!input.inputSources.length || !input.highlight.value) return
-      setComponent(entity, HighlightComponent)
-      return () => {
-        removeComponent(entity, HighlightComponent)
-      }
-    }, [input.inputSources, input.highlight])
-
-    // useEffect(() => {
-    //   // perhaps we don't need to create a rigidbody; we just want to be able to add anything in this tree to the `input` layer,
-    //   // whether or not it's a rigidbody or a mesh
-    //
-    //   //then we might just need to abandon the Input layer raycast, leave that as-is, add the distance heuristic and call it a day
-    //
-    //   // the input system can still perform physics and mesh bvh raycasts on things that have an InputComponent as an entity ancestor
-    //   // I think I know how this can work
-    //   //awesome
-    //
-    //   //techincally if we add the distance heuristic a rigidbody / collider are not needed
-    //
-    //   // after entity tree has loaded (how do we check for this...)
-    //   // create an input rigidbody if one doesn't exist
-    //   // if (!hasComponent(entity, RigidBodyComponent)) {
-    //   //   setComponent(entity, RigidBodyComponent, { type: BodyTypes.Fixed }) //assume kinematic if it had no rigidbody before
-    //   // }
-    //   // // create an input colliderComponent if one doesn't exist
-    //   // if (!hasComponent(entity, ColliderComponent)) {
-    //   //   //TODO - check if we have a mesh, if we do, use the mesh as a collider type....if not then generate a bounding sphere
-    //   //   setComponent(entity, ColliderComponent)
-    //   // }
-    //   // const hasMesh = hasComponent(entity, MeshComponent)
-    //   // const collider = getMutableComponent(entity, ColliderComponent)
-    //   // collider.collisionLayer.set(collider.collisionLayer.value | CollisionGroups.Input)
-    // }, [])
-
-    /** @todo - fix */
-    // useLayoutEffect(() => {
-    //   if (!input.inputSources.length || !input.grow.value) return
-    //   setComponent(entity, AnimateScaleComponent)
-    //   return () => {
-    //     removeComponent(entity, AnimateScaleComponent)
-    //   }
-    // }, [input.inputSources, input.grow])
-
-    return null
+    return hasFocus.value
   }
 })
 
@@ -270,11 +367,13 @@ function getLargestMagnitudeNumber(a: number, b: number) {
   return Math.abs(a) > Math.abs(b) ? a : b
 }
 
-export const enum InputExecutionOrder {
-  'Before' = -1,
-  'With' = 0,
-  'After' = 1
-}
+export const InputExecutionOrder = {
+  Before: -1,
+  With: 0,
+  After: 1
+} as const
+
+export type InputExecutionOrder = (typeof InputExecutionOrder)[keyof typeof InputExecutionOrder]
 
 function getInputExecutionInsert(order: InputExecutionOrder) {
   switch (order) {
@@ -291,4 +390,23 @@ function getInputExecutionInsert(order: InputExecutionOrder) {
 export const InputExecutionSystemGroup = defineSystem({
   uuid: 'ee.engine.InputExecutionSystemGroup',
   insert: { with: InputSystemGroup }
+})
+
+const inputQuery = defineQuery([InputComponent])
+
+const execute = () => {
+  for (const entity of inputQuery()) {
+    const component = getComponent(entity, InputComponent)
+    const highlight = component.highlight && component.inputSources.length
+    if (highlight) {
+      if (!hasComponent(entity, HighlightComponent)) setComponent(entity, HighlightComponent)
+    } else removeComponent(entity, HighlightComponent)
+  }
+}
+
+/** System for inserting subsystems*/
+export const InputHighlightSystem = defineSystem({
+  uuid: 'ee.engine.InputHighlightSystem',
+  insert: { with: AnimationSystemGroup },
+  execute
 })

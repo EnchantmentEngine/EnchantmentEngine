@@ -1,39 +1,15 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BadRequest } from '@feathersjs/errors'
 import { Paginated, Params, ServiceInterface } from '@feathersjs/feathers/lib/declarations'
 
 import { OembedType } from '@ir-engine/common/src/schemas/media/oembed.schema'
 import { routePath, RouteType } from '@ir-engine/common/src/schemas/route/route.schema'
-import { clientSettingPath, ClientSettingType } from '@ir-engine/common/src/schemas/setting/client-setting.schema'
 
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { engineSettingPath, EngineSettingType } from '@ir-engine/common/src/schema.type.module'
 import { projectPath } from '@ir-engine/common/src/schemas/projects/project.schema'
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
 import { Application } from '../../../declarations'
+import { ClientEngineSettingType } from '../../appconfig'
 import { getProjectConfig, onProjectEvent } from '../../projects/project/project-helper'
 
 export class OembedService implements ServiceInterface<OembedType | BadRequest | undefined, Params> {
@@ -53,9 +29,22 @@ export class OembedService implements ServiceInterface<OembedType | BadRequest |
         category: 'server'
       }
     })) as Paginated<EngineSettingType>
-    const clientSettingsResult = (await this.app.service(clientSettingPath).find()) as Paginated<ClientSettingType>
+    const clientSettingsResult = await this.app.service(engineSettingPath).find({
+      query: {
+        category: 'client',
+        paginate: false
+      }
+    })
+
     if (serverSettingsResult.total > 0 && clientSettingsResult.total > 0) {
-      const clientSettings = clientSettingsResult.data[0]
+      const clientSettings = unflattenArrayToObject(
+        clientSettingsResult.data.map((setting) => ({
+          key: setting.key,
+          value: setting.value,
+          dataType: setting.dataType
+        }))
+      ) as ClientEngineSettingType
+
       const clientHost = serverSettingsResult.data.find((setting) => setting.key === EngineSettings.Server.ClientHost)
         ?.value
       if (clientHost !== url.origin.replace(/https:\/\//, ''))

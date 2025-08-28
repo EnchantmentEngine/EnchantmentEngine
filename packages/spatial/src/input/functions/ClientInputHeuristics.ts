@@ -1,60 +1,37 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 /**
  * @fileoverview Contains function declarations describing the heuristics used by ClientInputSystem.
  */
 
 import {
   defineQuery,
+  EngineState,
   Entity,
   EntityUUID,
+  getAncestorWithComponents,
+  getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
   hasComponent,
   Not,
+  traverseEntityNodeParent,
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { InteractableComponent } from '@ir-engine/engine/src/interaction/components/InteractableComponent'
-import { defineState, getState } from '@ir-engine/hyperflux'
-import { Object3D, Quaternion, Ray, Raycaster, Vector3 } from 'three'
+import { defineState, getMutableState, getState } from '@ir-engine/hyperflux'
+import { Quaternion, Ray, Raycaster, Vector3 } from 'three'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { ObjectDirection } from '../../common/constants/MathConstants'
-import { EngineState } from '../../EngineState'
-import { GroupComponent } from '../../renderer/components/GroupComponent'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
+import { ObjectComponent } from '../../renderer/components/ObjectComponent'
+import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { ObjectLayers } from '../../renderer/constants/ObjectLayers'
-import { BoundingBoxComponent } from '../../transform/components/BoundingBoxComponents'
+import { BoundingBoxComponent } from '../../transform/components/BoundingBoxComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { Object3DUtils } from '../../transform/Object3DUtils'
 import { XRScenePlacementComponent } from '../../xr/XRScenePlacementComponent'
 import { XRState } from '../../xr/XRState'
 import { InputComponent } from '../components/InputComponent'
-import { InputState } from '../state/InputState'
+import { InputSourceComponent } from '../components/InputSourceComponent'
 
 const _worldPosInputSourceComponent = new Vector3()
 const _worldPosInputComponent = new Vector3()
@@ -72,14 +49,30 @@ export type IntersectionData = {
 export type HeuristicOrder = -1 | 0 | 1
 
 export type HeuristicFunctions = (
+  viewerEntity: Entity,
   intersectionData: Set<IntersectionData>,
   position: Vector3,
   direction: Vector3
 ) => void
 
+const sortOrder = (a, b) => b.order - a.order
+
 export const InputHeuristicState = defineState({
   name: 'ir.spatial.input.InputHeuristicState',
-  initial: [] as Array<{ order: HeuristicOrder; heuristic: HeuristicFunctions }>
+  initial: { heuristics: [] as Array<{ order: HeuristicOrder; heuristic: HeuristicFunctions }> },
+
+  addHeuristic: (order: HeuristicOrder, heuristic: HeuristicFunctions) => {
+    const state = getMutableState(InputHeuristicState)
+    state.heuristics.set((arr) =>
+      [
+        ...arr,
+        {
+          order,
+          heuristic
+        }
+      ].sort(sortOrder)
+    )
+  }
 })
 
 /**Proximity query */
@@ -97,16 +90,18 @@ export function findProximity(
   sortedIntersections: IntersectionData[],
   intersectionData: Set<IntersectionData>
 ) {
-  const userID = getState(EngineState).userID
+  const userID = getState(EngineState).userID as string
   if (!userID) return
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
 
   // @todo need a better way to do this
-  const selfAvatarEntity = UUIDComponent.getEntityByUUID((userID + '_avatar') as EntityUUID)
+
+  /**@todo avatar logic not to be in spatial package */
+  const selfAvatarEntity = UUIDComponent.getEntityByUUID((userID + 'avatar') as EntityUUID)
 
   // use sourceEid if controller (one InputSource per controller), otherwise use avatar rather than InputSource-emulated-pointer
-  const inputSourceEntity = isCameraAttachedToAvatar && isSpatialInput ? sourceEid : selfAvatarEntity
+  const inputSourceEntity = shouldViewerFollowController && isSpatialInput ? sourceEid : selfAvatarEntity
 
   // Skip Proximity Heuristic when the entity is undefined
   if (inputSourceEntity === UndefinedEntity) return
@@ -132,13 +127,7 @@ export function findProximity(
   if (closestEntities.length === 0) return
   if (closestEntities.length > 1) {
     //sort if more than 1 entry
-    closestEntities.sort((a, b) => {
-      //prioritize anything with an InteractableComponent if otherwise equal
-      const aNum = hasComponent(a.entity, InteractableComponent) ? -1 : 0
-      const bNum = hasComponent(b.entity, InteractableComponent) ? -1 : 0
-      //aNum - bNum : 0 if equal, -1 if a has tag and b doesn't, 1 if a doesnt have tag and b does
-      return Math.sign(a.distance - b.distance) + (aNum - bNum)
-    })
+    closestEntities.sort(sortDistance)
   }
   sortedIntersections.push({
     entity: closestEntities[0].entity,
@@ -146,18 +135,31 @@ export function findProximity(
   })
 }
 
+const sortDistance = (a: IntersectionData, b: IntersectionData) => {
+  return Math.sign(a.distance - b.distance)
+}
+
 const hitTarget = new Vector3()
 const ray = new Ray()
 
-export function boundingBoxHeuristic(intersectionData: Set<IntersectionData>, position: Vector3, direction: Vector3) {
+const boundingBoxQuery = defineQuery([VisibleComponent, BoundingBoxComponent])
+
+export function boundingBoxHeuristic(
+  viewerEntity: Entity,
+  intersectionData: Set<IntersectionData>,
+  position: Vector3,
+  direction: Vector3
+) {
   const isEditing = getState(EngineState).isEditing
   if (isEditing) return
 
   ray.origin.copy(position)
   ray.direction.copy(direction)
 
-  const inputState = getState(InputState)
-  for (const entity of inputState.inputBoundingBoxes) {
+  const boxEntities = boundingBoxQuery()
+    .filter(filterEntitiesByInput)
+    .filter((e) => filterEntitiesByViewer(e, viewerEntity))
+  for (const entity of boxEntities) {
     const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
     if (!boundingBox) continue
     const hit = ray.intersectBox(boundingBox.box, hitTarget)
@@ -171,22 +173,24 @@ const _raycaster = new Raycaster()
 _raycaster.layers.set(ObjectLayers.Scene)
 const meshesQuery = defineQuery([VisibleComponent, MeshComponent])
 
-export function meshHeuristic(intersectionData: Set<IntersectionData>, position: Vector3, direction: Vector3) {
-  const isEditing = getState(EngineState).isEditing
-  const inputState = getState(InputState)
-  const objects = (isEditing ? meshesQuery() : Array.from(inputState.inputMeshes))
-    .filter((eid) => hasComponent(eid, GroupComponent))
-    .map((eid) => getComponent(eid, GroupComponent))
-    .flat()
+export function meshHeuristic(
+  viewerEntity: Entity,
+  intersectionData: Set<IntersectionData>,
+  position: Vector3,
+  direction: Vector3
+) {
+  const entities = meshesQuery()
+    .filter(filterEntitiesByInput)
+    .filter((eid) => filterEntitiesByViewer(eid, viewerEntity))
+  const objects = entities
+    .filter((eid) => hasComponent(eid, ObjectComponent))
+    .map((eid) => getComponent(eid, ObjectComponent))
 
   _raycaster.set(position, direction)
 
-  const hits = _raycaster.intersectObjects<Object3D>(objects, true)
+  const hits = _raycaster.intersectObjects(objects, true)
   for (const hit of hits) {
-    const parentObject = Object3DUtils.findAncestor(hit.object, (obj) => obj.entity != undefined)
-    if (parentObject) {
-      intersectionData.add({ entity: parentObject.entity, distance: hit.distance })
-    }
+    intersectionData.add({ entity: hit.object.entity!, distance: hit.distance })
   }
 }
 
@@ -200,7 +204,37 @@ export function findRaycastedInput(sourceEid: Entity, intersectionData: Set<Inte
 
   TransformComponent.getWorldPosition(sourceEid, position).addScaledVector(direction, -0.01)
 
-  const heuristics = [...getState(InputHeuristicState)].sort((a, b) => b.order - a.order)
+  const { heuristics } = getState(InputHeuristicState)
 
-  for (const { heuristic } of heuristics) heuristic(intersectionData, position, direction)
+  const viewerEntity = getComponent(sourceEid, InputSourceComponent).sourceEntity
+  if (!viewerEntity) return
+
+  for (const h of heuristics) h.heuristic(viewerEntity, intersectionData, position, direction)
+}
+
+export function filterEntitiesByViewer(entity: Entity, viewerEntity: Entity) {
+  let isRendered = false
+  const scenes = getComponent(viewerEntity, RendererComponent).scenes
+  // iterate parent hierarchy until we find one in the scene
+  traverseEntityNodeParent(entity, (eid) => {
+    if (scenes.includes(eid)) {
+      isRendered = true
+      return true
+    }
+  })
+  return isRendered
+}
+
+const inputComponentArray = [InputComponent]
+
+/**
+ * Filters entities by input
+ * - return all meshes when authoring
+ * - iterate parent hierarchy until we find one with an input component
+ * @param entity
+ * @returns
+ */
+export function filterEntitiesByInput(entity: Entity) {
+  if (getAuthoringCounterpart(entity)) return true
+  return !!getAncestorWithComponents(entity, inputComponentArray)
 }

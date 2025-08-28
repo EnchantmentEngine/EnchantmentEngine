@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 /** Functions to provide engine level functionalities. */
 
 import { getMutableState, getState, HyperFlux } from '@ir-engine/hyperflux'
@@ -38,27 +13,20 @@ import {
 } from './SystemGroups'
 import { nowMilliseconds } from './Timer'
 
-const TimerConfig = {
-  MAX_DELTA_SECONDS: 1 / 10
-}
-
 /**
  * Execute systems on this world
  *
  * @param elapsedTime the current frame time in milliseconds (DOMHighResTimeStamp) relative to performance.timeOrigin
  */
 export const executeSystems = (elapsedTime: number) => {
-  const ecsState = getMutableState(ECSState)
-  ecsState.frameTime.set(performance.timeOrigin + elapsedTime)
+  const ecsState = getState(ECSState)
+  ecsState.frameTime = performance.timeOrigin + elapsedTime
 
   const start = nowMilliseconds()
-  const incomingActions = [...HyperFlux.store.actions.incoming]
 
   const elapsedSeconds = elapsedTime / 1000
-  ecsState.deltaSeconds.set(
-    Math.max(0.001, Math.min(TimerConfig.MAX_DELTA_SECONDS, elapsedSeconds - ecsState.elapsedSeconds.value))
-  )
-  ecsState.elapsedSeconds.set(elapsedSeconds)
+  ecsState.deltaSeconds = Math.max(0.001, Math.min(ecsState.maxDeltaSeconds, elapsedSeconds - ecsState.elapsedSeconds))
+  ecsState.elapsedSeconds = elapsedSeconds
 
   executeSystem(InputSystemGroup)
   executeFixedSystem(SimulationSystemGroup)
@@ -68,11 +36,9 @@ export const executeSystems = (elapsedTime: number) => {
   const end = nowMilliseconds()
   const duration = end - start
   if (duration > 150) {
-    HyperFlux.store
-      .logger('ecs:execute')
-      .warn(`Long frame execution detected. Duration: ${duration}. \n Incoming actions: %o`, incomingActions)
+    HyperFlux.store.logger('ecs:execute').warn(`Long frame execution detected. Duration: ${duration}`)
   }
-  ecsState.lastSystemExecutionDuration.set(duration)
+  ecsState.lastSystemExecutionDuration = duration
 }
 
 /**
@@ -120,20 +86,23 @@ export const executeFixedSystem = (systemUUID: SystemUUID) => {
   }
 }
 
-export const getDAG = (systemUUIDs = DefaultSystemPipeline, depth = 0) => {
+export const getDAG = (systemUUIDs = DefaultSystemPipeline, depth = 0, out = [] as string[]) => {
   for (const systemUUID of systemUUIDs) {
     const system = SystemDefinitions.get(systemUUID)
     if (!system) return
 
+    out.push(system.uuid)
+
     for (const preSystem of system.preSystems) {
-      getDAG([preSystem], depth + 1)
+      getDAG([preSystem], depth + 1, out)
     }
     console.log('-'.repeat(depth), system.uuid.split('.').pop())
     for (const subSystem of system.subSystems) {
-      getDAG([subSystem], depth + 1)
+      getDAG([subSystem], depth + 1, out)
     }
     for (const postSystem of system.postSystems) {
-      getDAG([postSystem], depth + 1)
+      getDAG([postSystem], depth + 1, out)
     }
   }
 }
+globalThis.getDAG = getDAG

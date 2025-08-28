@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiXCircle } from 'react-icons/hi2'
@@ -61,7 +36,7 @@ const MultiSelect = <T extends string | number>({
   menuClassName
 }: MultiSelectProps<T>) => {
   const { t } = useTranslation()
-  const twClassName = twMerge('relative bg-theme-surface-main', className)
+  const twClassName = twMerge('relative ', className)
   const ref = useRef<HTMLDivElement>(null)
 
   const showOptions = useHookstate(false)
@@ -88,14 +63,14 @@ const MultiSelect = <T extends string | number>({
   return (
     <div className={twClassName} ref={ref}>
       <Label>{label}</Label>
-      {description && <p className="self-stretch text-xs text-theme-secondary">{description}</p>}
+      {description && <p className="self-stretch text-xs ">{description}</p>}
       {error && (
-        <p className="inline-flex items-center gap-2.5 self-start text-sm text-theme-iconRed">
+        <p className="inline-flex items-center gap-2.5 self-start text-sm ">
           <HiXCircle /> {error}
         </p>
       )}
       <div
-        className="textshadow-sm mt-2 flex min-h-10 w-full flex-auto flex-wrap items-center rounded-lg border border-theme-primary bg-theme-surface-main px-3.5 pr-7"
+        className="textshadow-sm mt-2 flex min-h-10 w-full flex-auto flex-wrap items-center rounded-lg border   px-3.5 pr-7"
         onClick={() => showOptions.set((value) => !value)}
       >
         {selectedOptions.length === 0 && (
@@ -106,9 +81,9 @@ const MultiSelect = <T extends string | number>({
         {selectedOptions.map((selectedOption) => (
           <div
             key={selectedOption}
-            className="m-1 flex h-7 items-center justify-center gap-1 rounded border border-theme-primary bg-theme-surface-main p-1 font-medium text-theme-primary"
+            className="m-1 flex h-7 items-center justify-center gap-1 rounded border   p-1 font-medium "
           >
-            <Text className="text-theme-primary">{options.find((opt) => opt.value === selectedOption)?.label}</Text>
+            <Text className="">{options.find((opt) => opt.value === selectedOption)?.label}</Text>
             <HiXCircle
               className="cursor-pointer"
               onClick={() => onChange(selectedOptions.filter((opt) => opt !== selectedOption))}
@@ -119,26 +94,17 @@ const MultiSelect = <T extends string | number>({
 
       <MdOutlineKeyboardArrowDown
         size="1.5em"
-        className={`absolute right-3 top-10 text-theme-primary transition-transform ${
-          showOptions.value ? 'rotate-180' : ''
-        }`}
+        className={`absolute right-3 top-10  transition-transform ${showOptions.value ? 'rotate-180' : ''}`}
         onClick={() => showOptions.set((value) => !value)}
       />
 
-      <div
-        className={`absolute z-[1000] mt-2 w-full rounded border border-theme-primary bg-theme-secondary ${
-          showOptions.value ? 'visible' : 'hidden'
-        }`}
-      >
+      <div className={`absolute z-[1000] mt-2 w-full rounded border   ${showOptions.value ? 'visible' : 'hidden'}`}>
         <Input placeholder={t('common:select.filter')} value={searchInput.value} onChange={handleSearch} />
         <ul className={twMerge('max-h-40 overflow-auto [&>li]:px-4 [&>li]:py-2 [&>li]:text-gray-500 ', menuClassName)}>
           {filteredOptions.value.map((option) => (
             <li
               key={option.value}
-              className={twMerge(
-                'cursor-pointer px-4 py-2 text-theme-primary',
-                option.disabled ? 'cursor-not-allowed' : 'hover:bg-theme-surface-main hover:text-theme-highlight'
-              )}
+              className={twMerge('cursor-pointer px-4 py-2 ', option.disabled ? 'cursor-not-allowed' : 'hover: hover:')}
               onClick={() => {
                 if (option.disabled) return
                 if (!selectedOptions.find((opt) => opt === option.value)) {

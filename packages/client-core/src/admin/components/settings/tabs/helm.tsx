@@ -1,35 +1,10 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { forwardRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HiMinus, HiPlusSmall } from 'react-icons/hi2'
 
 import { useFind, useMutation } from '@ir-engine/common'
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { engineSettingPath, helmVersionPath } from '@ir-engine/common/src/schema.type.module'
+import { getDataType } from '@ir-engine/common/src/utils/dataTypeUtils'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { Button, Select } from '@ir-engine/ui'
 import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
@@ -99,6 +74,7 @@ const HelmTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefOb
         return helmMutation.create({
           key,
           category: 'helm',
+          dataType: getDataType(setting[key]),
           value: setting[key],
           type: 'private'
         })
@@ -136,8 +112,6 @@ const HelmTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefOb
     <Accordion
       title={t('admin:components.setting.helm.header')}
       subtitle={t('admin:components.setting.helm.subtitle')}
-      expandIcon={<HiPlusSmall />}
-      shrinkIcon={<HiMinus />}
       ref={ref}
       open={open}
     >
@@ -171,7 +145,7 @@ const HelmTab = forwardRef(({ open }: { open: boolean }, ref: React.MutableRefOb
         />
 
         <div className="col-span-1 mt-6 grid grid-cols-4 gap-6">
-          <Button size="sm" className="text-primary col-span-1 bg-theme-highlight" onClick={handleCancel} fullWidth>
+          <Button size="sm" className="text-primary col-span-1 " onClick={handleCancel} fullWidth>
             {t('admin:components.common.reset')}
           </Button>
 

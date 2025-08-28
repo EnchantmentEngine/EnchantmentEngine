@@ -1,33 +1,18 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { Entity, UndefinedEntity, getComponent, useOptionalComponent, useQuery } from '@ir-engine/ecs'
+import {
+  Entity,
+  EntityTreeComponent,
+  UndefinedEntity,
+  defineQuery,
+  getAncestorWithComponents,
+  getComponent,
+  getOptionalComponent,
+  useOptionalComponent,
+  useQuery
+} from '@ir-engine/ecs'
 import { startReactor, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import React, { useLayoutEffect } from 'react'
-import { EntityTreeComponent } from '../../transform/components/EntityTree'
-import { RendererComponent } from '../WebGLRendererSystem'
+import { RendererComponent } from '../components/RendererComponent'
+import { SceneComponent } from '../components/SceneComponents'
 
 /**
  * Returns the renderer entity that is rendering the specified entity
@@ -51,18 +36,18 @@ export function useRendererEntity(entity: Entity) {
         return () => {
           if (!unmounted) result.set(UndefinedEntity)
         }
-      }, [tree?.parentEntity?.value, matchesQuery, hasRenderer])
+      }, [tree?.parentEntity, matchesQuery, hasRenderer])
 
       if (matchesQuery) return null
 
-      if (!tree?.parentEntity?.value) return null
+      if (!tree?.parentEntity) return null
 
-      return <ParentSubReactor key={tree.parentEntity.value} entity={tree.parentEntity.value} />
+      return <ParentSubReactor key={tree.parentEntity} entity={tree.parentEntity} />
     }
 
     const root = startReactor(function useQueryReactor() {
       return <ParentSubReactor entity={entity} key={entity} />
-    })
+    }, `useRendererEntity - ${entity}`)
     return () => {
       unmounted = true
       root.stop()
@@ -70,4 +55,15 @@ export function useRendererEntity(entity: Entity) {
   }, [entity])
 
   return result.value
+}
+
+const rendererQuery = defineQuery([RendererComponent])
+
+export const getRendererEntity = (entity: Entity) => {
+  const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
+  const renderers = rendererQuery()
+  const matchesQuery = renderers.find((r) => getComponent(r, RendererComponent).scenes.includes(sceneEntity))
+  const hasRenderer = !!getOptionalComponent(matchesQuery ?? UndefinedEntity, RendererComponent)?.renderer
+  if (matchesQuery && hasRenderer) return matchesQuery
+  return UndefinedEntity
 }

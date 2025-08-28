@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { Box3, Color, Matrix4, Quaternion, Vector3 } from 'three'
 
@@ -30,9 +5,9 @@ import {
   defineQuery,
   defineSystem,
   Entity,
+  EntityTreeComponent,
   getComponent,
   getOptionalComponent,
-  getOptionalMutableComponent,
   hasComponent,
   Not,
   removeComponent,
@@ -44,16 +19,18 @@ import {
   ObjectGridSnapComponent
 } from '@ir-engine/engine/src/scene/components/ObjectGridSnapComponent'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 
+import { EngineState } from '@ir-engine/ecs'
 import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
-import { EditorControlFunctions } from '../functions/EditorControlFunctions'
+import {
+  getLayerMaskFromLayer,
+  ObjectLayer,
+  ObjectLayers
+} from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { SelectionState } from '../services/SelectionServices'
 import { ClickPlacementState } from './ClickPlacementSystem'
 
@@ -192,23 +169,26 @@ function calculateTranslation(bbox1: Box3, bbox2: Box3): Vector3 {
   return translation
 }
 
-function setHelperLayer(entity: Entity, layer: number) {
-  const helper = getOptionalMutableComponent(entity, BoundingBoxHelperComponent)
-  if (helper) {
-    const layerMask = 1 << layer
-    helper.layerMask.set(layerMask)
-  }
+function setHelperLayer(entity: Entity, layer: ObjectLayer) {
+  const helper = hasComponent(entity, BoundingBoxHelperComponent)
+  if (!helper) return
+  const layerMask = getLayerMaskFromLayer(layer)
+  if (!layerMask) return
+  setComponent(entity, BoundingBoxHelperComponent, {
+    layerMask: layerMask
+  })
 }
 
 function setHelperColor(entity: Entity, color: Color) {
-  const helper = getOptionalMutableComponent(entity, BoundingBoxHelperComponent)
-  if (helper) {
-    helper.color.set(color)
-  }
+  const helper = hasComponent(entity, BoundingBoxHelperComponent)
+  if (!helper) return
+  setComponent(entity, BoundingBoxHelperComponent, {
+    color: color
+  })
 }
 
 function resetHelperTransform(entity: Entity) {
-  const helper = getOptionalComponent(entity, BoundingBoxHelperComponent)?.entity
+  const helper = getOptionalComponent(entity, BoundingBoxHelperComponent)?.helperEntity
   if (helper) {
     setComponent(helper, TransformComponent, {
       position: new Vector3(),
@@ -235,7 +215,7 @@ export const ObjectGridSnapState = defineState({
     for (let i = 0; i < selectedEntities.length; i++) {
       const selectedEntity = selectedEntities[i]
       const selectedParent = selectedParents[i]
-      const helperEntity = getOptionalComponent(selectedEntity, BoundingBoxHelperComponent)?.entity
+      const helperEntity = getOptionalComponent(selectedEntity, BoundingBoxHelperComponent)?.helperEntity
       if (!helperEntity) {
         console.warn(`ObjectGridSnapSystem:apply No Helper entity found for selected entity: ${selectedEntity}`)
         continue
@@ -248,8 +228,6 @@ export const ObjectGridSnapState = defineState({
       TransformComponent.updateFromWorldMatrix(selectedParent)
       toCommit.push(selectedParent)
     }
-
-    EditorControlFunctions.commitTransformSave(toCommit)
   }
 })
 
@@ -343,7 +321,7 @@ export const ObjectGridSnapSystem = defineSystem({
         }
       }
 
-      const helperEntity = getOptionalComponent(selectedEntity, BoundingBoxHelperComponent)?.entity
+      const helperEntity = getOptionalComponent(selectedEntity, BoundingBoxHelperComponent)?.helperEntity
 
       const commitNoOp = () => {
         resetHelperTransform(selectedEntity)

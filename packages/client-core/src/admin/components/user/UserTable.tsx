@@ -1,23 +1,3 @@
-/*
-CPAL-1.0 License
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-The Original Code is Infinite Reality Engine.
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { Id, NullableId } from '@feathersjs/feathers'
 import { useFind, useMutation, useSearch } from '@ir-engine/common'
 import {
@@ -29,41 +9,43 @@ import {
   userPath
 } from '@ir-engine/common/src/schema.type.module'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine } from '@ir-engine/ecs'
-import { State, getMutableState, useHookstate } from '@ir-engine/hyperflux'
-import { Button, Checkbox } from '@ir-engine/ui'
+import { EngineState } from '@ir-engine/ecs'
+import { State, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
+import { Checkbox } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
+import { Edit01Lg, InfoCircleLg, Trash04Lg } from '@ir-engine/ui/src/icons'
 import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
 import Tooltip from '@ir-engine/ui/src/primitives/tailwind/Tooltip'
 import { truncateText } from '@ir-engine/ui/src/primitives/tailwind/TruncatedText'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaRegCircleCheck, FaRegCircleXmark } from 'react-icons/fa6'
-import { HiPencil, HiTrash } from 'react-icons/hi2'
-import { LuInfo } from 'react-icons/lu'
-import { PopoverState } from '../../../common/services/PopoverState'
+import { ModalState } from '../../../common/services/ModalState'
 import { AuthState } from '../../../user/services/AuthService'
 import DataTable from '../../common/Table'
 import { UserRowType, userColumns } from '../../common/constants/user'
+import ActionButton from '../ActionButton'
 import AccountIdentifiers from './AccountIdentifiers'
 import AddEditUserModal from './AddEditUserModal'
 
-export const removeUsers = async (
+export const deactivateUsers = async (
   modalProcessing: State<boolean>,
-  adminUserRemove: {
-    (id: Id): Promise<UserType>
-    (id: null): Promise<UserType[]>
-    (id: NullableId): Promise<any>
+  adminUserPatch: {
+    (id: Id, data: Partial<UserType>): Promise<UserType>
+    (id: null, data: Partial<UserType>): Promise<UserType[]>
+    (id: NullableId, data: Partial<UserType>): Promise<any>
   },
   users: UserType[]
 ) => {
   modalProcessing.set(true)
   await Promise.all(
     users.map((user) => {
-      adminUserRemove(user.id)
+      adminUserPatch(user.id, {
+        isDeactivated: true
+      })
     })
   )
-  PopoverState.hidePopupover()
+  ModalState.closeModal()
   modalProcessing.set(false)
 }
 
@@ -81,7 +63,7 @@ export default function UserTable({
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'location:write' as ScopeType,
       paginate: false
     }
@@ -108,7 +90,7 @@ export default function UserTable({
     search
   )
 
-  const adminUserRemove = useMutation(userPath).remove
+  const adminUserPatch = useMutation(userPath).patch
   const modalProcessing = useHookstate(false)
 
   const createRows = (rows: readonly UserType[]): UserRowType[] =>
@@ -134,7 +116,7 @@ export default function UserTable({
                 </>
               }
             >
-              <LuInfo className="ml-2 h-5 w-5 bg-transparent" />
+              <InfoCircleLg className="ml-2 h-5 w-5 bg-transparent text-text-secondary hover:text-text-primary" />
             </Tooltip>
           </div>
         ) : (
@@ -175,41 +157,39 @@ export default function UserTable({
         accountIdentifier: <AccountIdentifiers user={row} />,
         lastLogin: <RenderLogin />,
 
-        acceptedTOS: row.acceptedTOS ? (
-          <FaRegCircleCheck className="h-5 w-5 text-theme-iconGreen" />
+        ageVerified: row.ageVerified ? (
+          <FaRegCircleCheck className="h-5 w-5 " />
         ) : (
-          <FaRegCircleXmark className="h-5 w-5 text-theme-iconRed" />
+          <FaRegCircleXmark className="h-5 w-5 " />
         ),
         isGuest: row.isGuest.toString(),
+        isDeactivated: row.isDeactivated ? 'true' : 'false',
+        createdAt: toDisplayDateTime(row.createdAt),
         action: (
           <div className="flex items-center justify-start gap-3">
-            <Button
-              variant="tertiary"
-              className="h-8 w-8"
-              disabled={!userHasAccess}
+            <ActionButton
+              icon={Edit01Lg}
               title={t('admin:components.common.view')}
-              onClick={() => PopoverState.showPopupover(<AddEditUserModal user={row} />)}
-            >
-              <HiPencil className="text-theme-iconGreen" />
-            </Button>
-            <Button
-              variant="tertiary"
-              className="h-8 w-8"
-              disabled={user.id.value === row.id}
+              onClick={() => ModalState.openModal(<AddEditUserModal user={row} />)}
+              variant="green"
+            />
+
+            <ActionButton
+              icon={Trash04Lg}
               title={t('admin:components.common.delete')}
+              disabled={row.isDeactivated}
               onClick={() => {
-                PopoverState.showPopupover(
+                ModalState.openModal(
                   <ConfirmDialog
                     text={`${t('admin:components.user.confirmUserDelete')} '${row.name}'?`}
                     onSubmit={async () => {
-                      await removeUsers(modalProcessing, adminUserRemove, [row])
+                      await deactivateUsers(modalProcessing, adminUserPatch, [row])
                     }}
                   />
                 )
               }}
-            >
-              <HiTrash className="text-theme-iconRed" />
-            </Button>
+              variant="red"
+            />
           </div>
         )
       }

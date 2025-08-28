@@ -1,30 +1,8 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
+import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import React, { ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react'
+
 import ReactDOM from 'react-dom'
+import { twMerge } from 'tailwind-merge'
 import './tooltip.css'
 
 export interface BaseTooltipProps {
@@ -32,6 +10,7 @@ export interface BaseTooltipProps {
   content: ReactNode
   children: ReactNode
   position?: 'auto' | 'top' | 'bottom' | 'left' | 'right'
+  fullWidth?: boolean
 }
 
 export interface ControlledProps {
@@ -55,7 +34,7 @@ export interface TooltipRef {
  * Provides an imperative handle to show and hide the tooltip
  */
 function Tooltip(
-  { title, content, children, position = 'auto', isControlled = false, ...props }: TooltipProps,
+  { title, content, children, fullWidth = false, position = 'auto', isControlled = false, ...props }: TooltipProps,
   ref: React.ForwardedRef<TooltipRef>
 ) {
   const [tooltipPosition, setTooltipPosition] = useState('bottom')
@@ -173,10 +152,17 @@ function Tooltip(
     }
   }, [visibleState, title, content])
 
+  if (isMobile) {
+    return <>{children}</>
+  }
+
   return (
     <div
       ref={triggerRef}
-      className="group relative flex max-w-max flex-col items-center justify-center"
+      className={twMerge(
+        fullWidth ? 'w-full' : 'max-w-max',
+        'group relative flex flex-col items-center justify-center'
+      )}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
     >
@@ -187,16 +173,16 @@ function Tooltip(
             ref={tooltipRef}
             className={`tooltip ${
               visibleState === 'visible' ? 'tooltip-visible' : ''
-            } absolute min-w-max transform transition duration-300`}
+            } absolute min-w-max transition-transform duration-150`}
             style={{ ...tooltipStyles, zIndex: 9999, position: 'absolute' }}
           >
             <div className="relative flex max-w-xs flex-col items-center shadow-lg">
               <div
-                className={`tooltip-arrow absolute tooltip-arrow-${tooltipPosition} h-3 w-3 rotate-45 transform border-b border-theme-primary bg-[#191B1F]`}
+                className={`tooltip-arrow absolute tooltip-arrow-${tooltipPosition} h-3 w-3 rotate-45 transform bg-surface-4`}
               ></div>
 
-              <div className="rounded border border-theme-primary bg-[#191B1F] px-4 py-2 text-center text-xs text-white">
-                {title && <div className="mb-1 text-sm font-semibold text-white">{title}</div>}
+              <div className="rounded border border-ui-outline bg-surface-4 px-4 py-2 text-center text-xs text-text-primary">
+                {title && <div className="mb-1 text-sm font-semibold text-text-primary">{title}</div>}
                 <div>{content}</div>
               </div>
             </div>

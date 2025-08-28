@@ -1,35 +1,5 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { NullableId, Paginated, ServiceInterface } from '@feathersjs/feathers/lib/declarations'
 import { KnexAdapterParams } from '@feathersjs/knex'
-import appRootPath from 'app-root-path'
-import fs from 'fs'
-import { Knex } from 'knex'
-import path from 'path/posix'
-
 import { projectPath, ProjectType, staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import {
   FileBrowserContentType,
@@ -43,17 +13,22 @@ import {
   ProjectPermissionType
 } from '@ir-engine/common/src/schemas/projects/project-permission.schema'
 import { checkScope } from '@ir-engine/common/src/utils/checkScope'
+import { isValidId } from '@ir-engine/common/src/utils/isValidId'
 import { isValidFileExtension, isValidFileName, isValidFilePath } from '@ir-engine/common/src/utils/validateFileName'
 import isValidSceneName from '@ir-engine/common/src/utils/validateSceneName'
+import appRootPath from 'app-root-path'
+import fs from 'fs'
+import { Knex } from 'knex'
+import path from 'path/posix'
 
 import { BadRequest } from '@feathersjs/errors/lib'
-import { PROJECT_CAPTURE_REGEX, PROJECT_REGEX } from '@ir-engine/common/src/regex'
+import { PROJECT_CAPTURE_REGEX, PROJECT_REGEX, TRAILING_SLASH_REGEX } from '@ir-engine/common/src/regex'
 import { copyFolderRecursiveSync } from '@ir-engine/common/src/utils/fsHelperFunctions'
 import { Application } from '../../../declarations'
 import config from '../../appconfig'
 import verifyProjectPermission from '../../hooks/verify-project-permission'
 import { getContentType } from '../../util/fileUtils'
-import { getIncrementalName } from '../FileUtil'
+import { getIncrementalName, isValidFileType } from '../FileUtil'
 import { getStorageProvider } from '../storageprovider/storageprovider'
 import { StorageObjectInterface, StorageProviderInterface } from '../storageprovider/storageprovider.interface'
 import { uploadStaticResource } from './file-helper'
@@ -79,12 +54,10 @@ const ensureProjectPermissionAndPublicOrAssetsDirectory = async (
   const fileNameSplit = pathSplit[pathSplit.length - 1].split('.')
   const isDirectory = fileNameSplit.length === 1
   const filePath = path.join(...pathSplit.slice(0, isDirectory ? pathSplit.length : pathSplit.length - 1))
-  if (!isValidFilePath(filePath))
-    throw new BadRequest(
-      'Invalid path: ' +
-        filePath +
-        '; directories can only contain alphanumeric characters, dashes, underscores, dots, and @'
-    )
+
+  const resultFilePath = isValidFilePath(filePath)
+
+  if (!resultFilePath.isValid) throw new BadRequest(resultFilePath.error)
   if (!isDirectory) {
     let fileName = '',
       extension = ''
@@ -95,16 +68,11 @@ const ensureProjectPermissionAndPublicOrAssetsDirectory = async (
       fileName = fileNameSplit[0]
       extension = ''
     }
-    if (!isValidFileName(fileName))
-      throw new BadRequest(
-        'Invalid file name: ' +
-          fileName +
-          '; file names must be 4-64 characters, start and end with an alphanumeric, and contain only alphanumerics, dashes, underscores, and dots'
-      )
-    if (!isValidFileExtension(extension))
-      throw new BadRequest(
-        'Invalid file extension: ' + extension + '; file extension must be 2-4 alphanumeric characters'
-      )
+    const resultFileName = isValidFileName(fileName)
+    if (!resultFileName.isValid) throw new BadRequest(resultFileName.error)
+
+    const resultFileExtension = isValidFileExtension(extension)
+    if (!resultFileExtension.isValid) throw new BadRequest(resultFileExtension.error)
   }
 
   await verifyProjectPermission(['owner', 'editor'])({
@@ -114,6 +82,8 @@ const ensureProjectPermissionAndPublicOrAssetsDirectory = async (
     params,
     app: app
   } as any)
+
+  if (params.isInternal) return
 
   const resolvedPath = path.resolve(inputPath)
   const resolvedProjectPath = path.resolve('projects', projectName)
@@ -177,7 +147,7 @@ export class FileBrowserService
   async find(params?: FileBrowserParams) {
     if (!params) params = {}
     if (!params.query) params.query = {}
-    const { $skip, $limit } = params.query
+    const { $skip, $limit, recursive } = params.query
     let { directory } = params.query
 
     const skip = $skip ? $skip : 0
@@ -189,7 +159,7 @@ export class FileBrowserService
 
     ensureProjectsDirectory(directory)
 
-    let result = await storageProvider.listFolderContent(directory)
+    let result = await storageProvider.listFolderContent(directory, !!recursive)
     Object.entries(params.query).forEach(([key, value]) => {
       if (value['$like']) {
         result = result.filter(
@@ -270,12 +240,8 @@ export class FileBrowserService
 
     await ensureProjectPermissionAndPublicOrAssetsDirectory(directory, projectName, this.app, params!)
 
-    if (!isValidFilePath(joinedDirectory))
-      throw new BadRequest(
-        'Invalid directory: ' +
-          joinedDirectory +
-          '; directories can only contain alphanumeric characters, dashes, underscores, dots, and @'
-      )
+    const resultFilePath = isValidFilePath(joinedDirectory)
+    if (!resultFilePath.isValid) throw new BadRequest(resultFilePath.error)
 
     const parentPath = path.dirname(directory)
     const key = await getIncrementalName(path.basename(directory), parentPath, storageProvider, true)
@@ -333,6 +299,13 @@ export class FileBrowserService
           data.newProject
       )
 
+    const oldFullPath = `${data.oldPath}${data.oldName}/`.replace(TRAILING_SLASH_REGEX, '')
+    const newFullPath = data.newPath.replace(TRAILING_SLASH_REGEX, '')
+
+    if (oldFullPath === newFullPath || newFullPath.startsWith(oldFullPath + '/')) {
+      throw new Error('Cannot move a folder into itself or its own subfolder')
+    }
+
     const oldDirectory = data.oldPath.endsWith('/')
       ? data.oldPath.split('/').slice(0, -1).join('/')
       : data.oldPath.split('/').join('/')
@@ -357,7 +330,9 @@ export class FileBrowserService
 
     const staticResources = (await this.app.service(staticResourcePath).find({
       query: {
-        key: { $like: `%${path.join(oldDirectory, oldName)}%` },
+        key: {
+          $like: `%${path.join(oldDirectory, oldName)}%`
+        },
         paginate: false
       } as any
     })) as unknown as StaticResourceType[]
@@ -365,6 +340,10 @@ export class FileBrowserService
     const results = [] as StaticResourceType[]
     for (const resource of staticResources) {
       const newKey = resource.key.replace(path.join(oldDirectory, oldName), path.join(newDirectory, fileName))
+      const newThumbnailKey = resource.thumbnailKey?.replace(
+        path.join(oldDirectory, oldName),
+        path.join(newDirectory, fileName)
+      )
 
       if (data.isCopy) {
         const result = await this.app.service(staticResourcePath).create(
@@ -380,7 +359,7 @@ export class FileBrowserService
             licensing: resource.licensing,
             description: resource.description,
             attribution: resource.attribution,
-            thumbnailKey: resource.thumbnailKey,
+            thumbnailKey: newThumbnailKey,
             thumbnailMode: resource.thumbnailMode
           },
           { isInternal: true }
@@ -435,7 +414,7 @@ export class FileBrowserService
       const oldItemPath = path.join(oldPath, item.name)
       const newItemPath = path.join(newPath, item.name)
 
-      if (item.type === 'directory') {
+      if (item.type === 'folder') {
         await this.moveFolderRecursively(storageProvider, oldItemPath, newItemPath, isCopy)
       } else {
         //The local storage provider requires the file extension because it interacts with the filesystem and needs the full path, including the extension.
@@ -470,19 +449,29 @@ export class FileBrowserService
       try {
         const response = await fetch(url)
         const arr = await response.arrayBuffer()
+
+        // Get the MIME type from the headers
+        const responseType = response.headers.get('Content-Type')
+        if (responseType !== null) {
+          data.contentType = responseType
+        }
+
         data.body = Buffer.from(arr)
       } catch (error) {
         throw new Error('Failure in fetching source URL: ' + url + 'Error: ' + error)
       }
     }
 
-    if (data.type === 'scene') validateSceneName(data.path)
+    if (data.type === 'scene') await validateSceneName(data.path)
 
     let key = path.join('projects', data.project, data.path)
     if (data.unique) key = await ensureUniqueName(this.app, key)
 
     /** @todo should we allow user-specific content types? Or standardize on the backend? */
     const contentType = data.contentType ?? getContentType(key)
+    if (!isValidFileType(contentType, key)) {
+      throw new BadRequest('Unsupported file type')
+    }
 
     const existingResourceQuery = (await this.app.service(staticResourcePath).find({
       query: { key }
@@ -508,6 +497,14 @@ export class FileBrowserService
     }
 
     return staticResource
+  }
+
+  /**
+   *  Used to verify when a scene is deleted and has the default thumbnail.
+   * This prevents the default thumbnail from being deleted.
+   */
+  private isDefaultThumbnail(thumbnail: StaticResourceType): boolean {
+    return thumbnail.name === 'default.thumbnail.jpg' && thumbnail.project === 'enchantmentengine/default-project'
   }
 
   /**
@@ -542,16 +539,15 @@ export class FileBrowserService
     if (staticResources?.length > 0) {
       await Promise.all(
         staticResources.map(async (resource) => {
-          await this.app.service(staticResourcePath).remove(resource.id)
+          if (isValidId(resource.id)) await this.app.service(staticResourcePath).remove(resource.id)
           if (resource.thumbnailKey) {
             const thumbnail = (await this.app.service(staticResourcePath).find({
               query: { key: { $like: `%${resource.thumbnailKey}%` }, type: 'thumbnail' },
               paginate: false
             })) as any as StaticResourceType[]
-
-            if (thumbnail.length > 0) {
+            if (thumbnail.length > 0 && !this.isDefaultThumbnail(thumbnail[0])) {
               await storageProvider.deleteResources([thumbnail[0].key])
-              await this.app.service(staticResourcePath).remove(thumbnail[0].id)
+              if (isValidId(thumbnail[0].id)) await this.app.service(staticResourcePath).remove(thumbnail[0].id)
             }
           }
         })

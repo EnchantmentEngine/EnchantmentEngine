@@ -11,6 +11,8 @@ yarn.lock
 yarn-error.log
 .yarn/
 pnpm-lock.yaml
+bun.lock
+bun.lockb
 
 # Aider AI metadata
 .aider*
@@ -168,6 +170,8 @@ packages/server/upload_test/
 project-package-jsons/*
 
 feathers/*
+packages/ui/build/*
+packages/ui/storybook-static*
 /packages/ui/tests/jest-test-results.json
 packages/ui/tests/jest-test-results.json
 
@@ -177,3 +181,5 @@ packages/ui/tests/jest-test-results.json
 certs/tailscale
 
 **/credentials
+.aider*
+bun.lock

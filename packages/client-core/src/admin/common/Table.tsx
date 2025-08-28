@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { ReactNode, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HiArrowSmallDown, HiArrowSmallUp, HiArrowsUpDown } from 'react-icons/hi2'
@@ -117,10 +92,7 @@ const DataTable = ({ query, columns, rows, className, size }: DataTableProps) =>
   return !storedRows.fetched.value ? (
     <div className="flex animate-pulse flex-col gap-2">
       {Array.from({ length: 20 }, (_, i) => i).map((idx) => (
-        <div
-          key={idx}
-          className="h-12 w-full odd:bg-gray-300 even:bg-gray-200 dark:odd:bg-gray-800 dark:even:bg-gray-700"
-        />
+        <div key={idx} className="h-12 w-full odd:bg-surface-1 even:bg-surface-2" />
       ))}
     </div>
   ) : (

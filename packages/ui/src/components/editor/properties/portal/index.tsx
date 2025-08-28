@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Quaternion, Vector3 } from 'three'
@@ -41,7 +16,7 @@ import {
   commitProperty,
   updateProperty
 } from '@ir-engine/editor/src/components/properties/Util'
-import { bakeEnvmapTexture, uploadCubemapBakeToServer } from '@ir-engine/editor/src/functions/uploadEnvMapBake'
+import { generateEnvmapBake, uploadCubemapBakeToServer } from '@ir-engine/editor/src/functions/uploadEnvMapBake'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
 import { imageDataToBlob } from '@ir-engine/engine/src/scene/classes/ImageUtils'
 import { NO_PROXY, useHookstate } from '@ir-engine/hyperflux'
@@ -81,9 +56,9 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
   }, [])
 
   const updateCubeMapBake = async () => {
-    const imageData = await bakeEnvmapTexture(
-      transformComponent.value.position.clone().add(new Vector3(0, 2, 0).multiply(transformComponent.scale.value))
-    )
+    const imageData = await generateEnvmapBake({
+      position: transformComponent.position.clone().add(new Vector3(0, 2, 0).multiply(transformComponent.scale))
+    })
     const blob = await imageDataToBlob(imageData)
     state.previewImageData.set(imageData)
     state.previewImageURL.set(URL.createObjectURL(blob!))
@@ -96,13 +71,13 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
         .push
         //...((await API.instance.client.service(portalPath).find({ query: { paginate: false } })) as PortalType[])
         ()
-      console.log('portalsDetail', portalsDetail, getComponent(props.entity, UUIDComponent))
+      console.log('portalsDetail', portalsDetail, getComponent(props.entity, UUIDComponent).entityID)
     } catch (error) {
       throw new Error(error)
     }
     state.portals.set(
       portalsDetail
-        .filter((portal) => portal.portalEntityId !== getComponent(props.entity, UUIDComponent))
+        .filter((portal) => portal.portalEntityId !== getComponent(props.entity, UUIDComponent).entityID)
         .map(({ portalEntityId, portalEntityName, sceneName }) => {
           return { value: portalEntityId, label: sceneName + ': ' + portalEntityName }
         })
@@ -133,7 +108,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Location" label={t('editor:properties.portal.lbl-locationName')}>
         <StringInput
-          value={portalComponent.location.value}
+          value={portalComponent.location}
           onChange={updateProperty(PortalComponent, 'location')}
           onRelease={commitProperty(PortalComponent, 'location')}
         />
@@ -142,12 +117,12 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={state.portals.get(NO_PROXY) as PortalOptions[]}
-          value={portalComponent.linkedPortalId.value}
+          value={portalComponent.linkedPortalId}
           onChange={commitProperty(PortalComponent, 'linkedPortalId')}
         />
       </InputGroup>
       <InputGroup name="Portal" label={t('editor:properties.portal.lbl-redirect')}>
-        <Checkbox onChange={commitProperty(PortalComponent, 'redirect')} checked={portalComponent.redirect.value} />
+        <Checkbox onChange={commitProperty(PortalComponent, 'redirect')} checked={portalComponent.redirect} />
       </InputGroup>
       <InputGroup name="Effect Type" label={t('editor:properties.portal.lbl-effectType')}>
         <SelectInput
@@ -155,7 +130,7 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
           options={Array.from(PortalEffects.keys()).map((val) => {
             return { value: val, label: val }
           })}
-          value={portalComponent.effectType.value}
+          value={portalComponent.effectType}
           onChange={commitProperty(PortalComponent, 'effectType')}
         />
       </InputGroup>
@@ -165,13 +140,13 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
           options={Array.from(PortalPreviewTypes.values()).map((val) => {
             return { value: val, label: val }
           })}
-          value={portalComponent.previewType.value}
+          value={portalComponent.previewType}
           onChange={changePreviewType}
         />
       </InputGroup>
       <InputGroup name="Saved Image URL" label={t('editor:properties.portal.lbl-savedImageURL')}>
         <ControlledStringInput
-          value={portalComponent.previewImageURL.value}
+          value={portalComponent.previewImageURL}
           onChange={updateProperty(PortalComponent, 'previewImageURL')}
           onRelease={commitProperty(PortalComponent, 'previewImageURL')}
         />
@@ -198,17 +173,17 @@ export const PortalNodeEditor: EditorComponentType = (props) => {
           </div>
         </div>
       </InputGroup>
-      <ImageLink src={state.previewImageURL.value ?? portalComponent.previewImageURL.value} />
+      <ImageLink src={state.previewImageURL.value ?? portalComponent.previewImageURL} />
       <InputGroup name="Spawn Position" label={t('editor:properties.portal.lbl-spawnPosition')} className="w-auto">
         <Vector3Input
-          value={portalComponent.spawnPosition.value}
+          value={portalComponent.spawnPosition}
           onChange={updateProperty(PortalComponent, 'spawnPosition')}
           onRelease={commitProperty(PortalComponent, 'spawnPosition')}
         />
       </InputGroup>
       <InputGroup name="Spawn Rotation" label={t('editor:properties.portal.lbl-spawnRotation')} className="w-auto">
         <EulerInput
-          quaternion={portalComponent.spawnRotation.value}
+          quaternion={portalComponent.spawnRotation}
           onChange={changeSpawnRotation}
           onRelease={() =>
             commitProperty(PortalComponent, 'spawnRotation')(getComponent(props.entity, PortalComponent).spawnRotation)

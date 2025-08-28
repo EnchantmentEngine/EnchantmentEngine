@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React from 'react'
 
 import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
@@ -31,7 +6,6 @@ import { Checkbox, Input, Select } from '@ir-engine/ui'
 import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { useTranslation } from 'react-i18next'
-import { HiMinus, HiPlusSmall } from 'react-icons/hi2'
 import { twMerge } from 'tailwind-merge'
 
 function CheckBoxParam({ label, state }: { label: string; state: State<boolean> }) {
@@ -95,7 +69,7 @@ export default function GLTFTransformProperties({
     transformParms && (
       <>
         {itemCount === 1 && (
-          <div className="mb-6 grid grid-cols-4 gap-2 border-b border-theme-primary pb-6">
+          <div className="mb-6 grid grid-cols-4 gap-2 border-b  pb-6">
             <div className="col-span-1 flex flex-col justify-around gap-y-2">
               <Text
                 fontSize="xs"
@@ -135,7 +109,7 @@ export default function GLTFTransformProperties({
           </div>
         )}
         {itemCount > 1 && (
-          <div className="mb-6 grid grid-cols-4 gap-2 border-b border-theme-primary pb-6">
+          <div className="mb-6 grid grid-cols-4 gap-2 border-b  pb-6">
             <div className="col-span-1 flex flex-col justify-around gap-y-2">
               <Text
                 fontSize="xs"
@@ -154,13 +128,7 @@ export default function GLTFTransformProperties({
           </div>
         )}
 
-        <Accordion
-          title="Materials"
-          expandIcon={<HiPlusSmall />}
-          shrinkIcon={<HiMinus />}
-          titleFontSize="sm"
-          className="mb-2 rounded bg-theme-highlight p-2"
-        >
+        <Accordion title="Materials">
           <div className="my-1 grid grid-cols-4 items-center gap-x-2">
             <div className="col-span-1 col-start-2 text-right">
               <Text fontWeight="medium" fontSize="xs">
@@ -251,13 +219,7 @@ export default function GLTFTransformProperties({
           <CheckBoxParam label={t('editor:properties.model.transform.mipmaps')} state={transformParms.mipmap} />
         </Accordion>
 
-        <Accordion
-          title="Meshes"
-          expandIcon={<HiPlusSmall />}
-          shrinkIcon={<HiMinus />}
-          titleFontSize="sm"
-          className="mb-2 rounded bg-theme-highlight p-2"
-        >
+        <Accordion title="Meshes">
           <CheckBoxParam label={t('editor:properties.model.transform.instance')} state={transformParms.instance} />
 
           <CheckBoxParam label={t('editor:properties.model.transform.join')} state={transformParms.join.enabled} />
@@ -278,26 +240,14 @@ export default function GLTFTransformProperties({
           />
         </Accordion>
 
-        <Accordion
-          title="Scene"
-          expandIcon={<HiPlusSmall />}
-          shrinkIcon={<HiMinus />}
-          titleFontSize="sm"
-          className="mb-2 rounded bg-theme-highlight p-2"
-        >
+        <Accordion title="Scene">
           <CheckBoxParam label={t('editor:properties.model.transform.removeDuplicates')} state={transformParms.dedup} />
           <CheckBoxParam label={t('editor:properties.model.transform.flatten')} state={transformParms.flatten} />
           <CheckBoxParam label={t('editor:properties.model.transform.pruneUnused')} state={transformParms.prune} />
           <CheckBoxParam label={t('editor:properties.model.transform.reorder')} state={transformParms.reorder} />
         </Accordion>
 
-        <Accordion
-          title="Animation"
-          expandIcon={<HiPlusSmall />}
-          shrinkIcon={<HiMinus />}
-          titleFontSize="sm"
-          className="mb-2 rounded bg-theme-highlight p-2"
-        >
+        <Accordion title="Animation">
           <CheckBoxParam
             label={t('editor:properties.model.transform.resampleAnimations')}
             state={transformParms.resample}

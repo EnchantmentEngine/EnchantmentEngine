@@ -1,47 +1,20 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { useEffect } from 'react'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { UUIDComponent } from '@ir-engine/ecs'
+import { EntitySchema, EntityTreeComponent, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
+  getAuthoringCounterpart,
   getComponent,
   getOptionalComponent,
   useComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { useEntityContext } from '@ir-engine/ecs/src/EntityFunctions'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
-import { EngineState } from '@ir-engine/spatial/src/EngineState'
-import { EntityTreeComponent } from '@ir-engine/spatial/src/transform/components/EntityTree'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { PhysicsSystem } from '@ir-engine/spatial/src/physics/systems/PhysicsSystem'
 import { SplineComponent } from './SplineComponent'
 
@@ -54,28 +27,28 @@ export const SplineTrackComponent = defineComponent({
   name: 'SplineTrackComponent',
   jsonID: 'EE_spline_track',
 
-  schema: S.Object({
-    splineEntityUUID: S.EntityUUID(),
-    velocity: S.Number(1.0),
-    enableRotation: S.Bool(false),
-    lockToXZPlane: S.Bool(true),
-    loop: S.Bool(true),
+  schema: Schema.Object({
+    splineEntityUUID: EntitySchema.EntityID(),
+    velocity: Schema.Number({ default: 1.0 }),
+    enableRotation: Schema.Bool({ default: false }),
+    lockToXZPlane: Schema.Bool({ default: true }),
+    loop: Schema.Bool({ default: true }),
 
     // internal
-    alpha: S.NonSerialized(S.Number(0))
+    alpha: Schema.Number({ default: 0, serialized: false })
   }),
 
   reactor: function (props) {
     const entity = useEntityContext()
-    const component = useComponent(entity, SplineTrackComponent)
+    const componentState = useComponent(entity, SplineTrackComponent)
 
     useExecute(
       () => {
-        const { isEditor } = getState(EngineState)
+        if (getAuthoringCounterpart(entity)) return
         const { deltaSeconds } = getState(ECSState)
-        if (isEditor) return
-        if (!component.splineEntityUUID.value) return
-        const splineTargetEntity = UUIDComponent.getEntityByUUID(component.splineEntityUUID.value)
+        const component = getComponent(entity, SplineTrackComponent)
+        if (!component.splineEntityUUID) return
+        const splineTargetEntity = UUIDComponent.getEntityFromSameSourceByID(entity, component.splineEntityUUID)
         if (!splineTargetEntity) return
 
         const splineComponent = getOptionalComponent(splineTargetEntity, SplineComponent)
@@ -88,24 +61,22 @@ export const SplineTrackComponent = defineComponent({
         const elements = splineComponent.elements
         if (elements.length < 1) return
 
-        if (Math.floor(component.alpha.value) > elements.length - 1) {
-          if (!component.loop.value) {
+        if (Math.floor(component.alpha) > elements.length - 1) {
+          if (!component.loop) {
             //emit an event here?
             return
           }
-          component.alpha.set(0)
+          component.alpha = 0
         }
-        component.alpha.set(
-          (alpha) => alpha + (deltaSeconds * component.velocity.value) / splineComponent.curve.getLength() // todo cache length to avoid recalculating every frame
-        )
+        component.alpha = component.alpha + (deltaSeconds * component.velocity) / splineComponent.curve.getLength() // todo cache length to avoid recalculating every frame
 
         // move along spline
-        const alpha = component.alpha.value
-        const index = Math.floor(component.alpha.value)
+        const alpha = component.alpha
+        const index = Math.floor(component.alpha)
         const nextIndex = index + 1 > elements.length - 1 ? 0 : index + 1
 
         // prevent a possible loop around hiccup; if no loop then do not permit modulo 0
-        if (!component.loop.value && index > nextIndex) return
+        if (!component.loop && index > nextIndex) return
 
         const splineTransform = getComponent(splineTargetEntity, TransformComponent)
 
@@ -117,8 +88,8 @@ export const SplineTrackComponent = defineComponent({
         const q1 = elements[index].rotation
         const q2 = elements[nextIndex].rotation
 
-        if (component.enableRotation.value) {
-          if (component.lockToXZPlane.value) {
+        if (component.enableRotation) {
+          if (component.lockToXZPlane) {
             // get X and Y rotation only
             _euler.setFromQuaternion(q1)
             _euler.z = 0
@@ -154,13 +125,13 @@ export const SplineTrackComponent = defineComponent({
     )
 
     useEffect(() => {
-      if (!component.splineEntityUUID.value) return
-      const splineTargetEntity = UUIDComponent.getEntityByUUID(component.splineEntityUUID.value)
+      if (!componentState.splineEntityUUID) return
+      const splineTargetEntity = UUIDComponent.getEntityFromSameSourceByID(entity, componentState.splineEntityUUID)
       if (!splineTargetEntity) return
       const splineComponent = getOptionalComponent(splineTargetEntity, SplineComponent)
       if (!splineComponent) return
-      splineComponent.curve.closed = component.loop.value
-    }, [component.loop])
+      splineComponent.curve.closed = componentState.loop
+    }, [componentState.loop])
 
     return null
   }

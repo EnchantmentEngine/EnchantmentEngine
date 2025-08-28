@@ -1,12 +1,12 @@
 # not slim because we need github depedencies
-FROM node:18-buster-slim
+FROM node:22-slim
 
 RUN apt-get update
 RUN apt-get install -y build-essential meson python3-testresources python3-venv python3-pip git procps git-lfs
 # Create app directory
 WORKDIR /app
 
-RUN npm install -g npm lerna cross-env rimraf --loglevel notice
+RUN --mount=type=cache,target=/root/.npm npm install -g npm lerna cross-env rimraf --loglevel notice
 
 # to make use of caching, copy only package files and install dependencies
 COPY package.json .
@@ -19,7 +19,6 @@ COPY packages/engine/package.json ./packages/engine/
 COPY packages/instanceserver/package.json ./packages/instanceserver/
 COPY packages/hyperflux/package.json ./packages/hyperflux/
 COPY packages/matchmaking/package.json ./packages/matchmaking/
-COPY packages/network/package.json ./packages/network/
 COPY packages/server/package.json ./packages/server/
 COPY packages/server-core/package.json ./packages/server-core/
 COPY packages/spatial/package.json ./packages/spatial/
@@ -34,7 +33,7 @@ COPY patches/ ./patches/
 #RUN  npm ci --verbose  # we should make lockfile or shrinkwrap then use npm ci for predicatble builds
 
 ARG NODE_ENV
-RUN npm install --loglevel notice --legacy-peer-deps
+RUN npm install --loglevel notice
 
 COPY . .
 
@@ -45,8 +44,14 @@ ARG MYSQL_PORT
 ARG MYSQL_USER
 ARG MYSQL_PASSWORD
 ARG MYSQL_DATABASE
+ARG POSTGRES_HOST
+ARG POSTGRES_PORT
+ARG POSTGRES_USER
+ARG POSTGRES_PASSWORD
+ARG POSTGRES_DATABASE
 ARG SERVER_HOST
 ARG SERVER_PORT
+ARG VITE_AGENT_API_URL
 ARG VITE_APP_HOST
 ARG VITE_APP_PORT
 ARG VITE_SERVER_HOST
@@ -68,14 +73,26 @@ ARG VITE_AVATURN_API
 ARG VITE_ZENDESK_ENABLED
 ARG VITE_ZENDESK_KEY
 ARG VITE_ZENDESK_AUTHENTICATION_ENABLED
+ARG VITE_DNS_PROVIDER
+ARG VITE_MIDDLEWARE_API_URL
+ARG APP_HOST
+ARG GCP_PROJECT
+ARG GCP_EDGE_CACHE_SERVICE
+ARG GCP_URL_MAP
 
 ENV MYSQL_HOST=$MYSQL_HOST
 ENV MYSQL_PORT=$MYSQL_PORT
 ENV MYSQL_USER=$MYSQL_USER
 ENV MYSQL_PASSWORD=$MYSQL_PASSWORD
 ENV MYSQL_DATABASE=$MYSQL_DATABASE
+ENV POSTGRES_HOST=$POSTGRES_HOST
+ENV POSTGRES_PORT=$POSTGRES_PORT
+ENV POSTGRES_USER=$POSTGRES_USER
+ENV POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+ENV POSTGRES_DATABASE=$POSTGRES_DATABASE
 ENV SERVER_HOST=$SERVER_HOST
 ENV SERVER_PORT=$SERVER_PORT
+ENV VITE_AGENT_API_URL=$VITE_AGENT_API_URL
 ENV VITE_APP_HOST=$VITE_APP_HOST
 ENV VITE_APP_PORT=$VITE_APP_PORT
 ENV VITE_SERVER_HOST=$VITE_SERVER_HOST
@@ -97,13 +114,20 @@ ENV VITE_AVATURN_API=$VITE_AVATURN_API
 ENV VITE_ZENDESK_ENABLED=$VITE_ZENDESK_ENABLED
 ENV VITE_ZENDESK_KEY=$VITE_ZENDESK_KEY
 ENV VITE_ZENDESK_AUTHENTICATION_ENABLED=$VITE_ZENDESK_AUTHENTICATION_ENABLED
+ENV VITE_DNS_PROVIDER=$VITE_DNS_PROVIDER
+ENV VITE_MIDDLEWARE_API_URL=$VITE_MIDDLEWARE_API_URL
+ENV APP_HOST=$APP_HOST
+ENV GCP_PROJECT=$GCP_PROJECT
+ENV GCP_EDGE_CACHE_SERVICE=$GCP_EDGE_CACHE_SERVICE
+ENV GCP_URL_MAP=$GCP_URL_MAP
 
 ARG CACHE_DATE
-RUN npx ts-node --swc scripts/check-db-exists.ts
+RUN npx tsx scripts/check-db-exists.ts
 RUN npm run build-client
 
 RUN rm -r packages/client/public
 
+RUN bash ./scripts/setup_docker.sh
 RUN bash ./scripts/setup_helm.sh
 
 ENV APP_ENV=production

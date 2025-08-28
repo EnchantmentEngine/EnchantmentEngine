@@ -1,38 +1,18 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   UndefinedEntity,
+  ViewCursor,
   createEngine,
   createEntity,
+  createViewCursor,
   destroyEngine,
+  getComponent,
   hasComponent,
+  readFloat64,
+  readUint8,
   removeEntity,
-  setComponent
+  setComponent,
+  writeComponent
 } from '@ir-engine/ecs'
-import { ViewCursor, createViewCursor, readFloat64, readUint8, writeComponent } from '@ir-engine/network'
 import assert from 'assert'
 import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
@@ -73,6 +53,7 @@ describe('TransformSerialization', () => {
 
       it('should read the TransformComponent.position into the `@param cursor` ViewCursor correctly', () => {
         const Expected = new Vector3(40, 41, 42)
+        setComponent(testEntity, TransformComponent, { position: Expected })
         TransformComponent.position.x[testEntity] = Expected.x
         TransformComponent.position.y[testEntity] = Expected.y
         TransformComponent.position.z[testEntity] = Expected.z
@@ -109,9 +90,7 @@ describe('TransformSerialization', () => {
 
       it('should read the TransformComponent.rotation into the `@param cursor` ViewCursor correctly', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
-        TransformComponent.rotation.x[testEntity] = Expected.x
-        TransformComponent.rotation.y[testEntity] = Expected.y
-        TransformComponent.rotation.z[testEntity] = Expected.z
+        setComponent(testEntity, TransformComponent, { rotation: Expected })
 
         // Set the data as expected
         const cursor: ViewCursor = createViewCursor()
@@ -121,7 +100,7 @@ describe('TransformSerialization', () => {
 
         // Sanity check before running
         const beforeCursor = 0
-        const afterCursor = Uint8Array.BYTES_PER_ELEMENT + 3 * Float64Array.BYTES_PER_ELEMENT
+        const afterCursor = Uint8Array.BYTES_PER_ELEMENT + 4 * Float64Array.BYTES_PER_ELEMENT
         assert.equal(view.cursor, beforeCursor)
         // Run and Check the result
         readRotation(view, testEntity)
@@ -145,9 +124,7 @@ describe('TransformSerialization', () => {
 
       it('should readPosition into the `@param v` ViewCursor when position is marked as changed (1<<1)', () => {
         const Expected = new Vector3(40, 41, 42)
-        TransformComponent.position.x[testEntity] = Expected.x
-        TransformComponent.position.y[testEntity] = Expected.y
-        TransformComponent.position.z[testEntity] = Expected.z
+        setComponent(testEntity, TransformComponent, { position: Expected })
 
         // Set the data as expected
         const cursor: ViewCursor = createViewCursor()
@@ -166,10 +143,7 @@ describe('TransformSerialization', () => {
 
       it('should readRotation into the `@param v` ViewCursor when rotation is marked as changed (1<<2)', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
-        TransformComponent.rotation.x[testEntity] = Expected.x
-        TransformComponent.rotation.y[testEntity] = Expected.y
-        TransformComponent.rotation.z[testEntity] = Expected.z
-        TransformComponent.rotation.w[testEntity] = Expected.w
+        setComponent(testEntity, TransformComponent, { rotation: Expected })
 
         // Set the data as expected
         const cursor: ViewCursor = createViewCursor()
@@ -186,19 +160,19 @@ describe('TransformSerialization', () => {
         assert.equal(view.cursor, afterCursor)
       })
 
-      it('should mark TransformComponent.dirtyTransforms for `@param entity` as true', () => {
+      it('should mark TransformComponent.dirty for `@param entity` as true', () => {
         const Expected = true
 
         // Set the data as expected
         const cursor: ViewCursor = createViewCursor()
         const view = createViewCursor(cursor.buffer)
-        TransformComponent.dirtyTransforms[testEntity] = false
+        TransformComponent.dirty[testEntity] = 0
         // Sanity check before running
-        assert.equal(TransformComponent.dirtyTransforms[testEntity], false)
+        assert.equal(TransformComponent.dirty[testEntity], 0)
 
         // Run and Check the result
         readTransform(view, testEntity)
-        const result = TransformComponent.dirtyTransforms[testEntity]
+        const result = TransformComponent.dirty[testEntity]
         assert.equal(result, Expected)
       })
     }) //:: readTransform
@@ -221,10 +195,7 @@ describe('TransformSerialization', () => {
 
       it('should write the TransformComponent.position into the ViewCursor correctly', () => {
         const Expected = new Vector3(40, 41, 42)
-        // Set the data as expected
-        TransformComponent.position.x[testEntity] = Expected.x
-        TransformComponent.position.y[testEntity] = Expected.y
-        TransformComponent.position.z[testEntity] = Expected.z
+        setComponent(testEntity, TransformComponent, { position: Expected })
         const cursor: ViewCursor = createViewCursor()
         // Run and Check the result
         const position = writePosition(cursor, testEntity) as ViewCursor
@@ -251,11 +222,7 @@ describe('TransformSerialization', () => {
 
       it('should write the TransformComponent.rotation into the ViewCursor correctly', () => {
         const Expected = new Quaternion(40, 41, 42, 43).normalize()
-        // Set the data as expected
-        TransformComponent.rotation.x[testEntity] = Expected.x
-        TransformComponent.rotation.y[testEntity] = Expected.y
-        TransformComponent.rotation.z[testEntity] = Expected.z
-        TransformComponent.rotation.w[testEntity] = Expected.w
+        setComponent(testEntity, TransformComponent, { rotation: Expected })
         const cursor: ViewCursor = createViewCursor()
         // Run and Check the result
         const rotation = writeRotation(cursor, testEntity) as ViewCursor
@@ -306,7 +273,8 @@ describe('TransformSerialization', () => {
 
       it('should return the resulting ViewCursor if one of TransformComponent.[position, rotation] changed', () => {
         // Set the data as expected
-        const transform = setComponent(testEntity, TransformComponent)
+        setComponent(testEntity, TransformComponent)
+        const transform = getComponent(testEntity, TransformComponent)
         transform.position.x = 42
         const cursor: ViewCursor = createViewCursor()
         // Sanity check before running

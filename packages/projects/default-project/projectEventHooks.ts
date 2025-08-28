@@ -1,30 +1,4 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { BadRequest } from '@feathersjs/errors'
-import fs from 'fs'
 import path from 'path'
 
 import {
@@ -39,11 +13,11 @@ import { createLocations } from '@ir-engine/projects/createLocations'
 import { ProjectEventHooks } from '@ir-engine/projects/ProjectConfigInterface'
 import { Application } from '@ir-engine/server-core/declarations'
 
-import { patchStaticResourceAsAvatar, supportedAvatars } from '@ir-engine/server-core/src/user/avatar/avatar-helper'
-import appRootPath from 'app-root-path'
+import { routePath } from '@ir-engine/common/src/schema.type.module'
+import { activateRoute } from '@ir-engine/server-core/src/route/route/route'
+import updateAvatarRecords from '@ir-engine/server-core/src/util/updateAvatarRecords'
 import manifestJson from './manifest.json'
 
-const projectRelativeFolder = path.resolve(appRootPath.path, 'packages/projects')
 const avatarsFolder = path.resolve(__dirname, 'assets/avatars')
 
 const handleOEmbedRequest = async (app: Application, project: ProjectType, url: URL, currentOEmbed: OembedType) => {
@@ -58,7 +32,7 @@ const handleOEmbedRequest = async (app: Application, project: ProjectType, url: 
       },
       pagination: false
     } as any)) as any as LocationType[]
-    if (locationResult.length === 0) throw new BadRequest('Invalid location name')
+    if (locationResult.length === 0) throw new BadRequest('Invalid Published Space Name')
     const scene = (await app.service(staticResourcePath).get(locationResult[0].sceneId)) as StaticResourceType
     currentOEmbed.title = `${locationResult[0].name} - ${currentOEmbed.title}`
     currentOEmbed.description = `Join others in VR at ${locationResult[0].name}, directly from the web browser`
@@ -112,24 +86,21 @@ const config = {
     await createLocations(app, manifestJson.name, {
       apartment: 'public/scenes/apartment.gltf',
       default: 'public/scenes/default.gltf',
-      ['sky-station']: 'public/scenes/sky-station.gltf'
+      ['sky-station']: 'public/scenes/sky-station.gltf',
+      test: 'public/scenes/test.gltf',
+      sponza: 'public/scenes/sponza.gltf'
     })
-    await Promise.all(
-      fs
-        .readdirSync(avatarsFolder)
-        .filter((file) => supportedAvatars.includes(file.split('.').pop()!))
-        .map((file) =>
-          patchStaticResourceAsAvatar(
-            app,
-            manifestJson.name,
-            path.resolve(avatarsFolder, file).replace(projectRelativeFolder + '/', '')
-          )
-        )
-    )
+
+    await activateRoute(app.service(routePath))({
+      project: manifestJson.name,
+      route: '/banned',
+      activate: true
+    })
+    await updateAvatarRecords(app, avatarsFolder, manifestJson.name)
   },
-  // onUpdate: (app: Application) => {
-  //   return installAvatarsFromProject(app, avatarsFolder)
-  // },
+  onUpdate: async (app: Application) => {
+    await updateAvatarRecords(app, avatarsFolder, manifestJson.name)
+  },
   onOEmbedRequest: handleOEmbedRequest
   // TODO: remove avatars
   // onUninstall: (app: Application) => {

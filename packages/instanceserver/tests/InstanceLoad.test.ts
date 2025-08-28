@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import '../../server-core/src/patchEngineNode'
 
 import getLocalServerIp from '@ir-engine/server-core/src/util/get-local-server-ip'
@@ -46,14 +21,13 @@ import {
   UserID,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
-import { destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
-import { getState, PeerID } from '@ir-engine/hyperflux'
-import { NetworkState } from '@ir-engine/network'
+import { destroyEngine } from '@ir-engine/ecs/src/Engine'
+import { getState, HyperFlux, NetworkState, PeerID } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { AuthTask } from '@ir-engine/common/src/world/receiveJoinWorld'
 import { EntityUUID, getComponent, UUIDComponent } from '@ir-engine/ecs'
+import { AuthTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import config from '@ir-engine/server-core/src/appconfig'
 import { Spark } from 'primus'
@@ -63,11 +37,11 @@ import { InstanceServerState } from '../src/InstanceServerState'
 import { setupSocketFunctions } from '../src/SocketFunctions'
 import { start } from '../src/start'
 
-const p2pEnabled = config.instanceserver.p2pEnabled
+const p2pEnabled = config['instance-server'].p2pEnabled
 
 describe('InstanceLoad', () => {
   beforeAll(async () => {
-    config.instanceserver.p2pEnabled = false
+    config['instance-server'].p2pEnabled = false
 
     const child: ChildProcess = require('child_process').spawn('npm', ['run', 'dev-agones'], {
       cwd: appRootPath.path,
@@ -85,7 +59,7 @@ describe('InstanceLoad', () => {
   })
 
   afterAll(() => {
-    config.instanceserver.p2pEnabled = p2pEnabled
+    config['instance-server'].p2pEnabled = p2pEnabled
     return destroyEngine()
   })
 
@@ -107,9 +81,9 @@ describe('InstanceLoad', () => {
 
     const peerID = uuidv4() as PeerID
 
-    const skyStationScene = await app.service(locationPath).find({
+    const testScene = await app.service(locationPath).find({
       query: {
-        slugifiedName: 'sky-station'
+        slugifiedName: 'test'
       }
     })
 
@@ -118,7 +92,7 @@ describe('InstanceLoad', () => {
 
     const instance = await app.service(instancePath).create({
       ipAddress: `${localIp}:3031`,
-      locationId: skyStationScene.data[0].id,
+      locationId: testScene.data[0].id,
       assigned: false,
       assignedAt: toDateTimeSql(new Date()),
       roomCode: '' as RoomCode
@@ -130,7 +104,7 @@ describe('InstanceLoad', () => {
       socketQuery: {
         peerID,
         token: createdIdentityProvider.accessToken,
-        locationId: skyStationScene.data[0].id,
+        locationId: testScene.data[0].id,
         instanceID: '',
         channelId: '',
         roomCode: '',
@@ -146,9 +120,9 @@ describe('InstanceLoad', () => {
 
     await loadLocation(query)
 
-    const scene = await app.service(staticResourcePath).get(skyStationScene.data[0].sceneId)
+    const scene = await app.service(staticResourcePath).get(testScene.data[0].sceneId)
 
-    const entity = UUIDComponent.getEntityByUUID(scene.id as EntityUUID)
+    const entity = UUIDComponent.getEntityByUUID(('root' + scene.id) as EntityUUID)
     assert(entity > 0)
 
     assert.equal(getComponent(entity, GLTFComponent).progress, 100)
@@ -186,7 +160,7 @@ describe('InstanceLoad', () => {
     assert.equal(messages[0].status, 'pending')
     assert.equal(messages[1].status, 'success')
     assert.equal(messages[1].hostPeerID, NetworkState.worldNetwork.hostPeerID)
-    assert.equal(messages[1].hostPeerID, Engine.instance.store.peerID)
+    assert.equal(messages[1].hostPeerID, HyperFlux.store.peerID)
 
     const instanceAttendance = await app.service(instanceAttendancePath).find({
       query: {

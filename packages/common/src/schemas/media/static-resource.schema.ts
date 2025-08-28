@@ -1,34 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 // For more information about this file see https://dove.feathersjs.com/guides/cli/service.schemas.html
 import type { Static } from '@feathersjs/typebox'
 import { getValidator, querySyntax, Type } from '@feathersjs/typebox'
 
 import { TypedString } from '../../types/TypeboxUtils'
-import { UserID } from '../user/user.schema'
+import { UserID, userSchema } from '../user/user.schema'
 import { dataValidator, queryValidator } from '../validators'
 
 export const staticResourcePath = 'static-resource'
@@ -46,6 +21,7 @@ export const staticResourceSchema = Type.Object(
     userId: TypedString<UserID>({
       format: 'uuid'
     }),
+    user: Type.Optional(Type.Ref(userSchema)),
     hash: Type.String(),
     type: Type.String(), // 'scene' | 'asset' | 'file' | 'thumbnail' | 'avatar' | 'recording'
     project: Type.Optional(Type.String()),
@@ -57,14 +33,17 @@ export const staticResourceSchema = Type.Object(
     name: Type.Optional(Type.String()),
     url: Type.String(),
     stats: Type.Optional(Type.Record(Type.String(), Type.Any())),
-    thumbnailKey: Type.Optional(Type.String()),
+    thumbnailKey: Type.Optional(Type.Union([Type.String(), Type.Null()])),
     thumbnailURL: Type.Optional(Type.String()),
-    thumbnailMode: Type.Optional(Type.String()), // 'automatic' | 'manual'
+    thumbnailMode: Type.Optional(Type.Union([Type.String(), Type.Null()])), // 'automatic' | 'manual'
     updatedBy: TypedString<UserID>({
       format: 'uuid'
     }),
     createdAt: Type.String({ format: 'date-time' }),
-    updatedAt: Type.String({ format: 'date-time' })
+    updatedAt: Type.String({ format: 'date-time' }),
+    width: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+    height: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+    depth: Type.Optional(Type.Union([Type.Number(), Type.Null()]))
   },
   { $id: 'StaticResource', additionalProperties: false }
 )
@@ -95,7 +74,10 @@ export const staticResourceDataSchema = Type.Partial(
     'stats',
     'thumbnailKey',
     'thumbnailMode',
-    'name'
+    'name',
+    'width',
+    'height',
+    'depth'
   ]),
   { $id: 'StaticResourceData' }
 )
@@ -119,7 +101,10 @@ export const staticResourcePatchSchema = Type.Partial(
     'stats',
     'thumbnailKey',
     'thumbnailMode',
-    'name'
+    'name',
+    'width',
+    'height',
+    'depth'
   ]),
   {
     $id: 'StaticResourcePatch'
@@ -146,7 +131,10 @@ export const staticResourceQueryProperties = Type.Pick(staticResourceSchema, [
   'thumbnailMode',
   'createdAt',
   'updatedAt',
-  'name'
+  'name',
+  'width',
+  'height',
+  'depth'
 ])
 export const staticResourceQuerySchema = Type.Intersect(
   [

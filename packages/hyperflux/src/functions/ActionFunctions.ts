@@ -1,44 +1,19 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { matches, Parser, Validator } from 'ts-matches'
 import { v4 as uuidv4 } from 'uuid'
 
 import { createHookableFunction } from './createHookableFunction'
 
 import { OpaqueType } from '../types/OpaqueType'
-import { NetworkID, PeerID } from '../types/Types'
+import { NetworkID, PeerID, UserID } from '../types/Types'
 import { isDev } from './EnvironmentConstants'
-import { ReactorRoot } from './ReactorFunctions'
+import { ReactorReconciler, ReactorRoot } from './ReactorFunctions'
 import { setInitialState, StateDefinitions } from './StateFunctions'
 import { HyperFlux } from './StoreFunctions'
 
-const matchesPeerID = matches.string as Validator<unknown, PeerID>
-
 export { matches, Validator } from 'ts-matches'
-export { matchesPeerID }
+
+export const matchesUserID = matches.string as Validator<unknown, UserID>
+export const matchesPeerID = matches.string as Validator<unknown, PeerID>
 
 export type Topic = OpaqueType<'Topic'> & string
 
@@ -72,10 +47,18 @@ export type ActionOptions = {
   $uuid?: string
 
   /**
-   * The id of the sender's socket
+   * The id of the dispatching peer's unique identifier
    * Will be undefined if dispatched locally or not in a network
+   * - It is recommended that transports implement this upon receiving actions to ensure the peer is who they say they are
    */
   $peer?: PeerID
+
+  /**
+   * The user that dispatched this action
+   * Will be undefined if dispatched locally or not authenticated
+   * - It is recommended that transports implement this upon receiving actions to ensure the user is who they say they are
+   */
+  $user?: UserID
 
   /**
    * The intended recipients
@@ -221,6 +204,8 @@ export const ActionDefinitions = {} as Record<string, any>
 
 export type ActionReceptor<A extends ActionShape<Action>> = ((action: A) => void) & {
   matchesAction: Validator<A, any>
+  validate: (validator: (action: ResolvedActionType<A>) => boolean) => ActionReceptor<A>
+  validator?: (action: A) => boolean
 }
 
 export function isActionReceptor<A extends ActionShape<Action>>(f: any): f is ActionReceptor<A> {
@@ -304,6 +289,10 @@ export function defineAction<Shape extends Omit<ActionShape<Action>, keyof Actio
   actionCreator.receive = (actionReceptor: (action: ResolvedAction) => void) => {
     const hookableReceptor = createHookableFunction(actionReceptor)
     hookableReceptor['matchesAction'] = matchesShape
+    hookableReceptor['validate'] = (actionValidator: (action: ResolvedAction) => boolean) => {
+      hookableReceptor['validator'] = actionValidator
+      return hookableReceptor
+    }
     return hookableReceptor as typeof hookableReceptor & ActionReceptor<Shape>
   }
 
@@ -320,9 +309,11 @@ export function defineAction<Shape extends Omit<ActionShape<Action>, keyof Actio
 export const dispatchAction = <A extends Action>(_action: A) => {
   const action = JSON.parse(JSON.stringify(_action))
 
-  const agentId = HyperFlux.store.peerID
+  const peerID = HyperFlux.store.peerID
+  const agentID = HyperFlux.store.getAgentID()
 
-  action.$peer = action.$peer ?? agentId
+  action.$peer = action.$peer ?? peerID
+  action.$user = action.$user ?? agentID
   action.$to = action.$to ?? 'all'
   action.$time = action.$time ?? HyperFlux.store.getDispatchTime() + HyperFlux.store.defaultDispatchDelay()
   action.$cache = action.$cache ?? false
@@ -340,6 +331,8 @@ export const dispatchAction = <A extends Action>(_action: A) => {
   HyperFlux.store.actions.incoming.push(action as Required<ResolvedActionType>)
 
   addOutgoingTopicIfNecessary(topic)
+
+  return Object.freeze(action) as ResolvedActionType<A>
 }
 
 export function addOutgoingTopicIfNecessary(topic: Topic) {
@@ -438,6 +431,7 @@ const createEventSourceQueues = (action: Required<ResolvedActionType>) => {
           try {
             const receptor = definitionReceptor as ActionReceptor<ResolvedActionType>
             if (receptor.matchesAction.test(action)) {
+              if (receptor.validator && !receptor.validator(action)) continue
               receptor(action)
               hasNewActions = true
             }
@@ -449,7 +443,7 @@ const createEventSourceQueues = (action: Required<ResolvedActionType>) => {
 
       // if new actions were applied, synchronously run the reactor
       if (hasNewActions && HyperFlux.store.stateReactors[definition.name]) {
-        HyperFlux.store.stateReactors[definition.name].run()
+        ReactorReconciler.flushSync(() => HyperFlux.store.stateReactors[definition.name].run())
       }
     }
 
@@ -522,9 +516,12 @@ const applyEventSourcingToAllQueues = () => {
  * Process incoming actions
  */
 export const applyIncomingActions = () => {
-  const { incoming } = HyperFlux.store.actions
+  const incoming = HyperFlux.store.actions.incoming
+  if (!incoming.length) return
+
   const now = HyperFlux.store.getDispatchTime()
-  for (const action of [...incoming]) {
+  const actions = incoming.slice()
+  for (const action of actions) {
     _forwardIfNecessary(action)
     if (action.$time <= now) _applyIncomingAction(action)
   }

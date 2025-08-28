@@ -1,29 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { VRMHumanBone } from '@pixiv/three-vrm'
 import {
   AnimationAction,
   AnimationActionLoopStyles,
@@ -88,13 +62,15 @@ const matchesMovementType = matches.shape({
 export type MovementType = typeof matchesMovementType._TYPE
 
 /** Animation type */
-export enum AnimationType {
+export const AnimationType = {
   /** Static will be rendered on demand */
-  STATIC,
+  STATIC: 0,
 
   /** This type of animation will be rendred based on the velocity of the avatar */
-  VELOCITY_BASED
-}
+  VELOCITY_BASED: 1
+} as const
+
+export type AnimationTypeValue = (typeof AnimationType)[keyof typeof AnimationType]
 
 /** Type of calculate weights method parameters */
 export const matchesWeightsParameters = matches.partial({
@@ -213,21 +189,4 @@ const computeRootMotionVector = (track: KeyframeTrack) => {
 
 export function findRootBone(skinnedMesh: SkinnedMesh) {
   return skinnedMesh.skeleton.bones.find((obj) => obj.parent?.type !== 'Bone')
-}
-
-export const processRootAnimation = (clip: AnimationClip, rootBone: VRMHumanBone | undefined): any => {
-  if (!rootBone || !clip || !clip.name.endsWith('root')) return null
-
-  const meshQuat = new Quaternion(),
-    meshScale = new Vector3()
-  meshScale.setScalar(1)
-
-  const posTrack = findAnimationClipTrack(clip, rootBone.node.name, 'position')
-  const velocity = computeRootAnimationVelocity(posTrack, meshQuat, meshScale)
-  const distTrack = mapPositionTrackToDistanceTrack(posTrack, meshQuat, meshScale)
-
-  return {
-    velocity: velocity,
-    distanceTrack: distTrack
-  }
 }

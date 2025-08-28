@@ -1,51 +1,31 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import { LoaderUtils } from 'three'
 
 import {
-  transformModel as clientSideTransformModel,
-  ModelTransformStatus
-} from '@ir-engine/common/src/model/ModelTransformFunctions'
+  Entity,
+  getAncestorWithComponents,
+  iterateEntityNode,
+  removeEntityNodeRecursively,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import { setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { ModelTransformStatus, transformModel } from '@ir-engine/editor/src/optimize/ModelTransformFunctions'
 import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
 } from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
-import { NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
-import { iterateEntityNode, removeEntityNodeRecursively } from '@ir-engine/spatial/src/transform/components/EntityTree'
+import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { useTranslation } from 'react-i18next'
 import { defaultLODs, LODList, LODVariantDescriptor } from '../../constants/GLTFPresets'
 import exportGLTF from '../../functions/exportGLTF'
 
 import { pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
+import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
+
+import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
 import { Button } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
@@ -53,6 +33,7 @@ import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import { HiPlus, HiXMark } from 'react-icons/hi2'
 import { MdClose } from 'react-icons/md'
 import { FileDataType } from '../../constants/AssetTypes'
+import { EditorState } from '../../services/EditorServices'
 import GLTFTransformProperties from '../properties/GLTFTransformProperties'
 
 const progressCaptions: Record<ModelTransformStatus, string> = {
@@ -65,8 +46,9 @@ const progressCaptions: Record<ModelTransformStatus, string> = {
 const createLODVariants = async (
   srcURL: string,
   lods: LODVariantDescriptor[],
-  heuristic: Heuristic,
+  heuristic: (typeof Heuristic)[keyof typeof Heuristic],
   exportCombined = false,
+  parentEntity: Entity,
   onProgress: (
     progress: number,
     status: ModelTransformStatus,
@@ -79,7 +61,7 @@ const createLODVariants = async (
   }))
 
   const transformMetadata: Record<string, any>[] = []
-  await clientSideTransformModel(
+  await transformModel(
     srcURL,
     lodVariantParams,
     (i, key, data) => {
@@ -91,8 +73,7 @@ const createLODVariants = async (
 
   if (exportCombined) {
     const firstLODParams = lods[0].params
-
-    const result = createSceneEntity('container')
+    const result = createSceneEntity('container', parentEntity)
     const variant = createSceneEntity('LOD Variant', result)
     setComponent(variant, VariantComponent, {
       levels: lods.map((lod, lodIndex) => ({
@@ -105,7 +86,8 @@ const createLODVariants = async (
       heuristic
     })
     const destinationPath = srcURL.replace(/\.[^.]*$/, `-integrated.gltf`)
-    iterateEntityNode(result, (entity) => setComponent(entity, SourceComponent, destinationPath))
+    const gltfEntity = getAncestorWithComponents(result, [GLTFComponent])
+    iterateEntityNode(result, (entity) => UUIDComponent.setSourceEntity(entity, gltfEntity))
     await exportGLTF(result, destinationPath)
     removeEntityNodeRecursively(result)
   }
@@ -143,16 +125,52 @@ export default function ModelCompressionPanel({
       progress: 0,
       caption: ''
     })
-    for (const file of selectedFiles) {
-      await compressModel(file)
+    try {
+      const failedFiles: string[] = []
+      for (const file of selectedFiles) {
+        try {
+          await compressModel(file)
+        } catch (error) {
+          console.error('Error during model compression:', error)
+          // Notify user of error
+          failedFiles.push(file.name)
+          continue
+        }
+      }
+      if (failedFiles.length === selectedFiles.length) {
+        throw new Error(failedFiles.join(', '))
+      } else if (failedFiles.length > 0) {
+        NotificationService.dispatchNotify(
+          t('editor:properties.model.transform.compressionError', { file: failedFiles.join(', ') }),
+          {
+            variant: 'error'
+          }
+        )
+      }
+      await refreshDirectory()
+      NotificationService.dispatchNotify(t('editor:properties.model.transform.compressionComplete'), {
+        variant: 'success',
+        autoHideDuration: 3000
+      })
+    } catch (error) {
+      // Notify user of error
+      NotificationService.dispatchNotify(
+        t('editor:properties.model.transform.compressionError', { file: error.message }),
+        {
+          variant: 'error'
+        }
+      )
+      console.error('Error during model compression:', error)
+    } finally {
+      compressionLoading.set(false)
+      // Close the modal when compression is complete
+      ModalState.closeModal()
     }
-    await refreshDirectory()
-    compressionLoading.set(false)
   }
 
   const applyPreset = (preset: ModelTransformParameters) => {
     selectedPreset.set(JSON.parse(JSON.stringify(preset)))
-    PopoverState.showPopupover(
+    ModalState.openModal(
       <ConfirmDialog text={t('editor:properties.model.transform.applyPresetConfirmation')} onSubmit={confirmPreset} />
     )
   }
@@ -183,25 +201,25 @@ export default function ModelCompressionPanel({
 
     const url = new URL(file.url)
     const srcURL = pathJoin(url.origin, url.pathname)
+    const fileName = srcURL.split('/').pop()!.split('.').shift()!
     const modelFormat = srcURL.endsWith('.gltf') ? 'gltf' : srcURL.endsWith('.vrm') ? 'vrm' : 'glb'
 
-    if (selectedFiles.length > 1) {
-      fileLODs = fileLODs.map((lod) => {
-        const fileName = srcURL.split('/').pop()!.split('.').shift()!
-        const dst = fileName + lod.suffix
-        return {
-          ...lod,
-          dst,
-          modelFormat
-        }
-      })
-    }
+    // Create a copy of LODs with file-specific destination names
+    fileLODs = fileLODs.map((lod) => {
+      // Create a deep copy to avoid modifying the original LOD
+      const newLod = JSON.parse(JSON.stringify(lod)) as LODVariantDescriptor
+      // Set the destination filename based on the current file being processed
+      newLod.params.dst = fileName + newLod.suffix
+      newLod.params.modelFormat = modelFormat
+      return newLod
+    })
 
     await createLODVariants(
       srcURL,
       fileLODs,
       Heuristic.DISTANCE,
       exportCombined,
+      getState(EditorState).rootEntity,
       (progress, status, numerator, denominator) => {
         const caption = t(progressCaptions[status]!, {
           numerator: numerator + 1,
@@ -267,7 +285,7 @@ export default function ModelCompressionPanel({
         <Button
           variant="tertiary"
           className="absolute right-0 border-0 dark:bg-transparent dark:text-[#A3A3A3]"
-          onClick={() => PopoverState.hidePopupover()}
+          onClick={() => ModalState.closeModal()}
         >
           <MdClose />
         </Button>
@@ -279,7 +297,7 @@ export default function ModelCompressionPanel({
             <span key={index} className="flex items-center">
               <button
                 className={`rounded-none px-1 pb-4 text-sm font-medium ${
-                  selectedLODIndex.value === index ? 'border-b border-blue-primary text-blue-primary' : 'text-[#9CA0AA]'
+                  selectedLODIndex.value === index ? 'border-b' : 'text-[#9CA0AA]'
                 }`}
                 onClick={() => selectedLODIndex.set(Math.min(index, lods.length - 1))}
               >
@@ -304,7 +322,7 @@ export default function ModelCompressionPanel({
           </button>
         </div>
 
-        <div className="my-8 flex items-center justify-around gap-x-1 overflow-x-auto rounded-lg border border-theme-input p-2">
+        <div className="my-8 flex items-center justify-around gap-x-1 overflow-x-auto rounded-lg border  p-2">
           {presetList.value.map((lodItem: LODVariantDescriptor, index) => (
             <button
               key={index}
@@ -337,7 +355,7 @@ export default function ModelCompressionPanel({
             <div className="flex w-full flex-col">
               <div className="h-4 w-full overflow-hidden rounded bg-white">
                 <div
-                  className="h-4 w-full origin-left bg-blue-primary transition-transform"
+                  className="h-4 w-full origin-left transition-transform"
                   style={{
                     transform: `scaleX(${compressionProgress.progress.value})`
                   }}

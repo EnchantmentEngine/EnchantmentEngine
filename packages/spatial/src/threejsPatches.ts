@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import * as THREE from 'three'
 import { Euler, Matrix4, Object3D, Quaternion, Scene, SkinnedMesh, Vector2, Vector3, Vector4 } from 'three'
 
@@ -30,6 +5,9 @@ import { Entity } from '@ir-engine/ecs'
 
 import { overrideOnBeforeCompile } from './common/functions/OnBeforeCompilePlugin'
 import { Object3DUtils } from './transform/Object3DUtils'
+
+export const DisplayP3ColorSpace = 'display-p3'
+export const LinearDisplayP3ColorSpace = 'linear-display-p3'
 
 //@ts-ignore
 Vector3.prototype.toJSON = function () {
@@ -45,7 +23,7 @@ Quaternion.prototype.toJSON = function () {
   return { x: this._x, y: this._y, z: this._z, w: this._w }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-loss-of-precision
+// eslint-disable-next-line
 const opmu = 1.90110745351730037
 const u = new Float32Array(8)
 const v = new Float32Array(8)
@@ -119,10 +97,12 @@ Euler.prototype.toJSON = function () {
   return { x: this._x, y: this._y, z: this._z, order: this._order }
 }
 
-declare module 'three/src/core/Object3D' {
+declare module 'three/src/core/Object3D.js' {
   export interface Object3D {
     matrixWorldAutoUpdate: boolean
     entity: Entity
+    /** @deprecated use TransformComponent property */
+    readonly rotation: Euler
     /** @deprecated use ECS hierarchy instead [#9308](https://github.com/ir-engine/ir-engine/issues/9308) */
     add(...object: Object3D[]): this
     /** @deprecated use ECS hierarchy instead [#9308](https://github.com/ir-engine/ir-engine/issues/9308) */
@@ -143,14 +123,32 @@ declare module 'three/src/core/Object3D' {
     traverseVisible(callback: (object: Object3D) => void): void
     /** @deprecated use ECS hierarchy instead [#9308](https://github.com/ir-engine/ir-engine/issues/9308) */
     traverseAncestors(callback: (object: Object3D) => void): void
+    /** @deprecated */
+    preserveChildren?: boolean
+    /** @deprecated */
+    readonly isProxified: true | undefined
   }
 }
 
-declare module 'three/src/math/Quaternion' {
+declare module 'three/src/math/Quaternion.js' {
   export interface Quaternion {
     fastSlerp: typeof fastSlerp
   }
 }
+
+// declare module 'three/src/core/BufferGeometry.js' {
+//   export interface BufferGeometry {
+//     boundsTree?: MeshBVH
+//     disposeBoundsTree: () => void
+//     computeBoundsTree: () => void
+//   }
+// }
+
+// declare module 'three/src/core/Raycaster.js' {
+//   export interface Raycaster {
+//     firstHitOnly: boolean
+//   }
+// }
 
 Scene.DEFAULT_MATRIX_AUTO_UPDATE = false
 
@@ -213,9 +211,50 @@ SkinnedMesh.prototype.applyBoneTransform = function (index, vector) {
   return vector.applyMatrix4(this.bindMatrixInverse)
 }
 
+Object3D.prototype.copy = function (source: Object3D, recursive = true) {
+  this.name = source.name
+
+  this.up.copy(source.up)
+
+  this.position.copy(source.position)
+
+  // disable rotation
+  // this.rotation.order = source.rotation.order;
+
+  this.quaternion.copy(source.quaternion)
+  this.scale.copy(source.scale)
+
+  this.matrix.copy(source.matrix)
+  this.matrixWorld.copy(source.matrixWorld)
+
+  this.matrixAutoUpdate = source.matrixAutoUpdate
+  this.matrixWorldNeedsUpdate = source.matrixWorldNeedsUpdate
+
+  this.matrixWorldAutoUpdate = source.matrixWorldAutoUpdate
+
+  this.layers.mask = source.layers.mask
+  this.visible = source.visible
+
+  this.castShadow = source.castShadow
+  this.receiveShadow = source.receiveShadow
+
+  this.frustumCulled = source.frustumCulled
+  this.renderOrder = source.renderOrder
+
+  this.animations = source.animations.slice()
+
+  this.userData = JSON.parse(JSON.stringify(source.userData))
+
+  if (recursive === true) {
+    for (let i = 0; i < source.children.length; i++) {
+      const child = source.children[i]
+      this.add(child.clone())
+    }
+  }
+
+  return this
+}
+
 overrideOnBeforeCompile()
 
 globalThis.THREE = { ...THREE } as any
-
-// required to patch realism-effects
-if (!globalThis.URL.createObjectURL) globalThis.URL.createObjectURL = (blob) => null!

@@ -1,33 +1,10 @@
-/*
-CPAL-1.0 License
+export const UVOL_TYPE = {
+  DRACO_WITH_COMPRESSED_TEXTURE: 0,
+  GLB_WITH_COMPRESSED_TEXTURE: 1,
+  UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE: 2
+} as const
 
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-export enum UVOL_TYPE {
-  DRACO_WITH_COMPRESSED_TEXTURE = 0,
-  GLB_WITH_COMPRESSED_TEXTURE = 1,
-  UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE = 2
-}
+export type UvolType = (typeof UVOL_TYPE)[keyof typeof UVOL_TYPE]
 
 export type AudioFileFormat = 'mp3' | 'wav'
 
@@ -390,31 +367,31 @@ export interface BasePlayerManifest {
   deletePreviousBuffers: boolean
 }
 
-export interface DRACO_Manifest extends BasePlayerManifest {
-  type: UVOL_TYPE.DRACO_WITH_COMPRESSED_TEXTURE
+export interface DracoManifest extends BasePlayerManifest {
+  type: typeof UVOL_TYPE.DRACO_WITH_COMPRESSED_TEXTURE
   geometry: {
     targets: Record<string, DRACOTarget>
     path: EncoderManifest['geometryOutputPath']
   }
 }
 
-export interface GLB_Manifest extends BasePlayerManifest {
-  type: UVOL_TYPE.GLB_WITH_COMPRESSED_TEXTURE
+export interface GlbManifest extends BasePlayerManifest {
+  type: typeof UVOL_TYPE.GLB_WITH_COMPRESSED_TEXTURE
   geometry: {
     targets: Record<string, GLBTarget>
     path: EncoderManifest['geometryOutputPath']
   }
 }
 
-export interface UniformSolve_Manifest extends BasePlayerManifest {
-  type: UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE
+export interface UniformSolveManifest extends BasePlayerManifest {
+  type: typeof UVOL_TYPE.UNIFORM_SOLVE_WITH_COMPRESSED_TEXTURE
   geometry: {
     targets: Record<string, UniformSolveTarget>
     path: EncoderManifest['geometryOutputPath']
   }
 }
 
-export type PlayerManifest = DRACO_Manifest | GLB_Manifest | UniformSolve_Manifest
+export type PlayerManifest = DracoManifest | GlbManifest | UniformSolveManifest
 
 export const ABC_TO_OBJ_PADDING = 7
 

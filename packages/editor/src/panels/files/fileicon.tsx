@@ -1,29 +1,4 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { useHookstate } from '@hookstate/core'
+import { useHookstate } from '@ir-engine/hyperflux'
 import React from 'react'
 import { IoAccessibilityOutline } from 'react-icons/io5'
 import { MdOutlineAudioFile, MdOutlinePhotoSizeSelectActual, MdOutlineViewInAr } from 'react-icons/md'
@@ -35,8 +10,6 @@ const FileIconType = {
   'gltf-binary': MdOutlineViewInAr,
   glb: MdOutlineViewInAr,
   vrm: IoAccessibilityOutline,
-  usdz: MdOutlineViewInAr,
-  fbx: MdOutlineViewInAr,
   png: MdOutlinePhotoSizeSelectActual,
   jpeg: MdOutlinePhotoSizeSelectActual,
   jpg: MdOutlinePhotoSizeSelectActual,
@@ -49,8 +22,6 @@ const FileIconType = {
   'model/gltf': MdOutlineViewInAr,
   'model/glb': MdOutlineViewInAr,
   'model/vrm': IoAccessibilityOutline,
-  'model/usdz': MdOutlineViewInAr,
-  'model/fbx': MdOutlineViewInAr,
   'image/png': MdOutlinePhotoSizeSelectActual,
   'image/jpeg': MdOutlinePhotoSizeSelectActual,
   'image/jpg': MdOutlinePhotoSizeSelectActual,
@@ -70,64 +41,92 @@ export const FileIcon = ({
   type,
   isFolder,
   color = 'text-white',
-  isMinified = false
+  isMinified = false,
+  onLoad = () => {},
+  onLoadStart = () => {}
 }: {
   thumbnailURL?: string
   type: string
   isFolder?: boolean
   color?: string
   isMinified?: boolean
+  onLoad?: () => void
+  onLoadStart?: () => void
 }) => {
   const FallbackIcon = FileIconType[type ?? '']
   const imageLoaded = useHookstate(false)
 
   const handleImageLoaded = () => {
     imageLoaded.set(true)
+    onLoad?.()
   }
 
-  return (
-    <>
-      {isFolder ? (
-        <img
-          className={twMerge(isMinified ? 'h-4 w-4' : 'h-full max-h-40 w-full max-w-40', 'object-contain')}
-          crossOrigin="anonymous"
-          src={FOLDER_ICON_PATH}
-          alt="folder-icon"
-        />
-      ) : thumbnailURL ? (
-        <>
-          <img
-            className={twMerge(
-              isMinified ? 'h-4 w-4' : 'h-full max-h-40 w-full max-w-40',
-              'object-contain',
-              imageLoaded.value ? 'block' : 'hidden'
-            )}
-            crossOrigin="anonymous"
-            src={thumbnailURL}
-            alt="file-thumbnail"
-            onLoad={handleImageLoaded}
-          />
-          <img
-            className={twMerge(
-              isMinified ? 'h-4 w-4' : 'h-full max-h-40 w-full max-w-40',
-              'object-contain',
-              imageLoaded.value ? 'hidden' : 'block'
-            )}
-            crossOrigin="anonymous"
-            src={FILE_ICON_BLUR}
-            alt="file-thumbnail"
-          />
-        </>
-      ) : FallbackIcon ? (
-        <FallbackIcon className={twMerge(color, isMinified ? 'h-4 w-4' : 'h-full max-h-40 w-full max-w-40')} />
-      ) : (
-        <img
-          className={twMerge(isMinified ? 'h-4 w-4' : 'h-full max-h-40 w-full max-w-40', 'object-contain')}
-          crossOrigin="anonymous"
-          src={FILE_ICON_PATH}
-          alt="file-icon"
-        />
-      )}
-    </>
-  )
+  const handleLoadStart = () => {
+    onLoadStart?.()
+  }
+
+  const Tag = ({ className }: { className?: string }) => {
+    if (!type || isMinified) return <></>
+    return (
+      <div className={twMerge('absolute -left-[6px] top-0', className)}>
+        <div className="flex h-4 w-9 items-center justify-center rounded-lg bg-[#162546] px-1 py-3">
+          <span className="truncate text-[8px] text-white">{type.toUpperCase()}</span>
+        </div>
+      </div>
+    )
+  }
+
+  const renderImage = () => {
+    const imageClass = twMerge(
+      isMinified ? 'h-4 w-4' : 'h-full max-h-40 w-full max-w-40',
+      'object-contain',
+      'px-2 py-1',
+      'overflow-hidden rounded'
+    )
+
+    if (isFolder) {
+      return <img className={imageClass} crossOrigin="anonymous" src={FOLDER_ICON_PATH} alt="folder-icon" />
+    }
+
+    if (thumbnailURL) {
+      return (
+        <div className={`${isMinified ? '' : 'h-full w-full'}`}>
+          <div className="relative">
+            <Tag className="top-2" />
+          </div>
+          <div className={`${isMinified ? '' : 'h-full w-full'}`}>
+            <img
+              className={twMerge(imageClass, 'p-0', 'object-contain', imageLoaded.value ? 'block' : 'hidden')}
+              crossOrigin="anonymous"
+              src={thumbnailURL}
+              alt="file-thumbnail"
+              onLoad={handleImageLoaded}
+            />
+            <img
+              className={twMerge(imageClass, 'p-0', 'object-contain', imageLoaded.value ? 'hidden' : 'block')}
+              crossOrigin="anonymous"
+              src={FILE_ICON_BLUR}
+              alt="file-thumbnail"
+              onLoad={handleLoadStart}
+            />
+          </div>
+        </div>
+      )
+    }
+
+    if (FallbackIcon) {
+      return <FallbackIcon className={twMerge(color, isMinified ? 'h-4 w-4' : 'h-full max-h-40 w-full max-w-40')} />
+    }
+
+    return (
+      <>
+        <div className="relative">
+          <Tag className="top-2" />
+        </div>
+        <img className={`${imageClass} object-contain`} crossOrigin="anonymous" src={FILE_ICON_PATH} alt="file-icon" />
+      </>
+    )
+  }
+
+  return <>{renderImage()}</>
 }

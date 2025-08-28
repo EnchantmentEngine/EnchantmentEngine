@@ -1,37 +1,9 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { EntityUUID, UUIDComponent, useQuery } from '@ir-engine/ecs'
-import { ComponentType, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
+import { EntityID, useQuery, UUIDComponent } from '@ir-engine/ecs'
+import { getComponent, Layers, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { commitProperty, EditorComponentType, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEditor'
-import { GLTFNodeState, GLTFSnapshotAction } from '@ir-engine/engine/src/gltf/GLTFDocumentState'
-import { GLTFSnapshotState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
-import { SourceComponent } from '@ir-engine/engine/src/scene/components/SourceComponent'
-import { State, dispatchAction } from '@ir-engine/hyperflux'
+
 import { DirectionalLightComponent } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Checkbox } from '@ir-engine/ui'
@@ -44,7 +16,6 @@ import {
   BasicShadowMap,
   CineonToneMapping,
   LinearToneMapping,
-  NoToneMapping,
   PCFShadowMap,
   PCFSoftShadowMap,
   ReinhardToneMapping,
@@ -54,10 +25,6 @@ import InputGroup from '../../input/Group'
 import SelectInput from '../../input/Select'
 
 const ToneMappingOptions = [
-  {
-    label: 'No Tone Mapping',
-    value: NoToneMapping
-  },
   {
     label: 'Linear Tone Mapping',
     value: LinearToneMapping
@@ -83,10 +50,6 @@ const ToneMappingOptions = [
  */
 const ShadowTypeOptions = [
   {
-    label: 'No Shadow Map',
-    value: -1
-  },
-  {
     label: 'Basic Shadow Map',
     value: BasicShadowMap
   },
@@ -109,34 +72,28 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
   const { entity } = props
   const rendererSettingsState = useComponent(entity, RenderSettingsComponent)
 
+  const query = useQuery([DirectionalLightComponent], Layers.Authoring)
+
   const directionalLightOptions = [
     {
       label: 'None',
-      value: '' as EntityUUID
+      value: '' as EntityID
     }
   ].concat(
-    useQuery([DirectionalLightComponent, SourceComponent]).map((entity) => {
+    query.map((entity) => {
       return {
         label: getComponent(entity, NameComponent),
-        value: getComponent(entity, UUIDComponent)
+        value: getComponent(entity, UUIDComponent).entityID
       }
     })
   )
 
   useEffect(() => {
-    if (!UUIDComponent.getEntityByUUID(rendererSettingsState.primaryLight.value)) {
-      const source = getComponent(entity, SourceComponent)
-      const node = GLTFNodeState.getMutableNode(entity)
-      const renderSettingsExt = node.extensions[RenderSettingsComponent.jsonID] as State<
-        ComponentType<typeof RenderSettingsComponent>
-      >
-      if (!renderSettingsExt.primaryLight.value) return
-      renderSettingsExt.merge({
+    if (!UUIDComponent.getEntityFromSameSourceByID(entity, rendererSettingsState.primaryLight)) {
+      setComponent(entity, RenderSettingsComponent, {
         csm: false,
-        primaryLight: '' as EntityUUID
+        primaryLight: '' as EntityID
       })
-      const snapshot = GLTFSnapshotState.cloneCurrentSnapshot(source)
-      dispatchAction(GLTFSnapshotAction.createSnapshot(snapshot))
     }
   }, [rendererSettingsState.primaryLight])
 
@@ -154,7 +111,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={directionalLightOptions}
-          value={rendererSettingsState.primaryLight.value}
+          value={rendererSettingsState.primaryLight}
           onChange={commitProperty(RenderSettingsComponent, 'primaryLight')}
         />
       </InputGroup>
@@ -163,14 +120,14 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         label={t('editor:properties.renderSettings.lbl-csm')}
         info={t('editor:properties.renderSettings.info-csm')}
       >
-        <Checkbox checked={rendererSettingsState.csm.value} onChange={commitProperty(RenderSettingsComponent, 'csm')} />
+        <Checkbox checked={rendererSettingsState.csm} onChange={commitProperty(RenderSettingsComponent, 'csm')} />
       </InputGroup>
-      {rendererSettingsState.csm.value === true ? (
+      {rendererSettingsState.csm === true ? (
         <Slider
           min={1}
           max={5}
           step={1}
-          value={rendererSettingsState.cascades.value}
+          value={rendererSettingsState.cascades}
           onChange={updateProperty(RenderSettingsComponent, 'cascades')}
           onRelease={commitProperty(RenderSettingsComponent, 'cascades')}
           aria-label="Cascades"
@@ -187,7 +144,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={ToneMappingOptions}
-          value={rendererSettingsState.toneMapping.value}
+          value={rendererSettingsState.toneMapping}
           onChange={commitProperty(RenderSettingsComponent, 'toneMapping')}
         />
       </InputGroup>
@@ -195,7 +152,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
         min={0}
         max={10}
         step={0.1}
-        value={rendererSettingsState.toneMappingExposure.value}
+        value={rendererSettingsState.toneMappingExposure}
         onChange={updateProperty(RenderSettingsComponent, 'toneMappingExposure')}
         onRelease={commitProperty(RenderSettingsComponent, 'toneMappingExposure')}
         aria-label="Tone Mapping Exposure"
@@ -209,7 +166,7 @@ export const RenderSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={ShadowTypeOptions}
-          value={rendererSettingsState.shadowMapType.value ?? -1}
+          value={rendererSettingsState.shadowMapType ?? -1}
           onChange={commitProperty(RenderSettingsComponent, 'shadowMapType')}
         />
       </InputGroup>

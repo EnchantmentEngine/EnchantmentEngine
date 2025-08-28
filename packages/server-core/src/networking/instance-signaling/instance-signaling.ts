@@ -1,52 +1,33 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { BadRequest } from '@feathersjs/errors'
+import { BadRequest, Forbidden } from '@feathersjs/errors'
 import { Params } from '@feathersjs/feathers'
-import { CREDENTIAL_OFFSET, HASH_ALGORITHM } from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
+import {
+  CREDENTIAL_OFFSET,
+  HASH_ALGORITHM,
+  IceServer,
+  WebRTCSettings
+} from '@ir-engine/common/src/constants/DefaultWebRTCSettings'
+import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { PUBLIC_STUN_SERVERS } from '@ir-engine/common/src/constants/STUNServers'
 import multiLogger from '@ir-engine/common/src/logger'
 import {
-  IceServerType,
   InstanceAttendanceData,
   InstanceID,
   channelPath,
   channelUserPath,
+  engineSettingPath,
   instanceAttendancePath,
   instancePath,
-  instanceServerSettingPath,
   instanceSignalingPath,
-  locationPath
+  locationPath,
+  moderationBanPath
 } from '@ir-engine/common/src/schema.type.module'
 import { getDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
+import { unflattenArrayToObject } from '@ir-engine/common/src/utils/jsonHelperUtils'
+import type { MessageTypes } from '@ir-engine/hyperflux'
 import { PeerID, getState } from '@ir-engine/hyperflux'
-import { MessageTypes } from '@ir-engine/network/src/webrtc/WebRTCTransportFunctions'
 import crypto from 'crypto'
 import { Application } from '../../../declarations'
 import { ServerMode, ServerState } from '../../ServerState'
-import config from '../../appconfig'
 
 const logger = multiLogger.child({ component: 'instance-signaling' })
 
@@ -76,7 +57,16 @@ const peerJoin = async (app: Application, data: InstanceSignalingDataType, param
 
   const user = params.user
   if (!user) throw new BadRequest('Must be logged in to join instance')
-
+  const thisUserBanned = await app.service(moderationBanPath).find({
+    query: {
+      banUserId: user.id,
+      banned: true,
+      $limit: 0
+    }
+  })
+  if (thisUserBanned.total > 0) {
+    throw new Forbidden('You are banned')
+  }
   if (!peerID) throw new BadRequest('PeerID required')
 
   if (!data?.instanceID) throw new BadRequest('InstanceID required')
@@ -125,13 +115,24 @@ const peerJoin = async (app: Application, data: InstanceSignalingDataType, param
   const newInstanceAttendanceResult = await app.service(instanceAttendancePath).create(newInstanceAttendance)
 
   /** Get ice servers to use */
-  const instanceServerSettingsResponse = await app.service(instanceServerSettingPath).find()
-  const webRTCSettings = instanceServerSettingsResponse.data[0].webRTCSettings
-  const iceServers: IceServerType[] = webRTCSettings.useCustomICEServers
-    ? webRTCSettings.iceServers
-    : config.kubernetes.enabled
-    ? PUBLIC_STUN_SERVERS
-    : []
+  const instanceServerSettingsResponse = await app.service(engineSettingPath).find({
+    query: {
+      category: 'instance-server-webrtc',
+      jsonKey: EngineSettings.InstanceServer.WebRTCSettings
+    },
+    paginate: false
+  })
+
+  const webRTCSettings = unflattenArrayToObject(
+    instanceServerSettingsResponse.map((setting) => {
+      return {
+        key: setting.key,
+        value: setting.value,
+        dataType: setting.dataType
+      }
+    })
+  ) as WebRTCSettings
+  const iceServers: IceServer[] = webRTCSettings.useCustomICEServers ? webRTCSettings.iceServers : PUBLIC_STUN_SERVERS
 
   /** Duplicated from WebRTCFunctions.ts */
   if (webRTCSettings.useCustomICEServers) {
@@ -170,6 +171,18 @@ export default (app: Application): void => {
       const peerID = params!.socketQuery!.peerID
       const instanceId = data.instanceID
       if (!peerID || !instanceId) throw new BadRequest('instanceID required')
+
+      const user = params!.user
+      const thisUserBanned = await app.service(moderationBanPath).find({
+        query: {
+          banUserId: user!.id,
+          banned: true,
+          $limit: 0
+        }
+      })
+      if (thisUserBanned.total > 0) {
+        throw new Forbidden('You are banned')
+      }
 
       const now = await getDateTimeSql()
       await app.service(instanceAttendancePath).patch(

@@ -1,44 +1,22 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
-import { extend, ExtensionFactory, hookstate, SetInitialStateAction, State, useHookstate } from '@hookstate/core'
+import {
+  extend,
+  ExtensionFactory,
+  hookstate,
+  SetInitialStateAction,
+  SetPartialStateAction,
+  State,
+  useHookstate
+} from '@hookstate/core'
 import { Identifiable, identifiable } from '@hookstate/identifiable'
 import type { Object as _Object, Function, String } from 'ts-toolbelt'
 
-import { DeepReadonly } from '../types/DeepReadonly'
 import { ActionQueueHandle, ActionReceptor } from './ActionFunctions'
-import { isClient } from './EnvironmentConstants'
 import { startReactor } from './ReactorFunctions'
-import { HyperFlux, HyperStore } from './StoreFunctions'
+import { HyperFlux } from './StoreFunctions'
 
 export * from '@hookstate/core'
 export { useHookstate as useState } from '@hookstate/core'
 export * from '@hookstate/identifiable'
-
-/** @deprecated */
-export const createState = hookstate
 
 export const NO_PROXY = { noproxy: true }
 export const NO_PROXY_STEALTH = { noproxy: true, stealth: true }
@@ -52,8 +30,6 @@ export type StateDefinition<S, I, E, Receptors extends ReceptorMap> = {
   receptors?: Receptors
   receptorActionQueue?: ActionQueueHandle
   reactor?: any // why does React.FC break types?
-  /** @deprecated use `extension` */
-  onCreate?: (store: HyperStore, state: State<S, I & E>) => void
 }
 
 export const StateDefinitions = new Map<string, StateDefinition<any, any, any, any>>()
@@ -62,14 +38,21 @@ export const setInitialState = (def: StateDefinition<any, any, any, any>) => {
   const initial = typeof def.initial === 'function' ? (def.initial as any)() : JSON.parse(JSON.stringify(def.initial))
   if (HyperFlux.store.stateMap[def.name]) {
     HyperFlux.store.stateMap[def.name].set(initial)
+    HyperFlux.store.valueMap[def.name] = initial
   } else {
-    const state = (HyperFlux.store.stateMap[def.name] = hookstate(
+    HyperFlux.store.stateMap[def.name] = hookstate(
       initial,
-      extend(identifiable(def.name), def.extension)
-    ))
-    if (def.onCreate) def.onCreate(HyperFlux.store, state)
+      extend(
+        identifiable(def.name),
+        () => ({
+          onSet: () => (HyperFlux.store.valueMap[def.name] = HyperFlux.store.stateMap[def.name]?.get(NO_PROXY))
+        }),
+        def.extension
+      )
+    )
+    HyperFlux.store.valueMap[def.name] = initial
     if (def.reactor) {
-      const reactor = startReactor(def.reactor)
+      const reactor = startReactor(def.reactor, `State - ${def.name}`)
       HyperFlux.store.stateReactors[def.name] = reactor
     }
   }
@@ -88,9 +71,9 @@ export function getMutableState<S, I, E, R extends ReceptorMap>(StateDefinition:
   return HyperFlux.store.stateMap[StateDefinition.name] as State<S, I & E & Identifiable>
 }
 
-export function getState<S>(StateDefinition: StateDefinition<S, any, any, any>) {
+export function getState<S, I, E, R extends ReceptorMap>(StateDefinition: StateDefinition<S, I, E, R>) {
   if (!HyperFlux.store.stateMap[StateDefinition.name]) setInitialState(StateDefinition)
-  return HyperFlux.store.stateMap[StateDefinition.name].get(NO_PROXY_STEALTH) as DeepReadonly<S>
+  return HyperFlux.store.valueMap[StateDefinition.name] as S
 }
 
 export type Paths<S> = S extends object
@@ -99,39 +82,83 @@ export type Paths<S> = S extends object
     }[keyof S]
   : []
 
-export function resolveObject<O extends object, P extends string>(
+export function resolveObject<O extends object, P extends string | ReadonlyArray<string | number>>(
   obj: O,
-  path: Function.AutoPath<O, P>
-): _Object.Path<O, String.Split<P, '.'>> {
-  const keyPath = Array.isArray(path) ? path : path.split('.')
+  path: P
+): _Object.Path<O, P extends string ? String.Split<P, '.'> : P> {
+  const keyPath = Array.isArray(path) ? path : (path as string).split('.')
   return keyPath.reduce((prev, curr) => prev?.[curr], obj as any)
 }
 
 export function getNestedObject(object: any, propertyName: string) {
+  if (propertyName === '') return { result: object, finalProp: '' }
+  if (propertyName.startsWith('.')) propertyName = propertyName.slice(1)
   const props = propertyName.split('.')
   let result = object
-
-  for (let i = 0; i < props.length - 1; i++) {
+  for (let i = 0; i < props.length; i++) {
+    if (typeof result !== 'object') continue
     let isNumber = false
-
     try {
-      Number(props[0])
-      isNumber = true
+      isNumber = !isNaN(Number(props[i]))
     } catch (e) {
       isNumber = false
     }
-
     let val = props[i] as string | number
+    if (isNumber) {
+      val = Number(val)
+    }
+    result = result[val]
+  }
+  return { result, finalProp: props[props.length - 1] }
+}
 
+export function setNestedObject(object: object, propertyName: string, value: any) {
+  if (propertyName === '') return { result: object, finalProp: '' }
+  if (propertyName.startsWith('.')) propertyName = propertyName.slice(1)
+  const props = propertyName.split('.')
+  let last = object
+  for (let i = 0; i < props.length - 1; i++) {
+    if (typeof last !== 'object') continue
+    let isNumber = false
+    try {
+      isNumber = !isNaN(Number(props[i]))
+    } catch (e) {
+      isNumber = false
+    }
+    let val = props[i] as string | number
     if (isNumber) {
       val = Number(val)
     }
 
-    if (typeof result[props[i]] === 'undefined') result[props[i]] = {}
-    result = result[props[i]]
-  }
+    if (!last[val]) {
+      if (isNumber) last[val] = []
+      else last[val] = {}
+    }
 
-  return { result, finalProp: props[props.length - 1] }
+    last = last[val]
+  }
+  last[props[props.length - 1]] = value
+}
+
+/** @todo unused */
+const _mergeStateValuesDeep = (target: State<any>, source: any) => {
+  if (typeof source !== 'object') {
+    target.set(source)
+    return
+  }
+  for (const key in target) {
+    if (typeof source[key] === 'object') {
+      if (source[key] === null) {
+        target[key].set(null)
+        return
+      }
+      if (Array.isArray(source[key])) {
+        target[key].set([...source[key]]) // clone array deeply rather than reference
+        return
+      }
+      _mergeStateValuesDeep(target[key], source[key]) // recurse objects
+    }
+  }
 }
 
 export function useMutableState<S, I, E, R extends ReceptorMap, P extends string>(
@@ -152,7 +179,7 @@ export function useMutableState<S, I, E, R extends ReceptorMap, P extends string
 
 export const stateNamespaceKey = 'ir.hyperflux'
 
-export interface SyncStateWithLocalAPI {}
+export type SyncStateWithLocalAPI = object
 
 /**
  * Automatically synchronises specific root paths of a hyperflux state definition with the localStorage.
@@ -168,20 +195,22 @@ export function syncStateWithLocalStorage<S, E extends Identifiable>(
   keys: string[]
 ): ExtensionFactory<S, E, SyncStateWithLocalAPI> {
   return () => {
-    if (!isClient) return {}
-
-    let rootState: State<S, E>
+    if (!globalThis.localStorage) return {}
 
     return {
       onInit: (state) => {
-        rootState = state
+        const newVals = {} as SetPartialStateAction<S>
         for (const key of keys) {
           const storedValue = localStorage.getItem(`${stateNamespaceKey}.${state.identifier}.${key}`)
-          if (storedValue !== null && storedValue !== 'undefined') state[key].set(JSON.parse(storedValue))
+          if (storedValue !== null && storedValue !== 'undefined') newVals[key] = JSON.parse(storedValue)
         }
+        state.merge(newVals)
       },
-      onSet: (state, desc) => {
-        for (const key of keys) {
+      onSet: (state, { path }, rootState) => {
+        if (path.length > 1) return
+        const keysToUpdate = path.length ? [(path as string[])[0]] : keys
+        for (const key of keysToUpdate) {
+          if (!keys.includes(key)) return
           const storageKey = `${stateNamespaceKey}.${rootState.identifier}.${key}`
           const value = rootState[key]?.get(NO_PROXY)
           // We should still store flags that have been set to false or null
@@ -189,6 +218,6 @@ export function syncStateWithLocalStorage<S, E extends Identifiable>(
           else localStorage.setItem(storageKey, JSON.stringify(value))
         }
       }
-    } as any
+    }
   }
 }

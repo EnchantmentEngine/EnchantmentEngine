@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import { createHash } from 'crypto'
 import { Consumer, PlainTransport, Router, RtpEncodingParameters } from 'mediasoup/node/lib/types'
 import { useEffect } from 'react'
@@ -33,13 +8,16 @@ import { RecordingAPIState } from '@ir-engine/common/src/recording/ECSRecordingS
 import { RecordingID, recordingResourceUploadPath, RecordingSchemaType } from '@ir-engine/common/src/schema.type.module'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { getMutableState, getState, none, PeerID } from '@ir-engine/hyperflux'
 import {
+  getMutableState,
+  getState,
   NetworkState,
-  screenshareAudioDataChannelType,
-  webcamAudioDataChannelType,
-  webcamVideoDataChannelType
-} from '@ir-engine/network'
+  none,
+  PeerID,
+  screenshareAudioMediaChannelType,
+  webcamAudioMediaChannelType,
+  webcamVideoMediaChannelType
+} from '@ir-engine/hyperflux'
 import { config } from '@ir-engine/server-core/src/config'
 import serverLogger from '@ir-engine/server-core/src/ServerLogger'
 
@@ -108,9 +86,9 @@ export const createTransport = async (router: Router, port: number, rtcpPort: nu
 }
 
 export type PeerMediaType = {
-  /** @deprecated - use ProducersConsumerState instead */
+  /** @deprecated use ProducersConsumerState instead */
   paused: boolean
-  /** @deprecated - use ProducersConsumerState instead */
+  /** @deprecated use ProducersConsumerState instead */
   globalMute: boolean
   producerId: string
   encodings: RtpEncodingParameters[]
@@ -201,7 +179,7 @@ export const startMediaRecordingPair = async (
   }
 }
 
-type onUploadPartArgs = {
+type OnUploadPartArgs = {
   recordingID: RecordingID
   key: string
   body: PassThrough
@@ -225,11 +203,11 @@ export const startMediaRecording = async (recordingID: RecordingID, schema: Reco
       const dataChannelType = producer.mediaTag
       if (!mediaStreams[peerID]) mediaStreams[peerID] = {}
       const mediaType =
-        dataChannelType === webcamAudioDataChannelType || dataChannelType === webcamVideoDataChannelType
+        dataChannelType === webcamAudioMediaChannelType || dataChannelType === webcamVideoMediaChannelType
           ? 'webcam'
           : 'screenshare'
       const trackType =
-        dataChannelType === webcamAudioDataChannelType || dataChannelType === screenshareAudioDataChannelType
+        dataChannelType === webcamAudioMediaChannelType || dataChannelType === screenshareAudioMediaChannelType
           ? 'audio'
           : 'video'
       if (!mediaStreams[peerID][mediaType]) mediaStreams[peerID][mediaType] = {}

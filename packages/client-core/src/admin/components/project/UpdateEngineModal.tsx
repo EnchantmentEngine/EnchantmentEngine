@@ -1,45 +1,20 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuInfo } from 'react-icons/lu'
 
-import { PopoverState } from '@ir-engine/client-core/src/common/services/PopoverState'
+import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { ProjectService, ProjectState } from '@ir-engine/client-core/src/common/services/ProjectService'
 import { useFind } from '@ir-engine/common'
 import { DefaultUpdateSchedule } from '@ir-engine/common/src/interfaces/ProjectPackageJsonType'
 import { ProjectType, ScopeType, engineSettingPath, scopePath } from '@ir-engine/common/src/schema.type.module'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Checkbox, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { AuthState } from '../../../user/services/AuthService'
 import { ProjectUpdateService, ProjectUpdateState } from '../../services/ProjectUpdateService'
 import AddEditProjectModal from './AddEditProjectModal'
@@ -73,7 +48,7 @@ export default function UpdateEngineModal() {
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'projects:read' as ScopeType
     }
   })
@@ -115,7 +90,7 @@ export default function UpdateEngineModal() {
         project.updateType,
         project.updateSchedule
       )
-      PopoverState.showPopupover(
+      ModalState.openModal(
         <AddEditProjectModal
           inputProject={project}
           update={true}
@@ -124,7 +99,7 @@ export default function UpdateEngineModal() {
               set.add(project.name)
               return set
             })
-            PopoverState.hidePopupover()
+            ModalState.closeModal()
           }}
         />
       )
@@ -157,12 +132,12 @@ export default function UpdateEngineModal() {
           }
         })
       )
-      PopoverState.hidePopupover()
+      ModalState.closeModal()
     } catch (err) {
       errors.set(err.message)
     }
     modalProcessing.set(false)
-    PopoverState.hidePopupover()
+    ModalState.closeModal()
   }
 
   useEffect(() => {
@@ -174,7 +149,7 @@ export default function UpdateEngineModal() {
       title={t('admin:components.project.updateEngine')}
       onSubmit={handleSubmit}
       className="w-[50vw]"
-      onClose={PopoverState.hidePopupover}
+      onClose={ModalState.closeModal}
       submitLoading={modalProcessing.value}
     >
       <div className="grid gap-6">
@@ -193,8 +168,7 @@ export default function UpdateEngineModal() {
             position: 'top'
           }}
           positioning={{
-            maxHeight: '200px',
-            direction: 'down'
+            maxHeight: '200px'
           }}
           options={selectCommitTagOptions}
           value={selectedCommitTag.value}
@@ -214,7 +188,7 @@ export default function UpdateEngineModal() {
 
         {updateProjects.value && (
           <>
-            <div className="flex items-center justify-center gap-3 rounded-lg bg-theme-bannerInformative p-4">
+            <div className="flex items-center justify-center gap-3 rounded-lg  p-4">
               <div>
                 <LuInfo className="h-5 w-5 bg-transparent" />
               </div>
@@ -222,9 +196,9 @@ export default function UpdateEngineModal() {
             </div>
             <div className="grid gap-2">
               {projectState.projects.value
-                .filter((project) => project.name !== 'ir-engine/default-project' && project.repositoryPath)
+                .filter((project) => project.name !== 'enchantmentengine/default-project' && project.repositoryPath)
                 .map((project) => (
-                  <div key={project.id} className="border border-theme-primary bg-theme-surfaceInput px-3.5 py-5">
+                  <div key={project.id} className="border   px-3.5 py-5">
                     <Checkbox
                       label={project.name}
                       checked={projectsToUpdate.value.has(project.name)}

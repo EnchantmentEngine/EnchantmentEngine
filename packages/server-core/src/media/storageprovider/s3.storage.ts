@@ -1,28 +1,3 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and
-provide for limited attribution for the Original Developer. In addition,
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   CloudFrontClient,
   CreateFunctionCommand,
@@ -72,6 +47,7 @@ import { ASSETS_REGEX, PROJECT_PUBLIC_REGEX, PROJECT_REGEX, PROJECT_THUMBNAIL_RE
 import { FileBrowserContentType } from '@ir-engine/common/src/schemas/media/file-browser.schema'
 
 import config from '../../appconfig'
+import { BaseStorageProvider } from './base.storage'
 import {
   PutObjectParams,
   SignedURLResponse,
@@ -91,16 +67,18 @@ function handler(event) {
     var avatarsRegex = new RegExp(avatarsRegexRoot)
     var recordingsRegexRoot = __$recordingsRegex$__
     var recordingsRegex = new RegExp(recordingsRegexRoot)
+    var reportsRegexRoot = __$reportsRegex$__
+    var reportsRegex = new RegExp(reportsRegexRoot)
     var publicRegexRoot = __$publicRegex$__
     var publicRegex = new RegExp(publicRegexRoot)
     var tempRegex = new RegExp('/temp/')
     
     if (publicRegex.test(request.uri)) {
         request.uri = '/client' + request.uri
-    } else if (projectsRegex.test(request.uri) || recordingsRegex.test(request.uri) || avatarsRegex.test(request.uri) || tempRegex.test(request.uri)) {
-        // Projects, temp files, avatars, and recordings paths should be passed as-is
+    } else if (projectsRegex.test(request.uri) || recordingsRegex.test(request.uri) || avatarsRegex.test(request.uri) || reportsRegex.test(request.uri) || tempRegex.test(request.uri)) {
+        // Projects, temp files, avatars, recordings, and reports paths should be passed as-is
     } else {
-      // Anything that is not a static/public file, or a project or recording file, is assumed to be some sort
+      // Anything that is not a static/public file, or a project, recording, avatar, or report file, is assumed to be some sort
       // of engine route and passed to index.html to be handled by the router
       request.uri = '/client/index.html'
     }
@@ -122,22 +100,25 @@ export const getACL = (key: string) =>
 /**
  * Storage provide class to communicate with AWS S3 API.
  */
-export class S3Provider implements StorageProviderInterface {
+export class S3Provider extends BaseStorageProvider implements StorageProviderInterface {
   constructor() {
+    super()
     if (!this.minioClient) this.getOriginURLs().then((result) => (this.originURLs = result))
     const awsCredentials = `[default]\naws_access_key_id=${config.aws.s3.accessKeyId}\naws_secret_access_key=${config.aws.s3.secretAccessKey}\n[role]\nrole_arn = ${config.aws.s3.roleArn}\nsource_profile = default`
 
     if (!fs.existsSync(awsPath)) fs.mkdirSync(awsPath, { recursive: true })
-    fs.writeFileSync(credentialsPath, Buffer.from(awsCredentials))
+    fs.writeFileSync(credentialsPath, awsCredentials)
 
     this.provider = new S3Client({
+      requestHandler: {
+        requestTimeout: 5_000,
+        httpsAgent: { maxSockets: 300 }
+      },
       credentials: fromIni({
         profile: config.aws.s3.roleArn ? 'role' : 'default',
         filepath: credentialsPath
       }),
-      endpoint: config.server.storageProviderExternalEndpoint
-        ? config.server.storageProviderExternalEndpoint
-        : config.aws.s3.endpoint,
+      endpoint: config.server.storageProviderExternalEndpoint || config.aws.s3.endpoint || undefined,
       region: config.aws.s3.region,
       forcePathStyle: true,
       maxAttempts: 5
@@ -152,7 +133,7 @@ export class S3Provider implements StorageProviderInterface {
   /**
    * Name of S3 bucket.
    */
-  bucket = config.aws.s3.staticResourceBucket
+  bucket = config.aws.s3.staticResourceBucket as string
 
   /**
    * Instance of S3 service object. This object has one method for each API operation.
@@ -162,18 +143,8 @@ export class S3Provider implements StorageProviderInterface {
   minioClient =
     config.aws.s3.s3DevMode === 'local'
       ? new Client({
-          endPoint: new URL(
-            config.server.storageProviderExternalEndpoint
-              ? config.server.storageProviderExternalEndpoint
-              : config.aws.s3.endpoint
-          ).hostname,
-          port: parseInt(
-            new URL(
-              config.server.storageProviderExternalEndpoint
-                ? config.server.storageProviderExternalEndpoint
-                : config.aws.s3.endpoint
-            ).port
-          ),
+          endPoint: new URL(config.server.storageProviderExternalEndpoint || config.aws.s3.endpoint).hostname,
+          port: parseInt(new URL(config.server.storageProviderExternalEndpoint || config.aws.s3.endpoint).port),
           useSSL: true,
           accessKey: config.aws.s3.accessKeyId,
           secretKey: config.aws.s3.secretAccessKey
@@ -200,7 +171,7 @@ export class S3Provider implements StorageProviderInterface {
         : config.aws.cloudfront.domain
       : `${config.aws.cloudfront.domain}/${this.bucket}`
 
-  originURLs = [this.cacheDomain]
+  originURLs = [this.cacheDomain as string]
 
   private bucketAssetURL =
     config.server.storageProvider === 's3'
@@ -337,7 +308,7 @@ export class S3Provider implements StorageProviderInterface {
    */
   async putObject(data: StorageObjectPutInterface, params: PutObjectParams = {}): Promise<boolean> {
     if (!data.Key) return false
-    // key should not contain '/' at the begining
+    // key should not contain '/' at the beginning
     const key = data.Key[0] === '/' ? data.Key.substring(1) : data.Key
 
     const args = params.isDirectory
@@ -456,7 +427,7 @@ export class S3Provider implements StorageProviderInterface {
   }
 
   /**
-   * Invalidate items in the S3 storage.
+   * Invalidate items in S3
    * @param invalidationItems List of keys.
    */
   async createInvalidation(invalidationItems: string[]) {
@@ -507,6 +478,7 @@ export class S3Provider implements StorageProviderInterface {
     const projectsRegex = '^/projects/'
     const recordingsRegex = '^/recordings/'
     const avatarsRegex = '^/avatars/'
+    const reportsRegex = '^/reports/'
     let publicRegex = ''
     fs.readdirSync(path.join(appRootPath.path, 'packages', 'client', 'dist'), { withFileTypes: true }).forEach(
       (dirent) => {
@@ -526,6 +498,7 @@ export class S3Provider implements StorageProviderInterface {
     return CFFunctionTemplate.replace('__$projectsRegex$__', `'${projectsRegex}'`)
       .replace('__$avatarsRegex$__', `'${avatarsRegex}'`)
       .replace('__$recordingsRegex$__', `'${recordingsRegex}'`)
+      .replace('__$reportsRegex$__', `'${reportsRegex}'`)
       .replace('__$publicRegex$__', `'${publicRegex}'`)
   }
 
@@ -679,26 +652,49 @@ export class S3Provider implements StorageProviderInterface {
    */
   async listFolderContent(folderName: string, recursive = false): Promise<FileBrowserContentType[]> {
     folderName = folderName.endsWith('/') ? folderName : folderName + '/'
+    this.checkBlacklistedPrefix(folderName)
     const folderContent = await this.listObjects(folderName, recursive)
 
     const promises: Promise<FileBrowserContentType>[] = []
 
     // Folders
-    for (let i = 0; i < folderContent.CommonPrefixes!.length; i++) {
-      promises.push(
-        new Promise(async (resolve) => {
-          const key = folderContent.CommonPrefixes![i].Prefix.slice(0, -1)
-          const size = await this.getFolderSize(key)
-          const cont: FileBrowserContentType = {
-            key,
-            url: `${this.bucketAssetURL}/${key}`,
-            name: key.split('/').pop()!,
-            type: 'folder',
-            size
-          }
-          resolve(cont)
-        })
-      )
+    if (!recursive) {
+      for (let i = 0; i < folderContent.CommonPrefixes!.length; i++) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const key = folderContent.CommonPrefixes![i].Prefix.slice(0, -1)
+            const size = await this.getFolderSize(key)
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').pop()!,
+              type: 'folder',
+              size
+            }
+            resolve(cont)
+          })
+        )
+      }
+    }
+
+    if (recursive) {
+      const folders = this.getUniqueFolderPathsFromFiles(folderContent.Contents, folderName)
+      for (let i = 0; i < folders.length; i++) {
+        promises.push(
+          new Promise(async (resolve) => {
+            const key = folders[i].endsWith('/') ? folders[i].slice(0, -1) : folders[i]
+            const size = await this.getFolderSize(key)
+            const cont: FileBrowserContentType = {
+              key,
+              url: `${this.bucketAssetURL}/${key}`,
+              name: key.split('/').pop()!,
+              type: 'folder',
+              size
+            }
+            resolve(cont)
+          })
+        )
+      }
     }
 
     // Files
@@ -723,6 +719,33 @@ export class S3Provider implements StorageProviderInterface {
     }
 
     return await Promise.all(promises)
+  }
+
+  private getUniqueFolderPathsFromFiles(folderObjects: { Key: string }[], prefix: string): string[] {
+    prefix = prefix.startsWith('/') ? prefix.substring(1) : prefix
+
+    if (!prefix.endsWith('/')) {
+      prefix = prefix + '/'
+    }
+
+    const folders = new Set<string>()
+
+    folderObjects.forEach((item) => {
+      const key = item.Key
+      if (key.startsWith(prefix)) {
+        const relativePath = key.substring(prefix.length)
+
+        const parts = relativePath.split('/')
+        let currentPath = prefix
+
+        for (let i = 0; i < parts.length - 1; i++) {
+          currentPath += parts[i] + '/'
+          folders.add(currentPath)
+        }
+      }
+    })
+
+    return Array.from(folders).sort()
   }
 
   async getFolderSize(folderName: string): Promise<number> {

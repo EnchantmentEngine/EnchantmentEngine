@@ -1,36 +1,11 @@
-/*
-CPAL-1.0 License
-
-The contents of this file are subject to the Common Public Attribution License
-Version 1.0. (the "License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at
-https://github.com/ir-engine/ir-engine/blob/dev/LICENSE.
-The License is based on the Mozilla Public License Version 1.1, but Sections 14
-and 15 have been added to cover use of software over a computer network and 
-provide for limited attribution for the Original Developer. In addition, 
-Exhibit A has been modified to be consistent with Exhibit B.
-
-Software distributed under the License is distributed on an "AS IS" basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the
-specific language governing rights and limitations under the License.
-
-The Original Code is Infinite Reality Engine.
-
-The Original Developer is the Initial Developer. The Initial Developer of the
-Original Code is the Infinite Reality Engine team.
-
-All portions of the code written by the Infinite Reality Engine team are Copyright © 2021-2023 
-Infinite Reality Engine. All Rights Reserved.
-*/
-
 import {
   Entity,
+  EntityTreeComponent,
   UndefinedEntity,
   createEngine,
   createEntity,
   destroyEngine,
   getComponent,
-  getMutableComponent,
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
@@ -40,11 +15,9 @@ import { Matrix4, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { assertArray, assertVec } from '../../tests/util/assert'
 import { mockSpatialEngine } from '../../tests/util/mockSpatialEngine'
-import { EngineState } from '../EngineState'
-import { TransformComponent } from '../SpatialModule'
+import { ReferenceSpaceState, TransformComponent } from '../SpatialModule'
 import { Vector3_One } from '../common/constants/MathConstants'
 import { ReferenceSpace, XRState } from '../xr/XRState'
-import { EntityTreeComponent } from './components/EntityTree'
 import {
   computeAndUpdateWorldOrigin,
   updateWorldOrigin,
@@ -59,13 +32,13 @@ describe('updateWorldOriginFromScenePlacement', () => {
   beforeEach(async () => {
     createEngine()
     mockSpatialEngine()
-    localFloorEntity = getState(EngineState).localFloorEntity
+    localFloorEntity = getState(ReferenceSpaceState).localFloorEntity
 
     for (let id = 0; id < childrenCount; ++id) {
       children[id] = createEntity()
       setComponent(children[id], TransformComponent)
     }
-    getMutableComponent(localFloorEntity, EntityTreeComponent).children.set(children)
+    getComponent(localFloorEntity, EntityTreeComponent).children = children
   })
 
   afterEach(() => {
@@ -73,10 +46,10 @@ describe('updateWorldOriginFromScenePlacement', () => {
     return destroyEngine()
   })
 
-  it('should set the value of XRState.worldScale into all components of TransformComponent.scale for all children of EngineState.originEntity', () => {
+  it('should set the value of XRState.worldScale into all components of TransformComponent.scale for all children of ReferenceSpaceState.originEntity', () => {
     const scale = 42
     const Initial = new Vector3().setScalar(scale)
-    const children = getComponent(getState(EngineState).originEntity, EntityTreeComponent).children
+    const children = getComponent(getState(ReferenceSpaceState).originEntity, EntityTreeComponent).children
     for (const child of children) {
       // Set the data as expected
       setComponent(child, TransformComponent, { scale: Initial })
@@ -114,7 +87,7 @@ describe('updateWorldOriginFromScenePlacement', () => {
     const scale = Vector3_One.clone()
     const Initial = new Matrix4().compose(position, rotation, scale).invert()
     // Set the data as expected
-    getMutableComponent(localFloorEntity, TransformComponent).matrixWorld.set(Initial)
+    getComponent(localFloorEntity, TransformComponent).matrixWorld = Initial
     // Sanity check before running
     const before = getComponent(localFloorEntity, TransformComponent)
     assertArray.allNotEq(before.matrix.elements, before.matrixWorld.elements)
@@ -174,7 +147,7 @@ describe('updateWorldOrigin', () => {
   beforeEach(async () => {
     createEngine()
     mockSpatialEngine()
-    localFloorEntity = getState(EngineState).localFloorEntity
+    localFloorEntity = getState(ReferenceSpaceState).localFloorEntity
   })
 
   afterEach(() => {
@@ -211,7 +184,7 @@ describe.skip('computeAndUpdateWorldOrigin', () => {
   beforeEach(async () => {
     createEngine()
     mockSpatialEngine()
-    localFloorEntity = getState(EngineState).localFloorEntity
+    localFloorEntity = getState(ReferenceSpaceState).localFloorEntity
   })
 
   afterEach(() => {
