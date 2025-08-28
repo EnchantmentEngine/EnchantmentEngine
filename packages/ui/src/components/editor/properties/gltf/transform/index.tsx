@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ModelTransformParameters } from '@ir-engine/engine/src/assets/classes/ModelTransform'
+import { ModelTransformParameters } from '@ir-engine/editor/src/optimize/ModelTransform'
 import { State } from '@ir-engine/hyperflux'
 import { Checkbox, Input, Select } from '@ir-engine/ui'
 import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
