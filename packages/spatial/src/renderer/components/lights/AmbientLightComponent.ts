@@ -3,8 +3,7 @@ import { AmbientLight } from 'three'
 
 import { defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
+import { Schema, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import { T } from '../../../schema/schemaFunctions'
 import { ObjectComponent } from '../ObjectComponent'
 import { LightTagComponent } from './LightTagComponent'
@@ -13,9 +12,9 @@ export const AmbientLightComponent = defineComponent({
   name: 'AmbientLightComponent',
   jsonID: 'EE_ambient_light',
 
-  schema: S.Object({
+  schema: Schema.Object({
     color: T.Color(0xffffff),
-    intensity: S.Number({ default: 1 })
+    intensity: Schema.Number({ default: 1 })
   }),
 
   reactor: function () {
@@ -32,11 +31,11 @@ export const AmbientLightComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      light.color.set(ambientLightComponent.color.value)
+      light.color.set(ambientLightComponent.color)
     }, [ambientLightComponent.color])
 
     useEffect(() => {
-      light.intensity = ambientLightComponent.intensity.value
+      light.intensity = ambientLightComponent.intensity
     }, [ambientLightComponent.intensity])
 
     return null

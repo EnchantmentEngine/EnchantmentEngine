@@ -253,13 +253,13 @@ export const PostProcessingSettingsEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="Post Processing Enabled" label={t('editor:properties.postprocessing.enabled')}>
         <Checkbox
-          checked={postprocessing.enabled.value}
+          checked={postprocessing.enabled}
           onChange={(val) => {
             commitProperty(PostProcessingComponent, 'enabled')(val)
           }}
         />
       </InputGroup>
-      {postprocessing.enabled.value && (
+      {postprocessing.enabled && (
         <>
           <Accordion onClick={() => setOpenSettings(!openSettings)} title={t('editor:properties.postprocessing.name')}>
             {renderEffects()}

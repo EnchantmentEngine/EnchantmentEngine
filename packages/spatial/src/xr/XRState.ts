@@ -1,19 +1,9 @@
 import { Quaternion, Vector3 } from 'three'
-import matches from 'ts-matches'
 
-import { defineAction, defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
+import { UndefinedEntity } from '@ir-engine/ecs'
 import { DepthDataTexture } from './DepthDataTexture'
-
-export class XRAction {
-  // todo, support more haptic formats other than just vibrating controllers
-  static vibrateController = defineAction({
-    type: 'xre.xr.vibrateController',
-    handedness: matches.literals('left', 'right'),
-    value: matches.number,
-    duration: matches.number
-  })
-}
 
 // TODO: divide this up into the systems that manage these states
 export const XRState = defineState({
@@ -34,6 +24,7 @@ export const XRState = defineState({
         'immersive-ar': false,
         'immersive-vr': false
       },
+      cameraAttachedEntity: UndefinedEntity,
       avatarCameraMode: 'auto' as 'auto' | 'attached' | 'detached',
       unassingedInputSources: [] as XRInputSource[],
       session: null as XRSession | null,
@@ -81,10 +72,11 @@ export const XRState = defineState({
   },
 
   /**
-   * Specifies that the camera is attached to the avatar if:
+   * Specifies that the camera should be attached to the controller if:
    * - in an immersion session and not in placement mode or miniature mode
+   * @todo rename this to 'shouldViewerFollowController' for clarity
    */
-  get isCameraAttachedToAvatar(): boolean {
+  get shouldViewerFollowController(): boolean {
     const { session, sceneScale, scenePlacementMode, avatarCameraMode } = getState(XRState)
     if (!session || scenePlacementMode === 'placing') return false
     if (avatarCameraMode === 'auto') {
@@ -93,7 +85,7 @@ export const XRState = defineState({
     return avatarCameraMode === 'attached'
   },
 
-  useCameraAttachedToAvatar: () => {
+  useShouldViewerFollowController: () => {
     const { session, sceneScale, scenePlacementMode, avatarCameraMode } = useMutableState(XRState).value
     if (!session || scenePlacementMode === 'placing') return false
     if (avatarCameraMode === 'auto') {

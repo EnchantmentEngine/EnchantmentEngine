@@ -16,12 +16,12 @@ const LinkErrorReactor = () => {
   const { t } = useTranslation()
 
   useEffect(() => {
-    const linkErrors = errorComponent?.[LinkComponent.name].value
+    const linkErrors = errorComponent?.[LinkComponent.name]
     if (linkErrors?.[LINK_ERROR_TYPE]) {
       NotificationService.dispatchNotify(t('user:common.windowBlocked'), { variant: 'error' })
       removeError(entity, LinkComponent, LINK_ERROR_TYPE)
     }
-  }, [errorComponent?.value])
+  }, [errorComponent?.[LinkComponent.name]])
 
   return null
 }

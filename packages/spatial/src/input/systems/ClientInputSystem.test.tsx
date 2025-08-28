@@ -8,7 +8,6 @@ import {
   Entity,
   entityExists,
   getComponent,
-  getMutableComponent,
   hasComponent,
   InputSystemGroup,
   PresentationSystemGroup,
@@ -141,7 +140,7 @@ describe('client input system reactor', () => {
   //   mockXRFrame.pose.transform.orientation.y = 0.8455
   //   mockXRFrame.pose.transform.orientation.z = 0.2454
   //   mockXRFrame.pose.transform.orientation.w = 0.2743
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(XRState).xrFrame.set(mockXRFrame as unknown as XRFrame)
   //   setComponent(entity, InputSourceComponent, { source: mockXRInputSource })
   //   setComponent(entity, XRSpaceComponent, new MockXRSpace() as XRSpace)
@@ -167,7 +166,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(XRUIState).interactionRays.set([
   //     new Ray(new Vector3(0.23, 0.65, 0.98), new Vector3(0.21, 0.43, 0.82))
   //   ])
@@ -207,7 +206,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(PhysicsState).physicsWorld.set({
   //     castRayAndGetNormal: () => {
   //       return {
@@ -248,7 +247,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   setComponent(entity, BoundingBoxComponent)
   //   setComponent(entity, InputComponent)
   //   setComponent(entity, VisibleComponent)
@@ -398,13 +397,10 @@ describe('ClientInputCleanupSystem', () => {
 
       // Set the expected data
       for (const entity of EntityList) {
-        const gamepad = getMutableComponent(entity, InputSourceComponent).source.gamepad!
-        for (let id = 0; id < gamepad?.value!.axes.length; ++id) {
-          gamepad.set((value) => {
-            // @ts-ignore Ignore the readonly property typecheck
-            if (value) value.axes[id] = Initial
-            return value
-          })
+        const gamepad = getComponent(entity, InputSourceComponent).source.gamepad
+        for (let id = 0; id < gamepad!.axes.length; ++id) {
+          // @ts-expect-error
+          gamepad!.axes[id] = Initial
         }
       }
 
@@ -435,7 +431,7 @@ describe('ClientInputCleanupSystem', () => {
 
     //   // Set the expected data
     //   for (const entity of EntityList) {
-    //     const gamepad = getMutableComponent(entity, InputSourceComponent).source.gamepad!
+    //     const gamepad = getComponent(entity, InputSourceComponent).source.gamepad!
     //     gamepad.set((value) => {
     //       if (!value) value = { axes: [0, 0, 0, 0] } as unknown as Gamepad
     //       for (let id = 0; id < value!.axes.length; ++id) {

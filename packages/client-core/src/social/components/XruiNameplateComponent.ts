@@ -4,15 +4,14 @@ import {
   defineComponent,
   ECSState,
   Entity,
+  EntitySchema,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   NetworkObjectComponent,
   removeComponent,
   removeEntity,
-  S,
   setComponent,
   UndefinedEntity,
   useComponent,
@@ -20,7 +19,7 @@ import {
 } from '@ir-engine/ecs'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { createUI } from '@ir-engine/engine/src/interaction/functions/createUI'
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { inFrustum } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { createTransitionState } from '@ir-engine/spatial/src/common/functions/createTransitionState'
@@ -46,9 +45,9 @@ function getSelfAvatarHeadPosition(selfAvatarEntity: Entity, vec3: Vector3): voi
 
 export const XruiNameplateComponent = defineComponent({
   name: 'XruiNameplateComponent',
-  schema: S.Object({
-    uiEntity: S.Entity(),
-    nameLabel: S.String()
+  schema: Schema.Object({
+    uiEntity: EntitySchema.Entity(),
+    nameLabel: Schema.String()
   }),
 
   Transitions: new Map<Entity, ReturnType<typeof createTransitionState>>(),
@@ -56,7 +55,7 @@ export const XruiNameplateComponent = defineComponent({
   reactor: () => {
     const entity = useEntityContext()
     const networkObject = useComponent(entity, NetworkObjectComponent)
-    const user = useGet(userPath, networkObject.ownerId.value)
+    const user = useGet(userPath, networkObject.ownerId)
 
     useEffect(() => {
       if (!user.data?.name || getState(XruiNameplateState).isVisible === false) return
@@ -91,9 +90,7 @@ const addNameplateUI = (entity: Entity, username: string) => {
   const avatar = getOptionalComponent(entity, AvatarComponent)
 
   uiTransform.position.set(0, avatar?.avatarHeight ?? xruiNamePlateParams.defaultNamePlateHeight, 0)
-  const nameplateComponent = getMutableComponent(entity, XruiNameplateComponent)
-
-  nameplateComponent.uiEntity.set(uiEntity)
+  setComponent(entity, XruiNameplateComponent, { uiEntity })
 
   setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(uiEntity, ComputedTransformComponent, {

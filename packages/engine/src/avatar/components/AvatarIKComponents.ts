@@ -1,9 +1,9 @@
 import { AxesHelper, Quaternion, Vector3 } from 'three'
 
-import { NetworkObjectComponent, S, UUIDComponent, useEntityContext } from '@ir-engine/ecs'
+import { NetworkObjectComponent, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import { defineComponent, getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, Schema, useHookstate } from '@ir-engine/hyperflux'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -90,7 +90,7 @@ export const getHandTarget = (entity: Entity, hand: XRHandedness): HandTargetRet
 
 export const IKMatrixComponent = defineComponent({
   name: 'IKMatricesComponent',
-  schema: S.Object({
+  schema: Schema.Object({
     /** contains ik solve data */
     local: T.Mat4(),
     world: T.Mat4()

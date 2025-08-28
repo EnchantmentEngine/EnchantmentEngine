@@ -1,5 +1,5 @@
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 /**
  * Component for entities that serve as hotspots within a POI.
@@ -9,8 +9,8 @@ export const PoiHotspotComponent = defineComponent({
   name: 'PoiHotspotComponent',
   jsonID: 'IR_poi_hotspot_component',
 
-  schema: S.Object({
-    title: S.String({ default: '', $comment: 'Optional title or label for this hotspot' }),
-    description: S.String({ default: '', $comment: 'Optional description for this hotspot' })
+  schema: Schema.Object({
+    title: Schema.String({ default: '', $comment: 'Optional title or label for this hotspot' }),
+    description: Schema.String({ default: '', $comment: 'Optional description for this hotspot' })
   })
 })

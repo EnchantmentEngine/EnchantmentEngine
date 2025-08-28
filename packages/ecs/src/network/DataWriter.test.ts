@@ -4,9 +4,18 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 import { createEntity, NetworkSchemaState } from '@ir-engine/ecs'
 import { defineComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { getMutableState, getState, Network, NetworkState, NetworkTopics, PeerID, UserID } from '@ir-engine/hyperflux'
+import {
+  getMutableState,
+  getState,
+  HyperFlux,
+  Network,
+  NetworkState,
+  NetworkTopics,
+  PeerID,
+  UserID
+} from '@ir-engine/hyperflux'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { roundNumberToPlaces } from '@ir-engine/ecs/tests/MathTestUtils'
@@ -506,7 +515,7 @@ describe('DataWriter', () => {
   })
 
   it('should createDataWriter', () => {
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
 
     const write = createDataWriter()
 
@@ -551,7 +560,7 @@ describe('DataWriter', () => {
       })
     })
 
-    const packet = write(network, Engine.instance.store.peerID, entities)
+    const packet = write(network, HyperFlux.store.peerID, entities)
 
     const expectedBytes =
       2 * Uint32Array.BYTES_PER_ELEMENT +

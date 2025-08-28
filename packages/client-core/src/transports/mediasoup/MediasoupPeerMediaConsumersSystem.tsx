@@ -6,10 +6,10 @@ import {
   MediasoupMediaProducerConsumerState,
   MediasoupMediaProducersConsumersObjectsState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
   getMutableState,
   getState,
+  HyperFlux,
   NetworkState,
   PeerID,
   useHookstate,
@@ -200,7 +200,7 @@ export const PeerMediaChannels = () => {
   useEffect(() => {
     const mediaChannelPeers = mediaNetwork?.peers?.keys?.length
       ? Array.from(mediaNetwork.peers.keys as PeerID[]).filter(
-          (peerID) => peerID !== mediaNetwork.value.hostPeerID && peerID !== Engine.instance.store.peerID
+          (peerID) => peerID !== mediaNetwork.value.hostPeerID && peerID !== HyperFlux.store.peerID
         )
       : []
     mediaPeers.set(mediaChannelPeers)

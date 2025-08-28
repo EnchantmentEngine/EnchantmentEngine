@@ -20,7 +20,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '../../common/NameComponent'
 import { setVisibleComponent } from '../../renderer/components/VisibleComponent'
 import { T } from '../../schema/schemaFunctions'
@@ -111,10 +111,10 @@ void main() {
 export const InfiniteGridComponent = defineComponent({
   name: 'InfiniteGridComponent',
 
-  schema: S.Object({
-    size: S.Number({ default: 1 }),
+  schema: Schema.Object({
+    size: Schema.Number({ default: 1 }),
     color: T.Color(0x535353),
-    distance: S.Number({ default: 200 })
+    distance: Schema.Number({ default: 200 })
   }),
 
   reactor: () => {
@@ -133,10 +133,10 @@ export const InfiniteGridComponent = defineComponent({
           new ShaderMaterial({
             side: DoubleSide,
             uniforms: {
-              uColor: { value: component.color.value },
-              uSize1: { value: component.size.value },
-              uSize2: { value: component.size.value * 10 },
-              uDistance: { value: component.distance.value }
+              uColor: { value: component.color },
+              uSize1: { value: component.size },
+              uSize2: { value: component.size * 10 },
+              uDistance: { value: component.distance }
             },
             transparent: true,
             vertexShader: vertexShaderGrid,
@@ -165,26 +165,26 @@ export const InfiniteGridComponent = defineComponent({
     }, [engineRendererSettings.gridHeight])
 
     useEffect(() => {
-      mesh.material.uniforms.uColor.value = component.color.value
+      mesh.material.uniforms.uColor.value = component.color
     }, [component.color])
 
     useEffect(() => {
-      const size = component.size.value
+      const size = component.size
       mesh.material.uniforms.uSize1.value = size
       mesh.material.uniforms.uSize2.value = size * 10
     }, [component.size])
 
     useEffect(() => {
       if (!mesh) return
-      mesh.material.uniforms.uDistance.value = component.distance.value
+      mesh.material.uniforms.uDistance.value = component.distance
 
       const lineEntities = [] as Entity[]
       const lineColors = ['red', 'green', 'blue']
       for (let i = 0; i < lineColors.length; i++) {
         const lineGeometry = new BufferGeometry()
         const floatArray = [0, 0, 0, 0, 0, 0]
-        floatArray[i] = -component.distance.value
-        floatArray[i + 3] = component.distance.value
+        floatArray[i] = -component.distance
+        floatArray[i + 3] = component.distance
         const linePositions = new Float32Array(floatArray)
         lineGeometry.setAttribute('position', new BufferAttribute(linePositions, 3))
         const lineMaterial = new LineBasicMaterial({

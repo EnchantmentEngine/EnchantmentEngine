@@ -5,7 +5,8 @@ import {
   EntityTreeComponent,
   UndefinedEntity,
   createEntity,
-  getMutableComponent,
+  getComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useComponent
@@ -108,12 +109,12 @@ export const SpotLightHelperReactor: React.FC = (props: { parentEntity; iconEnti
     const helperEntity = createEntity()
     setComponent(helperEntity, EntityTreeComponent, { parentEntity })
 
-    const gizmoGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle.value, spotLightComponent.range.value)
+    const gizmoGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle, spotLightComponent.range)
 
     setComponent(helperEntity, LineSegmentComponent, {
       name: 'spot-light-helper',
       geometry: gizmoGeometry?.clone(),
-      color: spotLightComponent.color.value,
+      color: spotLightComponent.color,
       opacity: 0
     })
 
@@ -142,17 +143,22 @@ export const SpotLightHelperReactor: React.FC = (props: { parentEntity; iconEnti
   useEffect(() => {
     if (spotLightHelperEntity.value === UndefinedEntity) return
 
-    const helper = getMutableComponent(spotLightHelperEntity.value, LineSegmentComponent)
-    if (!helper) return
+    if (!hasComponent(spotLightHelperEntity.value, LineSegmentComponent)) return
 
-    helper.color.set(hovered ? BOUNDING_BOX_COLORS.HOVERED : spotLightComponent.color.value)
-
-    const newGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle.value, spotLightComponent.range.value)
-
-    if (helper.geometry.value) {
-      helper.geometry.value.dispose()
+    const oldGeometry = getComponent(spotLightHelperEntity.value, LineSegmentComponent).geometry
+    if (oldGeometry) {
+      oldGeometry.dispose()
     }
-    helper.geometry.set(newGeometry)
+    setComponent(spotLightHelperEntity.value, LineSegmentComponent, {
+      color: hovered ? BOUNDING_BOX_COLORS.HOVERED : spotLightComponent.color
+    })
+
+    const newGeometry = createSpotLightGizmoGeometry(spotLightComponent.angle, spotLightComponent.range)
+
+    if (oldGeometry) {
+      oldGeometry.dispose()
+    }
+    setComponent(spotLightHelperEntity.value, LineSegmentComponent, { geometry: newGeometry })
   }, [spotLightHelperEntity, spotLightComponent.color, spotLightComponent.angle, spotLightComponent.range, hovered])
 
   return null

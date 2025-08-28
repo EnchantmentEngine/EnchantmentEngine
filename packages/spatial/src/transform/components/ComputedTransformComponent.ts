@@ -1,11 +1,12 @@
+import { EntitySchema } from '@ir-engine/ecs'
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const ComputedTransformComponent = defineComponent({
   name: 'ComputedTransformComponent',
 
-  schema: S.Object({
-    referenceEntities: S.Array(S.Entity()),
-    computeFunction: S.Call()
+  schema: Schema.Object({
+    referenceEntities: Schema.Array(EntitySchema.Entity()),
+    computeFunction: Schema.Func([], Schema.Void())
   })
 })

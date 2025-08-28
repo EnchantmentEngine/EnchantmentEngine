@@ -5,7 +5,8 @@ import {
   EntityTreeComponent,
   UndefinedEntity,
   createEntity,
-  getMutableComponent,
+  getComponent,
+  hasComponent,
   removeEntity,
   setComponent,
   useComponent
@@ -106,8 +107,8 @@ export const PointLightHelperReactor: React.FC = (props: { parentEntity; iconEnt
     setComponent(helperEntity, EntityTreeComponent, { parentEntity })
     setComponent(helperEntity, LineSegmentComponent, {
       name: 'point-light-helper',
-      geometry: createPointLightGizmoGeometry(pointLight.range.value)?.clone(),
-      color: pointLight.color.value,
+      geometry: createPointLightGizmoGeometry(pointLight.range)?.clone(),
+      color: pointLight.color,
       opacity: 0
     })
     pointLightHelperEntity.set(helperEntity)
@@ -136,15 +137,20 @@ export const PointLightHelperReactor: React.FC = (props: { parentEntity; iconEnt
   useEffect(() => {
     if (pointLightHelperEntity.value === UndefinedEntity) return
 
-    const helper = getMutableComponent(pointLightHelperEntity.value, LineSegmentComponent)
-    helper.color.set(hovered ? BOUNDING_BOX_COLORS.HOVERED : pointLight.color.value)
+    if (!hasComponent(pointLightHelperEntity.value, LineSegmentComponent)) return
+    setComponent(pointLightHelperEntity.value, LineSegmentComponent, {
+      color: hovered ? BOUNDING_BOX_COLORS.HOVERED : pointLight.color
+    })
 
-    const newGeometry = createPointLightGizmoGeometry(pointLight.range.value)
-
-    if (newGeometry) {
-      helper.geometry.value?.dispose()
-      helper.geometry.set(newGeometry)
+    const oldGeometry = getComponent(pointLightHelperEntity.value, LineSegmentComponent).geometry
+    if (oldGeometry) {
+      oldGeometry?.dispose()
     }
+
+    const newGeometry = createPointLightGizmoGeometry(pointLight.range)
+    setComponent(pointLightHelperEntity.value, LineSegmentComponent, {
+      geometry: newGeometry
+    })
   }, [pointLightHelperEntity.value, pointLight.color, pointLight.range, hovered])
 
   return null

@@ -15,13 +15,11 @@ import {
 
 import {
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { AnimationState } from '@ir-engine/engine/src/avatar/AnimationManager'
@@ -30,6 +28,7 @@ import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComp
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { PlayMode, PlayModeType } from '@ir-engine/engine/src/scene/constants/PlayMode'
 import { dispatchAction, getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
@@ -149,8 +148,7 @@ export const playAudio = makeFlowNodeDefinition({
       playMode: playMode!,
       seekTime: seekTime
     }) // play
-    const component = getMutableComponent(entity, MediaComponent)
-    component.paused.set(paused)
+    setComponent(entity, MediaComponent, { paused })
     commit('flow')
   }
 })
@@ -348,7 +346,7 @@ export const setCameraZoom = makeFlowNodeDefinition({
   out: { flow: 'flow' },
   initialState: undefined,
   triggered: ({ read, commit }) => {
-    const entity = Engine.instance.cameraEntity
+    const entity = getState(ReferenceSpaceState).viewerEntity
     const zoom = read<number>('zoom')
     setComponent(entity, FollowCameraComponent, { targetDistance: zoom })
     commit('flow')

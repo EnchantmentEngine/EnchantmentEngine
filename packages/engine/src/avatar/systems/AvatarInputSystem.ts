@@ -3,14 +3,12 @@ import { Quaternion } from 'three'
 import {
   ComponentType,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   hasComponent,
   removeComponent,
   setComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
@@ -34,6 +32,7 @@ import { applyInputSourcePoseToIKTargets } from '../functions/applyInputSourcePo
 import { setIkFootTarget } from '../functions/avatarFootHeuristics'
 
 import { EngineState, Entity } from '@ir-engine/ecs'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { getThumbstickOrThumbpadAxes } from '@ir-engine/spatial/src/input/functions/getThumbstickOrThumbpadAxes'
 
@@ -94,14 +93,15 @@ export const AvatarAxesControlSchemeBehavior = {
 const onShiftLeft = () => {
   const entity = AvatarComponent.getSelfAvatarEntity()
   if (!entity) return
-  const controller = getMutableComponent(entity, AvatarControllerComponent)
-  controller.isWalking.set(!controller.isWalking.value)
+  setComponent(entity, AvatarControllerComponent, {
+    isWalking: !getComponent(entity, AvatarControllerComponent).isWalking
+  })
 }
 
 // const isAvatarClicked = () => {
 //   const pointerState = getState(InputState).pointerState
 //   const hits = Physics.castRayFromCamera(
-//     getComponent(Engine.instance.cameraEntity, CameraComponent),
+//     getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent),
 //     pointerState.position,
 //     getState(PhysicsState).physicsWorld,
 //     raycastComponentData
@@ -126,7 +126,7 @@ const onShiftLeft = () => {
 // TODO: this should be done using the input system components,
 // which already performs raycasts and has the necessary data
 const getAvatarDoubleClick = (buttons): boolean => {
-  // const followComponent = getOptionalComponent(Engine.instance.cameraEntity, FollowCameraComponent)
+  // const followComponent = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, FollowCameraComponent)
   // if (followComponent && followComponent.zoomLevel < 1) return false
 
   // if (buttons.PrimaryClick?.up) {
@@ -177,12 +177,12 @@ const execute = () => {
   if (!controller) return
 
   const xrState = getState(XRState)
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
   const isMovementControlsEnabled = XRState.isMovementControlsEnabled
 
   if (!isMovementControlsEnabled) return
 
-  if (!isCameraAttachedToAvatar && !getState(XRState).session) {
+  if (!shouldViewerFollowController && !getState(XRState).session) {
     const firstWalkableEntityWithInput = walkableQuery().find(findWalkableWithInput)
 
     if (firstWalkableEntityWithInput) {
@@ -209,7 +209,7 @@ const execute = () => {
 
   controller.gamepadLocalInput.set(0, 0, 0)
 
-  const viewerEntity = Engine.instance.viewerEntity
+  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
 
   const inputPointerEntity = InputPointerComponent.getPointersForCamera(viewerEntity)[0]
 
@@ -222,7 +222,7 @@ const execute = () => {
   const gamepadJump = buttons[StandardGamepadButton.StandardGamepadButtonA]?.down
 
   //** touch input (only for avatar jump)*/
-  const doubleClicked = isCameraAttachedToAvatar ? false : getAvatarDoubleClick(buttons)
+  const doubleClicked = shouldViewerFollowController ? false : getAvatarDoubleClick(buttons)
   /** keyboard input */
   const keyDeltaX =
     (buttons.KeyA?.pressed ? -1 : 0) +
@@ -248,7 +248,7 @@ const execute = () => {
     if (hasComponent(eid, InputPointerComponent)) continue
     const inputSource = getComponent(eid, InputSourceComponent)
     const controlScheme =
-      !isCameraAttachedToAvatar || inputSource.source.handedness === 'none'
+      !shouldViewerFollowController || inputSource.source.handedness === 'none'
         ? AvatarAxesControlScheme.Move
         : inputSource.source.handedness === inputState.preferredHand
         ? avatarInputSettings.rightAxesControlScheme

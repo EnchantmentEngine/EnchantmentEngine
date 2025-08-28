@@ -9,7 +9,7 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { Geometry } from '@ir-engine/spatial/src/common/constants/Geometry'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { DoubleSide } from 'three'
@@ -25,13 +25,13 @@ export const PrimitiveGeometryComponent = defineComponent({
   name: 'PrimitiveGeometryComponent',
   jsonID: 'EE_primitive_geometry',
 
-  schema: S.Object({
-    geometryType: S.Enum(GeometryType, {
+  schema: Schema.Object({
+    geometryType: Schema.Enum(GeometryType, {
       $comment:
         "A string enum, ie. one of the following values: 'BoxGeometry', 'SphereGeometry', 'CylinderGeometry', 'CapsuleGeometry', 'PlaneGeometry', 'CircleGeometry', 'RingGeometry', 'TorusGeometry', 'DodecahedronGeometry', 'IcosahedronGeometry', 'OctahedronGeometry', 'TetrahedronGeometry', 'TorusKnotGeometry'",
       default: GeometryType.BoxGeometry
     }),
-    geometryParams: S.Record(S.String(), S.Any())
+    geometryParams: Schema.Record(Schema.String(), Schema.Any())
   }),
 
   reactor: () => {
@@ -42,7 +42,7 @@ export const PrimitiveGeometryComponent = defineComponent({
         entity,
         MeshComponent,
         new Mesh(
-          createGeometry(geometryComponent.geometryType.value, geometryComponent.geometryParams.value),
+          createGeometry(geometryComponent.geometryType, geometryComponent.geometryParams),
           new MeshStandardMaterial({ side: DoubleSide })
         )
       )
@@ -55,7 +55,7 @@ export const PrimitiveGeometryComponent = defineComponent({
 
     useEffect(() => {
       if (!mesh) return
-      mesh.geometry.set(createGeometry(geometryComponent.geometryType.value, geometryComponent.geometryParams.value))
+      mesh.geometry = createGeometry(geometryComponent.geometryType, geometryComponent.geometryParams)
     }, [!!mesh, geometryComponent.geometryType, geometryComponent.geometryParams])
 
     return null

@@ -1,18 +1,18 @@
-import { Engine } from '@ir-engine/ecs'
+import { HyperFlux } from '@ir-engine/hyperflux'
 
 /**
- * @description Returns the first incoming action that matches the `@param name` from the Engine.instance's actions store
+ * @description Returns the first incoming action that matches the `@param name` from the Hyperflux store's incoming actions
  * */
 export function getIncomingAction(name: string) {
-  for (const action of Engine.instance.store.actions.incoming) {
+  for (const action of HyperFlux.store.actions.incoming) {
     if (action.type === name) return action
   }
   return undefined
 }
 
 /**
- * @description Returns the last action from the Engine.instance's actions history
+ * @description Returns the last action from the Hyperflux store's actions history
  * */
 export function getLastAction() {
-  return Engine.instance.store.actions.history.at(-1)
+  return HyperFlux.store.actions.history.at(-1)
 }

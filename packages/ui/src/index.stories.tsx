@@ -1,7 +1,7 @@
 import { TextButton } from '@ir-engine/client-core/src/components/Glass/buttons/TextButton'
 import { useFind } from '@ir-engine/common'
 import { scopePath } from '@ir-engine/common/src/schema.type.module'
-import { Meta, StoryObj } from '@storybook/react/*'
+import { Meta, StoryObj } from '@storybook/react'
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { handleMocks } from '../.storybook/util'
@@ -21,7 +21,7 @@ export const Default: StoryObj = {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-transparent">
         <div className="max-[30ch] rounded-md bg-white/60 p-4">
-          Toggle the Napster Engine and Location butons in the toolbar to change the scene
+          Toggle the Enchantment Engine and Location butons in the toolbar to change the scene
         </div>
       </div>
     )

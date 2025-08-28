@@ -1,20 +1,26 @@
 import { useEffect } from 'react'
 
 import { useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, hasComponent, removeComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import {
+  defineComponent,
+  hasComponent,
+  removeComponent,
+  setComponent,
+  useComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { Schema } from '@ir-engine/hyperflux'
 import { CallbackComponent, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 
-const LoadTagModeSchema = S.LiteralUnion(['distance', 'trigger'], { default: 'distance' })
+const LoadTagModeSchema = Schema.LiteralUnion(['distance', 'trigger'], { default: 'distance' })
 
 export const SceneDynamicLoadComponent = defineComponent({
   name: 'SceneDynamicLoadComponent',
   jsonID: 'EE_dynamic_load',
 
-  schema: S.Object({
+  schema: Schema.Object({
     mode: LoadTagModeSchema,
-    distance: S.Number({ default: 20 }),
-    loaded: S.Bool({ default: false, serialized: false })
+    distance: Schema.Number({ default: 20 }),
+    loaded: Schema.Bool({ default: false, serialized: false })
   }),
 
   reactor: () => {
@@ -23,14 +29,14 @@ export const SceneDynamicLoadComponent = defineComponent({
 
     /** Trigger mode */
     useEffect(() => {
-      if (component.mode.value !== 'trigger') return
+      if (component.mode !== 'trigger') return
 
       function doLoad() {
-        component.loaded.set(true)
+        setComponent(entity, SceneDynamicLoadComponent, { loaded: true })
       }
 
       function doUnload() {
-        component.loaded.set(false)
+        setComponent(entity, SceneDynamicLoadComponent, { loaded: false })
       }
 
       if (hasComponent(entity, CallbackComponent)) {

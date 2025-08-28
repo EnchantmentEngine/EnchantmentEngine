@@ -11,18 +11,17 @@ import {
 } from 'three'
 
 import {
-  Entity,
-  EntityTreeComponent,
-  S,
   createEntity,
   defineComponent,
+  Entity,
+  EntityTreeComponent,
   getComponent,
   removeEntity,
   setComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 import { WebContainer3D } from '@ir-engine/xrui'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
@@ -38,12 +37,12 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 export const PointerComponent = defineComponent({
   name: 'PointerComponent',
 
-  schema: S.Object({
-    inputSource: S.Type<XRInputSource>(),
-    lastHit: S.Type<ReturnType<typeof WebContainer3D.prototype.hitTest> | null>(),
+  schema: Schema.Object({
+    inputSource: Schema.Type<XRInputSource>(),
+    lastHit: Schema.Type<ReturnType<typeof WebContainer3D.prototype.hitTest> | null>(),
     // internal
-    pointer: S.Type<PointerObject>(),
-    cursor: S.Type<Mesh<BufferGeometry, MeshBasicMaterial> | null>()
+    pointer: Schema.Type<PointerObject>(),
+    cursor: Schema.Type<Mesh<BufferGeometry, MeshBasicMaterial> | null>()
   }),
 
   reactor: () => {
@@ -51,8 +50,8 @@ export const PointerComponent = defineComponent({
     const pointerComponentState = useComponent(entity, PointerComponent)
 
     const transition = useAnimationTransition(0.5, 'OUT', (alpha) => {
-      const cursorMaterial = pointerComponentState.cursor.value?.material as MeshBasicMaterial
-      const pointerMaterial = pointerComponentState.pointer.value?.material as MeshBasicMaterial
+      const cursorMaterial = pointerComponentState.cursor?.material as MeshBasicMaterial
+      const pointerMaterial = pointerComponentState.pointer?.material as MeshBasicMaterial
       if (cursorMaterial) {
         cursorMaterial.opacity = alpha
         cursorMaterial.visible = alpha > 0
@@ -64,14 +63,14 @@ export const PointerComponent = defineComponent({
     })
 
     useLayoutEffect(() => {
-      const inputSource = pointerComponentState.inputSource.value as XRInputSource
+      const inputSource = pointerComponentState.inputSource
       return () => {
         PointerComponent.pointers.delete(inputSource)
       }
     }, [])
 
     useEffect(() => {
-      const inputSource = pointerComponentState.inputSource.value
+      const inputSource = pointerComponentState.inputSource
       const cursor = new Mesh(new SphereGeometry(0.01, 16, 16), new MeshBasicMaterial({ color: 0xffffff, opacity: 0 }))
       const pointerEntity = createEntity()
       const cursorEntity = createEntity()
@@ -84,7 +83,8 @@ export const PointerComponent = defineComponent({
         const geometry = new RingGeometry(0.02, 0.04, 32).translate(0, 0, -1)
         const material = new MeshBasicMaterial({ opacity: 0, transparent: true })
         const mesh = new Mesh(geometry, material)
-        pointerComponentState.merge({ pointer: mesh, cursor })
+        pointerComponentState.pointer = mesh
+        pointerComponentState.cursor = cursor
         setComponent(pointerEntity, MeshComponent, mesh)
       } else {
         const geometry = new BufferGeometry()
@@ -104,7 +104,7 @@ export const PointerComponent = defineComponent({
     }, [pointerComponentState.inputSource])
 
     useEffect(() => {
-      transition(pointerComponentState.lastHit.value ? 'IN' : 'OUT')
+      transition(pointerComponentState.lastHit ? 'IN' : 'OUT')
     }, [pointerComponentState.lastHit])
 
     return null

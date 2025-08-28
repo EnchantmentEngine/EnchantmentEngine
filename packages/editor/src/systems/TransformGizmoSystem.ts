@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { getComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, setComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { InputSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -91,55 +91,88 @@ const useTransformGizmoControl = (entities: Entity[]) => {
   useImmediateEffect(() => {
     if (!gizmoControlComponent) return
     const mode = editorHelperState.transformMode.value
-    gizmoControlComponent.mode.set(mode)
+    setComponent(gizmoEntity, TransformGizmoControlComponent, { mode })
   }, [gizmoEntity, editorHelperState.transformMode])
 
   useImmediateEffect(() => {
     if (!gizmoControlComponent) return
     const space = editorHelperState.transformSpace.value
-    gizmoControlComponent.space.set(space)
+    setComponent(gizmoEntity, TransformGizmoControlComponent, { space })
   }, [gizmoEntity, editorHelperState.transformSpace])
 
   useImmediateEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.transformPivot.set(editorHelperState.transformPivot.value)
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      transformPivot: editorHelperState.transformPivot.value
+    })
   }, [gizmoEntity, editorHelperState.transformPivot])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
     switch (editorHelperState.gridSnap.value) {
       case SnapMode.Disabled: // continous update
-        gizmoControlComponent.translationSnap.set(0)
-        gizmoControlComponent.rotationSnap.set(0)
-        gizmoControlComponent.scaleSnap.set(0)
+        setComponent(gizmoEntity, TransformGizmoControlComponent, {
+          translationSnap: 0,
+          rotationSnap: 0,
+          scaleSnap: 0
+        })
         break
       case SnapMode.Grid:
-        gizmoControlComponent.translationSnap.set(editorHelperState.translationSnap.value)
-        gizmoControlComponent.rotationSnap.set(MathUtils.degToRad(editorHelperState.rotationSnap.value))
-        gizmoControlComponent.scaleSnap.set(editorHelperState.scaleSnap.value)
+        setComponent(gizmoEntity, TransformGizmoControlComponent, {
+          translationSnap: editorHelperState.translationSnap.value,
+          rotationSnap: MathUtils.degToRad(editorHelperState.rotationSnap.value),
+          scaleSnap: editorHelperState.scaleSnap.value
+        })
         break
     }
   }, [gizmoEntity, editorHelperState.gridSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.translationSnap.set(
-      editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.translationSnap.value : 0
-    )
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      translationSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.translationSnap.value : 0
+    })
   }, [gizmoEntity, editorHelperState.translationSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.rotationSnap.set(
-      editorHelperState.gridSnap.value === SnapMode.Grid ? MathUtils.degToRad(editorHelperState.rotationSnap.value) : 0
-    )
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      rotationSnap:
+        editorHelperState.gridSnap.value === SnapMode.Grid
+          ? MathUtils.degToRad(editorHelperState.rotationSnap.value)
+          : 0
+    })
   }, [gizmoEntity, editorHelperState.rotationSnap])
 
   useEffect(() => {
     if (!gizmoControlComponent) return
-    gizmoControlComponent.scaleSnap.set(
-      editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
-    )
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      scaleSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
+    })
+  }, [gizmoEntity, editorHelperState.scaleSnap])
+
+  useEffect(() => {
+    if (!gizmoControlComponent) return
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      rotationSnap:
+        editorHelperState.gridSnap.value === SnapMode.Grid
+          ? MathUtils.degToRad(editorHelperState.rotationSnap.value)
+          : 0
+    })
+  }, [gizmoEntity, editorHelperState.rotationSnap])
+
+  useEffect(() => {
+    if (!gizmoControlComponent) return
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      scaleSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
+    })
+  }, [gizmoEntity, editorHelperState.scaleSnap])
+
+  useEffect(() => {
+    if (!gizmoControlComponent) return
+    setComponent(gizmoEntity, TransformGizmoControlComponent, {
+      scaleSnap: editorHelperState.gridSnap.value === SnapMode.Grid ? editorHelperState.scaleSnap.value : 0
+    })
   }, [gizmoEntity, editorHelperState.scaleSnap])
 }
 

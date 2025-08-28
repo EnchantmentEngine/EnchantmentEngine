@@ -10,9 +10,9 @@ import {
   InstanceID,
   UserID
 } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { defineState, getMutableState, NetworkState, none } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, NetworkState, none } from '@ir-engine/hyperflux'
 
+import { EngineState } from '@ir-engine/ecs'
 import { NotificationService } from '../../common/services/NotificationService'
 
 export const ChannelState = defineState({
@@ -184,7 +184,7 @@ export const ChannelService = {
       const channelUserRemovedListener = (params: ChannelUserType) => {
         ChannelService.getChannels()
         const channelState = getMutableState(ChannelState)
-        if (params.userId === Engine.instance.userID && params.channelId === channelState.targetChannelId.value) {
+        if (params.userId === getState(EngineState).userID && params.channelId === channelState.targetChannelId.value) {
           channelState.targetChannelId.set('' as ChannelID)
           ChannelService.getInstanceChannel(NetworkState.worldNetwork.id)
         }

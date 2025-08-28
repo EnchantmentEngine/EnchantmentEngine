@@ -1,14 +1,4 @@
-import {
-  NO_PROXY_STEALTH,
-  State,
-  defineState,
-  destroy,
-  getMutableState,
-  getState,
-  hookstate,
-  none,
-  useHookstate
-} from '@ir-engine/hyperflux'
+import { Schema, TTypedSchema, createSimpleStore, useSimpleStore } from '@ir-engine/hyperflux'
 import { v4 as uuidv4 } from 'uuid'
 import {
   LayerComponent,
@@ -23,20 +13,46 @@ import {
   useOptionalComponent
 } from './ComponentFunctions'
 import { Entity, EntityID, EntityUUID, EntityUUIDPair, SourceID, UndefinedEntity } from './Entity'
-import { S } from './schemas/JSONSchemas'
-
-export const EntitiesBySourceState = defineState({
-  name: 'ir.world.EntitiesBySourceState',
-  initial: {} as Record<LayerID, Record<SourceID, Entity[]>>
-})
+import { EntitySchema } from './Schemas'
 
 /**
- * Internal global state
+ * SimpleStore instances for each layer - EntitiesBySource
  */
-export const EntitiesByUUIDState = defineState({
-  name: 'ir.ecs.EntitiesByUUIDState',
-  initial: {} as Record<LayerID, Record<EntityUUID, State<Entity>>>
-})
+export const EntitiesBySourceStores = new Map<
+  LayerID,
+  ReturnType<typeof createSimpleStore<Record<SourceID, Entity[]>>>
+>()
+
+/**
+ * SimpleStore instances for each layer - EntitiesByUUID
+ */
+export const EntitiesByUUIDStores = new Map<LayerID, ReturnType<typeof createSimpleStore<Record<EntityUUID, Entity>>>>()
+
+/**
+ * Get or create EntitiesBySource store for a layer
+ */
+function getEntitiesBySourceStore(layer: LayerID) {
+  if (!EntitiesBySourceStores.has(layer)) {
+    EntitiesBySourceStores.set(
+      layer,
+      createSimpleStore({} as Record<SourceID, Entity[]>, `ir.world.EntitiesBySourceState.${layer}`)
+    )
+  }
+  return EntitiesBySourceStores.get(layer)!
+}
+
+/**
+ * Get or create EntitiesByUUID store for a layer
+ */
+function getEntitiesByUUIDStore(layer: LayerID) {
+  if (!EntitiesByUUIDStores.has(layer)) {
+    EntitiesByUUIDStores.set(
+      layer,
+      createSimpleStore({} as Record<EntityUUID, Entity>, `ir.ecs.EntitiesByUUIDState.${layer}`)
+    )
+  }
+  return EntitiesByUUIDStores.get(layer)!
+}
 
 /**
  * UUIDComponent provides a unique identifier for entities by combining a source ID and an entity ID.
@@ -64,34 +80,15 @@ export const UUIDComponent = defineComponent({
 
   jsonID: 'EE_uuid',
 
-  schema: S.EntityUUIDPair({
-    validate: (idPair, prev, entity) => {
-      if (idPair === prev) return true
-      if (!idPair.entitySourceID) {
-        console.error('UUID context cannot be empty')
-        return false
-      }
-      if (!idPair.entityID) {
-        console.error('UUID id cannot be empty')
-        return false
-      }
-      const uuid = UUIDComponent.join(idPair)
-      const layer = LayerComponent.get(entity)
-      if (!getState(EntitiesByUUIDState)[layer]) {
-        getState(EntitiesByUUIDState)[layer] = {}
-        return true
-      }
-      // throw error if uuid is already in use
-      const currentEntity = getState(EntitiesByUUIDState)[layer][uuid]?.value
-      if (currentEntity && currentEntity !== entity) {
-        console.error(`UUID ${uuid} is already in use`, currentEntity, entity)
-        return false
-      }
-
-      return true
+  schema: Schema.Object(
+    {
+      entitySourceID: Schema.String(),
+      entityID: EntitySchema.EntityID()
     },
-    required: true
-  }),
+    {
+      required: true
+    }
+  ) as unknown as TTypedSchema<EntityUUIDPair>,
 
   toJSON(component) {
     return { entityID: component.entityID }
@@ -101,48 +98,68 @@ export const UUIDComponent = defineComponent({
     if (!idPair.entitySourceID) throw new Error('UUID context cannot be empty')
     if (!idPair.entityID) throw new Error('UUID id cannot be empty')
 
+    const uuid = UUIDComponent.join(idPair)
+
     const layer = LayerComponent.get(entity)
-    const prev =
-      component.value.entityID && component.value.entitySourceID ? UUIDComponent.join(component.value) : undefined
+    const uuidStore = getEntitiesByUUIDStore(layer)
+
+    // throw error if uuid is already in use
+    const currentEntity = uuidStore.value[uuid]
+    if (currentEntity && currentEntity !== entity) {
+      throw new Error(`UUID ${uuid} is already in use by ${currentEntity} ${entity}`)
+    }
+
+    const prev = component.entityID && component.entitySourceID ? UUIDComponent.join(component) : undefined
     // remove old uuid
     if (prev) {
       UUIDComponent.onRemove(entity, component)
     }
 
     // set new uuid
-    UUIDComponentFunctions._getUUIDState(UUIDComponent.join(idPair), layer).set(entity)
+    const sourceStore = getEntitiesBySourceStore(layer)
+    const currentState = sourceStore.value
+    UUIDComponentFunctions._getUUIDState(uuid, layer)
+    uuidStore.value[uuid] = entity
+    uuidStore.set(uuidStore.value)
 
-    component.set(idPair)
+    component.entityID = idPair.entityID
+    component.entitySourceID = idPair.entitySourceID
 
-    if (!getState(EntitiesBySourceState)[layer]) {
-      getMutableState(EntitiesBySourceState)[layer].set({})
-    }
-    const state = getMutableState(EntitiesBySourceState)[layer]
-    const entitiesBySourceState = state[idPair.entitySourceID]
-    if (!entitiesBySourceState.value) {
-      entitiesBySourceState.set([entity])
+    const entitiesBySourceState = currentState[idPair.entitySourceID]
+    if (!entitiesBySourceState) {
+      currentState[idPair.entitySourceID] = [entity]
+      sourceStore.set(currentState)
     } else {
-      if (!entitiesBySourceState.value.includes(entity)) entitiesBySourceState.merge([entity])
+      if (!entitiesBySourceState.includes(entity)) {
+        currentState[idPair.entitySourceID] = [...entitiesBySourceState, entity]
+        sourceStore.set(currentState)
+      }
     }
   },
 
   onRemove: (entity, component) => {
-    const uuid = UUIDComponent.join(component.value)
+    const uuid = UUIDComponent.join(component)
     const layer = LayerComponent.get(entity)
-    destroy(getState(EntitiesByUUIDState)[layer][uuid])
-    delete getState(EntitiesByUUIDState)[layer][uuid]
-
-    const source = component.value.entitySourceID.toString() as SourceID
-    const entities = getState(EntitiesBySourceState)[layer][source].filter((currentEntity) => currentEntity !== entity)
-    const layerState = getMutableState(EntitiesBySourceState)[layer]
-    if (entities.length === 0) {
-      layerState[source].set(none)
-    } else {
-      layerState[source].set(entities)
+    const uuidStore = getEntitiesByUUIDStore(layer)
+    const currentUUIDState = uuidStore.value
+    if (currentUUIDState[uuid]) {
+      delete currentUUIDState[uuid]
+      uuidStore.set(currentUUIDState)
     }
+
+    const source = component.entitySourceID.toString() as SourceID
+    const sourceStore = getEntitiesBySourceStore(layer)
+    const currentSourceState = sourceStore.value
+    const entities = currentSourceState[source]?.filter((currentEntity) => currentEntity !== entity) || []
+    if (entities.length === 0) {
+      delete currentSourceState[source]
+    } else {
+      currentSourceState[source] = entities
+    }
+    sourceStore.set(currentSourceState)
   },
 
-  entitiesByUUIDState: {} as Record<LayerID, Record<EntityUUID, State<Entity>>>,
+  entitiesByUUIDState: {} as Record<LayerID, Record<EntityUUID, Entity>>,
 
   create: (sourceEntity: Entity, nodeID = UUIDComponent.generate(), layer = Layers.Simulation as LayerID) => {
     const entity = createEntity(layer)
@@ -155,12 +172,14 @@ export const UUIDComponent = defineComponent({
 
   /** Reactively gets an entity by UUID */
   useEntityByUUID(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
-    return useHookstate(UUIDComponentFunctions._getUUIDState(uuid, layer)).value
+    const uuidStore = getEntitiesByUUIDStore(layer)
+    const [uuidState] = useSimpleStore(uuidStore)
+    return uuidState[uuid] || UndefinedEntity
   },
 
   /** Gets an entity by UUID */
   getEntityByUUID(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
-    return UUIDComponentFunctions._getUUIDState(uuid, layer).get(NO_PROXY_STEALTH)
+    return UUIDComponentFunctions._getUUIDState(uuid, layer)
   },
 
   /** Gets an entity from the same source by ID */
@@ -172,7 +191,7 @@ export const UUIDComponent = defineComponent({
 
   /** Reactively gets an entity from the same source by ID */
   useEntityFromSameSourceByID(entity: Entity, id: EntityID, layer = Layers.Simulation as LayerID) {
-    const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value
+    const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID
 
     return UUIDComponent.useEntityByUUID(UUIDComponent.join({ entitySourceID, entityID: id }), layer)
   },
@@ -192,18 +211,20 @@ export const UUIDComponent = defineComponent({
 
   useSourceEntity(entity: Entity) {
     const layer = LayerComponent.get(entity)
-    const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID.value as any as EntityUUID
+    const entitySourceID = useComponent(entity, UUIDComponent).entitySourceID as any as EntityUUID
 
     return UUIDComponent.useEntityByUUID(entitySourceID, layer)
   },
 
   useEntitiesBySource: (sourceID: SourceID, layer = Layers.Simulation as LayerID) => {
-    const state = useHookstate(getMutableState(EntitiesBySourceState)[layer]).value
-    return state?.[sourceID] || []
+    const sourceStore = getEntitiesBySourceStore(layer)
+    const [sourceState] = useSimpleStore(sourceStore)
+    return sourceState?.[sourceID] || []
   },
 
   getEntitiesBySource: (sourceID: SourceID, layer = Layers.Simulation as LayerID): Entity[] => {
-    return getState(EntitiesBySourceState)[layer]?.[sourceID] || []
+    const sourceStore = getEntitiesBySourceStore(layer)
+    return sourceStore.value[sourceID] || []
   },
 
   /** Recursively get the source entity until the root source is found */
@@ -219,14 +240,14 @@ export const UUIDComponent = defineComponent({
 
   useAsSourceID: (entity: Entity) => {
     const uuidComponent = useOptionalComponent(entity, UUIDComponent)
-    return uuidComponent ? (UUIDComponent.join(uuidComponent.value) as any as SourceID) : ('' as SourceID)
+    return uuidComponent ? (UUIDComponent.join(uuidComponent) as any as SourceID) : ('' as SourceID)
   },
 
   /** Gets a UUID as a string */
   get: (entity: Entity) => UUIDComponent.join(getComponent(entity, UUIDComponent)),
 
   /** Reactively gets a UUID as a string */
-  use: (entity: Entity) => UUIDComponent.join(useComponent(entity, UUIDComponent).value),
+  use: (entity: Entity) => UUIDComponent.join(useComponent(entity, UUIDComponent)),
 
   /** Joins an EntityUUIDPair into a string */
   join: (idPair: EntityUUIDPair) => `${idPair.entitySourceID}${idPair.entityID}` as EntityUUID,
@@ -242,16 +263,14 @@ export const UUIDComponent = defineComponent({
 })
 
 function _getUUIDState(uuid: EntityUUID, layer = Layers.Simulation as LayerID) {
-  let layerState = getState(EntitiesByUUIDState)[layer]
-  if (!layerState) {
-    layerState = {}
-    getState(EntitiesByUUIDState)[layer] = layerState
-  }
+  const uuidStore = getEntitiesByUUIDStore(layer)
+  const state = uuidStore.value
 
-  let entityState = layerState[uuid]
-  if (!entityState) {
-    entityState = hookstate(UndefinedEntity)
-    layerState[uuid] = entityState
+  let entityState = state[uuid]
+  if (typeof entityState === 'undefined') {
+    entityState = UndefinedEntity
+    state[uuid] = entityState
+    uuidStore.set(state)
   }
   return entityState
 }

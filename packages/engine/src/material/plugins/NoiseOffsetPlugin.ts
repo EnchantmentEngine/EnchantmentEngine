@@ -1,6 +1,6 @@
 import { generateNoiseTexture } from '@ir-engine/spatial/src/renderer/functions/generateNoiseTexture'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { Vector3 } from 'three'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
@@ -10,13 +10,13 @@ export const NoiseOffsetPluginComponent = defineMaterialPlugin({
 
   jsonID: 'IR_material_noise_offset',
 
-  uniforms: S.Object({
-    textureSize: S.Number({ default: 64 }),
-    frequency: S.Number({ default: 0.00025 }),
-    amplitude: S.Number({ default: 0.005 }),
-    noiseTexture: S.Class(() => generateNoiseTexture(64), { serialized: false }),
+  uniforms: Schema.Object({
+    textureSize: Schema.Number({ default: 64 }),
+    frequency: Schema.Number({ default: 0.00025 }),
+    amplitude: Schema.Number({ default: 0.005 }),
+    noiseTexture: Schema.Class(() => generateNoiseTexture(64), { serialized: false }),
     offsetAxis: T.Vec3(new Vector3(0, 1, 0)),
-    time: S.Number({ default: 0 })
+    time: Schema.Number({ default: 0 })
   }),
 
   onApply: (shader) => {

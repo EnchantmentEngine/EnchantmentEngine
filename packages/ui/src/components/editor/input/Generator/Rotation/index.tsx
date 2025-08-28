@@ -5,7 +5,6 @@ import {
   RotationGeneratorJSONDefaults,
   ValueGeneratorJSON
 } from '@ir-engine/engine/src/scene/types/ParticleSystemTypes'
-import { State } from '@ir-engine/hyperflux'
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Vector3 } from 'three'
@@ -16,11 +15,10 @@ import ValueGenerator from '../Value'
 
 type RotationGeneratorProps = Readonly<{
   path: string
-  scope: State<RotationGeneratorJSON>
   value: RotationGeneratorJSON
   onChange: (path: string) => (value: any) => void
 }>
-export default function RotationGenerator({ path, scope, value, onChange }: RotationGeneratorProps) {
+export default function RotationGenerator({ path, value, onChange }: RotationGeneratorProps) {
   const { t } = useTranslation()
 
   const onChangeVec3 = useCallback((path: string) => {
@@ -31,13 +29,10 @@ export default function RotationGenerator({ path, scope, value, onChange }: Rota
   }, [])
 
   const AxisAngleGeneratorInput = useCallback(() => {
-    const axisAngleScope = scope as State<AxisAngleGeneratorJSON>
-    const axisAngle = axisAngleScope.value
+    const axisAngle = value as AxisAngleGeneratorJSON
 
     if (!axisAngle.axis || !axisAngle.angle) {
-      const defaultAxisAngle = RotationGeneratorJSONDefaults['AxisAngle'] as AxisAngleGeneratorJSON
-      axisAngleScope.set(defaultAxisAngle)
-
+      onChange(path)({ axis: new Vector3(0, 1, 0), angle: { type: 'ConstantValue', value: 0 } })
       return
     }
 
@@ -47,25 +42,18 @@ export default function RotationGenerator({ path, scope, value, onChange }: Rota
           <Vector3Input value={new Vector3(...axisAngle.axis)} onChange={onChangeVec3(path + '.axis')} />
         </InputGroup>
         <InputGroup name="Angle" label={t('editor:properties.particle-system.rotation.angle')}>
-          <ValueGenerator
-            path={path + '.angle'}
-            scope={axisAngleScope.angle}
-            value={axisAngle.angle as ValueGeneratorJSON}
-            onChange={onChange}
-          />
+          <ValueGenerator path={path + '.angle'} value={axisAngle.angle} onChange={onChange} />
         </InputGroup>
       </>
     )
   }, [])
 
   const EulerGeneratorInput = useCallback(() => {
-    const eulerScope = scope as State<EulerGeneratorJSON>
-    const euler = eulerScope.value
+    const euler = value as EulerGeneratorJSON
 
     if (!euler.angleX || !euler.angleY || !euler.angleZ) {
       const defaultEuler = RotationGeneratorJSONDefaults['Euler'] as EulerGeneratorJSON
-      eulerScope.set(defaultEuler)
-
+      onChange(path)(defaultEuler)
       return
     }
 
@@ -75,38 +63,23 @@ export default function RotationGenerator({ path, scope, value, onChange }: Rota
           name="Angle X"
           label={t('editor:properties.particle-system.rotation.anglePosition', { position: 'X' })}
         >
-          <ValueGenerator
-            path={path + '.angleX'}
-            scope={eulerScope.angleX}
-            value={euler.angleX as ValueGeneratorJSON}
-            onChange={onChange}
-          />
+          <ValueGenerator path={path + '.angleX'} value={euler.angleX as ValueGeneratorJSON} onChange={onChange} />
         </InputGroup>
         <InputGroup
           name="Angle Y"
           label={t('editor:properties.particle-system.rotation.anglePosition', { position: 'Y' })}
         >
-          <ValueGenerator
-            path={path + '.angleY'}
-            scope={eulerScope.angleY}
-            value={euler.angleY as ValueGeneratorJSON}
-            onChange={onChange}
-          />
+          <ValueGenerator path={path + '.angleY'} value={euler.angleY as ValueGeneratorJSON} onChange={onChange} />
         </InputGroup>
         <InputGroup
           name="Angle Z"
           label={t('editor:properties.particle-system.rotation.anglePosition', { position: 'Z' })}
         >
-          <ValueGenerator
-            path={path + '.angleZ'}
-            scope={eulerScope.angleZ}
-            value={euler.angleZ as ValueGeneratorJSON}
-            onChange={onChange}
-          />
+          <ValueGenerator path={path + '.angleZ'} value={euler.angleZ as ValueGeneratorJSON} onChange={onChange} />
         </InputGroup>
       </>
     )
-  }, [scope, path, onChange, t])
+  }, [value, path, onChange, t])
 
   const RandomQuatGeneratorInput = useCallback(() => {
     return <></>
@@ -116,8 +89,7 @@ export default function RotationGenerator({ path, scope, value, onChange }: Rota
     const thisOnChange = onChange(path)
     return (type: typeof value.type) => {
       const defaultValue = RotationGeneratorJSONDefaults[type]
-      scope.set(defaultValue)
-
+      onChange(path)(defaultValue)
       thisOnChange(type)
     }
   }, [])

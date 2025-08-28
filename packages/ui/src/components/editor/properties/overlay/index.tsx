@@ -71,7 +71,7 @@ export const OverlayNodeEditor: EditorComponentType = (props) => {
       <FileBrowserInput
         acceptFileTypes={[...ImageFileTypes, ...VideoFileTypes]}
         acceptDropItems={[...ItemTypes.Images, ...ItemTypes.Videos]}
-        value={overlayComponent.src.value}
+        value={overlayComponent.src}
         onChange={updateProperty(OverlayComponent, 'src')}
         onRelease={commitProperty(OverlayComponent, 'src')}
       />
@@ -99,11 +99,11 @@ export const OverlayNodeEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           key={props.entity}
-          value={overlayComponent.type.value}
+          value={overlayComponent.type}
           options={getAvailableOverlayType()}
           onChange={commitProperty(OverlayComponent, `type`)}
         />
-        {contentSourceGroup[overlayComponent.type.value]}
+        {contentSourceGroup[overlayComponent.type]}
       </InputGroup>
       {/* <InputGroup
         name={t('editor:properties.overlay.overlayPosition')}

@@ -9,8 +9,7 @@ const AUDIO_TEXTURE_PATH = '/static/editor/audio-icon.png'
 export const MediaHelperReactor: React.FC = (props: { parentEntity; iconEntity; selected; hovered }) => {
   const { parentEntity, iconEntity, selected, hovered } = props
   const mediaComponent = useOptionalComponent(parentEntity, MediaComponent)
-  const debugEnabled =
-    (selected || hovered) && mediaComponent?.resources.value && mediaComponent.resources.value.length === 0
+  const debugEnabled = (selected || hovered) && mediaComponent?.resources && mediaComponent.resources.length === 0
   const [audioHelperTexture] = useTexture(debugEnabled ? AUDIO_TEXTURE_PATH : '', parentEntity)
 
   useHelperEntity(

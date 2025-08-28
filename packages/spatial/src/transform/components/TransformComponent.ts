@@ -1,11 +1,12 @@
 import { Matrix4, Quaternion, Vector3 } from 'three'
 
-import { EntityTreeComponent, getAncestorWithComponents, hasComponent, S } from '@ir-engine/ecs'
+import { EntityTreeComponent, getAncestorWithComponents, hasComponent } from '@ir-engine/ecs'
 import { defineComponent, getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { ComputedTransformComponent } from './ComputedTransformComponent'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
+import { Schema } from '@ir-engine/hyperflux'
 import { isZero } from '../../common/functions/MathFunctions'
 import { proxifyQuaternionWithDirty, proxifyVector3WithDirty } from '../../common/proxies/createThreejsProxy'
 import { SceneComponent } from '../../renderer/components/SceneComponents'
@@ -33,7 +34,7 @@ export const TransformComponent = defineComponent({
 
   jsonID: 'IR_transform',
 
-  schema: S.Object({
+  schema: Schema.Object({
     position: T.Vec3(),
     rotation: T.Quaternion(),
     scale: T.Vec3(),
@@ -70,9 +71,9 @@ export const TransformComponent = defineComponent({
 
   onSet: (entity, component, json) => {
     if (!json) return
-    if (json.position) component.position.value.copy(json.position)
-    if (json.rotation) component.rotation.value.copy(json.rotation)
-    if (json.scale && !isZero(json.scale)) component.scale.value.copy(json.scale)
+    if (json.position) component.position.copy(json.position)
+    if (json.rotation) component.rotation.copy(json.rotation)
+    if (json.scale && !isZero(json.scale)) component.scale.copy(json.scale)
 
     composeMatrix(entity)
     const entityTree = getOptionalComponent(entity, EntityTreeComponent)
@@ -80,9 +81,9 @@ export const TransformComponent = defineComponent({
     if (parentEntity) {
       const parentTransform = getOptionalComponent(parentEntity, TransformComponent)
       if (parentTransform)
-        component.matrixWorld.value.multiplyMatrices(parentTransform.matrixWorld, component.matrix.value as Matrix4)
+        component.matrixWorld.multiplyMatrices(parentTransform.matrixWorld, component.matrix as Matrix4)
     } else {
-      component.matrixWorld.value.copy(component.matrix.value as Matrix4)
+      component.matrixWorld.copy(component.matrix as Matrix4)
     }
   },
 
@@ -187,6 +188,13 @@ export const TransformComponent = defineComponent({
     vec3.z = te[14]
 
     return vec3
+  },
+
+  getSceneRotation: (entity: Entity, quaternion: Quaternion) => {
+    const sceneEntity = getAncestorWithComponents(entity, [SceneComponent])
+    if (!sceneEntity) return quaternion.set(0, 0, 0, 1)
+    TransformComponent.getMatrixRelativeToEntity(entity, sceneEntity, _m1)
+    return TransformComponent.getWorldRotation(entity, quaternion)
   },
 
   getSceneScale: (entity: Entity, vec3: Vector3) => {

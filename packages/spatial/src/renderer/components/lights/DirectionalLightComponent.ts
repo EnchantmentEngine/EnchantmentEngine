@@ -2,15 +2,14 @@ import { useEffect } from 'react'
 import { DirectionalLight } from 'three'
 
 import {
-  S,
   defineComponent,
-  getMutableComponent,
+  getComponent,
   removeComponent,
   setComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { Schema, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
 import { T } from '../../../schema/schemaFunctions'
 import { RendererState } from '../../RendererState'
@@ -21,14 +20,14 @@ export const DirectionalLightComponent = defineComponent({
   name: 'DirectionalLightComponent',
   jsonID: 'EE_directional_light',
 
-  schema: S.Object({
-    light: S.Type<DirectionalLight>({ serialized: false }),
+  schema: Schema.Object({
+    light: Schema.Type<DirectionalLight>({ serialized: false }),
     color: T.Color(),
-    intensity: S.Number({ default: 1 }),
-    castShadow: S.Bool({ default: false }),
-    shadowBias: S.Number({ default: -0.00001 }),
-    shadowRadius: S.Number({ default: 1 }),
-    cameraFar: S.Number({ default: 200 })
+    intensity: Schema.Number({ default: 1 }),
+    castShadow: Schema.Bool({ default: false }),
+    shadowBias: Schema.Number({ default: -0.00001 }),
+    shadowRadius: Schema.Number({ default: 1 }),
+    cameraFar: Schema.Number({ default: 200 })
   }),
 
   reactor: function () {
@@ -39,7 +38,7 @@ export const DirectionalLightComponent = defineComponent({
 
     useEffect(() => {
       setComponent(entity, LightTagComponent)
-      getMutableComponent(entity, DirectionalLightComponent).light.set(light)
+      getComponent(entity, DirectionalLightComponent).light = light
       setComponent(entity, ObjectComponent, light)
 
       return () => {
@@ -48,24 +47,24 @@ export const DirectionalLightComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      light.color.set(directionalLightComponent.color.value)
+      light.color.set(directionalLightComponent.color)
     }, [directionalLightComponent.color])
 
     useEffect(() => {
-      light.intensity = directionalLightComponent.intensity.value
+      light.intensity = directionalLightComponent.intensity
     }, [directionalLightComponent.intensity])
 
     useEffect(() => {
-      light.shadow.camera.far = directionalLightComponent.cameraFar.value
+      light.shadow.camera.far = directionalLightComponent.cameraFar
       light.shadow.camera.updateProjectionMatrix()
     }, [directionalLightComponent.cameraFar])
 
     useEffect(() => {
-      light.shadow.bias = directionalLightComponent.shadowBias.value
+      light.shadow.bias = directionalLightComponent.shadowBias
     }, [directionalLightComponent.shadowBias])
 
     useEffect(() => {
-      light.shadow.radius = directionalLightComponent.shadowRadius.value
+      light.shadow.radius = directionalLightComponent.shadowRadius
     }, [directionalLightComponent.shadowRadius])
 
     useEffect(() => {

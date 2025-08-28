@@ -9,7 +9,7 @@ import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { EngineState } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { isMobile, isSafari } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { addError, clearErrors } from '../functions/ErrorFunctions'
@@ -60,11 +60,11 @@ export const LinkComponent = defineComponent({
   name: 'LinkComponent',
   jsonID: 'EE_link',
 
-  schema: S.Object({
-    url: S.String(),
-    sceneNav: S.Bool(),
-    location: S.String(),
-    newTab: S.Bool({ default: true })
+  schema: Schema.Object({
+    url: Schema.String(),
+    sceneNav: Schema.Bool(),
+    location: Schema.String(),
+    newTab: Schema.Bool({ default: true })
   }),
 
   linkCallbackName,
@@ -80,9 +80,9 @@ export const LinkComponent = defineComponent({
 
     useEffect(() => {
       clearErrors(entity, LinkComponent)
-      if (link.sceneNav.value) return
+      if (link.sceneNav) return
       try {
-        new URL(link.url.value)
+        new URL(link.url)
       } catch {
         return addError(entity, LinkComponent, 'INVALID_URL', 'Please enter a valid URL.')
       }

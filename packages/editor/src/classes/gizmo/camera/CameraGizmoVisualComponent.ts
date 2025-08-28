@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import {
+  EntitySchema,
   EntityTreeComponent,
   createEntity,
   defineComponent,
@@ -9,8 +10,7 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getState } from '@ir-engine/hyperflux'
+import { Schema, getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraGizmoTagComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -24,10 +24,10 @@ import { cameraGizmo, cameraPicker, setupGizmo } from '../../../constants/GizmoP
 export const CameraGizmoVisualComponent = defineComponent({
   name: 'CameraGizmoVisual',
 
-  schema: S.Object({
-    sceneEntity: S.Entity(),
-    gizmo: S.Entity(),
-    picker: S.Entity()
+  schema: Schema.Object({
+    sceneEntity: EntitySchema.Entity(),
+    gizmo: EntitySchema.Entity(),
+    picker: EntitySchema.Entity()
   }),
 
   reactor: function () {
@@ -42,22 +42,22 @@ export const CameraGizmoVisualComponent = defineComponent({
       setComponent(gizmo, CameraGizmoTagComponent)
       setComponent(gizmo, VisibleComponent)
       setComponent(gizmo, EntityTreeComponent, {
-        parentEntity: visualComponent.sceneEntity.value ?? getState(ReferenceSpaceState).originEntity
+        parentEntity: visualComponent.sceneEntity ?? getState(ReferenceSpaceState).originEntity
       })
       setupGizmo(gizmo, cameraGizmo, ObjectLayers.Scene)
 
-      visualComponent.gizmo.set(gizmo)
+      setComponent(cameraGizmoVisualEntity, CameraGizmoVisualComponent, { gizmo })
 
       setComponent(picker, ObjectComponent, new Object3D())
       setComponent(picker, NameComponent, `cameraGizmoPickerMeshEntity`)
       setComponent(picker, CameraGizmoTagComponent)
       setComponent(picker, VisibleComponent)
       setComponent(picker, EntityTreeComponent, {
-        parentEntity: visualComponent.sceneEntity.value ?? getState(ReferenceSpaceState).originEntity
+        parentEntity: visualComponent.sceneEntity ?? getState(ReferenceSpaceState).originEntity
       })
       setupGizmo(picker, cameraPicker, ObjectLayers.Scene)
 
-      visualComponent.picker.set(picker)
+      setComponent(cameraGizmoVisualEntity, CameraGizmoVisualComponent, { picker })
 
       setComponent(picker, InputComponent)
 

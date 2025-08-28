@@ -7,14 +7,14 @@ import { ProjectService, ProjectState } from '@ir-engine/client-core/src/common/
 import { useFind } from '@ir-engine/common'
 import { DefaultUpdateSchedule } from '@ir-engine/common/src/interfaces/ProjectPackageJsonType'
 import { ProjectType, ScopeType, engineSettingPath, scopePath } from '@ir-engine/common/src/schema.type.module'
-import { useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { Checkbox, Select } from '@ir-engine/ui'
 import Modal from '@ir-engine/ui/src/primitives/tailwind/Modal'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 
 import { EngineSettings } from '@ir-engine/common/src/constants/EngineSettings'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { AuthState } from '../../../user/services/AuthService'
 import { ProjectUpdateService, ProjectUpdateState } from '../../services/ProjectUpdateService'
 import AddEditProjectModal from './AddEditProjectModal'
@@ -48,7 +48,7 @@ export default function UpdateEngineModal() {
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'projects:read' as ScopeType
     }
   })

@@ -26,7 +26,7 @@ export const InspectorWithData: StoryObj = {
     thumbnail: './apartment_scene.png',
     name: 'apartment_scene.png',
     type: 'png',
-    author: 'Napster 3D Studio',
+    author: 'Enchantment Engine',
     dateCreated: '2025-05-13T16:58:59.000Z',
     fileSize: '',
     dimensions: {},

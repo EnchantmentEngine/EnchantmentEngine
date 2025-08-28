@@ -1,7 +1,9 @@
-import { defineQuery, defineSystem, Engine, Entity, getChildrenWithComponents } from '@ir-engine/ecs'
+import { defineQuery, defineSystem, Entity, getChildrenWithComponents } from '@ir-engine/ecs'
 import { defineComponent, getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
+import { getState } from '@ir-engine/hyperflux'
 import { OutlineEffect } from 'postprocessing'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { WebGLRendererSystem } from '../WebGLRendererSystem'
 import { MeshComponent } from './MeshComponent'
 import { RendererComponent } from './RendererComponent'
@@ -15,9 +17,9 @@ const getCompObject = (entity: Entity) => getComponent(entity, MeshComponent)
 
 const execute = () => {
   /** @todo support multiple render contexts */
-  if (!hasComponent(Engine.instance.viewerEntity, RendererComponent)) return
+  if (!hasComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)) return
 
-  const rendererComponent = getComponent(Engine.instance.viewerEntity, RendererComponent)
+  const rendererComponent = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
   const outlineEffect = rendererComponent?.effectInstances?.OutlineEffect as OutlineEffect
   outlineEffect?.selection.set(
     highlightQuery()

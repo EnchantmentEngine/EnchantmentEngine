@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { Color, PointLight } from 'three'
 
-import { S, defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
-import { useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { defineComponent, removeComponent, setComponent, useComponent, useEntityContext } from '@ir-engine/ecs'
+import { Schema, useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 
+import { EntitySchema } from '@ir-engine/ecs'
 import { T } from '../../../schema/schemaFunctions'
 import { isMobileXRHeadset } from '../../../xr/XRState'
 import { RendererState } from '../../RendererState'
@@ -14,15 +15,15 @@ export const PointLightComponent = defineComponent({
   name: 'PointLightComponent',
   jsonID: 'EE_point_light',
 
-  schema: S.Object({
+  schema: Schema.Object({
     color: T.Color(0xffffff),
-    intensity: S.Number({ default: 1 }),
-    range: S.Number({ default: 0 }),
-    decay: S.Number({ default: 2 }),
-    castShadow: S.Bool({ default: false }),
-    shadowBias: S.Number({ default: 0 }),
-    shadowRadius: S.Number({ default: 1 }),
-    helperEntity: S.Entity({ serialized: false })
+    intensity: Schema.Number({ default: 1 }),
+    range: Schema.Number({ default: 0 }),
+    decay: Schema.Number({ default: 2 }),
+    castShadow: Schema.Bool({ default: false }),
+    shadowBias: Schema.Number({ default: 0 }),
+    shadowRadius: Schema.Number({ default: 1 }),
+    helperEntity: EntitySchema.Entity({ serialized: false })
   }),
 
   reactor: function () {
@@ -42,31 +43,31 @@ export const PointLightComponent = defineComponent({
     }, [])
 
     useEffect(() => {
-      light.color = new Color(pointLightComponent.color.value)
+      light.color = new Color(pointLightComponent.color)
     }, [pointLightComponent.color])
 
     useEffect(() => {
-      light.intensity = pointLightComponent.intensity.value
+      light.intensity = pointLightComponent.intensity
     }, [pointLightComponent.intensity])
 
     useEffect(() => {
-      light.distance = pointLightComponent.range.value
+      light.distance = pointLightComponent.range
     }, [pointLightComponent.range])
 
     useEffect(() => {
-      light.decay = pointLightComponent.decay.value
+      light.decay = pointLightComponent.decay
     }, [pointLightComponent.decay])
 
     useEffect(() => {
-      light.castShadow = pointLightComponent.castShadow.value
+      light.castShadow = pointLightComponent.castShadow
     }, [pointLightComponent.castShadow])
 
     useEffect(() => {
-      light.shadow.bias = pointLightComponent.shadowBias.value
+      light.shadow.bias = pointLightComponent.shadowBias
     }, [pointLightComponent.shadowBias])
 
     useEffect(() => {
-      light.shadow.radius = pointLightComponent.shadowRadius.value
+      light.shadow.radius = pointLightComponent.shadowRadius
     }, [pointLightComponent.shadowRadius])
 
     useEffect(() => {

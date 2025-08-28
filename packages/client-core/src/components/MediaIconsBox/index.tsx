@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
@@ -27,12 +27,11 @@ import {
   VideoRecorderOffMd
 } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import { MdFlipCameraAndroid } from 'react-icons/md'
+import { MdFlipCameraAndroid, MdOutlineViewInAr } from 'react-icons/md'
 import { VrIcon } from '../../common/components/Icons/VrIcon'
 import { RecordingUIState } from '../../systems/ui/RecordingsWidgetUI'
 import LocationIconButton from '../../user/components/LocationIconButton'
 import { clientContextParams } from '../../util/ClientContextState'
-import { useShelfStyles } from '../Shelves/useShelfStyles'
 
 const logger = multiLogger.child({ component: 'client-core:MediaIconsBox', modifier: clientContextParams })
 
@@ -40,9 +39,6 @@ export const MediaIconsBox = () => {
   const { t } = useTranslation()
   const playbackState = useMutableState(PlaybackState)
   const recordingState = useMutableState(RecordingState)
-
-  const location = useLocation()
-  const { topShelfStyle } = useShelfStyles()
 
   const currentLocation = useHookstate(getMutableState(LocationState).currentLocation.location)
   const networkState = useMutableState(NetworkState)
@@ -62,7 +58,7 @@ export const MediaIconsBox = () => {
   const numVideoDevices = mediaStreamState.availableVideoDevices.value.length
   const hasAudioDevice = mediaStreamState.availableAudioDevices.value.length > 0
   const hasVideoDevice = numVideoDevices > 0
-  const isMotionCaptureEnabled = mediaStreamState.faceTracking.value
+  // const isMotionCaptureEnabled = mediaStreamState.faceTracking.value
   const isCamVideoEnabled = !!mediaStreamState.webcamMediaStream.value && mediaStreamState.webcamEnabled.value
   const isCamAudioEnabled = !!mediaStreamState.microphoneMediaStream.value && mediaStreamState.microphoneEnabled.value
   const isScreenVideoEnabled =
@@ -207,7 +203,7 @@ export const MediaIconsBox = () => {
           }}
         />
       )}
-      {/* {supportsAR && xrEnabled && (
+      {supportsAR && xrEnabled && (
         <LocationIconButton
           id="UserAR"
           tooltip={{
@@ -218,7 +214,7 @@ export const MediaIconsBox = () => {
           }}
           icon={MdOutlineViewInAr}
         />
-      )} */}
+      )}
       {spectating && (
         <button
           type="button"

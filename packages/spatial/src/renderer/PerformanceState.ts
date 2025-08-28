@@ -20,6 +20,7 @@ import { EngineState } from '@ir-engine/ecs'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { RendererState } from './RendererState'
 import { RendererComponent } from './components/RendererComponent'
+import { RenderBackends } from './constants/RenderModes'
 
 type PerformanceTier = 0 | 1 | 2 | 3 | 4 | 5
 type TargetFPS = 30 | 60
@@ -153,9 +154,9 @@ export const PerformanceState = defineState({
     const renderer = useOptionalComponent(viewerEntity, RendererComponent)
 
     useEffect(() => {
-      if (!renderer?.renderer.value) return
+      if (!renderer?.renderer) return
       PerformanceManager.buildPerformanceState(getComponent(viewerEntity, RendererComponent))
-    }, [!!renderer?.renderer.value])
+    }, [!!renderer?.renderer])
 
     const performanceState = useMutableState(PerformanceState)
     const renderSettings = useMutableState(RenderSettingsState)
@@ -416,11 +417,19 @@ const buildPerformanceState = async (
   renderer: ComponentType<typeof RendererComponent>,
   override?: GetGPUTier['override']
 ) => {
-  const performanceState = getMutableState(PerformanceState)
-  const gl = renderer.renderContext as WebGL2RenderingContext
-
   // hack fix for nodejs
+  if (!renderer.renderer) return
+  const isWebGLBackend = getState(RendererState).backend
+
+  if (isWebGLBackend === RenderBackends.WEBGPU) {
+    console.log('Performance state: Skipping GPU tier detection for WebGPU renderer')
+    return
+  }
+
   if (!renderer.canvas || !renderer.canvas!.getContext('webgl2')) return
+
+  const performanceState = getMutableState(PerformanceState)
+  const gl = renderer.renderer?.getContext() as any as WebGL2RenderingContext
 
   const gpuTier = await getGPUTier({
     glContext: gl,

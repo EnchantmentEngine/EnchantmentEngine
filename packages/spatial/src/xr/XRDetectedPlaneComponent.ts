@@ -2,23 +2,21 @@ import { useEffect } from 'react'
 import { BufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial, ShadowMaterial } from 'three'
 
 import {
-  Engine,
-  Entity,
-  EntityTreeComponent,
-  S,
   createEntity,
   defineComponent,
+  Entity,
+  EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   removeEntity,
   setComponent,
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
 
-import { getState } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 
 import { NameComponent } from '../common/NameComponent'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { MeshComponent } from '../renderer/components/MeshComponent'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
@@ -45,12 +43,12 @@ export const XRDetectedPlaneComponentState = defineComponent({
 export const XRDetectedPlaneComponent = defineComponent({
   name: 'XRDetectedPlaneComponent',
 
-  schema: S.Object({
-    plane: S.Type<XRPlane>(),
+  schema: Schema.Object({
+    plane: Schema.Type<XRPlane>(),
     // internal
-    shadowMesh: S.Type<Mesh>({ serialized: false }),
-    geometry: S.Type<BufferGeometry>({ serialized: false }),
-    placementHelper: S.Type<Mesh>({ serialized: false })
+    shadowMesh: Schema.Type<Mesh>({ serialized: false }),
+    geometry: Schema.Type<BufferGeometry>({ serialized: false }),
+    placementHelper: Schema.Type<Mesh>({ serialized: false })
   }),
 
   reactor: function () {
@@ -59,7 +57,7 @@ export const XRDetectedPlaneComponent = defineComponent({
 
     useEffect(() => {
       return () => {
-        component.geometry.value?.dispose()
+        component.geometry?.dispose()
       }
     }, [])
 
@@ -105,13 +103,13 @@ export const XRDetectedPlaneComponent = defineComponent({
     if (plane.lastChangedTime > lastKnownTime) {
       state.planesLastChangedTimes.set(plane, plane.lastChangedTime)
       const geometry = XRDetectedPlaneComponent.createGeometryFromPolygon(plane)
-      const planeComponent = getMutableComponent(entity, XRDetectedPlaneComponent)
-      planeComponent.geometry.value?.dispose()
-      planeComponent.shadowMesh.value?.geometry.dispose()
+      const planeComponent = getComponent(entity, XRDetectedPlaneComponent)
+      planeComponent.geometry?.dispose()
+      planeComponent.shadowMesh?.geometry.dispose()
       const mesh = new Mesh(geometry, shadowMaterial)
       setComponent(entity, MeshComponent, mesh)
-      planeComponent.geometry.set(geometry)
-      planeComponent.shadowMesh.set(mesh)
+      planeComponent.geometry = geometry
+      planeComponent.shadowMesh = mesh
     }
   },
 
@@ -134,7 +132,7 @@ export const XRDetectedPlaneComponent = defineComponent({
       return state.detectedPlanesMap.get(plane)!
     }
     const entity = createEntity()
-    setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     setComponent(entity, TransformComponent)
     setVisibleComponent(entity, true)
     setComponent(entity, XRDetectedPlaneComponent, { plane })

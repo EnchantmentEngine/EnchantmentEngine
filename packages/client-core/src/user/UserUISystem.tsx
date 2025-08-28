@@ -24,16 +24,16 @@ const OverlayReactor = () => {
   }
 
   useEffect(() => {
-    if (overlayComponent?.isOpen.value && !isPopoverOpen) {
-      const popoverType = overlayComponent?.type.value
+    if (overlayComponent?.isOpen && !isPopoverOpen) {
+      const popoverType = overlayComponent?.type
       if (!popoverType) return
       const Component = getState(OverlayComponentState)[popoverType]
-      ModalState.openModal(<Component component={overlayComponent.value} onClose={onClose} />, () => {
+      ModalState.openModal(<Component component={overlayComponent} onClose={onClose} />, () => {
         onClose()
       })
       setIsPopoverOpen(true)
     }
-  }, [overlayComponent?.isOpen.value])
+  }, [overlayComponent?.isOpen])
 
   return null
 }

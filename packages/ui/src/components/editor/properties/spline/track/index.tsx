@@ -28,7 +28,6 @@ export const SplineTrackNodeEditor: EditorComponentType = (props) => {
   const { t } = useTranslation()
   const component = useComponent(props.entity, SplineTrackComponent)
   const velocity = component.velocity
-  const alpha = component.velocity
 
   const availableSplines = useQuery([SplineComponent]).map((entity) => {
     const name = getComponent(entity, NameComponent)
@@ -38,12 +37,6 @@ export const SplineTrackNodeEditor: EditorComponentType = (props) => {
       value: nodeID
     }
   })
-
-  // @todo allow these to be passed in or remove this capability
-
-  const setAlpha = (value) => {
-    component.alpha.set(value)
-  }
 
   return (
     <NodeEditor
@@ -55,18 +48,18 @@ export const SplineTrackNodeEditor: EditorComponentType = (props) => {
         <SelectInput
           key={props.entity}
           options={availableSplines}
-          value={component.splineEntityUUID.value!}
+          value={component.splineEntityUUID!}
           onChange={commitProperty(SplineTrackComponent, 'splineEntityUUID') as any}
         />
       </InputGroup>
       <InputGroup name="Velocity" label={t('editor:properties.splinetrack.lbl-velocity')}>
         <NumericInput
-          value={velocity.value}
+          value={velocity}
           onChange={updateProperty(SplineTrackComponent, 'velocity')}
           onRelease={commitProperty(SplineTrackComponent, 'velocity')}
           prefix={
             <Vector3Scrubber
-              value={velocity.value}
+              value={velocity}
               onChange={updateProperty(SplineTrackComponent, 'velocity')}
               onRelease={commitProperty(SplineTrackComponent, 'velocity')}
             />
@@ -75,18 +68,15 @@ export const SplineTrackNodeEditor: EditorComponentType = (props) => {
       </InputGroup>
       <InputGroup name="Enable Rotation" label={t('editor:properties.splinetrack.lbl-enableRotation')}>
         <Checkbox
-          checked={component.enableRotation.value}
+          checked={component.enableRotation}
           onChange={commitProperty(SplineTrackComponent, 'enableRotation')}
         />
       </InputGroup>
       <InputGroup name="Lock XZ" label={t('editor:properties.splinetrack.lbl-lockXZ')}>
-        <Checkbox
-          checked={component.lockToXZPlane.value}
-          onChange={commitProperty(SplineTrackComponent, 'lockToXZPlane')}
-        />
+        <Checkbox checked={component.lockToXZPlane} onChange={commitProperty(SplineTrackComponent, 'lockToXZPlane')} />
       </InputGroup>
       <InputGroup name="Loop" label={t('editor:properties.splinetrack.lbl-loop')}>
-        <Checkbox checked={component.loop.value} onChange={commitProperty(SplineTrackComponent, 'loop')} />
+        <Checkbox checked={component.loop} onChange={commitProperty(SplineTrackComponent, 'loop')} />
       </InputGroup>
     </NodeEditor>
   )

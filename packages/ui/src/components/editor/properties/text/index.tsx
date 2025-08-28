@@ -13,8 +13,7 @@ import NodeEditor from '@ir-engine/editor/src/panels/properties/common/NodeEdito
 import {
   FontMaterialKind,
   TextComponent,
-  TroikaTextAlignment,
-  TroikaTextLineHeight
+  TroikaTextAlignment
 } from '@ir-engine/engine/src/scene/components/TextComponent'
 import { useHookstate } from '@ir-engine/hyperflux'
 import { Checkbox } from '@ir-engine/ui'
@@ -51,11 +50,6 @@ const SelectOptions = {
     { label: 'Standard', value: FontMaterialKind.Standard }
   ]
 }
-
-/**
- * @description Default fallback value for when when text.lineheight is not set to 'normal'
- */
-const LineHeightNumericDefault = 1.2 as TroikaTextLineHeight
 
 const HoverInfo = {
   FontFamily: `
@@ -104,23 +98,10 @@ export const TextNodeEditor: EditorComponentType = (props) => {
 
   // initialize default values
   useEffect(() => {
-    if (text.lineHeight.value === undefined) {
-      text.lineHeight.set(LineHeightNumericDefault) // 1.2 em
-    }
-    if (text.outlineOpacity.value === undefined) {
-      text.outlineOpacity.set(100) // 100%
-    }
-    if (text.outlineWidth.value === undefined) {
-      text.outlineWidth.set(3) // 3px
-    }
-    if (text.textAlign.value === undefined) {
-      text.textAlign.set('left')
-    }
-
-    if (text.font.value === undefined) {
+    if (text.font === undefined) {
       const defaultFont = SelectOptions.Font.find((option) => option.label === 'Noto Sans')
       if (defaultFont) {
-        text.font.set(defaultFont.value)
+        text.font = defaultFont.value
       }
     }
   }, [])
@@ -134,7 +115,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
     >
       <InputGroup name="TextContents" label="Contents">
         <ControlledStringInput
-          value={text.text.value}
+          value={text.text}
           onChange={updateProperty(TextComponent, 'text')}
           onRelease={commitProperty(TextComponent, 'text')}
         />
@@ -148,7 +129,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={1}
               mediumStep={5}
               largeStep={10}
-              value={text.textOpacity.value}
+              value={text.textOpacity}
               onChange={updateProperty(TextComponent, 'textOpacity')}
               onRelease={commitProperty(TextComponent, 'textOpacity')}
               unit="%"
@@ -160,7 +141,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={0.01}
               mediumStep={0.1}
               largeStep={0.5}
-              value={text.textWidth.value}
+              value={text.textWidth}
               onChange={updateProperty(TextComponent, 'textWidth')}
               onRelease={commitProperty(TextComponent, 'textWidth')}
               unit="em"
@@ -172,7 +153,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={0.01}
               mediumStep={0.1}
               largeStep={0.5}
-              value={text.textIndent.value}
+              value={text.textIndent}
               onChange={updateProperty(TextComponent, 'textIndent')}
               onRelease={commitProperty(TextComponent, 'textIndent')}
               unit="em"
@@ -182,18 +163,18 @@ export const TextNodeEditor: EditorComponentType = (props) => {
           <InputGroup name="TextAlign" label={t('editor:properties.text.textAlign')}>
             <SelectInput
               options={SelectOptions.TextAlignment}
-              value={text.textAlign.value}
+              value={text.textAlign}
               onChange={(value) => commitProperty(TextComponent, 'textAlign')(value.toString() as TroikaTextAlignment)}
             />
           </InputGroup>
           <InputGroup name="TextWrap" label={t('editor:properties.text.textWrap')}>
-            <Checkbox checked={text.textWrap.value} onChange={commitProperty(TextComponent, 'textWrap')} />
+            <Checkbox checked={text.textWrap} onChange={commitProperty(TextComponent, 'textWrap')} />
           </InputGroup>
           <InputGroup name="TextAnchor" label={t('editor:properties.text.textAnchor')}>
             <Vector2Input
               min={0}
               max={100}
-              value={text.textAnchor.value}
+              value={text.textAnchor}
               onChange={updateProperty(TextComponent, 'textAnchor')}
               onRelease={commitProperty(TextComponent, 'textAnchor')}
             />
@@ -203,7 +184,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={0.01}
               mediumStep={0.1}
               largeStep={0.25}
-              value={text.textDepthOffset.value}
+              value={text.textDepthOffset}
               onChange={updateProperty(TextComponent, 'textDepthOffset')}
               onRelease={commitProperty(TextComponent, 'textDepthOffset')}
               unit="px"
@@ -213,7 +194,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={1}
               mediumStep={5}
               largeStep={15}
-              value={text.textCurveRadius.value}
+              value={text.textCurveRadius}
               onChange={updateProperty(TextComponent, 'textCurveRadius')}
               onRelease={commitProperty(TextComponent, 'textCurveRadius')}
               unit="deg"
@@ -225,7 +206,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={0.01}
               mediumStep={0.1}
               largeStep={0.2}
-              value={text.letterSpacing.value}
+              value={text.letterSpacing}
               onChange={updateProperty(TextComponent, 'letterSpacing')}
               onRelease={commitProperty(TextComponent, 'letterSpacing')}
               unit="px"
@@ -237,7 +218,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={0.01}
               mediumStep={0.1}
               largeStep={0.2}
-              value={text.lineHeight.value as number}
+              value={text.lineHeight as number}
               onChange={updateProperty(TextComponent, 'lineHeight')}
               onRelease={commitProperty(TextComponent, 'lineHeight')}
               unit="em"
@@ -246,7 +227,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
           <InputGroup name="TextDirection" label={t('editor:properties.text.textDirection')}>
             <SelectInput
               options={SelectOptions.TextDirection}
-              value={text.textDirection.value}
+              value={text.textDirection}
               onChange={commitProperty(TextComponent, 'textDirection')}
             />
           </InputGroup>
@@ -256,7 +237,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="Font" label={t('editor:properties.text.fontGroup')}>
         <SelectInput
           options={SelectOptions.Font}
-          value={text.font.value || ''}
+          value={text.font || ''}
           onChange={(value) => commitProperty(TextComponent, 'font')(value.toString())}
         />
       </InputGroup>
@@ -266,7 +247,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
           smallStep={0.01}
           mediumStep={0.1}
           largeStep={0.5}
-          value={text.fontSize.value}
+          value={text.fontSize}
           onChange={updateProperty(TextComponent, 'fontSize')}
           onRelease={commitProperty(TextComponent, 'fontSize')}
           unit="em"
@@ -274,7 +255,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
       </InputGroup>
       <InputGroup name="FontColor" label={t('editor:properties.text.fontColor')}>
         <ColorInput
-          value={text.fontColor.value}
+          value={text.fontColor}
           onChange={commitProperty(TextComponent, 'fontColor')}
           //onRelease={commitProperty(TextComponent, 'fontColor')}
         />
@@ -282,7 +263,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
       <InputGroup name="FontMaterial" label={t('editor:properties.text.fontMaterial')}>
         <SelectInput
           options={SelectOptions.FontMaterial}
-          value={text.fontMaterial.value}
+          value={text.fontMaterial}
           onChange={commitProperty(TextComponent, 'fontMaterial')}
           //onRelease={commitProperty(TextComponent, 'fontMaterial')}
         />
@@ -292,7 +273,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
         <div>
           <InputGroup name="OutlineColor" label={t('editor:properties.text.outlineColor')}>
             <ColorInput
-              value={text.outlineColor.value}
+              value={text.outlineColor}
               onChange={updateProperty(TextComponent, 'outlineColor')}
               onRelease={commitProperty(TextComponent, 'outlineColor')}
             />
@@ -304,7 +285,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={1}
               mediumStep={2}
               largeStep={5}
-              value={text.outlineOpacity.value}
+              value={text.outlineOpacity}
               onChange={updateProperty(TextComponent, 'outlineOpacity')}
               onRelease={commitProperty(TextComponent, 'outlineOpacity')}
               unit="%"
@@ -316,7 +297,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={0.5}
               mediumStep={1}
               largeStep={2}
-              value={text.outlineWidth.value}
+              value={text.outlineWidth}
               onChange={updateProperty(TextComponent, 'outlineWidth')}
               onRelease={commitProperty(TextComponent, 'outlineWidth')}
               unit="px"
@@ -328,7 +309,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={1}
               mediumStep={2}
               largeStep={5}
-              value={text.outlineBlur.value}
+              value={text.outlineBlur}
               onChange={updateProperty(TextComponent, 'outlineBlur')}
               onRelease={commitProperty(TextComponent, 'outlineBlur')}
               unit="px"
@@ -336,7 +317,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
           </InputGroup>
           <InputGroup name="OutlineOffset" label={t('editor:properties.text.outlineOffset')}>
             <Vector2Input
-              value={text.outlineOffset.value}
+              value={text.outlineOffset}
               onChange={updateProperty(TextComponent, 'outlineOffset')}
               onRelease={commitProperty(TextComponent, 'outlineOffset')}
             />
@@ -348,7 +329,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
         <div>
           <InputGroup name="StrokeColor" label={t('editor:properties.text.strokeColor')}>
             <ColorInput
-              value={text.strokeColor.value}
+              value={text.strokeColor}
               onChange={updateProperty(TextComponent, 'strokeColor')}
               onRelease={commitProperty(TextComponent, 'strokeColor')}
             />
@@ -360,7 +341,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={1}
               mediumStep={2}
               largeStep={10}
-              value={text.strokeOpacity.value}
+              value={text.strokeOpacity}
               onChange={updateProperty(TextComponent, 'strokeOpacity')}
               onRelease={commitProperty(TextComponent, 'strokeOpacity')}
               unit="%"
@@ -372,7 +353,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               smallStep={0.5}
               mediumStep={1}
               largeStep={2}
-              value={text.strokeWidth.value}
+              value={text.strokeWidth}
               onChange={updateProperty(TextComponent, 'strokeWidth')}
               onRelease={commitProperty(TextComponent, 'strokeWidth')}
               unit="%"
@@ -394,7 +375,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
           <div>
             <InputGroup name="TextOrientation" label="textOrientation" info={HoverInfo.TextOrientation}>
               <ControlledStringInput
-                value={text.textOrientation.value}
+                value={text.textOrientation}
                 onChange={updateProperty(TextComponent, 'textOrientation')}
                 onRelease={commitProperty(TextComponent, 'textOrientation')}
               />
@@ -404,26 +385,18 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               label={t('editor:properties.text.clippingActive')}
               info={HoverInfo.Clipping}
             >
-              <Checkbox checked={text.clipActive.value} onChange={commitProperty(TextComponent, 'clipActive')} />
+              <Checkbox checked={text.clipActive} onChange={commitProperty(TextComponent, 'clipActive')} />
             </InputGroup>
-            <InputGroup
-              disabled={!text.clipActive.value}
-              name="ClippingMin"
-              label={t('editor:properties.text.clippingMin')}
-            >
+            <InputGroup disabled={!text.clipActive} name="ClippingMin" label={t('editor:properties.text.clippingMin')}>
               <Vector2Input
-                value={text.clipRectMin.value}
+                value={text.clipRectMin}
                 onChange={updateProperty(TextComponent, 'clipRectMin')}
                 onRelease={commitProperty(TextComponent, 'clipRectMin')}
               />
             </InputGroup>
-            <InputGroup
-              disabled={!text.clipActive.value}
-              name="ClippingMax"
-              label={t('editor:properties.text.clippingMax')}
-            >
+            <InputGroup disabled={!text.clipActive} name="ClippingMax" label={t('editor:properties.text.clippingMax')}>
               <Vector2Input
-                value={text.clipRectMax.value}
+                value={text.clipRectMax}
                 onChange={updateProperty(TextComponent, 'clipRectMax')}
                 onRelease={commitProperty(TextComponent, 'clipRectMax')}
               />
@@ -439,7 +412,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
                 smallStep={1}
                 mediumStep={1}
                 largeStep={2}
-                value={text.glyphResolution.value}
+                value={text.glyphResolution}
                 onChange={updateProperty(TextComponent, 'glyphResolution')}
                 onRelease={commitProperty(TextComponent, 'glyphResolution')}
                 unit="2^N"
@@ -451,7 +424,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
                 smallStep={1}
                 mediumStep={1}
                 largeStep={1}
-                value={text.glyphDetail.value}
+                value={text.glyphDetail}
                 onChange={updateProperty(TextComponent, 'glyphDetail')}
                 onRelease={commitProperty(TextComponent, 'glyphDetail')}
                 unit="subdiv"
@@ -462,10 +435,7 @@ export const TextNodeEditor: EditorComponentType = (props) => {
               label={t('editor:properties.text.gpuAccelerated')}
               info={HoverInfo.GPUAccelerated}
             >
-              <Checkbox
-                checked={text.gpuAccelerated.value}
-                onChange={commitProperty(TextComponent, 'gpuAccelerated')}
-              />
+              <Checkbox checked={text.gpuAccelerated} onChange={commitProperty(TextComponent, 'gpuAccelerated')} />
             </InputGroup>
           </div>
         </InputGroup>

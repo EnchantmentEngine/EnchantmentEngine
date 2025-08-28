@@ -32,7 +32,7 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
       >
         <SelectInput
           options={DistanceModelOptions}
-          value={mediaState.distanceModel.value}
+          value={mediaState.distanceModel}
           onChange={commitProperty(MediaSettingsComponent, 'distanceModel')}
         />
       </InputGroup>
@@ -42,17 +42,17 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
         info={t('editor:properties.mediaSettings.info-immersiveMedia')}
       >
         <Checkbox
-          checked={mediaState.immersiveMedia.value}
+          checked={mediaState.immersiveMedia}
           onChange={commitProperty(MediaSettingsComponent, 'immersiveMedia')}
         />
       </InputGroup>
 
-      {mediaState.distanceModel.value === DistanceModel.Linear ? (
+      {mediaState.distanceModel === DistanceModel.Linear ? (
         <Slider
           min={0}
           max={1}
           step={0.01}
-          value={mediaState.rolloffFactor.value}
+          value={mediaState.rolloffFactor}
           onChange={updateProperty(MediaSettingsComponent, 'rolloffFactor')}
           onRelease={commitProperty(MediaSettingsComponent, 'rolloffFactor')}
           aria-label="Media Rolloff Factor"
@@ -70,7 +70,7 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
             smallStep={0.1}
             mediumStep={1}
             largeStep={10}
-            value={mediaState.rolloffFactor.value}
+            value={mediaState.rolloffFactor}
             onChange={updateProperty(MediaSettingsComponent, 'rolloffFactor')}
             onRelease={commitProperty(MediaSettingsComponent, 'rolloffFactor')}
           />
@@ -86,7 +86,7 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
           smallStep={0.1}
           mediumStep={1}
           largeStep={10}
-          value={mediaState.refDistance.value}
+          value={mediaState.refDistance}
           onChange={updateProperty(MediaSettingsComponent, 'refDistance')}
           onRelease={commitProperty(MediaSettingsComponent, 'refDistance')}
           unit="m"
@@ -102,7 +102,7 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
           smallStep={0.1}
           mediumStep={1}
           largeStep={10}
-          value={mediaState.maxDistance.value}
+          value={mediaState.maxDistance}
           onChange={updateProperty(MediaSettingsComponent, 'maxDistance')}
           onRelease={commitProperty(MediaSettingsComponent, 'maxDistance')}
           unit="m"
@@ -119,7 +119,7 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
           smallStep={0.1}
           mediumStep={1}
           largeStep={10}
-          value={mediaState.coneInnerAngle.value}
+          value={mediaState.coneInnerAngle}
           onChange={updateProperty(MediaSettingsComponent, 'coneInnerAngle')}
           onRelease={commitProperty(MediaSettingsComponent, 'coneInnerAngle')}
           unit="°"
@@ -136,7 +136,7 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
           smallStep={0.1}
           mediumStep={1}
           largeStep={10}
-          value={mediaState.coneOuterAngle.value}
+          value={mediaState.coneOuterAngle}
           onChange={updateProperty(MediaSettingsComponent, 'coneOuterAngle')}
           onRelease={commitProperty(MediaSettingsComponent, 'coneOuterAngle')}
           unit="°"
@@ -146,7 +146,7 @@ export const MediaSettingsEditor: EditorComponentType = (props) => {
         min={0}
         max={1}
         step={0.01}
-        value={mediaState.coneOuterGain.value}
+        value={mediaState.coneOuterGain}
         onChange={updateProperty(MediaSettingsComponent, 'coneOuterGain')}
         onRelease={commitProperty(MediaSettingsComponent, 'coneOuterGain')}
         aria-labelname="Media Cone Outer Gain"

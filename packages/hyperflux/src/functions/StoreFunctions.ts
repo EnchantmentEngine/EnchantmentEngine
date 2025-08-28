@@ -43,6 +43,7 @@ export interface HyperStore {
    * State dictionary
    */
   stateMap: Record<string, State<any>>
+  valueMap: Record<string, any>
 
   stateReactors: Record<string, ReactorRoot>
 
@@ -107,6 +108,7 @@ export function createHyperStore(options?: {
     peerID,
     peerIndex,
     stateMap: {},
+    valueMap: {},
     stateReactors: {},
     actions: {
       queues: new Map(),

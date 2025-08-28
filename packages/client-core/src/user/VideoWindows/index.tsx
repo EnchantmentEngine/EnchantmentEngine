@@ -3,9 +3,9 @@ import React, { useRef } from 'react'
 import { useGet } from '@ir-engine/common'
 import { UserID, userPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState } from '@ir-engine/ecs'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
   getState,
+  HyperFlux,
   MediaChannelState,
   MediaChannelType,
   MediaStreamInterface,
@@ -64,7 +64,7 @@ export const useMediaWindows = () => {
     { [channelType: MediaChannelType]: MediaStreamInterface }
   ][]
 
-  const selfPeerID = Engine.instance.store.peerID
+  const selfPeerID = HyperFlux.store.peerID
   const selfUserID = useMutableState(EngineState).userID.value
 
   const userPeers: Array<[UserID, PeerID[]]> =
@@ -125,9 +125,7 @@ export const useMediaWindows = () => {
 
   return windows.filter(
     ({ peerID }) =>
-      (peerID === Engine.instance.store.peerID ||
-        mediaNetwork?.peers?.[peerID].userId === selfUserID ||
-        isNearby(peerID)) &&
+      (peerID === HyperFlux.store.peerID || mediaNetwork?.peers?.[peerID].userId === selfUserID || isNearby(peerID)) &&
       mediaChannelState.value[peerID]
   )
 }

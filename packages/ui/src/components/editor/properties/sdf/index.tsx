@@ -17,11 +17,11 @@ export const SDFEditor: EditorComponentType = (props) => {
   return (
     <NodeEditor {...props} name={'SDF'} description={'Raymarching--torus and fog'} Icon={SDFEditor.iconComponent}>
       <InputGroup name="Add Pass" label={'add pass to postprocess'}>
-        <Checkbox checked={sdfComponent.enable.value} onChange={commitProperty(SDFComponent, 'enable')} />
+        <Checkbox checked={sdfComponent.enable} onChange={commitProperty(SDFComponent, 'enable')} />
       </InputGroup>
       <InputGroup name="Mode" label="Mode">
         <SelectInput
-          value={sdfComponent.mode.value}
+          value={sdfComponent.mode}
           options={[
             { label: 'torus', value: SDFMode.TORUS },
             { label: 'fog', value: SDFMode.FOG }
@@ -31,13 +31,13 @@ export const SDFEditor: EditorComponentType = (props) => {
       </InputGroup>
       <InputGroup name="Color" label="Color">
         <ColorInput
-          value={sdfComponent.color.value}
+          value={sdfComponent.color}
           onChange={commitProperty(SDFComponent, 'color')}
           onRelease={commitProperty(SDFComponent, 'color')}
         />
       </InputGroup>
       <InputGroup name="Scale" label="Scale">
-        <Vector3Input value={sdfComponent.scale.value} onChange={commitProperty(SDFComponent, 'scale')} />
+        <Vector3Input value={sdfComponent.scale} onChange={commitProperty(SDFComponent, 'scale')} />
       </InputGroup>
     </NodeEditor>
   )

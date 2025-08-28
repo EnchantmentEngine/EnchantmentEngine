@@ -9,21 +9,22 @@ import {
   PCFShadowMap,
   PCFSoftShadowMap,
   ReinhardToneMapping,
-  VSMShadowMap
+  VSMShadowMap,
+  WebGLRenderer
 } from 'three'
 
-import { useEntityContext } from '@ir-engine/ecs'
+import { EntitySchema, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, getComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { useRendererEntity } from '@ir-engine/spatial/src/renderer/functions/useRendererEntity'
 
-const ToneMappingSchema = S.LiteralUnion(
+const ToneMappingSchema = Schema.LiteralUnion(
   [NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping],
   { default: LinearToneMapping }
 )
 
-const ShadowMapSchema = S.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], {
+const ShadowMapSchema = Schema.LiteralUnion([BasicShadowMap, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap], {
   default: PCFSoftShadowMap
 })
 
@@ -31,12 +32,12 @@ export const RenderSettingsComponent = defineComponent({
   name: 'RenderSettingsComponent',
   jsonID: 'EE_render_settings',
 
-  schema: S.Object({
-    primaryLight: S.EntityID(),
-    csm: S.Bool({ default: true }),
-    cascades: S.Number({ default: 5 }),
+  schema: Schema.Object({
+    primaryLight: EntitySchema.EntityID(),
+    csm: Schema.Bool({ default: true }),
+    cascades: Schema.Number({ default: 5 }),
     toneMapping: ToneMappingSchema,
-    toneMappingExposure: S.Number({ default: 0.8 }),
+    toneMappingExposure: Schema.Number({ default: 0.8 }),
     shadowMapType: ShadowMapSchema
   }),
 
@@ -48,19 +49,19 @@ export const RenderSettingsComponent = defineComponent({
     useEffect(() => {
       if (!rendererEntity) return
       const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.toneMapping = component.toneMapping.value
+      renderer.toneMapping = component.toneMapping
     }, [component.toneMapping, rendererEntity])
 
     useEffect(() => {
       if (!rendererEntity) return
       const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.toneMappingExposure = component.toneMappingExposure.value
+      renderer.toneMappingExposure = component.toneMappingExposure
     }, [component.toneMappingExposure, rendererEntity])
 
     useEffect(() => {
       if (!rendererEntity) return
-      const renderer = getComponent(rendererEntity, RendererComponent).renderer!
-      renderer.shadowMap.type = component.shadowMapType.value
+      const renderer = getComponent(rendererEntity, RendererComponent).renderer! as WebGLRenderer // todo
+      renderer.shadowMap.type = component.shadowMapType
       renderer.shadowMap.needsUpdate = true
     }, [component.shadowMapType, rendererEntity])
 

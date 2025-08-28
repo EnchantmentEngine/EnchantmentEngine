@@ -1,13 +1,8 @@
 import { clamp } from 'lodash'
-import { AnimationAction, AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'three'
+import { AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'three'
 
 import { UUIDComponent } from '@ir-engine/ecs'
-import {
-  getComponent,
-  getMutableComponent,
-  getOptionalComponent,
-  hasComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineActionQueue, getState, NetworkState } from '@ir-engine/hyperflux'
@@ -63,37 +58,36 @@ export const updateAnimationGraph = (avatarEntities: Entity[]) => {
       )
       continue
     }
-    const graph = getMutableComponent(targetEntity, AvatarAnimationComponent).animationGraph
-    graph.fadingOut.set(newAnimation.needsSkip ?? false)
-    graph.layer.set(newAnimation.layer ?? 0)
+    const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
+    graph.fadingOut = newAnimation.needsSkip ?? false
+    graph.layer = newAnimation.layer ?? 0
     playAvatarAnimationFromMixamo(targetEntity, animationAsset, newAnimation.loop!, newAnimation.clipName!)
   }
 
   for (const entity of avatarEntities) {
-    const animationGraph = getMutableComponent(entity, AvatarAnimationComponent).animationGraph
+    const animationGraph = getComponent(entity, AvatarAnimationComponent).animationGraph
 
     setAvatarLocomotionAnimation(entity)
 
     const currentAction = animationGraph.blendAnimation
 
-    if (currentAction.value) {
+    if (currentAction) {
       const deltaSeconds = getState(ECSState).deltaSeconds
       const locomotionBlend = animationGraph.blendStrength
-      currentAction.value.setEffectiveWeight(locomotionBlend.value)
+      currentAction.setEffectiveWeight(locomotionBlend)
       if (
-        (currentAction.value.time >= currentAction.value.getClip().duration - epsilon &&
-          currentAction.value.loop != LoopRepeat) ||
-        animationGraph.fadingOut.value
+        (currentAction.time >= currentAction.getClip().duration - epsilon && currentAction.loop != LoopRepeat) ||
+        animationGraph.fadingOut
       ) {
-        currentAction.value.setEffectiveTimeScale(0)
-        locomotionBlend.set(Math.max(locomotionBlend.value - deltaSeconds * currentActionBlendSpeed, 0))
-        if (locomotionBlend.value <= 0) {
-          currentAction.value.setEffectiveWeight(0)
-          animationGraph.fadingOut.set(false)
-          currentAction.set(undefined)
+        currentAction.setEffectiveTimeScale(0)
+        animationGraph.blendStrength = Math.max(locomotionBlend - deltaSeconds * currentActionBlendSpeed, 0)
+        if (locomotionBlend <= 0) {
+          currentAction.setEffectiveWeight(0)
+          animationGraph.fadingOut = false
+          animationGraph.blendAnimation = undefined
         }
       } else {
-        locomotionBlend.set(Math.min(locomotionBlend.value + deltaSeconds * currentActionBlendSpeed, 1))
+        animationGraph.blendStrength = Math.min(locomotionBlend + deltaSeconds * currentActionBlendSpeed, 1)
       }
     }
   }
@@ -107,7 +101,7 @@ export const playAvatarAnimationFromMixamo = (
   clipName?: string
 ) => {
   const animationComponent = getComponent(entity, AnimationComponent)
-  const avatarAnimationComponent = getMutableComponent(entity, AvatarAnimationComponent)
+  const avatarAnimationComponent = getComponent(entity, AvatarAnimationComponent)
   const rigComponent = getComponent(entity, AvatarRigComponent)
   if (!rigComponent || !rigComponent.bonesToEntities.hips) return
   //if animation is already present on animation component, use it instead of retargeting again
@@ -118,15 +112,17 @@ export const playAvatarAnimationFromMixamo = (
 
   if (!retargetedAnimation) retargetedAnimation = animationsScene.animations[0]
 
-  const currentAction = avatarAnimationComponent.animationGraph.blendAnimation
+  const action = avatarAnimationComponent.animationGraph.blendAnimation
   //before setting animation, stop previous animation if it exists
-  if (currentAction.value) currentAction.value.stop()
+  if (action) action.stop()
   //set the animation to the current action
-  currentAction.set(
-    getAnimationAction(retargetedAnimation.name, animationComponent.mixer, animationComponent.animations)
+  avatarAnimationComponent.animationGraph.blendAnimation = getAnimationAction(
+    retargetedAnimation.name,
+    animationComponent.mixer,
+    animationComponent.animations
   )
-  if (currentAction.value) {
-    const action = currentAction.value as AnimationAction
+
+  if (action) {
     action.timeScale = 1
     action.time = 0
     action.loop = loop ? LoopRepeat : LoopOnce
@@ -142,7 +138,7 @@ let runWeight = 0,
 export const setAvatarLocomotionAnimation = (entity: Entity) => {
   const animationComponent = getComponent(entity, AnimationComponent)
   if (!animationComponent.animations) return
-  const avatarAnimationComponent = getMutableComponent(entity, AvatarAnimationComponent)
+  const avatarAnimationComponent = getComponent(entity, AvatarAnimationComponent)
 
   const idle = getAnimationAction('Idle', animationComponent.mixer, animationComponent.animations)
   const run = getAnimationAction('Run', animationComponent.mixer, animationComponent.animations)
@@ -154,13 +150,13 @@ export const setAvatarLocomotionAnimation = (entity: Entity) => {
 
   //for now we're hard coding layer overrides into the locomotion blending function
   const animationGraph = avatarAnimationComponent.animationGraph
-  const idleBlendStrength = animationGraph.blendStrength.value
-  const layerOverride = animationGraph.layer.value > 0
-  const locomoteBlendStrength = layerOverride ? animationGraph.blendStrength.value : 0
-  const needsSkip = animationGraph.fadingOut
+  const idleBlendStrength = animationGraph.blendStrength
+  const layerOverride = animationGraph.layer > 0
+  const locomoteBlendStrength = layerOverride ? animationGraph.blendStrength : 0
 
-  const magnitude = moveLength.copy(avatarAnimationComponent.value.locomotion).setY(0).lengthSq()
-  if (animationGraph.blendAnimation && magnitude > 1 && idleBlendStrength >= 1 && !layerOverride) needsSkip.set(true)
+  const magnitude = moveLength.copy(avatarAnimationComponent.locomotion).setY(0).lengthSq()
+  if (animationGraph.blendAnimation && magnitude > 1 && idleBlendStrength >= 1 && !layerOverride)
+    animationGraph.fadingOut = true
 
   walkWeight = lerp(
     walk.getEffectiveWeight(),

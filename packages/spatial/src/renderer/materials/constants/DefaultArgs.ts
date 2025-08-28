@@ -1,8 +1,8 @@
-import { Schema } from '@ir-engine/ecs'
+import { SchemaDefinition } from '@ir-engine/hyperflux'
 import { Color, Euler, Quaternion, Texture, Vector2, Vector3, Vector4 } from 'three'
 
 /** @todo copied from defineMaterialPlugin in engine package, will be removed once prototypes are fully removed  */
-export const isTextureUniform = (uniformSchema: Schema) => !!uniformSchema.options?.metadata?.$isTexture
+export const isTextureUniform = (uniformSchema: SchemaDefinition) => !!uniformSchema.options?.metadata?.$isTexture
 
 export const BoolArg = { default: false, type: 'boolean' }
 
@@ -23,7 +23,7 @@ export const ShaderArg = { default: '', type: 'shader' }
 
 export const ObjectArg = { default: {}, type: 'object' }
 
-export function getDefaultType(value, schema?: Schema) {
+export function getDefaultType(value, schema?: SchemaDefinition) {
   if (schema && isTextureUniform(schema)) return TextureArg.type
   switch (typeof value) {
     case 'boolean':
@@ -46,7 +46,7 @@ export function getDefaultType(value, schema?: Schema) {
   }
 }
 
-export function generateDefaults(value, schema?: Schema) {
+export function generateDefaults(value, schema?: SchemaDefinition) {
   return Object.fromEntries(
     Object.entries(value)
       .filter(([k, v]) => getDefaultType(v, schema?.properties?.[k]))

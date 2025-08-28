@@ -9,13 +9,14 @@ import {
   userAvatarPath,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
-import { createEngine, destroyEngine, Engine, EngineState, Entity } from '@ir-engine/ecs'
+import { createEngine, destroyEngine, EngineState, Entity } from '@ir-engine/ecs'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import {
   applyIncomingActions,
   EventDispatcher,
   getMutableState,
   getState,
+  HyperFlux,
   joinNetwork,
   MediaChannelState,
   NetworkID,
@@ -168,7 +169,7 @@ describe('SingleVideoWindow component', () => {
 
     sceneEntity = getState(SceneState)[sceneURL]
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const instanceID = 'instanceID' as NetworkID
     getMutableState(EngineState).userID.set(hostUserID)
 
@@ -212,8 +213,8 @@ describe('SingleVideoWindow component', () => {
   })
 
   afterEach(() => {
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   it('should render a container element with the data-testid attribute "video-window"', () => {

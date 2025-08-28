@@ -4,11 +4,12 @@ import { EffectComposer } from 'postprocessing'
 import React from 'react'
 import { Scene } from 'three'
 
-export type EffectReactorProps = {
+export type EffectReactorProps<Effect = any> = {
   isActive: State<boolean, any>
   rendererEntity: Entity
-  effectData: any
+  effectData: Effect
   effects: any
+  entity: Entity
   composer: EffectComposer
   scene: Scene
   passes: any //Record<string, Pass>

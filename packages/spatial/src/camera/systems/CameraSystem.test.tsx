@@ -2,7 +2,6 @@ import assert from 'assert'
 import { afterEach, beforeEach, describe, it, vi } from 'vitest'
 
 import {
-  Engine,
   EngineState,
   EntityID,
   EntityUUIDPair,
@@ -13,6 +12,7 @@ import {
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import {
+  HyperFlux,
   Network,
   NetworkState,
   NetworkTopics,
@@ -33,7 +33,7 @@ describe('CameraSystem', () => {
   describe('CameraEntityState', () => {
     beforeEach(() => {
       createEngine()
-      Engine.instance.store.defaultDispatchDelay = () => 0
+      HyperFlux.store.defaultDispatchDelay = () => 0
       initializeSpatialViewer()
     })
 
@@ -43,7 +43,7 @@ describe('CameraSystem', () => {
 
     it('should create a camera entity and apply a CameraComponent to that entity', async () => {
       const hostUserID = 'host user' as UserID
-      const hostPeerID = Engine.instance.store.peerID
+      const hostPeerID = HyperFlux.store.peerID
 
       createMockNetwork(NetworkTopics.world, hostPeerID, hostUserID)
 
@@ -62,7 +62,7 @@ describe('CameraSystem', () => {
           entitySourceID: cameraUUID.entitySourceID,
           ownerID: network.hostUserID!,
           $topic: NetworkTopics.world,
-          $peer: Engine.instance.store.peerID
+          $peer: HyperFlux.store.peerID
         })
       )
       applyIncomingActions()

@@ -7,10 +7,10 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { NO_PROXY, getState, useImmediateEffect } from '@ir-engine/hyperflux'
+import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { ReferenceSpace, XRState } from './XRState'
@@ -161,8 +161,8 @@ export const XRHandComponent = defineComponent({
 export const XRLeftHandComponent = defineComponent({
   name: 'XRLeftHandComponent',
 
-  schema: S.Object({
-    rotations: S.Class(() => new Float32Array(4 * 19))
+  schema: Schema.Object({
+    rotations: Schema.Class(() => new Float32Array(4 * 19))
   }),
 
   onInit: (entity, initial) => {
@@ -176,8 +176,8 @@ export const XRLeftHandComponent = defineComponent({
 export const XRRightHandComponent = defineComponent({
   name: 'XRRightHandComponent',
 
-  schema: S.Object({
-    rotations: S.Class(() => new Float32Array(4 * 19))
+  schema: Schema.Object({
+    rotations: Schema.Class(() => new Float32Array(4 * 19))
   }),
 
   onInit: (entity, initial) => {
@@ -190,10 +190,10 @@ export const XRRightHandComponent = defineComponent({
 
 export const XRHitTestComponent = defineComponent({
   name: 'XRHitTestComponent',
-  schema: S.Object({
-    options: S.Type<XRTransientInputHitTestOptionsInit | XRHitTestOptionsInit>(),
-    source: S.Type<XRHitTestSource>(),
-    results: S.Array(S.Type<XRHitTestResult>())
+  schema: Schema.Object({
+    options: Schema.Type<XRTransientInputHitTestOptionsInit | XRHitTestOptionsInit>(),
+    source: Schema.Type<XRHitTestSource>(),
+    results: Schema.Array(Schema.Type<XRHitTestResult>())
   }),
 
   reactor: () => {
@@ -204,7 +204,7 @@ export const XRHitTestComponent = defineComponent({
     useEffect(() => {
       if (!hitTest) return
 
-      const options = hitTest.options.value
+      const options = hitTest.options
       const xrState = getState(XRState)
 
       let active = true
@@ -212,8 +212,8 @@ export const XRHitTestComponent = defineComponent({
       if ('space' in options) {
         xrState.session?.requestHitTestSource?.(options as XRHitTestOptionsInit)?.then((source) => {
           if (active) {
-            hitTest.source.set(source)
-            hitTest.results.set([])
+            hitTest.source = source
+            hitTest.results = []
           } else {
             source.cancel()
           }
@@ -223,8 +223,8 @@ export const XRHitTestComponent = defineComponent({
           ?.requestHitTestSourceForTransientInput?.(options as XRTransientInputHitTestOptionsInit)
           ?.then((source) => {
             if (active) {
-              hitTest.source.set(source)
-              hitTest.results.set([])
+              hitTest.source = source
+              hitTest.results = []
             } else {
               source.cancel()
             }
@@ -233,7 +233,7 @@ export const XRHitTestComponent = defineComponent({
 
       return () => {
         active = false
-        hitTest?.source?.value?.cancel?.()
+        hitTest?.source?.cancel?.()
       }
     }, [hitTest?.options])
 
@@ -243,8 +243,8 @@ export const XRHitTestComponent = defineComponent({
 
 export const XRAnchorComponent = defineComponent({
   name: 'XRAnchorComponent',
-  schema: S.Object({
-    anchor: S.Type<XRAnchor>()
+  schema: Schema.Object({
+    anchor: Schema.Type<XRAnchor>()
   }),
 
   reactor: () => {
@@ -252,7 +252,7 @@ export const XRAnchorComponent = defineComponent({
     const xrAnchorComponent = useComponent(entity, XRAnchorComponent)
 
     useImmediateEffect(() => {
-      const anchor = xrAnchorComponent.anchor.get(NO_PROXY)
+      const anchor = xrAnchorComponent.anchor
       return () => {
         anchor?.delete()
       }
@@ -265,9 +265,9 @@ export const XRAnchorComponent = defineComponent({
 export const XRSpaceComponent = defineComponent({
   name: 'XRSpaceComponent',
 
-  schema: S.Object({
-    space: S.Type<XRSpace>(),
-    baseSpace: S.Type<XRSpace>()
+  schema: Schema.Object({
+    space: Schema.Type<XRSpace>(),
+    baseSpace: Schema.Type<XRSpace>()
   }),
 
   reactor: () => {
@@ -275,7 +275,7 @@ export const XRSpaceComponent = defineComponent({
     const xrSpaceComponent = useComponent(entity, XRSpaceComponent)
 
     useImmediateEffect(() => {
-      const baseSpace = xrSpaceComponent.baseSpace.value
+      const baseSpace = xrSpaceComponent.baseSpace
       let parentEntity = UndefinedEntity
       switch (baseSpace) {
         case ReferenceSpace.localFloor:

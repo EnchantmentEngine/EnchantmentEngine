@@ -4,7 +4,6 @@ import {
   Entity,
   EntityTreeComponent,
   getComponent,
-  getMutableComponent,
   getOptionalComponent,
   setComponent,
   UndefinedEntity
@@ -28,7 +27,7 @@ const _raycaster = new Raycaster()
 _raycaster.layers.enable(ObjectLayers.Gizmos)
 _raycaster.firstHitOnly = true
 
-export function cameraGizmoUpdate(gizmoEntity) {
+export function cameraGizmoUpdate(gizmoEntity: Entity) {
   const cameraGizmo = getComponent(gizmoEntity, CameraGizmoComponent)
   if (cameraGizmo === undefined) return
   if (cameraGizmo.visualEntity === UndefinedEntity) return
@@ -80,7 +79,7 @@ export function cameraGizmoUpdate(gizmoEntity) {
   }
 }
 
-export function controlUpdate(gizmoEntity) {
+export function controlUpdate(gizmoEntity: Entity) {
   const viewerEntity = getState(ReferenceSpaceState).viewerEntity
   if (!viewerEntity) return
   const sceneRot = getComponent(viewerEntity, TransformComponent).rotation
@@ -90,23 +89,23 @@ export function controlUpdate(gizmoEntity) {
   })
 }
 
-function pointerHover(gizmoEntity) {
-  const cameraGizmo = getMutableComponent(gizmoEntity, CameraGizmoComponent)
-  const panelInputPointerEntity = InputPointerComponent.getPointersForCamera(cameraGizmo.cameraEntity.value)[0]
+function pointerHover(gizmoEntity: Entity) {
+  const cameraGizmo = getComponent(gizmoEntity, CameraGizmoComponent)
+  const panelInputPointerEntity = InputPointerComponent.getPointersForCamera(cameraGizmo.cameraEntity)[0]
   if (!panelInputPointerEntity) return
-  if (cameraGizmo.cameraEntity.value === UndefinedEntity) return
+  if (cameraGizmo.cameraEntity === UndefinedEntity) return
 
   _raycaster.setFromCamera(
     getComponent(panelInputPointerEntity, InputPointerComponent).position,
-    getComponent(cameraGizmo.cameraEntity.value, CameraComponent)
+    getComponent(cameraGizmo.cameraEntity, CameraComponent)
   )
-  const gizmoVisual = getComponent(cameraGizmo.visualEntity.value, CameraGizmoVisualComponent)
+  const gizmoVisual = getComponent(cameraGizmo.visualEntity, CameraGizmoVisualComponent)
   const intersect = intersectObjectWithRay(getComponent(gizmoVisual.picker, ObjectComponent), _raycaster, true)
 
-  cameraGizmo.axis.set(((intersect as any)?.object?.name as any) ?? null)
+  setComponent(gizmoEntity, CameraGizmoComponent, { axis: ((intersect as any)?.object?.name as any) ?? null })
 }
 
-function pointerDown(gizmoEntity) {
+function pointerDown(gizmoEntity: Entity) {
   const cameraGizmoComponent = getComponent(gizmoEntity, CameraGizmoComponent)
   const inputPointerEntity = InputPointerComponent.getPointersForCamera(cameraGizmoComponent.cameraEntity)[0]
   if (!inputPointerEntity) return
@@ -130,7 +129,7 @@ function pointerDown(gizmoEntity) {
 
 /*function pointerMove(gizmoEntity) {
   // TODO support gizmos in multiple viewports
-  const inputPointerEntity = InputPointerComponent.getPointersForCamera(Engine.instance.viewerEntity)[0]
+  const inputPointerEntity = InputPointerComponent.getPointersForCamera(getState(ReferenceSpaceState).viewerEntity)[0]
   if (!inputPointerEntity) return
   const pointer = getComponent(inputPointerEntity, InputPointerComponent)
   const gizmoControlComponent = getMutableComponent(gizmoEntity, TransformGizmoControlComponent)
@@ -160,7 +159,7 @@ function pointerDown(gizmoEntity) {
   )
     return
 
-  const camera = getComponent(Engine.instance?.cameraEntity, CameraComponent)
+  const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
   _raycaster.setFromCamera(pointer.position, camera)
 
   const planeIntersect = intersectObjectWithRay(plane, _raycaster, true)

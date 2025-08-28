@@ -10,16 +10,10 @@ import {
   UniformsUtils
 } from 'three'
 
-import { iterateEntityNode, useEntityContext } from '@ir-engine/ecs'
-import {
-  defineComponent,
-  getComponent,
-  getMutableComponent,
-  hasComponent,
-  removeComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { EntitySchema, iterateEntityNode, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, getComponent, hasComponent, removeComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
 
@@ -31,14 +25,14 @@ export type MaterialMap = {
 export const AvatarDissolveComponent = defineComponent({
   name: 'AvatarDissolveComponent',
 
-  schema: S.Object({
-    height: S.Number({ default: 1 }),
-    currentTime: S.Number(),
-    dissolveMaterials: S.Array(S.Type<ShaderMaterial>()),
-    originMaterials: S.Array(
-      S.Object({
-        entity: S.Entity(),
-        material: S.Type<Material>()
+  schema: Schema.Object({
+    height: Schema.Number({ default: 1 }),
+    currentTime: Schema.Number(),
+    dissolveMaterials: Schema.Array(Schema.Type<ShaderMaterial>()),
+    originMaterials: Schema.Array(
+      Schema.Object({
+        entity: EntitySchema.Entity(),
+        material: Schema.Type<Material>()
       })
     )
   }),
@@ -65,10 +59,8 @@ export const AvatarDissolveComponent = defineComponent({
         }
       })
 
-      getMutableComponent(entity, AvatarDissolveComponent).merge({
-        dissolveMaterials: dissolveMatList,
-        originMaterials: materialList
-      })
+      getComponent(entity, AvatarDissolveComponent).dissolveMaterials = dissolveMatList
+      getComponent(entity, AvatarDissolveComponent).originMaterials = materialList
 
       return () => {
         for (const originalMaterial of materialList) {

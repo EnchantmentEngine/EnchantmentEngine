@@ -6,6 +6,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   NetworkID,
   useHookstate,
   useMutableState
@@ -19,7 +20,7 @@ import {
   MediasoupMediaProducersConsumersObjectsState
 } from '@ir-engine/common/src/transports/mediasoup/MediasoupMediaProducerConsumerState'
 import { MediasoupTransportState } from '@ir-engine/common/src/transports/mediasoup/MediasoupTransportState'
-import { Engine, PresentationSystemGroup } from '@ir-engine/ecs'
+import { PresentationSystemGroup } from '@ir-engine/ecs'
 import { NetworkState } from '@ir-engine/hyperflux'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
 import { ConsumerExtension, SocketWebRTCClientNetwork, WebRTCTransportExtension } from './MediasoupClientFunctions'
@@ -103,7 +104,7 @@ export const NetworkProducer = (props: { networkID: InstanceID; producerID: stri
 
     const peerID = producerState.peerID.value
     // dont need to request our own consumers
-    if (peerID === Engine.instance.store.peerID) return
+    if (peerID === HyperFlux.store.peerID) return
 
     const mediaTag = producerState.mediaTag.value
     const channelID = producerState.channelID.value

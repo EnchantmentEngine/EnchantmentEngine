@@ -1,14 +1,14 @@
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import React from 'react'
 import { HiX } from 'react-icons/hi'
 import { NewChatState } from '../ChatState'
 
 export const UserStatusPanel: React.FC = () => {
   const userName = useHookstate(getMutableState(AuthState).user.name).value
-  const userThumbnail = useUserAvatarThumbnail(Engine.instance.userID)
+  const userThumbnail = useUserAvatarThumbnail(getState(EngineState).userID)
   const chatState = useMutableState(NewChatState)
 
   // Mock data for recent activity

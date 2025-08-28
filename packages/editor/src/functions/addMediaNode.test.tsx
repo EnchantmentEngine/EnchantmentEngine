@@ -142,7 +142,7 @@ const createModelGLTF = () => ({
 const createMaterialGLTF = () => ({
   asset: {
     version: '2.0',
-    generator: 'Napster Engine Test'
+    generator: 'Enchantment Engine Test'
   },
   scenes: [],
   nodes: [],
@@ -200,7 +200,7 @@ describe('addMediaNode', () => {
     const createSceneGLTF = () => ({
       asset: {
         version: '2.0',
-        generator: 'Napster Engine Test'
+        generator: 'Enchantment Engine Test'
       },
       scenes: [{ nodes: [] }],
       scene: 0,
@@ -249,7 +249,7 @@ describe('addMediaNode', () => {
     const createSceneGLTF = () => ({
       asset: {
         version: '2.0',
-        generator: 'Napster Engine Test'
+        generator: 'Enchantment Engine Test'
       },
       scenes: [{ nodes: [0] }],
       scene: 0,

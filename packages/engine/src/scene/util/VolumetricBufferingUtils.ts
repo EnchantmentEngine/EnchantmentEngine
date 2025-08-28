@@ -1,4 +1,4 @@
-import { State } from '@ir-engine/hyperflux'
+import { Entity, getComponent, setComponent } from '@ir-engine/ecs'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import { MutableRefObject } from 'react'
@@ -13,6 +13,7 @@ import {
   ShaderMaterial,
   Vector2
 } from 'three'
+import { VolumetricComponent } from '../components/VolumetricComponent'
 import {
   DRACOTarget,
   GeometryType,
@@ -75,6 +76,7 @@ interface FetchProps {
   currentTimeInMS: number
   bufferData: BufferDataContainer
   target: string
+  entity: Entity
   startTimeInMS: number
 }
 
@@ -82,7 +84,6 @@ interface FetchGeometryProps extends FetchProps {
   geometryType: GeometryType
   geometryBuffer: Map<string, (Mesh<BufferGeometry, Material> | BufferGeometry | KeyframeAttribute)[]>
   mesh: Mesh<BufferGeometry, ShaderMaterial>
-  initialBufferLoaded: State<boolean>
   repeat: MutableRefObject<Vector2>
   offset: MutableRefObject<Vector2>
 }
@@ -96,7 +97,7 @@ export const fetchGeometry = ({
   manifestPath,
   geometryBuffer,
   mesh,
-  initialBufferLoaded,
+  entity,
   startTimeInMS,
   repeat,
   offset
@@ -181,13 +182,15 @@ export const fetchGeometry = ({
           collection[_currentFrame] = geometry
           bufferData.addBufferedRange(currentFrameStartTime, currentFrameEndTime, -1)
 
-          if (!initialBufferLoaded.value) {
+          const comp = getComponent(entity, VolumetricComponent)
+          if (!comp.geometry.initialBufferLoaded) {
             const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
             const endTime = startTime + bufferLimits.geometry[geometryType].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
             const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
             if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-              initialBufferLoaded.set(true)
+              comp.geometry.initialBufferLoaded = true
+              setComponent(entity, VolumetricComponent)
             }
           }
         })
@@ -226,13 +229,15 @@ export const fetchGeometry = ({
           collection[currentFrame] = geometry
           bufferData.addBufferedRange(currentFrameStartTime, currentFrameEndTime, -1)
 
-          if (!initialBufferLoaded.value) {
+          const comp = getComponent(entity, VolumetricComponent)
+          if (!comp.geometry.initialBufferLoaded) {
             const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
             const endTime = startTime + bufferLimits.geometry[geometryType].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
             const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
             if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-              initialBufferLoaded.set(true)
+              comp.geometry.initialBufferLoaded = true
+              setComponent(entity, VolumetricComponent)
             }
           }
         })
@@ -316,13 +321,15 @@ export const fetchGeometry = ({
 
           bufferData.addBufferedRange(currentSegmentStartTime, currentSegmentEndTime, currentFrameData.fetchTime)
 
-          if (!initialBufferLoaded.value) {
+          const comp = getComponent(entity, VolumetricComponent)
+          if (!comp.geometry.initialBufferLoaded) {
             const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
             const endTime = startTime + bufferLimits.geometry[geometryType].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
             const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
             if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-              initialBufferLoaded.set(true)
+              comp.geometry.initialBufferLoaded = true
+              setComponent(entity, VolumetricComponent)
             }
           }
         })
@@ -450,7 +457,6 @@ interface FetchTextureProps extends FetchProps {
   textureType: TextureType
   textureBuffer: Map<string, CompressedTexture[]>
   textureFormat: TextureFormat
-  initialBufferLoaded: State<boolean>
   startTimeInMS: number
 }
 
@@ -463,7 +469,7 @@ export const fetchTextures = ({
   manifestPath,
   textureBuffer,
   textureFormat,
-  initialBufferLoaded,
+  entity,
   startTimeInMS
 }: FetchTextureProps) => {
   const currentTime = currentTimeInMS * (TIME_UNIT_MULTIPLIER / 1000)
@@ -534,13 +540,16 @@ export const fetchTextures = ({
 
         bufferData.addBufferedRange(currentFrameStartTime, currentFrameEndTime, currentFrameData.fetchTime)
 
-        if (!initialBufferLoaded.value) {
+        const comp = getComponent(entity, VolumetricComponent)
+        const initialBufferLoaded = comp.textureInfo.initialBufferLoaded[textureType]
+        if (!initialBufferLoaded) {
           const startTime = (startTimeInMS * TIME_UNIT_MULTIPLIER) / 1000
           const endTime = startTime + bufferLimits.texture[textureFormat].initialBufferDuration * TIME_UNIT_MULTIPLIER
 
           const startFrameBufferData = bufferData.getIntersectionDuration(startTime, endTime)
           if (startFrameBufferData.missingDuration === 0 && startFrameBufferData.pendingDuration === 0) {
-            initialBufferLoaded.set(true)
+            comp.textureInfo.initialBufferLoaded[textureType] = true
+            setComponent(entity, VolumetricComponent)
           }
         }
       })

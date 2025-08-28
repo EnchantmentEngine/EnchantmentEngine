@@ -30,7 +30,7 @@ const MeshNodeEditor: EditorComponentType = (props: { entity: Entity }) => {
       <Accordion title={t('editor:properties.mesh.geometryEditor')}>
         <GeometryEditor geometry={meshComponent?.geometry ?? null} />
       </Accordion>
-      {materialInstanceComponent.value.entities.map((entity) => {
+      {materialInstanceComponent.entities.map((entity) => {
         if (!materialIsInAuthoringLayer(entity)) return null
         return (
           <Accordion title={t('editor:properties.mesh.materialEditor')} key={entity}>

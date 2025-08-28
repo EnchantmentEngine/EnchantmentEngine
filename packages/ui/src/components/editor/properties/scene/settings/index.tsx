@@ -28,7 +28,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
   const sceneThumbnailState = getMutableState(SceneThumbnailState)
 
   const generateColors = () => {
-    const url = sceneThumbnailState.thumbnailURL.value ?? sceneSettingsComponent.thumbnailURL.value
+    const url = sceneThumbnailState.thumbnailURL.value ?? sceneSettingsComponent.thumbnailURL
     if (!url) return
     const image = new Image()
     image.crossOrigin = 'Anonymous'
@@ -45,7 +45,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
     image.src = url
   }
 
-  const useSpectatingEntity = useState(!!sceneSettingsComponent.spectateEntity.value)
+  const useSpectatingEntity = useState(!!sceneSettingsComponent.spectateEntity)
 
   return (
     <NodeEditor
@@ -117,9 +117,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
         className="w-auto"
       >
         <div>
-          <ImageLink
-            src={sceneThumbnailState.loadingScreenURL.value ?? sceneSettingsComponent.loadingScreenURL.value}
-          />
+          <ImageLink src={sceneThumbnailState.loadingScreenURL.value ?? sceneSettingsComponent.loadingScreenURL} />
           <Button onClick={SceneThumbnailState.createLoadingScreen} className="mt-2 w-full">
             {t('editor:properties.sceneSettings.generate')}
           </Button>
@@ -141,22 +139,22 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
       <InputGroup name="Primary Color" label={t('editor:properties.sceneSettings.lbl-colors')}>
         <div className="w-full space-y-2">
           <ColorInput
-            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL.value}
-            value={new Color(sceneSettingsComponent.primaryColor.value)}
+            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL}
+            value={new Color(sceneSettingsComponent.primaryColor)}
             onChange={(val) => updateProperty(SceneSettingsComponent, 'primaryColor')('#' + val.getHexString())}
             onRelease={(val) => commitProperty(SceneSettingsComponent, 'primaryColor')('#' + val.getHexString())}
             className="w-full"
           />
           <ColorInput
-            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL.value}
-            value={new Color(sceneSettingsComponent.backgroundColor.value)}
+            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL}
+            value={new Color(sceneSettingsComponent.backgroundColor)}
             onChange={(val) => updateProperty(SceneSettingsComponent, 'backgroundColor')('#' + val.getHexString())}
             onRelease={(val) => commitProperty(SceneSettingsComponent, 'backgroundColor')('#' + val.getHexString())}
             className="w-full"
           />
           <ColorInput
-            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL.value}
-            value={new Color(sceneSettingsComponent.alternativeColor.value)}
+            disabled={!sceneThumbnailState.thumbnailURL.value && !sceneSettingsComponent.thumbnailURL}
+            value={new Color(sceneSettingsComponent.alternativeColor)}
             onChange={(val) => updateProperty(SceneSettingsComponent, 'alternativeColor')('#' + val.getHexString())}
             onRelease={(val) => commitProperty(SceneSettingsComponent, 'alternativeColor')('#' + val.getHexString())}
             className="w-full"
@@ -168,7 +166,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
       </InputGroup>
       <InputGroup name="Kill Height" label={t('editor:properties.sceneSettings.lbl-killHeight')}>
         <NumericInput
-          value={sceneSettingsComponent.sceneKillHeight.value}
+          value={sceneSettingsComponent.sceneKillHeight}
           onChange={updateProperty(SceneSettingsComponent, 'sceneKillHeight')}
           onRelease={commitProperty(SceneSettingsComponent, 'sceneKillHeight')}
         />

@@ -118,8 +118,8 @@ describe.skip('HierarchyPanel component', () => {
 
   afterEach(() => {
     Cache.enabled = false
-    destroyEngine()
     cleanup()
+    destroyEngine()
   })
 
   // it('should render a top bar element with the data-testid attribute "hierarchy-panel-topbar"', async () => {

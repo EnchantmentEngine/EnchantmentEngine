@@ -4,10 +4,9 @@ import { PerspectiveCamera } from 'three'
 import {
   AnimationSystemGroup,
   defineSystem,
-  Engine,
   EntityUUID,
   getComponent,
-  getOptionalMutableComponent,
+  getOptionalComponent,
   NetworkObjectOwnedTag,
   NetworkObjectSendPeriodicUpdatesTag,
   QueryReactor,
@@ -17,7 +16,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, none, useMutableState } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
@@ -71,7 +70,7 @@ function CameraReactor() {
 
   useEffect(() => {
     if (!cameraSettings?.cameraNearClip) return
-    const camera = getComponent(Engine.instance.cameraEntity, CameraComponent) as PerspectiveCamera
+    const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent) as PerspectiveCamera
     if (camera?.isPerspectiveCamera) {
       camera.fov = cameraSettings.fov.value
       camera.near = cameraSettings.cameraNearClip.value
@@ -83,27 +82,27 @@ function CameraReactor() {
   // TODO: this is messy and not properly reactive; we need a better way to handle camera settings
   useEffect(() => {
     if (!cameraSettings?.fov) return
-    const follow = getOptionalMutableComponent(Engine.instance.cameraEntity, FollowCameraComponent)
+    const follow = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, FollowCameraComponent)
     if (follow) {
       let startDistance = cameraSettings.thirdPersonDefaultDistance.value
       let minDistance = cameraSettings.thirdPersonMinDistance.value
       let maxDistance = cameraSettings.thirdPersonMaxDistance.value
-      if (follow.mode.value === FollowCameraMode.FirstPerson) {
+      if (follow.mode === FollowCameraMode.FirstPerson) {
         startDistance = 0
         minDistance = 0
         maxDistance = 0
-      } else if (follow.mode.value === FollowCameraMode.ThirdPerson) {
+      } else if (follow.mode === FollowCameraMode.ThirdPerson) {
         startDistance = cameraSettings.thirdPersonDefaultDistance.value
         minDistance = cameraSettings.thirdPersonMinDistance.value
         maxDistance = cameraSettings.thirdPersonMaxDistance.value
-      } else if (follow.mode.value === FollowCameraMode.TopDown) {
+      } else if (follow.mode === FollowCameraMode.TopDown) {
         startDistance = cameraSettings.topDownDefaultDistance.value
         minDistance = cameraSettings.topDownMinDistance.value
         maxDistance = cameraSettings.topDownMaxDistance.value
       }
-      follow.minDistance.set(minDistance)
-      follow.maxDistance.set(maxDistance)
-      follow.distance.set(startDistance)
+      follow.minDistance = minDistance
+      follow.maxDistance = maxDistance
+      follow.distance = startDistance
     }
   }, [cameraSettings])
 

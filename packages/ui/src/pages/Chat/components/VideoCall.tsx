@@ -6,8 +6,8 @@ import { VolumeContextMenu } from './VolumeContextMenu'
 
 import { useMediaWindows } from '@ir-engine/client-core/src/user/VideoWindows'
 import { UserName } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
+  HyperFlux,
   MediaChannelState,
   MediaStreamInterface,
   MediaStreamState,
@@ -32,7 +32,7 @@ export const UserMedia: React.FC<{ peerID: PeerID; type: 'cam' | 'screen' }> = (
   const [showVolumeMenu, setShowVolumeMenu] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
 
-  const isSelf = !mediaNetwork || peerID === Engine.instance.store.peerID || peerID === 'self'
+  const isSelf = !mediaNetwork || peerID === HyperFlux.store.peerID || peerID === 'self'
   const isScreen = type === 'screen'
 
   // For now, we'll use a placeholder for user data

@@ -33,7 +33,7 @@ const AvatarSelectMenu = forwardRef(({ showBackButton, previewEnabled = true }: 
   const userAvatarId = avatar?.avatarId
   const avatarLoading = useHookstate(false)
   const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
-  const selfAvatarLoaded = useOptionalComponent(selfAvatarEntity, GLTFComponent)?.progress?.value === 100
+  const selfAvatarLoaded = useOptionalComponent(selfAvatarEntity, GLTFComponent)?.progress === 100
 
   const avatarCreatorMenuRef = useRef<{
     handleClose: () => Promise<void>

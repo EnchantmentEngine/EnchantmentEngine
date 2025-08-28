@@ -23,6 +23,8 @@ export function mockGLTF(generator = '@ir-engine/MockGLTF', version = '2.0'): GL
   }
 }
 
+let i = 0
+
 /**
  * Creates mock GLTFParserOptions for testing
  * @param gltf The GLTF object to use in the options
@@ -31,7 +33,7 @@ export function mockGLTF(generator = '@ir-engine/MockGLTF', version = '2.0'): GL
  */
 export function mockGLTFOptions(gltf: GLTF.IGLTF, url = 'test.gltf'): GLTFParserOptions {
   const entity = createEntity()
-  setComponent(entity, UUIDComponent, { entitySourceID: 'test' as SourceID, entityID: 'test' as EntityID })
+  setComponent(entity, UUIDComponent, { entitySourceID: 'test' as SourceID, entityID: ('test' + i++) as EntityID })
   setComponent(entity, GLTFComponent, { src: url, document: gltf })
 
   // Ensure the dependency cache is set up for this URL

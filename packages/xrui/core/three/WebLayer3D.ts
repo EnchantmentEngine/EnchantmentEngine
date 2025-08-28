@@ -70,7 +70,7 @@ export class WebLayer3D extends Object3D {
   private _mediaSrc?: string
   private _mediaTexture?: VideoTexture | Texture
 
-  textures: Set<Texture>
+  textures = new Set<Texture>()
 
   private _previousTexture?: VideoTexture | CompressedTexture | Texture
 
@@ -285,8 +285,8 @@ export class WebLayer3D extends Object3D {
     return this._webLayer.needsRemoval
   }
 
-  bounds: Bounds
-  margin: Edges
+  bounds = new Bounds()
+  margin = new Edges()
 
   get parentWebLayer(): WebLayer3D | undefined {
     return this._webLayer.parentLayer && this.container.manager.layersByElement.get(this._webLayer.parentLayer.element)
