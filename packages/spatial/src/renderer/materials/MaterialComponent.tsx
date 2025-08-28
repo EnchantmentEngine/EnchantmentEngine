@@ -141,7 +141,6 @@ export const useUniforms = <T extends TObjectSchema<TProperties>>(
       Object.fromEntries(
         Object.entries(schemas.properties)
           .map(([key, value]) => {
-            console.log({ key, value, isTexture: isTextureUniform(value) })
             if (isTextureUniform(schemas.properties![key])) return [key, new Uniform(null)]
             return [key, new Uniform(value !== null && typeof value === 'object' && 'index' in value ? null : value)]
           })
