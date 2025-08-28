@@ -190,6 +190,8 @@ export const useExecute = (execute: () => void, insert: InsertSystem & { uuid?: 
       destroySystem(handle)
     }
   })
+
+  return uuid
 }
 
 /**

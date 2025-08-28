@@ -30,9 +30,11 @@ export async function up(knex: Knex): Promise<void> {
       //@ts-ignore
       table.uuid('id').collate('utf8mb4_bin').primary()
       //@ts-ignore
-      table.uuid('token', 255).collate('utf8mb4_bin').defaultTo(null).unique()
+      table.string('token', 255).collate('utf8mb4_bin').defaultTo(null).unique()
       table.string('accountIdentifier', 255).defaultTo(null)
+      table.string('email', 255).defaultTo(null)
       table.string('oauthToken', 255).defaultTo(null)
+      table.string('oauthRefreshToken', 255).defaultTo(null)
       table.string('type', 255).notNullable()
       //@ts-ignore
       table.uuid('userId').collate('utf8mb4_bin').defaultTo(null).index()
@@ -41,7 +43,6 @@ export async function up(knex: Knex): Promise<void> {
 
       // unique combinations
       table.unique(['userId', 'token'], { indexName: 'identity_provider_user_id_token' })
-      table.unique(['userId', 'type'], { indexName: 'identity_provider_user_id_type' })
 
       table.foreign('userId').references('id').inTable('user').onDelete('CASCADE').onUpdate('CASCADE')
     })

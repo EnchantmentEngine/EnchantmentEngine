@@ -1,6 +1,6 @@
-import { defineNodeMaterialPlugin } from '@ir-engine/engine/src/material/defineNodeMaterialPlugin'
 import { Schema } from '@ir-engine/hyperflux'
 import { float, mix, mul, uniform, vec3 } from 'three/tsl'
+import { defineNodeMaterialPlugin } from '../materials/defineNodeMaterialPlugin'
 
 export const WebGPUCSMPlugin = defineNodeMaterialPlugin({
   name: 'WebGPUCSMPlugin',

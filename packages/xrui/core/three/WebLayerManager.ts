@@ -62,6 +62,8 @@ export class WebLayerManager extends WebLayerManagerBase {
             t.minFilter = LinearMipmapLinearFilter
             t.colorSpace = this.textureEncoding
             this.texturesByHash.get(textureData.hash)!.compressedTexture = t
+            // Once compressed texture is ready, drop CPU-side canvas to save memory
+            this.clearTextureCanvas(textureData)
             resolve(undefined)
           },
           () => {},

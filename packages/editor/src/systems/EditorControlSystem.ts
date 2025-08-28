@@ -41,7 +41,6 @@ import {
   toggleTransformPivot,
   toggleTransformSpace
 } from '../functions/transformFunctions'
-import { EditorErrorState } from '../services/EditorErrorServices'
 
 import { EditorHelperState, PlacementMode, PlacementModeType } from '../services/EditorHelperState'
 
@@ -249,7 +248,9 @@ function paste(event) {
   } else if ((data = event.clipboardData.getData('text')) !== '') {
     try {
       const url = new URL(data)
-      addMediaNode(url.href).catch((error) => getMutableState(EditorErrorState).error.set(error))
+      addMediaNode(url.href).catch((error) => {
+        console.error(error)
+      })
     } catch (e) {
       console.warn('Clipboard contents did not contain a valid url')
     }
@@ -355,7 +356,7 @@ const execute = () => {
         selectedParentEntity === clickStartEntity ? closestIntersection.entity : selectedParentEntity
 
       // If hiding children of GLB, don't allow those children to be selected (clicking in scene view)
-      if (!getState(EditorHelperState).showGlbChildren && selectedParentEntity) {
+      if (selectedParentEntity) {
         const forceSelectGlbParent = isEntityGlb(selectedParentEntity) // && hasComponent(selectedParentEntity, SceneComponent)
         clickStartEntity = forceSelectGlbParent ? selectedParentEntity : selectedEntity //selectedEntity vs clickStartEntity so that we allow closest intersection drill down above to work
       } else {

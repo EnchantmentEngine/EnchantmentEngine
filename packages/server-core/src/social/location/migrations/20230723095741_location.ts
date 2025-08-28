@@ -14,7 +14,6 @@ export async function up(knex: Knex): Promise<void> {
       //@ts-ignore
       table.uuid('id').collate('utf8mb4_bin').primary()
       table.string('name', 255).notNullable()
-      table.string('sceneId', 255).nullable()
       table.string('slugifiedName', 255).notNullable().unique()
       table.boolean('isLobby').defaultTo(false)
       table.boolean('isFeatured').defaultTo(false)

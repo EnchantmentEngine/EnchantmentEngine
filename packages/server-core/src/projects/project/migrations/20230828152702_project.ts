@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
 
 import { projectPath } from '@ir-engine/common/src/schemas/projects/project.schema'
+import { locationPath } from '@ir-engine/common/src/schemas/social/location.schema'
 
 export async function up(knex: Knex): Promise<void> {
   const tableExists = await knex.schema.hasTable(projectPath)
@@ -14,21 +15,40 @@ export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable(projectPath, (table) => {
       //@ts-ignore
       table.uuid('id').collate('utf8mb4_bin').primary().notNullable()
-      table.string('name', 255).defaultTo(null)
+      table.string('name', 255).defaultTo(null).unique()
       table.string('repositoryPath', 255).defaultTo(null)
       table.json('settings').defaultTo(null)
       table.boolean('needsRebuild').defaultTo(null)
+      table.string('visibility', 255).defaultTo('private')
       table.string('sourceRepo', 255).defaultTo(null)
       table.string('sourceBranch', 255).defaultTo(null)
       table.string('updateType', 255).defaultTo(null)
       table.string('updateSchedule', 255).defaultTo(null)
+      table.boolean('enabled').defaultTo(true)
+      table.boolean('hasLocalChanges').defaultTo(false)
+      table.boolean('assetsOnly').defaultTo(false)
       //@ts-ignore
       table.uuid('updateUserId').collate('utf8mb4_bin').defaultTo(null)
       table.string('commitSHA', 255).defaultTo(null)
       table.dateTime('commitDate').defaultTo(null)
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
+      //@ts-ignore
+      table.uuid('updatedBy', 36).collate('utf8mb4_bin')
+
+      // Foreign keys
+      table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     })
+
+    const projectColumnExists = await knex.schema.hasColumn(locationPath, 'projectId')
+
+    if (projectColumnExists === false) {
+      await knex.schema.alterTable(locationPath, async (table) => {
+        //@ts-ignore
+        table.uuid('projectId', 36).collate('utf8mb4_bin').nullable().index()
+        table.foreign('projectId').references('id').inTable('project').onDelete('CASCADE').onUpdate('CASCADE')
+      })
+    }
 
     await knex.raw('SET FOREIGN_KEY_CHECKS=1')
   }
