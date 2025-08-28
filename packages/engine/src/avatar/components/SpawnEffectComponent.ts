@@ -1,9 +1,8 @@
-import { Easing, Tween } from '@tweenjs/tween.js'
 import { useEffect } from 'react'
 import { AdditiveBlending, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three'
 
-import { EntitySchema, EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { Easing, EntitySchema, EntityTreeComponent, createEntity, removeEntity, useEntityContext } from '@ir-engine/ecs'
+import { defineComponent, getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
@@ -15,7 +14,6 @@ import { SceneQueryType } from '@ir-engine/spatial/src/physics/types/PhysicsType
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
 
 export const SpawnEffectComponent = defineComponent({
   name: 'SpawnEffectComponent',
@@ -62,42 +60,17 @@ export const SpawnEffectComponent = defineComponent({
   },
 
   fadeIn: (entity: Entity) => {
-    const effectComponent = getComponent(entity, SpawnEffectComponent)
-    setComponent(
-      entity,
-      TweenComponent,
-      new Tween<any>(effectComponent)
-        .to(
-          {
-            opacityMultiplier: 1
-          },
-          1000
-        )
-        .easing(Easing.Exponential.Out)
-        .start()
-        .onComplete(() => {
-          removeComponent(entity, TweenComponent)
-        })
-    )
+    SpawnEffectComponent.setTransition(entity, 'opacityMultiplier', 1, {
+      duration: 1000,
+      easing: Easing.exponential.out
+    })
   },
 
   fadeOut: (entity: Entity) => {
-    const effectComponent = getComponent(entity, SpawnEffectComponent)
-    setComponent(
-      entity,
-      TweenComponent,
-      new Tween<any>(effectComponent)
-        .to(
-          {
-            opacityMultiplier: 0
-          },
-          2000
-        )
-        .start()
-        .onComplete(() => {
-          removeEntity(entity)
-        })
-    )
+    /** @todo use proper transition callback API */
+    setTimeout(() => {
+      removeEntity(entity)
+    })
   },
 
   lightMesh: new Mesh(

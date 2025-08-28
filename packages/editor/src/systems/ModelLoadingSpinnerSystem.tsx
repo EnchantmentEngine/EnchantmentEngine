@@ -1,9 +1,11 @@
 import {
+  AnimationSystemGroup,
+  ECSState,
   Entity,
   Layers,
-  PresentationSystemGroup,
   QueryReactor,
   defineSystem,
+  getComponent,
   removeEntity,
   useComponent,
   useHasComponent
@@ -11,8 +13,16 @@ import {
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { createLoadingSpinner } from '@ir-engine/engine/src/scene/functions/spatialLoadingSpinner'
+import { getState } from '@ir-engine/hyperflux'
+import { TransformComponent } from '@ir-engine/spatial'
+import { Axis } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import React, { useEffect } from 'react'
+import { Quaternion } from 'three'
+
+const spinnerEntities = new Set<Entity>()
+
+const _tmpQuat = new Quaternion()
 
 const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   const { entity } = props
@@ -25,7 +35,9 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
   useEffect(() => {
     if (!shouldHaveSpinner) return
     const spinnerEntity = createLoadingSpinner(`loading ${gltfComponent.src}`, entity)
+    spinnerEntities.add(spinnerEntity)
     return () => {
+      spinnerEntities.delete(spinnerEntity)
       removeEntity(spinnerEntity)
     }
   }, [shouldHaveSpinner])
@@ -35,7 +47,16 @@ const LoadingSpinnerReactor = (props: { entity: Entity }) => {
 
 export const ModelLoadingSpinnerSystem = defineSystem({
   uuid: 'ee.editor.ModelLoadingSpinnerSystem',
-  insert: { after: PresentationSystemGroup },
+  insert: { with: AnimationSystemGroup },
+  execute: () => {
+    const delta = getState(ECSState).deltaSeconds
+    for (const spinnerEntity of spinnerEntities) {
+      const transform = getComponent(spinnerEntity, TransformComponent)
+      const angle = delta * Math.PI * 2
+      _tmpQuat.setFromAxisAngle(Axis.Z, angle)
+      transform.rotation.multiply(_tmpQuat)
+    }
+  },
   reactor: () => (
     <QueryReactor ChildEntityReactor={LoadingSpinnerReactor} Components={[GLTFComponent]} layer={Layers.Authoring} />
   )
