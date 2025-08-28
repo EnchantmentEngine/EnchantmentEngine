@@ -56,10 +56,14 @@ declare module '*.gltf?raw' {
   export default content
 } 
 
-// Worker modules (e.g., `?worker` suffix used by Vite)
 declare module '*?worker' {
   const WorkerFactory: { new (): Worker }
   export default WorkerFactory
+}
+
+declare module '*?worker&url' {
+  const content: string
+  export default content
 }
 
 declare module '*.wasm' {

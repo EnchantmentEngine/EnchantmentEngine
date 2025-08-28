@@ -8,14 +8,22 @@ import {
   TypedArray
 } from 'three'
 import { MeshBVH, SerializedBVH } from 'three-mesh-bvh'
+import Worker from 'web-worker'
 
+import { isClient } from '@ir-engine/hyperflux'
 import { deinterleaveAttribute } from '../../common/classes/BufferGeometryUtils'
 import { WorkerPool } from '../../common/classes/WorkerPool'
+import { createWorkerFromCrossOriginURL } from '../../common/functions/createWorkerFromCrossOriginURL'
 
-import Worker from './generateBVHAsync.worker.js?worker'
+import workerPath from './generateBVHAsync.worker.js?worker&url'
 
 const createWorker = () => {
-  return new Worker()
+  if (isClient) {
+    return createWorkerFromCrossOriginURL(workerPath, true, { name: 'BVH' })
+  } else {
+    const workerPath = __dirname + '/generateBVHAsync.worker.js'
+    return new Worker(workerPath, { type: 'module' })
+  }
 }
 
 export const bvhWorkerPool = new WorkerPool(1)

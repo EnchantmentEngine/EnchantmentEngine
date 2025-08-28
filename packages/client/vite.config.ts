@@ -240,6 +240,9 @@ export default defineConfig(async () => {
         ]
       }
     },
+    worker: {
+      format: 'es'
+    },
     plugins: [
       svgr(),
       nodePolyfills(),
