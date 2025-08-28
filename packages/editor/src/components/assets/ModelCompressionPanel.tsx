@@ -9,11 +9,11 @@ import {
   UUIDComponent
 } from '@ir-engine/ecs'
 import { setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { ModelTransformStatus, transformModel } from '@ir-engine/editor/src/optimize/ModelTransformFunctions'
 import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
-} from '@ir-engine/engine/src/assets/classes/ModelTransform'
+} from '@ir-engine/editor/src/optimize/ModelTransform'
+import { ModelTransformStatus, transformModel } from '@ir-engine/editor/src/optimize/ModelTransformFunctions'
 import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 

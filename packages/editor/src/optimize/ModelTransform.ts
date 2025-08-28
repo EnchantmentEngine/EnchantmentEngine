@@ -2,8 +2,6 @@ import { DracoOptions, JoinOptions, PaletteOptions } from '@gltf-transform/funct
 
 import { OpaqueType } from '@ir-engine/hyperflux'
 
-export type ResourceID = OpaqueType<'ResourceID'> & string
-
 export type ParameterOverride<T> = OpaqueType<'ParameterOverride'> & {
   isParameterOverride: true
   enabled: boolean
@@ -33,11 +31,7 @@ export function extractParameters<T>(parameters: ParameterOverride<T>) {
   } else return parameters.parameters
 }
 
-export type ResourceParameters<T> = ParameterOverride<T> & {
-  resourceId: ResourceID
-}
-
-export type ImageTransformParameters = ResourceParameters<{
+export type ImageTransformParameters = ParameterOverride<{
   flipY: ParameterOverride<boolean>
   maxTextureSize: ParameterOverride<number>
   textureFormat: ParameterOverride<'default' | 'jpg' | 'ktx2' | 'png' | 'webp'>
@@ -58,7 +52,7 @@ export type ExtractedImageTransformParameters = {
   maxCodebooks: boolean
 }
 
-export type GeometryTransformParameters = ResourceParameters<{
+export type GeometryTransformParameters = ParameterOverride<{
   weld: ParameterOverride<number>
   dracoCompression: ParameterOverride<DracoOptions>
 }>

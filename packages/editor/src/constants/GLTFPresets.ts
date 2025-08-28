@@ -1,7 +1,7 @@
 import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
-} from '@ir-engine/engine/src/assets/classes/ModelTransform'
+} from '@ir-engine/editor/src/optimize/ModelTransform'
 import { Devices, VariantMetadata } from '@ir-engine/engine/src/scene/components/VariantComponent'
 
 export type LODVariantDescriptor = {
