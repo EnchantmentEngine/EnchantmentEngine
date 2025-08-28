@@ -1,11 +1,11 @@
 import { FrontSide, Vector3 } from 'three'
 
-import { defineComponent, EntitySchema, getComponent } from '@ir-engine/ecs'
+import { defineComponent, EntitySchema, setComponent } from '@ir-engine/ecs'
 import { Schema } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { defineMaterialPlugin } from '../defineMaterialPlugin'
 
-import { MaterialStateComponent } from '../MaterialComponent'
+import { MaterialComponent } from '../MaterialComponent'
 import {
   ditheringAlphatestChunk,
   ditheringFragUniform,
@@ -41,7 +41,7 @@ export const TransparencyDitheringPluginComponent = defineMaterialPlugin({
     )
   }),
 
-  onApply(shader, renderer) {
+  onApply(entity, shader, renderer) {
     if (!shader.vertexShader.startsWith('varying vec3 vWorldPosition')) {
       shader.vertexShader = shader.vertexShader.replace(
         /#include <common>/,
@@ -62,7 +62,7 @@ export const TransparencyDitheringPluginComponent = defineMaterialPlugin({
 
   reactor: ({ entity }) => {
     useEffect(() => {
-      getComponent(entity, MaterialStateComponent).material.side = FrontSide
+      setComponent(entity, MaterialComponent, { side: FrontSide })
     }, [])
   }
 })

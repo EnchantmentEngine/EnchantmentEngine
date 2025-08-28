@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import {
   defineSystem,
   Entity,
-  getOptionalComponent,
+  entityExists,
   hasComponent,
   haveCommonAncestor,
   PresentationSystemGroup,
@@ -12,14 +12,15 @@ import {
   setComponent,
   UndefinedEntity,
   useComponent,
+  useHasComponent,
   useOptionalComponent,
   useQuery,
   useQueryBySource,
   UUIDComponent
 } from '@ir-engine/ecs'
 
+import { MaterialComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { useTexture } from '@ir-engine/spatial/src/resources/resourceLoaderHooks'
 import { ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -29,7 +30,6 @@ import {
   CubeTexture,
   DataTexture,
   EquirectangularReflectionMapping,
-  MeshStandardMaterial,
   RGBAFormat,
   SRGBColorSpace,
   Texture,
@@ -43,7 +43,7 @@ import { addError, removeError } from '../functions/ErrorFunctions'
 const EnvMapReactor = (props: { entity: Entity }) => {
   const { entity } = props
   const envMapComponent = useComponent(entity, EnvMapComponent).type
-  const materialComponentEntities = useQueryBySource(entity, [MaterialStateComponent])
+  const materialComponentEntities = useQueryBySource(entity, [MaterialComponent])
   return (
     <>
       {materialComponentEntities.map((materialComponentEntity, index) => {
@@ -97,27 +97,22 @@ const EnvMapReactor = (props: { entity: Entity }) => {
 const IntensityReactor = (props: { rootEntity: Entity; entity: Entity }) => {
   const { rootEntity, entity } = props
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
-  const material = useOptionalComponent(entity, MaterialStateComponent)?.material as MeshStandardMaterial | undefined
+  const material = useHasComponent(entity, MaterialComponent)
   useEffect(() => {
     if (!material) return
-    material.envMapIntensity = envMapComponent.envMapIntensity
+    setComponent(entity, MaterialComponent, { envMapIntensity: envMapComponent.envMapIntensity })
   }, [envMapComponent.envMapIntensity, material])
   return null
 }
 
-// circumvent threejs bug with envmap uniforms
-const disallowedMaterials = new Set(['MeshMatcapMaterial', 'MeshToonMaterial'])
-
 const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
   const backgroundQuery = useQuery([BackgroundComponent])
-  const material = useOptionalComponent(entity, MaterialStateComponent)?.material as MeshStandardMaterial | undefined
+  const material = useHasComponent(entity, MaterialComponent)
   useEffect(() => {
     return () => {
-      if (!hasComponent(entity, MaterialStateComponent)) return
-      if (material?.envMap) {
-        material.envMap = null
-      }
+      if (!hasComponent(entity, MaterialComponent)) return
+      setComponent(entity, MaterialComponent, { envMap: null })
     }
   }, [])
 
@@ -128,11 +123,8 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   useEffect(() => {
     if (!material || !backgroundComponent) return
 
-    // threejs freaks out if matcap materials are passed in envmap related values
-    if (disallowedMaterials.has(material.type)) return
-
-    material.envMap = backgroundComponent as Texture
-    ResourceState.addEntityResource(entity, material.envMap!)
+    setComponent(entity, MaterialComponent, { envMap: backgroundComponent as Texture })
+    ResourceState.addEntityResource(entity, backgroundComponent as Texture)
   }, [backgroundComponent, material])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
@@ -140,34 +132,39 @@ const EnvMapSkyboxReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
 const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
-  const material = useOptionalComponent(entity, MaterialStateComponent)?.material as MeshStandardMaterial | undefined
+  const material = useHasComponent(entity, MaterialComponent)
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
   useEffect(() => {
     return () => {
-      if (!hasComponent(entity, MaterialStateComponent)) return
-      if (material?.envMap) {
-        material.envMap = null
-      }
+      if (!hasComponent(entity, MaterialComponent)) return
+      setComponent(entity, MaterialComponent, { envMap: null })
     }
   }, [])
   useEffect(() => {
-    if (!material || disallowedMaterials.has(material.type)) return
+    if (!material) return
+    const abortController = new AbortController()
     loadCubeMapTexture(
       envMapComponent.envMapCubemapURL,
       (texture: CubeTexture | undefined) => {
-        if (texture) {
-          texture.mapping = CubeReflectionMapping
-          texture.colorSpace = SRGBColorSpace
-          material.envMap = texture
-          removeError(entity, EnvMapComponent, 'MISSING_FILE')
-        }
+        if (abortController.signal.aborted || !hasComponent(entity, MaterialComponent)) return
+        if (!texture) return
+        texture.mapping = CubeReflectionMapping
+        texture.colorSpace = SRGBColorSpace
+        setComponent(entity, MaterialComponent, { envMap: texture })
+        removeError(entity, EnvMapComponent, 'MISSING_FILE')
       },
       undefined,
       (_) => {
-        material.envMap = null
+        if (abortController.signal.aborted || !hasComponent(entity, MaterialComponent)) return
+        setComponent(entity, MaterialComponent, { envMap: null })
         addError(entity, EnvMapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
       }
     )
+    return () => {
+      abortController.abort()
+      if (!entityExists(entity) || !hasComponent(entity, MaterialComponent)) return
+      setComponent(entity, MaterialComponent, { envMap: null })
+    }
   }, [envMapComponent.envMapCubemapURL, material])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
@@ -176,33 +173,25 @@ const EnvMapCubemapReactor = (props: { entity: Entity; rootEntity: Entity }) => 
 const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
-  const materialState = useOptionalComponent(entity, MaterialStateComponent)?.material as MeshStandardMaterial
 
   const [envMapTexture, error] = useTexture(envMapComponent.envMapSourceURL, entity)
 
   useEffect(() => {
     return () => {
-      const materialComponent = getOptionalComponent(entity, MaterialStateComponent) as MeshStandardMaterial | undefined
-      if (materialComponent?.envMap) {
-        const material = materialComponent as MeshStandardMaterial
-        material.envMap = null
-      }
+      if (!hasComponent(entity, MaterialComponent)) return
+      setComponent(entity, MaterialComponent, { envMap: null })
     }
   }, [])
 
   useEffect(() => {
-    if (disallowedMaterials.has(materialState!.type)) return
-
     if (!envMapTexture || !envMapTexture.isTexture) return
     envMapTexture.mapping = EquirectangularReflectionMapping
-    const material = materialState as MeshStandardMaterial
-    material.envMap = envMapTexture
-  }, [envMapTexture, materialState])
+    setComponent(entity, MaterialComponent, { envMap: envMapTexture })
+  }, [envMapTexture])
 
   useEffect(() => {
     if (!error) return
-    const material = materialState as MeshStandardMaterial
-    material.envMap = null
+    setComponent(entity, MaterialComponent, { envMap: null })
     addError(entity, EnvMapComponent, 'MISSING_FILE', 'Skybox texture could not be found!')
   }, [error])
 
@@ -211,7 +200,6 @@ const EnvMapEquirectangularReactor = (props: { entity: Entity; rootEntity: Entit
 
 const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
-  const material = useOptionalComponent(entity, MaterialStateComponent)?.material as MeshStandardMaterial
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
   const bakeEntity =
     UUIDComponent.useEntityFromSameSourceByID(props.rootEntity, envMapComponent.envMapSourceEntityUUID) ??
@@ -223,22 +211,18 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 
   useEffect(() => {
     return () => {
-      if (!hasComponent(entity, MaterialStateComponent)) return
-      if (material?.envMap) {
-        material.envMap = null
-      }
+      if (!entityExists(entity) || !hasComponent(entity, MaterialComponent)) return
+      setComponent(entity, MaterialComponent, { envMap: null })
       removeComponent(entity, BoxProjectionPlugin)
     }
   }, [])
 
   useEffect(() => {
-    if (!material || disallowedMaterials.has(material.type)) return
-
     const texture = envMaptexture
     if (!texture) return
     texture.mapping = EquirectangularReflectionMapping
-    material.envMap = texture
-  }, [envMaptexture, envMapComponent.type, material])
+    setComponent(entity, MaterialComponent, { envMap: texture })
+  }, [envMaptexture, envMapComponent.type])
 
   useEffect(() => {
     if (!bakeComponent) return
@@ -273,21 +257,16 @@ const EnvMapBakeReactor = (props: { entity: Entity; rootEntity: Entity }) => {
 const tempColor = new Color(0, 0, 1)
 const EnvMapColorReactor = (props: { entity: Entity; rootEntity: Entity }) => {
   const { entity, rootEntity } = props
-  const material = useOptionalComponent(entity, MaterialStateComponent)?.material as MeshStandardMaterial
   const envMapComponent = useComponent(rootEntity, EnvMapComponent)
 
   useEffect(() => {
     return () => {
-      if (!hasComponent(entity, MaterialStateComponent)) return
-      if (material?.envMap) {
-        material.envMap = null
-      }
+      if (!entityExists(entity) || !hasComponent(entity, MaterialComponent)) return
+      setComponent(entity, MaterialComponent, { envMap: null })
     }
   }, [])
 
   useEffect(() => {
-    if (!material || disallowedMaterials.has(material.type)) return
-
     const color = envMapComponent.envMapSourceColor ?? tempColor
     const resolution = 64 // Min value required
     /** @todo track in resource manager */
@@ -295,11 +274,11 @@ const EnvMapColorReactor = (props: { entity: Entity; rootEntity: Entity }) => {
     texture.needsUpdate = true
     texture.colorSpace = SRGBColorSpace
     texture.mapping = EquirectangularReflectionMapping
-    material.envMap = texture
+    setComponent(entity, MaterialComponent, { envMap: texture })
     return () => {
       texture.dispose()
     }
-  }, [envMapComponent.envMapSourceColor, material, envMapComponent.type])
+  }, [envMapComponent.envMapSourceColor, envMapComponent.type])
 
   return <IntensityReactor entity={entity} rootEntity={rootEntity} />
 }

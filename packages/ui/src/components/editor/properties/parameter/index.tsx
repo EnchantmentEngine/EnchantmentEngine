@@ -2,7 +2,6 @@ import React from 'react'
 
 import { camelCaseToSpacedString } from '@ir-engine/common/src/utils/camelCaseToSpacedString'
 import capitalizeFirstLetter from '@ir-engine/common/src/utils/capitalizeFirstLetter'
-import { generateDefaults } from '@ir-engine/spatial/src/renderer/materials/constants/DefaultArgs'
 import { Checkbox } from '@ir-engine/ui'
 import ColorInput from '../../../../primitives/tailwind/Color'
 import InputGroup from '../../input/Group'
@@ -58,7 +57,7 @@ export default function ParameterInput({
     }
   }
 
-  const _defaults = defaults ?? generateDefaults(values)
+  const _defaults = defaults // ?? generateDefaults(values)
   /*
 0: "boolean"
 1: "string"

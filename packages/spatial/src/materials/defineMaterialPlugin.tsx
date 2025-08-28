@@ -1,8 +1,8 @@
 import { defineComponent, Entity, SystemUUID, useComponent } from '@ir-engine/ecs'
 import { SchemaDefinition, State, Static, TObjectSchema, TProperties } from '@ir-engine/hyperflux'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { Shader, Texture, WebGLRenderer } from 'three'
-import { MaterialPluginComponents, MaterialStateComponent, UniformRecord, useUniforms } from './MaterialComponent'
+import { MaterialComponent, MaterialPluginComponents, UniformRecord, useUniforms } from './MaterialComponent'
 import { removePlugin, setPlugin } from './materialFunctions'
 
 /**
@@ -18,7 +18,7 @@ import { removePlugin, setPlugin } from './materialFunctions'
  *     enabled: true
  *   },
  *
- *   onApply: (shader, renderer, uniforms) => {
+ *   onApply: (entity, shader, renderer) => {
  *     shader.fragmentShader = shader.fragmentShader.replace(
  *       'void main() {',
  *       `
@@ -28,8 +28,6 @@ import { removePlugin, setPlugin } from './materialFunctions'
  *         void main() {
  *       `
  *     )
- *       shader.uniforms.time.value = uniforms.time
- *       shader.uniforms.boolean.value = uniforms.boolean
  *   },
  *
  *   update: (deltaSeconds, uniforms) => {
@@ -38,21 +36,26 @@ import { removePlugin, setPlugin } from './materialFunctions'
  * })
  **/
 
-export const defineMaterialPlugin = <T extends SchemaDefinition>({
+export const defineMaterialPlugin = <T extends SchemaDefinition, Extras = Record<string, unknown>>({
   name,
   jsonID,
   uniforms: uniformSchema,
   onApply,
+  onSet,
+  onRemove,
   update,
-  reactor: Reactor
+  reactor: Reactor,
+  ...extensions
 }: {
   name: string
-  jsonID: string
+  jsonID?: string
   uniforms: T
-  onApply: (shader: Shader, renderer: WebGLRenderer) => void
+  onApply?: (entity: Entity, shader: Shader, renderer: WebGLRenderer) => void
+  onSet?: (entity: Entity, component: Static<T>, json: any) => void
+  onRemove?: (entity: Entity, component: Static<T>) => void
   update?: (component: Static<T>, deltaSeconds: number) => void
   reactor?: (props: { entity: Entity; textureState: State<Record<string, Texture | null>> }) => any
-}) => {
+} & Extras) => {
   const PluginComponent = defineComponent({
     name,
 
@@ -60,38 +63,42 @@ export const defineMaterialPlugin = <T extends SchemaDefinition>({
 
     schema: uniformSchema,
 
+    onSet,
+
+    onRemove,
+
     reactor: ({ entity }) => {
-      /** Suspend context until material exists */
-      const material = useComponent(entity, MaterialStateComponent).material
-
       const pluginState = useComponent(entity, PluginComponent) as UniformRecord
-
-      const systemUUID = useMemo(() => makeMaterialPluginUpdateSystemID(name, entity), [name, entity])
 
       const { textureState, uniforms } = useUniforms(
         entity,
         uniformSchema as TObjectSchema<TProperties>,
         pluginState,
-        update,
-        systemUUID
+        update
       )
 
       useEffect(() => {
+        if (!onApply) return
         const callback = (shader: Shader, renderer: WebGLRenderer) => {
           for (const key in uniforms) {
             shader.uniforms[key] = uniforms[key]
           }
 
-          onApply(shader, renderer)
+          onApply(entity, shader, renderer)
         }
+
+        /** Suspend context until material exists */
+        const material = MaterialComponent.get(entity)!
         setPlugin(material, callback)
         return () => {
           removePlugin(material, callback)
         }
-      }, [material])
+      }, [])
 
       return Reactor ? <Reactor entity={entity} textureState={textureState} /> : null
-    }
+    },
+
+    ...extensions
   })
 
   MaterialPluginComponents[name] = PluginComponent

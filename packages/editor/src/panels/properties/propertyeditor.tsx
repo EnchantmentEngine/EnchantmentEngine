@@ -11,7 +11,7 @@ import { ComponentEditorsState } from '@ir-engine/editor/src/services/ComponentE
 import { SelectionState } from '@ir-engine/editor/src/services/SelectionServices'
 import { ErrorBoundary, NO_PROXY, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { Button } from '@ir-engine/ui'
 import TransformPropertyGroup from '@ir-engine/ui/src/components/editor/properties/transform'

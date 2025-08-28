@@ -4,12 +4,9 @@ import { mergeGeometries } from '@ir-engine/engine/src/scene/util/meshUtils'
 import { getState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { MaterialInstanceComponent, MaterialStateComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
-import {
-  MaterialInstanceComponent,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
   BufferAttribute,
   BufferGeometry,

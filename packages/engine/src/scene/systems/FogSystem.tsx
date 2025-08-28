@@ -14,8 +14,8 @@ import { Schema } from '@ir-engine/hyperflux'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 
 import { defineMaterialPlugin } from '@ir-engine/spatial'
+import { MaterialComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { FogSettingsComponent, FogType } from '@ir-engine/spatial/src/renderer/components/FogSettingsComponent'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 
 export const FogShaderPluginComponent = defineMaterialPlugin({
   name: 'FogShaderPluginComponent',
@@ -28,16 +28,16 @@ export const FogShaderPluginComponent = defineMaterialPlugin({
     heightFactor: Schema.Number({ default: 0.05 })
   }),
 
-  onApply(shader) {},
+  onApply(entity, shader, renderer) {},
 
   update: (component, deltaSeconds) => {
     component.fogTime += deltaSeconds
   }
 })
 
-function FogGroupReactor(props: { fogEntity: Entity }) {
-  const entity = useEntityContext()
-  const fogSettings = useComponent(props.fogEntity, FogSettingsComponent)
+function FogGroupReactor(props: { entity: Entity; fogEntity: Entity }) {
+  const { entity, fogEntity } = props
+  const fogSettings = useComponent(fogEntity, FogSettingsComponent)
 
   useEffect(() => {
     setComponent(entity, FogShaderPluginComponent)
@@ -64,7 +64,7 @@ const FogReactor = () => {
   return (
     <QueryReactor
       ChildEntityReactor={FogGroupReactor}
-      Components={[MaterialStateComponent, VisibleComponent]}
+      Components={[MaterialComponent, VisibleComponent]}
       props={{ fogEntity: entity }}
     />
   )

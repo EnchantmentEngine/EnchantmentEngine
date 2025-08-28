@@ -19,7 +19,7 @@ export const NoiseOffsetPluginComponent = defineMaterialPlugin({
     time: Schema.Number({ default: 0 })
   }),
 
-  onApply: (shader) => {
+  onApply: (entity, shader) => {
     shader.vertexShader = shader.vertexShader.replace(
       'void main() {',
       `

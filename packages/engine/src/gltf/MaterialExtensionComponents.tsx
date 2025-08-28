@@ -1,8 +1,7 @@
 import { GLTF } from '@gltf-transform/core'
-import { Component, ComponentType, defineComponent, getComponent } from '@ir-engine/ecs'
+import { Component, ComponentType, defineComponent } from '@ir-engine/ecs'
 import { Schema } from '@ir-engine/hyperflux'
 import { Vector2_One, Vector2_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
   Color,
   LinearSRGBColorSpace,
@@ -867,10 +866,11 @@ export const MozillaHubsLightMapComponent = defineComponent({
 
         getDependency(options, 'material', materialIndex).then((entity) => {
           // fix for change to MeshBasicMaterial shading WRT lightmaps
-          const material = getComponent(entity, MaterialStateComponent).material as MeshBasicMaterial
-          if (material.type === 'MeshBasicMaterial') {
-            material.lightMapIntensity *= Math.PI
-          }
+          /** @todo */
+          // const material = getComponent(entity, MaterialComponent, { lightMapIntensity })
+          // if (material.type === 'MeshBasicMaterial') {
+          //   material.lightMapIntensity *= Math.PI
+          // }
         })
       })
     )

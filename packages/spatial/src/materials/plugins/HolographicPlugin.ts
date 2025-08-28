@@ -18,7 +18,7 @@ export const HolographicPluginComponent = defineMaterialPlugin({
     hologramOpacity: Schema.Number({ default: 0.5 })
   }),
 
-  onApply: (shader) => {
+  onApply: (entity, shader) => {
     shader.vertexShader =
       `
           varying vec4 vPos;  

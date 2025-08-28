@@ -1,6 +1,3 @@
-export { defineMaterialPlugin } from './materials/defineMaterialPlugin'
-export { MaterialStateComponent, TextureSchema } from './materials/MaterialComponent'
-
 export { AmbientLightComponent } from './components/lights/AmbientLightComponent'
 export { DirectionalLightComponent } from './components/lights/DirectionalLightComponent'
 export { HemisphereLightComponent } from './components/lights/HemisphereLightComponent'

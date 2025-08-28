@@ -1,5 +1,5 @@
 import { getAllEntities, getEntityComponents } from '@ir-engine/ecs'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONTree } from 'react-json-tree'
 
@@ -12,7 +12,7 @@ import {
   getOptionalComponent,
   hasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { SuspendedQueryChildState, defineQuery, removeQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
@@ -21,13 +21,16 @@ import {
   HyperFlux,
   NO_PROXY,
   defineState,
+  getState,
   syncStateWithLocalStorage,
   useHookstate,
   useMutableState
 } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { Input } from '@ir-engine/ui'
+import { MaterialMapState } from '@ir-engine/spatial/src/materials/MaterialComponent'
+import { Button, Input } from '@ir-engine/ui'
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
+import { MeshStandardMaterial } from 'three'
 import { useFrameUpdate } from './useFrameUpdate'
 
 const renderEntityTreeRoots = (roots: Entity[]) => {
@@ -123,7 +126,8 @@ const EntitySearchState = defineState({
   name: 'EntitySearchState',
   initial: {
     search: '',
-    query: ''
+    query: '',
+    materialDebug: false
   },
   extension: syncStateWithLocalStorage(['search', 'query'])
 })
@@ -159,6 +163,7 @@ export const EntityDebug = () => {
   const entityTree = useHookstate({ siimulation: {}, authoring: {} } as any)
   const entitySearch = useMutableState(EntitySearchState).search
   const entityQuery = useMutableState(EntitySearchState).query
+  const materialDebug = useMutableState(EntitySearchState).materialDebug
 
   erroredComponents.set(
     [...HyperFlux.store.activeReactors.values()]
@@ -186,8 +191,20 @@ export const EntityDebug = () => {
     { after: PresentationSystemGroup }
   )
 
+  useEffect(() => {
+    if (!materialDebug.value) return
+    const material = getState(MaterialMapState).get(UndefinedEntity) as MeshStandardMaterial
+    material.color.set(0xff00ff)
+    return () => {
+      material.color.set(0xffffff)
+    }
+  }, [materialDebug.value])
+
   return (
     <div className="m-1 bg-neutral-600 p-1">
+      <Button className="mb-2" onClick={() => materialDebug.set(!materialDebug.value)}>
+        Material Debug {materialDebug.value ? 'Enabled' : 'Disabled'}
+      </Button>
       <div className="my-1">
         <Text className="text-text-primary-button">{t('common:debug.scenes')}</Text>
         <JSONTree

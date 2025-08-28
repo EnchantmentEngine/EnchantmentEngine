@@ -2,9 +2,9 @@ import { Shader } from 'three'
 
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { EntitySchema } from '@ir-engine/ecs'
+import { Entity, EntitySchema } from '@ir-engine/ecs'
 import { Schema } from '@ir-engine/hyperflux'
-import { defineMaterialPlugin } from '@ir-engine/spatial/src/renderer/materials/defineMaterialPlugin'
+import { defineMaterialPlugin } from '@ir-engine/spatial'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import {
   envmapParsReplaceLambert,
@@ -40,7 +40,7 @@ export const BoxProjectionPlugin = defineMaterialPlugin({
     cubeMapPos: T.Vec3()
   }),
 
-  onApply: (shader: Shader) => {
+  onApply: (entity: Entity, shader: Shader) => {
     const shaderType = shader.shaderType
     const isPhysical = shaderType === 'MeshStandardMaterial' || shaderType === 'MeshPhysicalMaterial'
     const isSupported = isPhysical || shaderType === 'MeshLambertMaterial' || shaderType === 'MeshPhongMaterial'

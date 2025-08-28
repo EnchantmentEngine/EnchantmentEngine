@@ -150,7 +150,8 @@ export const loadResource = <T extends ResourceAssetType>(
       }
       resource.status.set(ResourceStatus.Loaded)
       ResourceState.debugLog(`ResourceState:load Loaded resource: ${url} for entity: ${entity}`)
-      ResourceState.checkBudgets()
+      /** @todo do this elsewhere as it causes cyclical imports */
+      // PerformanceState.checkBudgets()
       if (entity) ResourceProgressComponent.setResource(entity, url, 100, 100)
       onLoad(response)
 

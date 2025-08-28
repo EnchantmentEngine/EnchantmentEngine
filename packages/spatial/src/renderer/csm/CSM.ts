@@ -26,12 +26,12 @@ import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { CameraComponent } from '../../camera/components/CameraComponent'
 import { NameComponent } from '../../common/NameComponent'
 import { Vector3_Zero } from '../../common/constants/MathConstants'
+import { MaterialComponent } from '../../materials/MaterialComponent'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 import { VisibleComponent } from '../../renderer/components/VisibleComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { RendererComponent } from '../components/RendererComponent'
 import { getMaxShadowCascades, supportsShaderChunkInjection } from '../functions/RendererBackendUtils'
-import { MaterialStateComponent } from '../materials/MaterialComponent'
 import { CSMComponent } from './CSMComponent'
 import { CSMPluginComponent } from './CSMPluginComponent'
 import Frustum from './Frustum'
@@ -399,9 +399,8 @@ function updateUniforms(rendererEntity?: Entity): void {
   const materialEntities = csmPluginQuery()
 
   for (const materialEntity of materialEntities) {
-    if (hasComponent(materialEntity, MaterialStateComponent)) {
-      const materialComponent = getComponent(materialEntity, MaterialStateComponent)
-      const material = materialComponent.material
+    if (hasComponent(materialEntity, MaterialComponent)) {
+      const material = MaterialComponent.get(materialEntity)
 
       if (!material?.isMaterial || !material.defines) continue
 
@@ -458,7 +457,7 @@ function removeCSMLights(rendererEntity: Entity): void {
   csm.lights = []
 }
 
-const csmPluginQuery = defineQuery([CSMPluginComponent])
+const csmPluginQuery = defineQuery([CSMPluginComponent, MaterialComponent])
 
 function disposeCSM(rendererEntity: Entity): void {
   const materialEntities = csmPluginQuery()

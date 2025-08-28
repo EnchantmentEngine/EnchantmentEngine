@@ -3,7 +3,10 @@ import { BackSide, Color, Mesh, MeshBasicMaterial, SphereGeometry, Vector2 } fro
 
 import {
   Entity,
+  EntityID,
   EntityTreeComponent,
+  SourceID,
+  UUIDComponent,
   UndefinedEntity,
   createEntity,
   getComponent,
@@ -40,9 +43,10 @@ import { EngineState } from '@ir-engine/ecs'
 import { AvatarRigComponent } from '@ir-engine/engine/src/avatar/components/AvatarAnimationComponent'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { BasicMaterialComponent, ReferenceSpaceState } from '@ir-engine/spatial'
 import { SpectateEntityState } from '@ir-engine/spatial/src/camera/systems/SpectateSystem'
 import { CameraMode } from '@ir-engine/spatial/src/camera/types/CameraMode'
+import { MaterialComponent, MaterialInstanceComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { useRemoveEngineCanvas } from '@ir-engine/spatial/src/renderer/functions/useEngineCanvas'
 import { useLoadedSceneEntity } from '../hooks/useLoadedSceneEntity'
@@ -82,10 +86,23 @@ export const LoadingUISystemState = defineState({
 
     const meshEntity = createEntity()
     const mesh = new Mesh(
-      new SphereGeometry(10),
-      new MeshBasicMaterial({ side: BackSide, transparent: true, depthWrite: true, depthTest: false, fog: false })
+      new SphereGeometry(10)
+      //new MeshBasicMaterial({ side: BackSide, transparent: true, depthWrite: true, depthTest: false, fog: false })
     )
     mesh.frustumCulled = false
+    setComponent(meshEntity, UUIDComponent, {
+      entityID: 'loading-ui-mesh' as EntityID,
+      entitySourceID: 'loading-ui-source' as SourceID
+    })
+    setComponent(meshEntity, MaterialInstanceComponent, { entities: [meshEntity] })
+    setComponent(meshEntity, BasicMaterialComponent)
+    setComponent(meshEntity, MaterialComponent, {
+      side: BackSide,
+      transparent: true,
+      depthWrite: true,
+      depthTest: false,
+      fog: false
+    })
 
     setComponent(meshEntity, NameComponent, 'Loading XRUI Mesh')
 

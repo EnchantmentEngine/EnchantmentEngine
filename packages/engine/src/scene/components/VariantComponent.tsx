@@ -25,9 +25,9 @@ import { defineMaterialPlugin } from '@ir-engine/spatial'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
+import { MaterialInstanceComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { MaterialInstanceComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { DistanceFromCameraComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
@@ -185,7 +185,7 @@ export const InstanceVariantMaterialPluginComponent = defineMaterialPlugin({
     minDistance: Schema.Number(),
     maxDistance: Schema.Number()
   }),
-  onApply: (shader) => {
+  onApply: (entity, shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       'uniform float opacity;',
       `uniform float opacity;
@@ -293,11 +293,11 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
   useEffect(() => {
     const entities = [...materialEntities]
     for (const materialEntity of entities) {
-      setComponent(materialEntity, InstanceVariantMaterialPluginComponent)
+      setComponent(materialEntity!, InstanceVariantMaterialPluginComponent)
     }
     return () => {
       for (const materialEntity of entities) {
-        removeComponent(materialEntity, InstanceVariantMaterialPluginComponent)
+        removeComponent(materialEntity!, InstanceVariantMaterialPluginComponent)
       }
     }
   }, [materialEntities])
@@ -306,7 +306,7 @@ const ChildMeshReactor = (props: { variantEntity: Entity; modelEntity: Entity; m
     const minDistance = level.metadata['minDistance']
     const maxDistance = level.metadata['maxDistance']
     for (const materialEntity of materialEntities) {
-      setComponent(materialEntity, InstanceVariantMaterialPluginComponent, {
+      setComponent(materialEntity!, InstanceVariantMaterialPluginComponent, {
         minDistance: minDistance,
         maxDistance: maxDistance
       })

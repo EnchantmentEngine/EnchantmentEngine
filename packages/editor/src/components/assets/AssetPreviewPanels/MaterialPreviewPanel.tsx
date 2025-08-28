@@ -9,9 +9,9 @@ import { CameraOrbitComponent } from '@ir-engine/spatial/src/camera/components/C
 import { TransformPivot, TransformSpace } from '@ir-engine/spatial/src/common/constants/TransformConstants'
 import { computeTransformPivot } from '@ir-engine/spatial/src/common/functions/TransformPivot'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { MaterialStateComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
-import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { SelectionState } from '../../../services/SelectionServices'
 
 export const MaterialPreviewCanvas = () => {

@@ -18,13 +18,10 @@ import {
 import { Entity, SourceID } from '@ir-engine/ecs/src/Entity'
 import { destroy, hookstate, startReactor, State, useHookstate } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { MaterialComponent, MaterialInstanceComponent } from '@ir-engine/spatial/src/materials/MaterialComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { SkinnedMeshComponent } from '@ir-engine/spatial/src/renderer/components/SkinnedMeshComponent'
-import {
-  MaterialInstanceComponent,
-  MaterialStateComponent
-} from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { useEffect } from 'react'
 import {
@@ -550,6 +547,7 @@ const exportMesh = async (entity: Entity, gltf: GLTF.IGLTF, context: GLTFSceneEx
   if (materialInstances) {
     for (let i = 0; i < materialInstances.entities.length; i++) {
       const materialEntity = materialInstances.entities[i]
+      if (!materialEntity) continue
       materialPromises.push(
         new Promise<void>((resolve) => {
           awaitMaterial(materialEntity, context).then((materialIndex) => {
@@ -932,19 +930,21 @@ const exportMaterial = async (
   gltf: GLTF.IGLTF,
   context: GLTFSceneExportContext
 ): Promise<number | null> => {
-  const material = getComponent(entity, MaterialStateComponent).material
+  const material = MaterialComponent.get(entity)
+  if (!material) return null
 
   const cache = context.cache.materials
   if (cache.has(material)) return cache.get(material)!
 
-  const materialEntityUUID = getComponent(entity, UUIDComponent)
+  // probably not needed as undefined in MaterialInstanceComponent denotes no specified material, but keeping for reference
+  // const materialEntityUUID = getComponent(entity, UUIDComponent)
 
-  //do not export fallback material
-  if (
-    materialEntityUUID.entityID === MaterialStateComponent.fallbackMaterialUUIDPair.entityID &&
-    materialEntityUUID.entitySourceID === MaterialStateComponent.fallbackMaterialUUIDPair.entitySourceID
-  )
-    return null
+  // //do not export fallback material
+  // if (
+  //   materialEntityUUID.entityID === MaterialStateComponent.fallbackMaterialUUIDPair.entityID &&
+  //   materialEntityUUID.entitySourceID === MaterialStateComponent.fallbackMaterialUUIDPair.entitySourceID
+  // )
+  //   return null
 
   const materialDef: GLTF.IMaterial = await materialToMaterialDef(
     material,
@@ -1169,7 +1169,7 @@ const exportEntity = async (
   //ignore entities with no source
   if (!hasComponent(entity, UUIDComponent)) return
   //ignore material entities as they get exported in exportMesh
-  const materialComponent = hasComponent(entity, MaterialStateComponent)
+  const materialComponent = hasComponent(entity, MaterialComponent)
   if (materialComponent) {
     await exportMaterial(entity, gltf, context)
     return
