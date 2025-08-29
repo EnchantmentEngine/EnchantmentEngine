@@ -1,0 +1,22 @@
+{
+  "name": "@ir-engine/core",
+  "version": "1.0.3",
+  "main": "index.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Core spatial system for the Infinite Reality Engine",
+  "scripts": {
+    "check-errors": "tsc --noemit",
+    "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts",
+    "test-coverage": "npm run test-coverage-generate ; npm run test-coverage-launch",
+    "test-coverage-generate": "npm run test -- --coverage --silent",
+    "test-coverage-launch": "vite preview --open --outDir coverage"
+  },
+  "repository": "http://github.com/enchantmentengine/enchantmentengine",
+  "author": "Infinite Reality Engine",
+  "license": "CPAL",
+  "dependencies": {},
+  "devDependencies": {},
+  "gitHead": "2313453697ca7c6b8d36b3b166b5a6445fe1c851"
+}
