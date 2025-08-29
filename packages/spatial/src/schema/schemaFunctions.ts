@@ -6,28 +6,6 @@ const isColorObj = (color?: ColorRepresentation): color is Color => {
   return color !== undefined && (color as Color).r !== undefined
 }
 
-export const NonEmptyString = (errMsg: string) => {
-  return (str: string): boolean => {
-    if (!str) {
-      console.error(errMsg)
-      return false
-    }
-
-    return true
-  }
-}
-
-export const NonEmptyArray = (errMsg: string) => {
-  return (arr: unknown[]): boolean => {
-    if (!arr || arr.length === 0) {
-      console.error(errMsg)
-      return false
-    }
-
-    return true
-  }
-}
-
 type Init<T> = T
 
 export const T = {
