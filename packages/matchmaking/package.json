@@ -16,7 +16,7 @@
   "npmClient": "npm",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ir-engine/ir-engine.git"
+    "url": "git+https://github.com/enchantmentengine/enchantmentengine.git"
   },
   "scripts": {
     "check-errors": "tsc --noemit",

@@ -6,18 +6,18 @@
     "url": "http://github.com/ir-engine"
   },
   "bugs": {
-    "url": "https://github.com/ir-engine/ir-engine/issues"
+    "url": "https://github.com/enchantmentengine/enchantmentengine/issues"
   },
   "publishConfig": {
     "access": "public"
   },
   "description": "A declarative way to build 3D/VR/AR/XR apps that scale. Built with tooling web developers will love, using conventions that game developers and creative coders will find straightforward familiar.",
-  "homepage": "https://github.com/ir-engine/ir-engine#readme",
+  "homepage": "https://github.com/enchantmentengine/enchantmentengine#readme",
   "license": "CPAL",
   "main": "index.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ir-engine/ir-engine.git"
+    "url": "git+https://github.com/enchantmentengine/enchantmentengine.git"
   },
   "scripts": {
     "check-errors": "tsc --noemit",

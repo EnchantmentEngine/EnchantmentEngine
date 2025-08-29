@@ -13,7 +13,7 @@
     "test-coverage-generate": "npm run test -- --coverage --silent",
     "test-coverage-launch": "vite preview --open --outDir coverage"
   },
-  "repository": "http://github.com/ir-engine/ir-engine",
+  "repository": "http://github.com/enchantmentengine/enchantmentengine",
   "author": "Infinite Reality Engine",
   "license": "CPAL",
   "dependencies": {

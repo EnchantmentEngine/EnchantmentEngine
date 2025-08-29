@@ -14,7 +14,7 @@
     "test-coverage-launch": "vite preview --open --outDir coverage",
     "validate": "npm run test"
   },
-  "repository": "http://github.com/ir-engine/ir-engine",
+  "repository": "http://github.com/enchantmentengine/enchantmentengine",
   "author": "Infinite Reality Engine",
   "license": "CPAL",
   "dependencies": {
