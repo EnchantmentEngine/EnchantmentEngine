@@ -1,6 +1,6 @@
 import { removeComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import { Widget, Widgets } from './Widgets'
 
 import { VideoRecorderLg } from '@ir-engine/ui/src/icons'

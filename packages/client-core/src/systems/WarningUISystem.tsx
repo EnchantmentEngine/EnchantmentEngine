@@ -7,7 +7,6 @@ import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { defineState, getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -17,6 +16,7 @@ import { VisibleComponent, setVisibleComponent } from '@ir-engine/spatial/src/re
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
 import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import type { WebLayer3D } from '@ir-engine/xrui'
 
 export const WarningUIState = defineState({

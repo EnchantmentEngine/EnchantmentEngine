@@ -9,9 +9,9 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { MediaComponent, MediaElementComponent } from '@ir-engine/engine/src/scene/components/MediaComponent'
-import { createXRUI, XRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { TransformComponent } from '@ir-engine/spatial'
 import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUIComponent'
+import { createXRUI, XRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import { PauseCircleLg, PlayLg, VolumeMaxLg, VolumeXLg } from '@ir-engine/ui/src/icons'
 
 export function createMediaControlsView(entity: Entity): XRUI<null> {

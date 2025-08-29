@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 
 import { getComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { dispatchAction, getMutableState, getState, startReactor, useHookstate } from '@ir-engine/hyperflux'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import { WidgetAppActions } from './WidgetAppService'
 
 import {
