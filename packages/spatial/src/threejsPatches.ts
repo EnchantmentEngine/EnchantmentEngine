@@ -4,7 +4,6 @@ import { Euler, Matrix4, Object3D, Quaternion, Scene, SkinnedMesh, Vector2, Vect
 import { Entity } from '@ir-engine/ecs'
 
 import { overrideOnBeforeCompile } from './common/functions/OnBeforeCompilePlugin'
-import { Object3DUtils } from './transform/Object3DUtils'
 
 export const DisplayP3ColorSpace = 'display-p3'
 export const LinearDisplayP3ColorSpace = 'linear-display-p3'
@@ -152,21 +151,85 @@ declare module 'three/src/math/Quaternion.js' {
 
 Scene.DEFAULT_MATRIX_AUTO_UPDATE = false
 
+const _v1 = new Vector3()
+const _m1 = new Matrix4()
+
 /**
- * Since we have complete control over matrix updates, we know that at any given point
- *  in execution time if the matrix will be up to date or a frame late, and we can simply
- *  grab the data we need from the world matrix
+ * Extracts the position part of the object's matrixWorld.
+ * Does not update the matrix chain
+ * @param {Object3D} object
+ * @param {Vector3} outPosition
  */
 Object3D.prototype.getWorldPosition = function (target) {
-  return Object3DUtils.getWorldPosition(this, target)
+  target.x = this.matrixWorld.elements[12]
+  target.y = this.matrixWorld.elements[13]
+  target.z = this.matrixWorld.elements[14]
+  return target
 }
 
+/**
+ * Extracts the quaternion part of the object's matrixWorld.
+ * Does not update the matrix chain
+ * @param {Object3D} object
+ * @param {Quaternion} outQuaternion
+ */
 Object3D.prototype.getWorldQuaternion = function (target) {
-  return Object3DUtils.getWorldQuaternion(this, target)
+  const te = this.matrixWorld.elements
+
+  let sx = _v1.set(te[0], te[1], te[2]).length()
+  const sy = _v1.set(te[4], te[5], te[6]).length()
+  const sz = _v1.set(te[8], te[9], te[10]).length()
+
+  // if determine is negative, we need to invert one scale
+  const det = this.matrixWorld.determinant()
+  if (det < 0) sx = -sx
+
+  // scale the rotation part
+  _m1.copy(this.matrixWorld)
+
+  const invSX = 1 / sx
+  const invSY = 1 / sy
+  const invSZ = 1 / sz
+
+  _m1.elements[0] *= invSX
+  _m1.elements[1] *= invSX
+  _m1.elements[2] *= invSX
+
+  _m1.elements[4] *= invSY
+  _m1.elements[5] *= invSY
+  _m1.elements[6] *= invSY
+
+  _m1.elements[8] *= invSZ
+  _m1.elements[9] *= invSZ
+  _m1.elements[10] *= invSZ
+
+  target.setFromRotationMatrix(_m1)
+
+  return target
 }
 
+/**
+ * Extracts the scale part of the object's matrixWorld.
+ * Does not update the matrix chain
+ * @param {Object3D} object
+ * @param {Quaternion} outQuaternion
+ */
 Object3D.prototype.getWorldScale = function (target) {
-  return Object3DUtils.getWorldScale(this, target)
+  const te = this.matrixWorld.elements
+
+  let sx = _v1.set(te[0], te[1], te[2]).length()
+  const sy = _v1.set(te[4], te[5], te[6]).length()
+  const sz = _v1.set(te[8], te[9], te[10]).length()
+
+  // if determine is negative, we need to invert one scale
+  const det = this.matrixWorld.determinant()
+  if (det < 0) sx = -sx
+
+  target.x = sx
+  target.y = sy
+  target.z = sz
+
+  return target
 }
 
 Object3D.prototype.getWorldDirection = function (target) {

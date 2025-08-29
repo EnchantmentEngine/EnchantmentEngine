@@ -1,7 +1,5 @@
 import { Bone, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { Object3DUtils } from '@ir-engine/spatial/src/transform/Object3DUtils'
-
 const toLocalQuat = new Quaternion(),
   rotation = new Quaternion(),
   boneFwd = new Vector3(),
@@ -30,7 +28,7 @@ export function getForwardVector(matrix: Matrix4, outVec: Vector3): Vector3 {
 export function solveLookIK(bone: Bone, forward: Vector3, rotationClamp = 0.785398) {
   if (!bone || !bone.parent) return
 
-  Object3DUtils.getWorldQuaternion(bone.parent, toLocalQuat) // can this be replaces with a matrix rotation?
+  bone.parent.getWorldQuaternion(toLocalQuat) // can this be replaces with a matrix rotation?
   toLocalQuat.invert()
 
   getForwardVector(bone.parent.matrix, boneFwd)
