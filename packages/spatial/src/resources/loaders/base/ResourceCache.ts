@@ -163,7 +163,7 @@ class ResourceCacheDatabase extends Dexie {
     const metadata = await this.getGLTFMetadata(normalizedUrl)
     if (!metadata) return
 
-    let deletePromises = [] as Promise<void>[]
+    const deletePromises = [] as Promise<void>[]
     for (let i = 0; i < metadata.dependencies.length; i++) {
       const depUrl = metadata.dependencies[i]
       deletePromises.push(this.deleteResource(depUrl))
