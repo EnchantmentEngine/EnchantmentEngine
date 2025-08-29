@@ -1,4 +1,4 @@
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import { Widget, Widgets } from './Widgets'
 
 import { Users02Lg } from '@ir-engine/ui/src/icons'

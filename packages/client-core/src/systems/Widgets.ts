@@ -1,6 +1,6 @@
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { dispatchAction } from '@ir-engine/hyperflux'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import { SVGIconType } from '@ir-engine/ui/src/icons/types'
 import { IconType } from 'react-icons'
 import { RegisteredWidgets, WidgetAppActions } from './WidgetAppService'
