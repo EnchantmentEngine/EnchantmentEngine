@@ -19,7 +19,7 @@ export const OrientedBoundingBoxComponent = defineComponent({
   })
 })
 
-export const updateBoundingBox = (entity: Entity) => {
+export const updateOrientedBoundingBox = (entity: Entity) => {
   const boxComponent = getOptionalComponent(entity, OrientedBoundingBoxComponent)
 
   if (!boxComponent) {
