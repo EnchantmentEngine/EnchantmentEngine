@@ -129,6 +129,7 @@ export function createHyperStore(options?: {
     })
   }
   HyperFlux.store = store
+  globalThis.HyperStore = store
   return store
 }
 
