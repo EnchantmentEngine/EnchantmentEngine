@@ -1,12 +1,10 @@
-import { ComponentType, getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { ComponentType, Entity, getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs'
 
 import { getState } from '@ir-engine/hyperflux'
-import { Box3, Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
+import { Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { BoundingBoxComponent, updateBoundingBox } from '../../transform/components/BoundingBoxComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { getBoundingBoxVertices } from '../../transform/functions/BoundingBoxFunctions'
 import { CameraComponent } from '../components/CameraComponent'
 import { TargetCameraRotationComponent } from '../components/TargetCameraRotationComponent'
 
@@ -60,16 +58,6 @@ export function computeCameraDistanceAndCenter(
   return { distance, center }
 }
 
-/**
- * Computes the distance and center of the camera required to fit the box in the camera's view
- * @param camera - PerspectiveCamera
- * @param box - Box3 to fit in the camera's view
- * @param padding - Padding value to fit the box in the camera's view
- */
-export function computeCameraDistanceAndCenterFromBox(camera: PerspectiveCamera, box: Box3, padding: number = 1.1) {
-  const points = getBoundingBoxVertices(box)
-  return computeCameraDistanceAndCenter(camera, points, padding)
-}
 /**
  * Camera view angles enum
  */

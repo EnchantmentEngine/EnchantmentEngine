@@ -13,9 +13,9 @@ import {
   useHasComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
+import { AnimationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getMutableState, getState, NO_PROXY_STEALTH, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { useHelperEntity } from '@ir-engine/spatial/src/helper/functions/useHelperEntity'
 import React from 'react'
@@ -40,6 +40,7 @@ import { iconGizmoArrow, setupGizmo } from '../constants/GizmoPresets'
 import { getIconGizmo, gizmoIconUpdate, setIconSize, VolumeVisibility } from '../functions/gizmos/studioIconGizmoHelper'
 import { EditorHelperState } from '../services/EditorHelperState'
 import { SelectionState } from '../services/SelectionServices'
+import { BoundingBoxHelperComponent } from './BoundingBoxHelperComponent'
 import { transformGizmoControllerQuery } from './TransformGizmoSystem'
 
 const _raycaster = new Raycaster() // for heuristic
@@ -142,6 +143,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
 
     if (effectiveHelper?.volume) {
       setComponent(entity, BoundingBoxComponent)
+      setComponent(entity, BoundingBoxHelperComponent)
     }
     return iconGizmo
   }, [entity, effectiveHelper, directionalEntitiesState, lineEntitiesState])
@@ -249,7 +251,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
         const color = selected.value ? BOUNDING_BOX_COLORS.SELECTED : hovered ? BOUNDING_BOX_COLORS.HOVERED : undefined
 
         if (color) {
-          setComponent(entity, BoundingBoxComponent, { color })
+          setComponent(entity, BoundingBoxHelperComponent, { color })
         }
         break
       }
@@ -264,7 +266,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
 
           const autoColor = selected.value ? BOUNDING_BOX_COLORS.SELECTED : BOUNDING_BOX_COLORS.HOVERED
 
-          setComponent(entity, BoundingBoxComponent, { color: autoColor })
+          setComponent(entity, BoundingBoxHelperComponent, { color: autoColor })
         }
         break
 
@@ -274,6 +276,7 @@ const ActiveHelperReactor: React.FC<ComponentHelperEntry> = (helper) => {
     }
 
     return () => {
+      removeComponent(entity, BoundingBoxHelperComponent)
       if (!hasPreexistingBoundingBoxComponent && hasComponent(entity, BoundingBoxComponent)) {
         removeComponent(entity, BoundingBoxComponent)
       }
@@ -325,9 +328,23 @@ const reactor = () => {
   return <>{helperComponents}</>
 }
 
+const _vec3 = new Vector3()
+
+const boundingBoxHelperQuery = defineQuery([BoundingBoxComponent, BoundingBoxHelperComponent, TransformComponent])
+
 export const ActiveHelperSystem = defineSystem({
   uuid: 'ee.engine.ActiveHelperSystem',
-  insert: { with: PresentationSystemGroup },
-  execute: () => {},
+  insert: { with: AnimationSystemGroup },
+  execute: () => {
+    for (const entity of boundingBoxHelperQuery()) {
+      const boundingBox = getComponent(entity, BoundingBoxComponent)
+      const boundingBoxHelper = getComponent(entity, BoundingBoxHelperComponent)
+      const boxOffset = boundingBox.box.getCenter(_vec3)
+      if (!boundingBoxHelper.helperEntity) continue
+      const helperObject = getComponent(boundingBoxHelper.helperEntity, ObjectComponent)
+      helperObject.position.copy(boxOffset)
+      helperObject.updateMatrixWorld(true)
+    }
+  },
   reactor
 })

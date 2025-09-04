@@ -37,8 +37,6 @@ import { PerformanceState } from '../renderer/PerformanceState'
 import { RendererComponent } from '../renderer/components/RendererComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
 
-// offloadTextureData implemented in engine package, but needs to be called and typed here
-
 declare module 'three/src/textures/Texture.js' {
   export interface Texture {
     offloadTextureData: () => Promise<boolean>
