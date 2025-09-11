@@ -138,13 +138,7 @@ const execute = () => {
     }
 
     if (getState(InputState).capturingEntity === cameraEntity) {
-      setComponent(cameraEntity, TargetCameraRotationComponent, {
-        phi,
-        phiVelocity: 0,
-        theta,
-        thetaVelocity: 0,
-        time
-      })
+      setComponent(cameraEntity, TargetCameraRotationComponent, { phi, theta, time })
     }
     handleFollowCameraScroll(cameraEntity, axes, deltaSeconds)
   }
