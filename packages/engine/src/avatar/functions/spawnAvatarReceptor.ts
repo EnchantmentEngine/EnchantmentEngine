@@ -13,7 +13,6 @@ import {
   setComponent,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { setTargetCameraRotation } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -28,6 +27,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { getState, isClient } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
 import { GrabberComponent } from '../../grabbable/GrabbableComponent'
@@ -131,7 +131,13 @@ export const createAvatarController = (entity: Entity) => {
   let targetTheta = (cameraForward.angleTo(avatarForward) * 180) / Math.PI
   const orientation = cameraForward.x * avatarForward.z - cameraForward.z * avatarForward.x
   if (orientation > 0) targetTheta = 2 * Math.PI - targetTheta
-  setTargetCameraRotation(getState(ReferenceSpaceState).viewerEntity, 0, targetTheta, 0.01)
+  setComponent(getState(ReferenceSpaceState).viewerEntity, TargetCameraRotationComponent, {
+    phi: 0,
+    phiVelocity: 0,
+    theta: targetTheta,
+    thetaVelocity: 0,
+    time: 0.01
+  })
 
   setComponent(entity, AvatarControllerComponent)
 }
