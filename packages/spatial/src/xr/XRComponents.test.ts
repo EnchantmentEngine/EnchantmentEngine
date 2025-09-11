@@ -31,7 +31,7 @@ const XRHandRotationDefaults = [
 
 function assertXRHandComponentDefaults(data: any) {
   assertArray.eq([...data.rotations.values()], XRHandRotationDefaults)
-  expect(data.hand).toBeNull()
+  expect(data.hand).toBeUndefined()
 }
 
 describe('XRHandComponent', () => {

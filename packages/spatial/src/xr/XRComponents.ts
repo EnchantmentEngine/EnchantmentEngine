@@ -162,30 +162,18 @@ export const XRLeftHandComponent = defineComponent({
   name: 'XRLeftHandComponent',
 
   schema: Schema.Object({
-    rotations: Schema.Class(() => new Float32Array(4 * 19))
-  }),
-
-  onInit: (entity, initial) => {
-    return {
-      ...initial,
-      hand: null! as XRHand
-    }
-  }
+    rotations: Schema.Class(() => new Float32Array(4 * 19)),
+    hand: Schema.Type<XRHand>()
+  })
 })
 
 export const XRRightHandComponent = defineComponent({
   name: 'XRRightHandComponent',
 
   schema: Schema.Object({
-    rotations: Schema.Class(() => new Float32Array(4 * 19))
-  }),
-
-  onInit: (entity, initial) => {
-    return {
-      ...initial,
-      hand: null! as XRHand
-    }
-  }
+    rotations: Schema.Class(() => new Float32Array(4 * 19)),
+    hand: Schema.Type<XRHand>()
+  })
 })
 
 export const XRHitTestComponent = defineComponent({
