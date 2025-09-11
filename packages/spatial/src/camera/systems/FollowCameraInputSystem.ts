@@ -1,7 +1,7 @@
 import { Vector2 } from 'three'
 
 import { Entity } from '@ir-engine/ecs'
-import { getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -10,7 +10,6 @@ import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux
 import { CameraSettings } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
-import { setTargetCameraRotation } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
 import { FollowCameraMode } from '@ir-engine/spatial/src/camera/types/FollowCameraMode'
 import { DefaultAxisBindings, InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
@@ -139,7 +138,7 @@ const execute = () => {
     }
 
     if (getState(InputState).capturingEntity === cameraEntity) {
-      setTargetCameraRotation(cameraEntity, phi, theta, time)
+      setComponent(cameraEntity, TargetCameraRotationComponent, { phi, theta, time })
     }
     handleFollowCameraScroll(cameraEntity, axes, deltaSeconds)
   }
