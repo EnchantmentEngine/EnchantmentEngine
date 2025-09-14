@@ -406,7 +406,7 @@ export const connectToNetwork = async (
   addOutgoingTopicIfNecessary(network.topic)
 
   // handle cached actions
-  for (const action of cachedActions!) HyperFlux.store.actions.incoming.push({ ...action, $fromCache: true })
+  for (const action of cachedActions!) HyperFlux.store.actions.incoming.push({ ...action })
 
   HyperFlux.store.actions.outgoing[network.topic].queue.push(...HyperFlux.store.actions.outgoing[network.topic].history)
 

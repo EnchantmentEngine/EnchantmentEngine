@@ -2,8 +2,6 @@ import assert from 'assert'
 import matches from 'ts-matches'
 import { describe, it } from 'vitest'
 
-import { PeerID } from '@ir-engine/hyperflux'
-
 import {
   applyIncomingActions,
   clearOutgoingActions,
@@ -42,10 +40,9 @@ describe('Hyperflux Unit Tests', () => {
     assert.throws(() => test({}))
     // @ts-expect-error - should type error if providing wrong type, and should throw error
     assert.throws(() => test({ payload: 100 }))
-    const action = test({ payload: 'abcd', $cache: false })
+    const action = test({ payload: 'abcd' })
     assert.equal(action.type, 'TEST_PATTERN_MATCHING')
     assert.equal(action.optionalThing, null)
-    assert(action.$cache === false)
     assert(test.matches.test(action))
     assert(
       test.matches.unsafeCast({
@@ -60,10 +57,9 @@ describe('Hyperflux Unit Tests', () => {
 
   it('should be able to define and create actions with action options', () => {
     const test = defineAction({
-      type: 'TEST_OPTIONS',
-      $cache: true
+      type: 'TEST_OPTIONS'
     })
-    const action = test({ $cache: true })
+    const action = test({})
     assert(action.type === 'TEST_OPTIONS')
     assert(test.matches.test(action))
     assert(test.matches.test({ type: 'TEST' }) === false)
@@ -102,7 +98,6 @@ describe('Hyperflux Unit Tests', () => {
     assert(greet.matches.test(store.actions.incoming[0]))
     assert(store.actions.incoming[0].$to == 'all')
     assert(store.actions.incoming[0].$time <= Date.now())
-    assert(store.actions.incoming[0].$cache === false)
     applyIncomingActions()
     assert.equal(store.actions.history.length, 1)
     assert.equal(store.actions.incoming.length, 0)
@@ -147,70 +142,12 @@ describe('Hyperflux Unit Tests', () => {
     assert.equal(store.actions.incoming.length, 1)
     assert(store.actions.incoming[0].$to == 'all')
     assert(store.actions.incoming[0].$time <= Date.now())
-    assert(store.actions.incoming[0].$cache === false)
     applyIncomingActions()
     assert.equal(store.actions.incoming.length, 0)
     assert.equal(store.actions.outgoing[store.defaultTopic].queue.length, 1)
     clearOutgoingActions(store.defaultTopic)
     assert.equal(store.actions.incoming.length, 0)
     assert.equal(store.actions.outgoing[store.defaultTopic].queue.length, 0)
-  })
-
-  it('should add incoming actions to cache as indicated', () => {
-    const store = createHyperStore({
-      getDispatchTime: () => Date.now()
-    })
-    const greet = defineAction({
-      type: 'TEST_GREETING',
-      greeting: matchesWithDefault(matches.string, () => 'hi')
-    })
-
-    dispatchAction(greet({ $cache: true }))
-    dispatchAction(greet({ $cache: false }))
-    dispatchAction(greet({ $cache: true }))
-    dispatchAction(greet({ $cache: true }))
-    dispatchAction(greet({ $cache: true }))
-    applyIncomingActions()
-
-    assert.equal(store.actions.history.length, 5)
-    assert.equal(store.actions.cached.length, 4)
-
-    dispatchAction(greet({ $cache: { removePrevious: true } }))
-    applyIncomingActions()
-    assert.equal(store.actions.history.length, 6)
-    assert.equal(store.actions.cached.length, 1)
-
-    dispatchAction(greet({ $cache: true }))
-    dispatchAction(greet({ $cache: true }))
-    dispatchAction(greet({ $cache: true }))
-    let greetAction = greet({ greeting: 'welcome', $cache: true })
-    dispatchAction(greetAction)
-    applyIncomingActions()
-    assert.equal(store.actions.history.length, 10)
-    assert.equal(store.actions.cached.length, 5)
-    assert.equal(store.actions.history.at(-1)!['greeting'], 'welcome')
-
-    greetAction = greet({ greeting: 'welcome', $cache: { removePrevious: ['greeting'], disable: true } })
-    dispatchAction(greetAction)
-    applyIncomingActions()
-    assert.equal(store.actions.history.length, 11)
-    assert.equal(store.actions.cached.length, 4)
-    assert.equal(store.actions.history.at(-1)!['greeting'], 'welcome')
-
-    dispatchAction(greet({ $peer: 'differentPeer' as PeerID, $cache: { removePrevious: true } }))
-    applyIncomingActions()
-    assert.equal(store.actions.history.length, 12)
-    assert.equal(store.actions.cached.length, 5)
-
-    dispatchAction(greet({ $cache: { removePrevious: true, disable: true } }))
-    applyIncomingActions()
-    assert.equal(store.actions.history.length, 13)
-    assert.equal(store.actions.cached.length, 1)
-
-    dispatchAction(greet({ $peer: 'differentPeer' as PeerID, $cache: { removePrevious: true, disable: true } }))
-    applyIncomingActions()
-    assert.equal(store.actions.history.length, 14)
-    assert.equal(store.actions.cached.length, 0)
   })
 
   it('should be able to apply incoming actions to receptors in a peer store', () => {

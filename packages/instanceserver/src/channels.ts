@@ -184,7 +184,6 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
 
   dispatchAction(
     NetworkActions.peerJoined({
-      $cache: true,
       $network: network.id,
       $topic: network.topic,
       peerID: HyperFlux.store.peerID,
@@ -438,7 +437,6 @@ const handleChannelUserRemoved = (app: Application) => async (params) => {
     network.transports[matchingPeer.peerID]?.end?.()
     dispatchAction(
       NetworkActions.peerLeft({
-        $cache: true,
         $network: network.id,
         $topic: network.topic,
         peerID: matchingPeer.peerID,

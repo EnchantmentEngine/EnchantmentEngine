@@ -18,14 +18,12 @@ export class WorldNetworkAction {
     parentUUID: matchesEntityUUID,
     ownerID: matchesWithDefault(matchesUserID, () => getState(EngineState).userID),
     authorityPeerId: matchesPeerID.optional(),
-    $cache: true,
     $topic: NetworkTopics.world
   })
 
   static destroyEntity = defineAction({
     type: 'ee.network.DESTROY_ENTITY',
     entityUUID: matchesEntityUUID,
-    $cache: true,
     $topic: NetworkTopics.world
   })
 
@@ -42,7 +40,6 @@ export class WorldNetworkAction {
     ownerID: matchesUserID,
     entityUUID: matchesEntityUUID,
     newAuthority: matchesPeerID,
-    $topic: NetworkTopics.world,
-    $cache: true
+    $topic: NetworkTopics.world
   })
 }

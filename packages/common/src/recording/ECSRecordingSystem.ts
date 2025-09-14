@@ -714,7 +714,6 @@ const playbackStopped = (userId: UserID, recordingID: RecordingID, network?: Net
       for (const peerID of activePlayback.peerIDs) {
         dispatchAction(
           NetworkActions.peerLeft({
-            $cache: true,
             $topic: network.topic,
             $network: network.id,
             peerID,
@@ -746,6 +745,7 @@ const playbackStopped = (userId: UserID, recordingID: RecordingID, network?: Net
   activePlaybacks.delete(recordingID)
 }
 
+/** @todo replace action queue with event sourcing */
 const startRecordingActionQueue = defineActionQueue(ECSRecordingActions.startRecording.matches)
 const stopRecordingActionQueue = defineActionQueue(ECSRecordingActions.stopRecording.matches)
 const startPlaybackActionQueue = defineActionQueue(ECSRecordingActions.startPlayback.matches)

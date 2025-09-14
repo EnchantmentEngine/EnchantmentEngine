@@ -1,6 +1,7 @@
+import { AnimationNetworkState } from './state/AvatarAnimationState'
 import { AvatarIKTargetState } from './state/AvatarIKTargetState'
 import { AnimationSystem } from './systems/AnimationSystem'
-import { AvatarAnimationSystem } from './systems/AvatarAnimationSystem'
+import { AvatarAnimationState, AvatarAnimationSystem } from './systems/AvatarAnimationSystem'
 import { AvatarAutopilotSystem } from './systems/AvatarAutopilotSystem'
 import { AvatarControllerSystem } from './systems/AvatarControllerSystem'
 import { AvatarIKSystem } from './systems/AvatarIKSystem'
@@ -13,6 +14,8 @@ import { ReferenceSpaceTransformSystem } from './systems/ReferenceSpaceTransform
 
 export default {
   AnimationSystem,
+  AvatarAnimationState,
+  AnimationNetworkState,
   AvatarAnimationSystem,
   AvatarIKSystem,
   AvatarAutopilotSystem,

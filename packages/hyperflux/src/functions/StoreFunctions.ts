@@ -50,8 +50,6 @@ export interface HyperStore {
   actions: {
     /** All queues that have been created */
     queues: Map<ActionQueueHandle, ActionQueueInstance>
-    /** Cached actions */
-    cached: Array<Required<ResolvedActionType>>
     /** Incoming actions */
     incoming: Array<Required<ResolvedActionType>>
     /** All actions that have been applied, in the order they were processed */
@@ -112,7 +110,6 @@ export function createHyperStore(options?: {
     stateReactors: {},
     actions: {
       queues: new Map(),
-      cached: [],
       incoming: [],
       history: [],
       knownUUIDs: new Set(),

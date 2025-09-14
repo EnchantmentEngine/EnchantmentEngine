@@ -30,9 +30,6 @@ export class AvatarNetworkAction {
     type: 'ee.engine.avatar.SET_AVATAR_URL',
     entityUUID: matchesEntityUUID,
     avatarURL: matches.string,
-    $cache: {
-      removePrevious: true
-    },
     $topic: NetworkTopics.world
   })
 
@@ -40,9 +37,6 @@ export class AvatarNetworkAction {
     type: 'ee.engine.avatar.SET_AVATAR_NAME',
     entityUUID: matchesEntityUUID,
     name: matches.string,
-    $cache: {
-      removePrevious: true
-    },
     $topic: NetworkTopics.world
   })
 

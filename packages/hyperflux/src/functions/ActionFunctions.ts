@@ -26,20 +26,6 @@ export type Action = {
 
 export type ActionRecipients = PeerID | PeerID[] | 'all' | null | undefined
 
-export type ActionCacheOptions =
-  | boolean
-  | {
-      /**
-       * If non-falsy, remove previous actions in the cache that match `$peer` and `type` fields,
-       * and any specified fields
-       */
-      removePrevious?: boolean | string[]
-      /**
-       * If true, do not cache this action
-       */
-      disable?: boolean
-    }
-
 export type ActionOptions = {
   /**
    * The uuid of this action, uniquely identifying it
@@ -79,19 +65,9 @@ export type ActionOptions = {
 
   /**
    * Optionally specify the network to send this action to.
-   * Specifying this will not send the action to other networks, even as a cached action.
+   * Specifying this will not send the action to other networks.
    */
   $network?: NetworkID | undefined
-
-  /**
-   * Specifies how this action should be cached for newly joining clients.
-   */
-  $cache?: ActionCacheOptions
-
-  /**
-   * This action is being replayed from the cache
-   */
-  $fromCache?: true
 
   /**
    * The call stack at the time the action was dispatched
@@ -116,7 +92,7 @@ export type ActionShape<ActionType extends Action> = {
     : never
 }
 
-// type t = ActionShape<{store:'test', type:'hello', $cache: {removePrevious: true}, count: MatchesWithDefault<number>}>
+// type t = ActionShape<{store:'test', type:'hello', count: MatchesWithDefault<number>}>
 
 export type ResolvedActionShape<Shape extends ActionShape<any>> = {
   [key in keyof Shape]: Shape[key] extends Validator<unknown, infer B>
@@ -128,7 +104,7 @@ export type ResolvedActionShape<Shape extends ActionShape<any>> = {
     : never
 }
 
-// type t = ResolvedActionShape<{store:'test', type:'hello', $cache: {removePrevious: true}, count: MatchesWithDefault<number>}>
+// type t = ResolvedActionShape<{store:'test', type:'hello', count: MatchesWithDefault<number>}>
 
 export type ResolvedActionShapeWithOptionals<Shape extends ActionShape<any>> = {
   [key in keyof Shape]: Shape[key] extends Validator<unknown, infer B>
@@ -224,7 +200,7 @@ export function defineAction<Shape extends Omit<ActionShape<Action>, keyof Actio
   const defaultEntries = shapeEntries.filter(
     ([k, v]: [string, any]) =>
       typeof v === 'object' && ('defaultValue' in v || ('parser' in v && v.parser.description.name === 'Default'))
-  ) as Array<[string, MatchesWithDefault<any> | Validator<unknown, unknown>]>
+  ) as unknown as Array<[string, MatchesWithDefault<any> | Validator<unknown, unknown>]>
   const defaultValidators = Object.fromEntries(
     defaultEntries.map(([k, v]) => [k, v instanceof Validator ? v : v.matches])
   )
@@ -255,7 +231,6 @@ export function defineAction<Shape extends Omit<ActionShape<Action>, keyof Actio
       })
     )
   }) as any
-  delete resolvedActionShape.$cache
   delete resolvedActionShape.$topic
 
   const allValuesNull = Object.fromEntries(Object.entries(resolvedActionShape).map(([k]) => [k, null]))
@@ -316,7 +291,6 @@ export const dispatchAction = <A extends Action>(_action: A) => {
   action.$user = action.$user ?? agentID
   action.$to = action.$to ?? 'all'
   action.$time = action.$time ?? HyperFlux.store.getDispatchTime() + HyperFlux.store.defaultDispatchDelay()
-  action.$cache = action.$cache ?? false
   action.$uuid = action.$uuid ?? uuidv4()
   const topic = (action.$topic = action.$topic ?? HyperFlux.store.defaultTopic)
 
@@ -342,45 +316,6 @@ export function addOutgoingTopicIfNecessary(topic: Topic) {
       queue: [],
       history: [],
       forwardedUUIDs: new Set()
-    }
-  }
-}
-
-const _updateCachedActions = (incomingAction: Required<ResolvedActionType>) => {
-  if (incomingAction.$cache) {
-    const cachedActions = HyperFlux.store.actions.cached
-    // see if we must remove any previous actions
-    if (typeof incomingAction.$cache === 'boolean') {
-      if (incomingAction.$cache) cachedActions.push(incomingAction)
-    } else {
-      const remove = incomingAction.$cache.removePrevious
-
-      if (remove) {
-        for (const a of [...cachedActions]) {
-          if (a.$peer === incomingAction.$peer && a.type === incomingAction.type) {
-            if (remove === true) {
-              const idx = cachedActions.indexOf(a)
-              cachedActions.splice(idx, 1)
-            } else {
-              let matches = true
-              for (const key of remove) {
-                if (!deepEqual(a[key], incomingAction[key])) {
-                  matches = false
-                  break
-                }
-              }
-              if (matches) {
-                const idx = cachedActions.indexOf(a)
-                cachedActions.splice(idx, 1)
-              }
-            }
-          }
-        }
-      }
-
-      if (!incomingAction.$cache.disable) {
-        cachedActions.push(incomingAction)
-      }
     }
   }
 }
@@ -467,8 +402,6 @@ const _applyIncomingAction = (action: Required<ResolvedActionType>) => {
     HyperFlux.store.actions.incoming.splice(idx, 1)
     return
   }
-
-  _updateCachedActions(action)
 
   createEventSourceQueues(action)
 

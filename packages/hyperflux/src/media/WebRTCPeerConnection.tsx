@@ -122,11 +122,11 @@ export const WebRTCPeerConnection = (props: {
         dataChannel.send('')
         if (receivedPoll) {
           clearInterval(interval)
-          // once connected, send all our own cached actions to the peer
-          const selfCachedActions = HyperFlux.store.actions.cached.filter(
+          // once connected, send all our own actions to the peer
+          const selfActions = HyperFlux.store.actions.history.filter(
             (action) => action.$topic === network.topic && action.$peer === HyperFlux.store.peerID
           )
-          message(selfCachedActions)
+          message(selfActions)
         }
       }
     }, 10)
