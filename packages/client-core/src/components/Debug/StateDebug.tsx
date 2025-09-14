@@ -76,7 +76,6 @@ export function StateDebug() {
         )
 
   const actionHistory = [...HyperFlux.store.actions.history].sort((a, b) => a.$time - b.$time)
-  const cachedHistory = [...HyperFlux.store.actions.cached].sort((a, b) => a.$time - b.$time)
   const eventSourcedHistory = Object.fromEntries(
     [...StateDefinitions.entries()]
       .filter(([name, state]) => state.receptorActionQueue)
@@ -114,14 +113,6 @@ export function StateDebug() {
         <JSONTree
           data={actionHistory}
           labelRenderer={actionLabelRenderer(actionHistory)}
-          shouldExpandNodeInitially={() => false}
-        />
-      </div>
-      <div className="my-0.5">
-        <h1>{t('common:debug.actionsCached')}</h1>
-        <JSONTree
-          data={cachedHistory}
-          labelRenderer={actionLabelRenderer(cachedHistory)}
           shouldExpandNodeInitially={() => false}
         />
       </div>

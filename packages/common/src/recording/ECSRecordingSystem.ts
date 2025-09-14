@@ -745,6 +745,7 @@ const playbackStopped = (userId: UserID, recordingID: RecordingID, network?: Net
   activePlaybacks.delete(recordingID)
 }
 
+/** @todo replace action queue with event sourcing */
 const startRecordingActionQueue = defineActionQueue(ECSRecordingActions.startRecording.matches)
 const stopRecordingActionQueue = defineActionQueue(ECSRecordingActions.stopRecording.matches)
 const startPlaybackActionQueue = defineActionQueue(ECSRecordingActions.startPlayback.matches)
