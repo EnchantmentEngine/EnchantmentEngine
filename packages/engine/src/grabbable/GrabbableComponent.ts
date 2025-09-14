@@ -139,7 +139,6 @@ export class GrabbableNetworkAction {
     grabbed: matches.boolean,
     attachmentPoint: matches.literals('left', 'right').optional(),
     grabberEntityUUID: matchesEntityUUID,
-    $cache: true,
     $topic: NetworkTopics.world
   })
 }

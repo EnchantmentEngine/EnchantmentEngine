@@ -54,24 +54,19 @@ export class MediasoupMediaProducerActions {
     transportID: matches.string,
     peerID: matchesPeerID,
     mediaTag: matches.string as Validator<unknown, MediaChannelType>,
-    channelID: matches.string as Validator<unknown, ChannelID>,
-    $cache: true
+    channelID: matches.string as Validator<unknown, ChannelID>
   })
 
   static producerClosed = defineAction({
     type: 'ee.engine.network.mediasoup.MEDIA_CLOSED_PRODUCER',
-    producerID: matches.string,
-    $cache: true
+    producerID: matches.string
   })
 
   static producerPaused = defineAction({
     type: 'ee.engine.network.mediasoup.MEDIA_PRODUCER_PAUSED',
     producerID: matches.string,
     paused: matches.boolean,
-    globalMute: matches.boolean,
-    $cache: {
-      removePrevious: ['producerID']
-    }
+    globalMute: matches.boolean
   })
 }
 

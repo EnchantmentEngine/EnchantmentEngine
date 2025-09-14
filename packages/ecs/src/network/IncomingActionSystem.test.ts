@@ -1,4 +1,4 @@
-import assert, { strictEqual } from 'assert'
+import { strictEqual } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
@@ -77,28 +77,6 @@ describe('IncomingActionSystem Unit Tests', async () => {
 
       /* assert */
       strictEqual(HyperFlux.store.actions.history.length, 1)
-    })
-  })
-
-  describe('applyAndArchiveIncomingAction', () => {
-    it('should cache actions where $cache = true', () => {
-      /* mock */
-      const action = TestAction({
-        // incoming action from past
-        $time: 0,
-        $to: '0' as ActionRecipients,
-        $cache: true
-      })
-      action.$topic = NetworkTopics.world
-
-      HyperFlux.store.actions.incoming.push(action)
-
-      /* run */
-      applyIncomingActions()
-
-      /* assert */
-      strictEqual(HyperFlux.store.actions.history.length, 1)
-      assert(HyperFlux.store.actions.cached.indexOf(action) !== -1)
     })
   })
 })
