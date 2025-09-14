@@ -263,8 +263,6 @@ function createRenderTarget(
   } else {
     result = new WebGLRenderTarget(glProjLayer.textureWidth, glProjLayer.textureHeight, rtOptions)
   }
-  const renderTargetProperties = renderer.properties.get(result)
-  //renderTargetProperties.__ignoreDepthValues = glProjLayer.ignoreDepthValues
 
   return result
 }
@@ -285,7 +283,7 @@ function createFunctionSetSession(renderer: WebGLRenderer, manager: WebXRManager
 
     // wrap in try catch to avoid errors when calling updateTargetFrameRate on unsupported devices
     try {
-      if (typeof session.updateTargetFrameRate === 'function') session.updateTargetFrameRate(72)
+      if (typeof session.updateTargetFrameRate === 'function') session.updateTargetFrameRate(72).catch(console.warn)
     } catch (e) {
       console.warn(e)
     }

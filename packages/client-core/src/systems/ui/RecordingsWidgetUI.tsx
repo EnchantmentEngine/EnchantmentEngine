@@ -4,7 +4,6 @@ import { HiPlay, HiPlusCircle } from 'react-icons/hi2'
 import { useFind, useGet } from '@ir-engine/common'
 import { ECSRecordingActions, PlaybackState, RecordingState } from '@ir-engine/common/src/recording/ECSRecordingSystem'
 import { RecordingType, recordingPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import {
   MediaChannelState,
   NetworkState,
@@ -18,6 +17,7 @@ import {
 } from '@ir-engine/hyperflux'
 import { startPlayback } from '@ir-engine/ui/src/pages/Capture'
 
+import { EngineState } from '@ir-engine/ecs'
 import { useMediaNetwork } from '../../common/services/MediaInstanceConnectionService'
 import { WidgetAppService } from '../WidgetAppService'
 
@@ -188,7 +188,7 @@ export const RecordingPeerList = () => {
 
   useEffect(() => {
     const mediaNetwork = NetworkState.mediaNetwork
-    peerIDs.set(mediaNetwork?.users?.[Engine.instance.userID] ?? [])
+    peerIDs.set(mediaNetwork?.users?.[getState(EngineState).userID] ?? [])
   }, [mediaNetworkState?.peers, mediaNetworkState?.users])
 
   return (

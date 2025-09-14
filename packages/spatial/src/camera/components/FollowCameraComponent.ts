@@ -28,12 +28,10 @@ import { T } from '../../schema/schemaFunctions'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSettingsState'
-import { setTargetCameraRotation } from '../functions/CameraFunctions'
 import { FollowCameraMode, FollowCameraShoulderSide } from '../types/FollowCameraMode'
 import { CameraOrbitComponent } from './CameraOrbitComponent'
 import { TargetCameraRotationComponent } from './TargetCameraRotationComponent'
 
-const window = 'window' in globalThis ? globalThis.window : ({} as any as Window)
 const topDownDefaultPhi = 85
 
 export const FollowCameraComponent = defineComponent({
@@ -75,9 +73,7 @@ export const FollowCameraComponent = defineComponent({
     distance: Schema.Number({ default: 0 }),
     defaultDistance: Schema.Number({ default: 0 }),
     targetDistance: Schema.Number({ default: 0 }),
-    zoomVelocity: Schema.Object({
-      value: Schema.Number({ default: 0 })
-    }),
+    zoomVelocity: Schema.Number({ default: 0 }),
     minDistance: Schema.Number({ default: 0 }),
     maxDistance: Schema.Number({ default: 0 }),
     effectiveMinDistance: Schema.Number({ default: 0 }),
@@ -399,20 +395,20 @@ const initialCameraPlacement = (entity: Entity) => {
 }
 
 const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
-  const follow = getComponent(cameraEntity, FollowCameraComponent)
-  const followState = getComponent(cameraEntity, FollowCameraComponent)
+  const follow = getOptionalComponent(cameraEntity, FollowCameraComponent)
+  if (!follow) return
   const cameraTransform = getComponent(cameraEntity, TransformComponent)
   const targetTransform = getOptionalComponent(referenceEntity, TransformComponent)
   const cameraSettings = getMutableState(CameraSettingsState)
 
-  followState.lerpValue =
+  follow.lerpValue =
     follow.mode != FollowCameraMode.FirstPerson && follow.thirdPersonOffset.y === 0
       ? 0
-      : Math.min(followState.lerpValue + getState(ECSState).deltaSeconds, LERP_TIME)
+      : Math.min(follow.lerpValue + getState(ECSState).deltaSeconds, LERP_TIME)
 
-  const lerpVal = follow.smoothLerp ? smootherStep(followState.lerpValue / LERP_TIME) : 1
+  const lerpVal = follow.smoothLerp ? smootherStep(follow.lerpValue / LERP_TIME) : 1
 
-  if (!targetTransform || !follow || !follow?.enabled) return
+  if (!targetTransform || !follow?.enabled) return
 
   // Limit the pitch
   follow.phi = Math.min(follow.maxPhi, Math.max(follow.minPhi, follow.phi))
@@ -493,7 +489,13 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     follow.isResetCamera = cameraSettings.isFirstPersonCameraReset.value
     follow.defaultPhi = 0
     follow.defaultTheta = 0
-    setTargetCameraRotation(cameraEntity, 0, follow.theta)
+    setComponent(cameraEntity, TargetCameraRotationComponent, {
+      phi: 0,
+      phiVelocity: 0,
+      theta: follow.theta,
+      thetaVelocity: 0,
+      time: 0.3
+    })
   }
   const resetCameraThirdPerson = () => {
     follow.minDistance = cameraSettings.thirdPersonMinDistance.value
@@ -507,7 +509,13 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     follow.isResetCamera = cameraSettings.isThirdPersonCameraReset.value
     follow.defaultPhi = 0
     follow.defaultTheta = 0
-    setTargetCameraRotation(cameraEntity, 0, follow.theta)
+    setComponent(cameraEntity, TargetCameraRotationComponent, {
+      phi: 0,
+      phiVelocity: 0,
+      theta: follow.theta,
+      thetaVelocity: 0,
+      time: 0.3
+    })
   }
   const resetCameraTopDown = () => {
     follow.minDistance = cameraSettings.topDownMinDistance.value
@@ -521,27 +529,33 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     follow.isResetCamera = cameraSettings.isTopDownCameraReset.value
     follow.defaultPhi = topDownDefaultPhi
     follow.defaultTheta = 0
-    setTargetCameraRotation(cameraEntity, topDownDefaultPhi, follow.theta)
+    setComponent(getState(ReferenceSpaceState).viewerEntity, TargetCameraRotationComponent, {
+      phi: topDownDefaultPhi,
+      phiVelocity: 0,
+      theta: follow.theta,
+      thetaVelocity: 0,
+      time: 0.3
+    })
   }
 
   const switchToFirstPerson = () => {
-    followState.mode = FollowCameraMode.FirstPerson
-    resetMode[followState.mode]()
+    follow.mode = FollowCameraMode.FirstPerson
+    resetMode[follow.mode]()
   }
   const switchToThirdPerson = () => {
-    followState.mode = FollowCameraMode.ThirdPerson
-    resetMode[followState.mode]()
+    follow.mode = FollowCameraMode.ThirdPerson
+    resetMode[follow.mode]()
   }
   const switchToTopDown = () => {
-    followState.mode = FollowCameraMode.TopDown
-    resetMode[followState.mode]()
+    follow.mode = FollowCameraMode.TopDown
+    resetMode[follow.mode]()
   }
 
   const timeInSeconds = Math.floor(Date.now() / 1000)
   const resetThreshold = 3 //in seconds
   if (follow.isResetCamera) {
     if (follow.lastCameraAdjustmentTime !== -1 && follow.lastCameraAdjustmentTime + resetThreshold <= timeInSeconds) {
-      resetMode[followState.mode]()
+      resetMode[follow.mode]()
       follow.lastCameraAdjustmentTime = -1
     }
   } else {
@@ -649,10 +663,15 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
 
   //multiplying by lerpVal (always between 0 and 1) so we don't instantly apply followdistance to the camera transform when changing targets, but eventually maintain the full value.
   //multiplying by 3 and clamping to 1 so that the follow distance is achieved faster than the rest of the lerp
-  follow.distance =
-    follow.distance +
-    Math.min(lerpVal * 3, 1) *
-      smoothDamp(0, newZoomDistance - follow.distance, follow.zoomVelocity, smoothingSpeed, deltaSeconds)
+  const { output, newVelocity } = smoothDamp(
+    0,
+    newZoomDistance - follow.distance,
+    follow.zoomVelocity,
+    smoothingSpeed,
+    deltaSeconds
+  )
+  follow.distance = follow.distance + Math.min(lerpVal * 3, 1) * output
+  follow.zoomVelocity = newVelocity
 
   const thetaRad = MathUtils.degToRad(follow.theta)
   const phiRad = MathUtils.degToRad(follow.phi)
@@ -730,12 +749,27 @@ const updateCameraTargetRotation = (cameraEntity: Entity) => {
 
   const delta = getState(ECSState).deltaSeconds
   if (!followCamera.locked) {
-    followCamera.phi = followCamera.smoothLerp
-      ? smoothDamp(followCamera.phi, target.phi, target.phiVelocity, target.time, delta)
-      : target.phi
-    followCamera.theta = followCamera.smoothLerp
-      ? smoothDamp(followCamera.theta, target.theta, target.thetaVelocity, target.time, delta)
-      : target.theta
+    if (followCamera.smoothLerp) {
+      const { output, newVelocity } = smoothDamp(followCamera.phi, target.phi, target.phiVelocity, target.time, delta)
+      followCamera.phi = output
+      target.phiVelocity = newVelocity
+    } else {
+      followCamera.phi = target.phi
+    }
+
+    if (followCamera.smoothLerp) {
+      const { output, newVelocity } = smoothDamp(
+        followCamera.theta,
+        target.theta,
+        target.thetaVelocity,
+        target.time,
+        delta
+      )
+      followCamera.theta = output
+      target.thetaVelocity = newVelocity
+    } else {
+      followCamera.theta = target.theta
+    }
   }
 }
 

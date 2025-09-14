@@ -21,6 +21,7 @@ import {
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Schema, Static, useHookstate } from '@ir-engine/hyperflux'
+import { defineMaterialPlugin } from '@ir-engine/spatial'
 import { removeCallback, setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
@@ -33,7 +34,6 @@ import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 import React from 'react'
 import { InstancedMesh } from 'three'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { defineMaterialPlugin } from '../../material/defineMaterialPlugin'
 import { InstancingComponent } from './InstancingComponent'
 
 export type VariantLevel = {
@@ -58,8 +58,8 @@ export const Devices = {
 export type DevicesType = (typeof Devices)[keyof typeof Devices]
 
 export const distanceMetadataSchema = Schema.Object({
-  minDistance: Schema.Union([Schema.Number(), Schema.Undefined()], { default: undefined }),
-  maxDistance: Schema.Union([Schema.Number(), Schema.Undefined()], { default: undefined })
+  minDistance: Schema.Optional(Schema.Number()),
+  maxDistance: Schema.Optional(Schema.Number())
 })
 
 export const deviceMetadataSchema = Schema.Object({

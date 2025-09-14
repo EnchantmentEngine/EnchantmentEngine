@@ -31,5 +31,5 @@
     "types": ["@types/node"],
     "erasableSyntaxOnly": true
   },
-  "include": ["../../__global.d.ts", "./src", "./index.ts"]
+  "include": ["../../__global.d.ts", "./src", "./tests", "./index.ts"]
 }

@@ -140,7 +140,7 @@ describe('client input system reactor', () => {
   //   mockXRFrame.pose.transform.orientation.y = 0.8455
   //   mockXRFrame.pose.transform.orientation.z = 0.2454
   //   mockXRFrame.pose.transform.orientation.w = 0.2743
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(XRState).xrFrame.set(mockXRFrame as unknown as XRFrame)
   //   setComponent(entity, InputSourceComponent, { source: mockXRInputSource })
   //   setComponent(entity, XRSpaceComponent, new MockXRSpace() as XRSpace)
@@ -166,7 +166,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(XRUIState).interactionRays.set([
   //     new Ray(new Vector3(0.23, 0.65, 0.98), new Vector3(0.21, 0.43, 0.82))
   //   ])
@@ -206,7 +206,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   getMutableState(PhysicsState).physicsWorld.set({
   //     castRayAndGetNormal: () => {
   //       return {
@@ -247,7 +247,7 @@ describe('client input system reactor', () => {
   //     profiles: ['test'],
   //     hand: undefined
   //   }) as XRInputSource
-  //   const entity = Engine.instance.localFloorEntity
+  //   const entity = getState(ReferenceSpaceState).localFloorEntity
   //   setComponent(entity, BoundingBoxComponent)
   //   setComponent(entity, InputComponent)
   //   setComponent(entity, VisibleComponent)

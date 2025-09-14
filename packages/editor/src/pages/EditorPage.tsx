@@ -1,7 +1,6 @@
-import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
+import { EngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { useDocumentTitle } from '@ir-engine/client-core/src/hooks/useDocumentTitle'
 import { useUnsupported } from '@ir-engine/client-core/src/hooks/useUnsupported'
-import { EngineState } from '@ir-engine/ecs'
 import '@ir-engine/engine/src/EngineModule'
 import { getMutableState, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
@@ -10,17 +9,6 @@ import '../EditorModule'
 import EditorContainer from '../components/EditorContainer'
 import { EditorState } from '../services/EditorServices'
 import { ProjectPage } from './ProjectPage'
-
-export const useStudioEditor = () => {
-  const engineReady = useEngineInjection()
-
-  useEffect(() => {
-    getMutableState(EngineState).isEditor.set(true)
-    getMutableState(EngineState).isEditing.set(true)
-  }, [])
-
-  return engineReady
-}
 
 export const EditorPage = () => {
   const [params] = useSearchParams()
@@ -52,5 +40,9 @@ export const EditorPage = () => {
 
   if (!scenePath.value && !projectName.value) return <ProjectPage studioPath="/studio" />
 
-  return <EditorContainer />
+  return (
+    <EngineInjection>
+      <EditorContainer />
+    </EngineInjection>
+  )
 }

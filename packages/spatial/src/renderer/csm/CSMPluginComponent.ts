@@ -1,9 +1,9 @@
 import { defineComponent, Entity, getComponent, getOptionalComponent } from '@ir-engine/ecs'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { Schema } from '@ir-engine/hyperflux'
+import { getState, Schema } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { Material, Vector2 } from 'three'
 import { CameraComponent } from '../../camera/components/CameraComponent'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { supportsOnBeforeCompile } from '../functions/RendererBackendUtils'
 import { getRendererEntity } from '../functions/useRendererEntity'
 import { MaterialStateComponent } from '../materials/MaterialComponent'
@@ -47,7 +47,7 @@ export const CSMPluginComponent = defineComponent({
       const breaksVec2: Vector2[] = []
 
       const createShaderCallback = (isWebGPU: boolean) => (shader: any) => {
-        const camera = getComponent(Engine.instance.cameraEntity, CameraComponent)
+        const camera = getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
         const far = Math.min(camera.far, csm.maxFar)
         const near = Math.min(csm.maxFar, camera.near)
         CSM.getExtendedBreaks(breaksVec2, rendererEntity)

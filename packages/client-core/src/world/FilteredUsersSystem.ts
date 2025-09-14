@@ -2,12 +2,12 @@ import { useEffect } from 'react'
 
 import { UserID } from '@ir-engine/common/src/schema.type.module'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { getNearbyUsers } from '@ir-engine/engine/src/avatar/functions/getNearbyUsers'
 import { defineState, getMutableState, getState, NetworkState } from '@ir-engine/hyperflux'
 
+import { EngineState } from '@ir-engine/ecs'
 import { useMediaNetwork } from '../common/services/MediaInstanceConnectionService'
 
 export const FilteredUsersState = defineState({
@@ -23,9 +23,11 @@ export const FilteredUsersService = {
     const mediaState = getMutableState(FilteredUsersState)
     const peers = Object.values(NetworkState.worldNetwork.peers)
     const worldUserIds = peers
-      .filter((peer) => peer.peerID !== NetworkState.worldNetwork.hostPeerID && peer.userId !== Engine.instance.userID)
+      .filter(
+        (peer) => peer.peerID !== NetworkState.worldNetwork.hostPeerID && peer.userId !== getState(EngineState).userID
+      )
       .map((peer) => peer.userId)
-    const nearbyUsers = getNearbyUsers(Engine.instance.userID, worldUserIds)
+    const nearbyUsers = getNearbyUsers(getState(EngineState).userID, worldUserIds)
     mediaState.nearbyLayerUsers.set(nearbyUsers)
   }
 }

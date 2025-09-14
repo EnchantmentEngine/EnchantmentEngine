@@ -12,7 +12,7 @@ export class WorldNetworkAction {
       ownerID: Schema.UserID({ required: true, default: () => getState(EngineState).userID }),
       authorityPeerId: Schema.Optional(Schema.PeerID())
     }),
-    meta: { $cache: true, $topic: NetworkTopics.world }
+    meta: { $topic: NetworkTopics.world }
   })
 
   static destroyEntity = defineAction({
@@ -20,7 +20,7 @@ export class WorldNetworkAction {
     schema: Schema.Object({
       entityUUID: EntitySchema.EntityUUID({ required: true })
     }),
-    meta: { $cache: true, $topic: NetworkTopics.world }
+    meta: { $topic: NetworkTopics.world }
   })
 
   static requestAuthorityOverObject = defineAction({
@@ -39,6 +39,6 @@ export class WorldNetworkAction {
       entityUUID: EntitySchema.EntityUUID({ required: true }),
       newAuthority: Schema.PeerID({ required: true })
     }),
-    meta: { $topic: NetworkTopics.world, $cache: true }
+    meta: { $topic: NetworkTopics.world }
   })
 }

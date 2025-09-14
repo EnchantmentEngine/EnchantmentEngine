@@ -39,7 +39,7 @@ if [[ $(lsb_release -si) -ne "Ubuntu" ]] ; then
   warn "This script only works for Ubuntu Linux distributions."
   read -r -n1 -p 'Are you sure you want to continue? [y/n] ' choice
   case "$choice" in
-    y|Y) warn "Running Infinite Reality Engine Ubuntu installer script on:"; echo "  $(lsb_release -sa)";;
+    y|Y) warn "Running Enchantment Engine Ubuntu installer script on:"; echo "  $(lsb_release -sa)";;
     n|N|*) exit 1;;
   esac
 fi
@@ -50,12 +50,12 @@ echo "1. Add/activate the universe and docker APT repositories to the system (re
 echo "2. Install git, curl, nvm, ca-certificates and nodeLTS"
 echo "3. Instruct you on how to download docker-desktop"
 echo "4. Install docker-desktop with the file you downloaded while the script waited for your input"
-echo "5. Clone Infinite Reality Engine's repository to the folder $(pwd)/ir-engine"
-echo "6. Install all npm dependencies that Infinite Reality Engine needs"
+echo "5. Clone Enchantment Engine's repository to the folder $(pwd)/ir-engine"
+echo "6. Install all npm dependencies that Enchantment Engine needs"
 echo ""
 read -r -n1 -p 'Do you want to continue? [y/n] ' choice
 case "$choice" in
-  y|Y) info "Running Infinite Reality Engine's Ubuntu installer" ;;
+  y|Y) info "Running Enchantment Engine's Ubuntu installer" ;;
   n|N|*) exit 1 ;;
 esac
 
@@ -123,16 +123,16 @@ info "Launching docker-desktop"
 systemctl --user start docker-desktop
 
 # Install the engine
-info "Installing Infinite Reality Engine into folder $(pwd)/ir-engine ..."
-git clone https://github.com/ir-engine/ir-engine
-info "Changing folder to $(pwd)/ir-engine"
-cd ir-engine
+info "Installing Enchantment Engine into folder $(pwd)/enchantmentengine ..."
+git clone https://github.com/enchantmentengine/enchantmentengine
+info "Changing folder to $(pwd)/enchantmentengine"
+cd enchantmentengine
 info "Creating a new .env file at $(pwd)/.env.local"
 cp .env.local.default .env.local
 info "Running the command 'npm install' inside the folder $(pwd)"
 npm install
 echo ""
-info "Infinite Reality Engine has been successfully installed into $(pwd)."
+info "Enchantment Engine has been successfully installed into $(pwd)."
 echo "   You can now run it by executing the command:"
 echo "   npm run reinit && npm run dev"
 

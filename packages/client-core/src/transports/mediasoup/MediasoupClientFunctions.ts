@@ -19,13 +19,13 @@ import { MediaStreamAppData, NetworkConnectionParams } from '@ir-engine/common/s
 import multiLogger from '@ir-engine/common/src/logger'
 import { ChannelID, InstanceID, InviteCode, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
 import { getSearchParamFromURL } from '@ir-engine/common/src/utils/getSearchParamFromURL'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineSystem, destroySystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 import { AuthTask, ReadyTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import {
   Action,
   DataChannelType,
+  HyperFlux,
   NetworkID,
   NetworkState,
   NetworkTopics,
@@ -145,7 +145,7 @@ export const connectToInstance = (
     const token = authState.authUser.accessToken
 
     const query: NetworkConnectionParams = {
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       instanceID,
       locationId: locationID,
       channelId: channelID,
@@ -315,7 +315,7 @@ export async function authenticatePrimus(primus: Primus, instanceID: InstanceID,
   const authState = getState(AuthState)
   const accessToken = authState.authUser.accessToken
   const inviteCode = getSearchParamFromURL('inviteCode') as InviteCode
-  const payload = { accessToken, peerID: Engine.instance.store.peerID, inviteCode }
+  const payload = { accessToken, peerID: HyperFlux.store.peerID, inviteCode }
 
   const { status, routerRtpCapabilities, cachedActions, error, hostPeerID } = await new Promise<AuthTask>((resolve) => {
     const onAuthentication = (response: AuthTask) => {
@@ -386,7 +386,7 @@ export const connectToNetwork = async (
   }
 
   const buffer = (dataChannelType: DataChannelType, data: any) => {
-    const fromPeerID = Engine.instance.store.peerID
+    const fromPeerID = HyperFlux.store.peerID
     const dataProducer = MediasoupDataProducerConsumerState.getProducerByDataChannel(network.id, dataChannelType) as
       | DataProducer
       | undefined
@@ -406,11 +406,9 @@ export const connectToNetwork = async (
   addOutgoingTopicIfNecessary(network.topic)
 
   // handle cached actions
-  for (const action of cachedActions!) Engine.instance.store.actions.incoming.push({ ...action, $fromCache: true })
+  for (const action of cachedActions!) HyperFlux.store.actions.incoming.push({ ...action })
 
-  Engine.instance.store.actions.outgoing[network.topic].queue.push(
-    ...Engine.instance.store.actions.outgoing[network.topic].history
-  )
+  HyperFlux.store.actions.outgoing[network.topic].queue.push(...HyperFlux.store.actions.outgoing[network.topic].history)
 
   if (!network.mediasoupDevice.loaded) {
     await network.mediasoupDevice.load({ routerRtpCapabilities })
@@ -419,7 +417,7 @@ export const connectToNetwork = async (
 
   dispatchAction(
     MediasoupTransportActions.requestTransport({
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       direction: 'send',
       sctpCapabilities: network.mediasoupDevice.sctpCapabilities,
       $network: network.id,
@@ -430,7 +428,7 @@ export const connectToNetwork = async (
 
   dispatchAction(
     MediasoupTransportActions.requestTransport({
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       direction: 'recv',
       sctpCapabilities: network.mediasoupDevice.sctpCapabilities,
       $network: network.id,
@@ -701,12 +699,12 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
         // ensure the network still exists and we want to re-create the transport
         if (!getState(NetworkState).networks[network.id] || !network.primus || network.primus.disconnect) return
 
-        const transportID = MediasoupTransportState.getTransport(network.id, direction, Engine.instance.store.peerID)
+        const transportID = MediasoupTransportState.getTransport(network.id, direction, HyperFlux.store.peerID)
         getMutableState(MediasoupTransportState)[network.id][transportID].set(none)
 
         dispatchAction(
           MediasoupTransportActions.requestTransport({
-            peerID: Engine.instance.store.peerID,
+            peerID: HyperFlux.store.peerID,
             direction,
             sctpCapabilities: network.mediasoupDevice.sctpCapabilities,
             $network: network.id,

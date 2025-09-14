@@ -7,12 +7,8 @@ export const TargetCameraRotationComponent = defineComponent({
   schema: Schema.Object({
     phi: Schema.Number(),
     theta: Schema.Number(),
-    time: Schema.Number()
-  }),
-
-  onInit: (entity, initial) => ({
-    ...initial,
-    phiVelocity: { value: 0 },
-    thetaVelocity: { value: 0 }
+    time: Schema.Number(),
+    phiVelocity: Schema.Number(),
+    thetaVelocity: Schema.Number()
   })
 })

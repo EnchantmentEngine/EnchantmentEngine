@@ -13,8 +13,10 @@ export async function up(knex: Knex): Promise<void> {
       //@ts-ignore
       table.uuid('id').collate('utf8mb4_bin').primary()
       table.string('key', 255).notNullable()
-      table.string('value', 255).notNullable()
+      table.string('value', 4095).notNullable()
       table.string('type', 255).notNullable().defaultTo('private')
+      table.string('jsonKey', 255).defaultTo(null)
+      table.string('dataType', 10).defaultTo('string')
       table.string('category', 255).notNullable()
       //@ts-ignore
       table.uuid('updatedBy', 36).collate('utf8mb4_bin').index()

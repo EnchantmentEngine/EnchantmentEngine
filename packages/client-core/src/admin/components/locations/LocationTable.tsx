@@ -7,7 +7,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import config from '@ir-engine/common/src/config'
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
 import { Edit01Lg, Trash04Lg } from '@ir-engine/ui/src/icons'
 import { locationColumns, LocationRowType } from '../../common/constants/location'
 import DataTable from '../../common/Table'
@@ -27,7 +28,7 @@ export default function LocationTable({ search }: { search: string }) {
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'location:write' as ScopeType
     }
   })

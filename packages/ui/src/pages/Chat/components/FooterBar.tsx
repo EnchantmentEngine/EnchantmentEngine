@@ -1,12 +1,12 @@
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
 import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import React from 'react'
 
 export const FooterBar: React.FC = () => {
   const userName = useHookstate(getMutableState(AuthState).user.name).value
-  const userThumbnail = useUserAvatarThumbnail(Engine.instance.userID)
+  const userThumbnail = useUserAvatarThumbnail(getState(EngineState).userID)
 
   const isOnline = useHookstate(true)
 

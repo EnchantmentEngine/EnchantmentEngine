@@ -3,7 +3,7 @@ import { Vector3 } from 'three'
 import {
   defineQuery,
   defineSystem,
-  Engine,
+  EngineState,
   getComponent,
   getOptionalComponent,
   hasComponent,
@@ -14,7 +14,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { dispatchAction, NetworkState, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, HyperFlux, NetworkState, useMutableState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { DistanceFromLocalClientComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { getDistanceSquaredFromTarget, TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
@@ -31,7 +31,7 @@ const controllerQuery = defineQuery([AvatarControllerComponent, NetworkObjectOwn
 const execute = () => {
   const controlledEntities = controllerQuery()
 
-  /** @todo non-immersive camera should utilize isCameraAttachedToAvatar */
+  /** @todo non-immersive camera should utilize shouldViewerFollowController */
   for (const entity of controlledEntities) {
     const controller = getComponent(entity, AvatarControllerComponent)
 
@@ -50,9 +50,9 @@ const execute = () => {
       ) {
         dispatchAction(
           WorldNetworkAction.transferAuthorityOfObject({
-            ownerID: Engine.instance.userID,
+            ownerID: getState(EngineState).userID,
             entityUUID: UUIDComponent.get(entity),
-            newAuthority: Engine.instance.store.peerID
+            newAuthority: HyperFlux.store.peerID
           })
         )
         setComponent(entity, NetworkObjectAuthorityTag)

@@ -2,7 +2,6 @@ import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
 import { defineQuery, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, hasComponent, removeComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getState } from '@ir-engine/hyperflux'
 import { Q_Y_180 } from '@ir-engine/spatial/src/common/constants/MathConstants'
@@ -17,6 +16,7 @@ import {
 } from '@ir-engine/spatial/src/xr/XRComponents'
 import { ReferenceSpace, XRState } from '@ir-engine/spatial/src/xr/XRState'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
 import { AvatarComponent } from '../components/AvatarComponent'
@@ -121,11 +121,11 @@ export const applyInputSourcePoseToIKTargets = () => {
     return
   }
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
 
   /** Head */
-  if (isCameraAttachedToAvatar && ikTargetHead) {
-    const cameraTransform = getComponent(Engine.instance.cameraEntity, TransformComponent)
+  if (shouldViewerFollowController && ikTargetHead) {
+    const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
     const ikTransform = getComponent(ikTargetHead, TransformComponent)
     ikTransform.position.copy(cameraTransform.position)
     ikTransform.rotation.copy(cameraTransform.rotation).multiply(Q_Y_180)
@@ -142,7 +142,7 @@ export const applyInputSourcePoseToIKTargets = () => {
   }
 
   /** In miniature mode, IK doesn't make much sense */
-  if (!isCameraAttachedToAvatar) return
+  if (!shouldViewerFollowController) return
 
   const inverseWorldScale = 1 / XRState.worldScale
 

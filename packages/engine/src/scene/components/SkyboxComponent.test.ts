@@ -2,7 +2,6 @@ import {
   createEngine,
   createEntity,
   destroyEngine,
-  Engine,
   Entity,
   getComponent,
   getOptionalComponent,
@@ -10,6 +9,8 @@ import {
   serializeComponent,
   setComponent
 } from '@ir-engine/ecs'
+import { getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { BackgroundComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { mockSpatialEngine } from '@ir-engine/spatial/tests/util/mockSpatialEngine'
@@ -186,7 +187,7 @@ describe('SkyboxComponent', () => {
     it('should set Sky properties correctly when skyboxProps change', async () => {
       mockSpatialEngine()
 
-      setComponent(Engine.instance.viewerEntity, RendererComponent)
+      setComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
 
       // Set initial component with default skyboxProps
       setComponent(entity, SkyboxComponent, {

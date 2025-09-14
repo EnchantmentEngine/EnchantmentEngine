@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
   LocationInstanceConnectionService,
@@ -11,10 +10,8 @@ import {
   MediaInstanceConnectionService,
   MediaInstanceState
 } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { ChannelService, ChannelState } from '@ir-engine/client-core/src/social/services/ChannelService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
 import { InstanceID, LocationID, RoomCode } from '@ir-engine/common/src/schema.type.module'
 import { defineSystem, PresentationSystemGroup } from '@ir-engine/ecs'
@@ -32,7 +29,6 @@ import { FriendService } from '../social/services/FriendService'
 import { connectToInstance } from '../transports/mediasoup/MediasoupClientFunctions'
 import { PeerToPeerNetworkState } from '../transports/p2p/PeerToPeerNetworkState'
 import { AuthState } from '../user/services/AuthService'
-import { ViewerMenuState } from '../util/ViewerMenuState'
 
 export const WorldInstanceProvisioning = () => {
   const locationState = useMutableState(LocationState)
@@ -239,28 +235,8 @@ export const SocialMenus = {
 }
 
 export const FriendMenus = () => {
-  const { t } = useTranslation()
-
-  const [socialsEnabled] = useFeatureFlags([FeatureFlags.Client.Menu.Social])
-
-  useEffect(() => {
-    if (!socialsEnabled) return
-
-    const viewerMenuState = getMutableState(ViewerMenuState)
-    viewerMenuState.userMenus.friends.set(true)
-
-    return () => {
-      viewerMenuState.userMenus.friends.set(false)
-    }
-  }, [socialsEnabled])
-
-  if (!socialsEnabled) return null
-
-  const UseFriendsListeners = () => {
-    FriendService.useAPIListeners()
-    return null
-  }
-  return <UseFriendsListeners />
+  FriendService.useAPIListeners()
+  return null
 }
 
 export const reactor = () => {

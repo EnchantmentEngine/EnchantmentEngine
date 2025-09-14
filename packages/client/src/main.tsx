@@ -10,14 +10,9 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 // @ts-ignore
 ;(globalThis as any).process = { env: { ...(import.meta as any).env, APP_ENV: (import.meta as any).env.MODE } }
 
-const $offline = lazy(() => import('@ir-engine/client/src/pages/offline/offline'))
-const $banned = lazy(() => import('@ir-engine/client/src/pages/_banned'))
 const $location = lazy(() => import('@ir-engine/client/src/pages/location/location'))
 const $auth = lazy(() => import('@ir-engine/client/src/pages/auth/authRoutes'))
-
 const Store = lazy(() => import('./store'))
-
-const AppPage = lazy(() => import('./pages/AppPage'))
 const Router = lazy(() => import('./route/CustomRouter'))
 
 const App = () => {
@@ -33,22 +28,7 @@ const App = () => {
               <Suspense
                 fallback={<LoadingView fullScreen className="block h-12 w-12" title={t('common:loader.starting')} />}
               >
-                <AppPage loginRequired={false}>
-                  <$location />
-                </AppPage>
-              </Suspense>
-            }
-          />
-          <Route
-            key="offline"
-            path="/offline/*"
-            element={
-              <Suspense
-                fallback={<LoadingView fullScreen className="block h-12 w-12" title={t('common:loader.starting')} />}
-              >
-                <AppPage>
-                  <$offline />
-                </AppPage>
+                <$location />
               </Suspense>
             }
           />
@@ -69,9 +49,7 @@ const App = () => {
             path="/*"
             element={
               <Suspense>
-                <AppPage>
-                  <Router />
-                </AppPage>
+                <Router />
               </Suspense>
             }
           />

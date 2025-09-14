@@ -23,20 +23,6 @@ export type Action = {
 
 export type ActionRecipients = PeerID | PeerID[] | 'all' | null | undefined
 
-export type ActionCacheOptions =
-  | boolean
-  | {
-      /**
-       * If non-falsy, remove previous actions in the cache that match `$peer` and `type` fields,
-       * and any specified fields
-       */
-      removePrevious?: boolean | string[]
-      /**
-       * If true, do not cache this action
-       */
-      disable?: boolean
-    }
-
 export type ActionOptions = {
   /**
    * The uuid of this action, uniquely identifying it
@@ -76,19 +62,9 @@ export type ActionOptions = {
 
   /**
    * Optionally specify the network to send this action to.
-   * Specifying this will not send the action to other networks, even as a cached action.
+   * Specifying this will not send the action to other networks.
    */
   $network?: NetworkID | undefined
-
-  /**
-   * Specifies how this action should be cached for newly joining clients.
-   */
-  $cache?: ActionCacheOptions
-
-  /**
-   * This action is being replayed from the cache
-   */
-  $fromCache?: true
 
   /**
    * The call stack at the time the action was dispatched
@@ -226,7 +202,6 @@ export const dispatchAction = <A extends Action>(_action: A) => {
   action.$user = action.$user ?? agentID
   action.$to = action.$to ?? 'all'
   action.$time = action.$time ?? HyperFlux.store.getDispatchTime() + HyperFlux.store.defaultDispatchDelay()
-  action.$cache = action.$cache ?? false
   action.$uuid = action.$uuid ?? uuidv4()
   action.$topic = action.$topic ?? HyperFlux.store.defaultTopic
   const topic = action.$topic
@@ -257,42 +232,7 @@ export function addOutgoingTopicIfNecessary(topic: Topic) {
   }
 }
 
-const _updateCachedActions = (incomingAction: Action) => {
-  if (incomingAction.$cache) {
-    const cachedActions = HyperFlux.store.actions.cached as Action[]
-    // see if we must remove any previous actions
-    if (typeof incomingAction.$cache === 'boolean') {
-      if (incomingAction.$cache) cachedActions.push(incomingAction)
-    } else {
-      const remove = incomingAction.$cache.removePrevious
-      if (remove) {
-        for (const a of [...cachedActions]) {
-          if (a.$peer === incomingAction.$peer && a.type === incomingAction.type) {
-            if (remove === true) {
-              const idx = cachedActions.indexOf(a)
-              cachedActions.splice(idx, 1)
-            } else {
-              let match = true
-              for (const key of remove) {
-                if (!deepEqual(a[key], incomingAction[key])) {
-                  match = false
-                  break
-                }
-              }
-              if (match) {
-                const idx = cachedActions.indexOf(a)
-                cachedActions.splice(idx, 1)
-              }
-            }
-          }
-        }
-      }
-      if (!incomingAction.$cache.disable) cachedActions.push(incomingAction)
-    }
-  }
-}
-
-const applyIncomingActionsToAllQueues = (action: Action) => {
+const applyIncomingActionsToAllQueues = (action: Required<ResolvedActionType>) => {
   for (const [queueHandle, queue] of HyperFlux.store.actions.queues) {
     if (queueHandle.test(action)) {
       // if the action is out of order, mark the queue as needing resync
@@ -359,7 +299,6 @@ const _applyIncomingAction = (action: Action) => {
     if (idx !== -1) HyperFlux.store.actions.incoming.splice(idx, 1)
     return
   }
-  _updateCachedActions(action)
   createEventSourceQueues(action)
   applyIncomingActionsToAllQueues(action)
   const messageStackError = (e: any) => {

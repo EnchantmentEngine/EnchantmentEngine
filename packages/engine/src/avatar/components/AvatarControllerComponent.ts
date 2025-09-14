@@ -13,9 +13,8 @@ import {
   useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { getState, useImmediateEffect } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { TargetCameraRotationComponent } from '@ir-engine/spatial/src/camera/components/TargetCameraRotationComponent'
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
@@ -67,8 +66,9 @@ export const AvatarControllerComponent = defineComponent({
     const entity = useEntityContext()
     const avatarComponent = useOptionalComponent(entity, AvatarComponent)
     const avatarControllerComponent = useComponent(entity, AvatarControllerComponent)
-    const isCameraAttachedToAvatar = XRState.useCameraAttachedToAvatar()
-    const camera = useComponent(Engine.instance.cameraEntity, CameraComponent)
+    const shouldCameraAttachToController = XRState.useShouldViewerFollowController()
+    const hasSession = !!useMutableState(XRState).session.value
+    const camera = useComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const world = Physics.useWorld(entity)
     const gltfComponent = useOptionalComponent(entity, GLTFComponent)
     const cameraHasTargetRotation = useHasComponent(
@@ -95,9 +95,7 @@ export const AvatarControllerComponent = defineComponent({
     useEffect(() => {
       if (!world) return
       Physics.createCharacterController(world, entity, {})
-      world.cameraAttachedRigidbodyEntity = entity
       return () => {
-        world.cameraAttachedRigidbodyEntity = UndefinedEntity
         Physics.removeCharacterController(world, entity)
       }
     }, [world])
@@ -113,7 +111,7 @@ export const AvatarControllerComponent = defineComponent({
     }, [avatarComponent?.avatarHeight, camera.near])
 
     useEffect(() => {
-      if (!avatarComponent || isCameraAttachedToAvatar || !cameraHasTargetRotation) return
+      if (!avatarComponent || shouldCameraAttachToController || !cameraHasTargetRotation) return
 
       const controller = getComponent(entity, AvatarControllerComponent)
       const targetCameraRotation = getComponent(controller.cameraEntity, TargetCameraRotationComponent)
@@ -128,7 +126,20 @@ export const AvatarControllerComponent = defineComponent({
       return () => {
         if (entityExists(controller.cameraEntity)) removeComponent(controller.cameraEntity, FollowCameraComponent)
       }
-    }, [isCameraAttachedToAvatar, avatarComponent, cameraHasTargetRotation])
+    }, [shouldCameraAttachToController, avatarComponent, cameraHasTargetRotation])
+
+    // Determine if the camera should be attached to the controller
+    const cameraAttached = !hasSession || shouldCameraAttachToController
+
+    useEffect(() => {
+      if (!cameraAttached) return
+
+      getMutableState(XRState).cameraAttachedEntity.set(entity)
+
+      return () => {
+        getMutableState(XRState).cameraAttachedEntity.set(UndefinedEntity)
+      }
+    }, [cameraAttached])
 
     return null
   }

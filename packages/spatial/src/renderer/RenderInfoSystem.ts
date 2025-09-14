@@ -1,10 +1,11 @@
-import { Engine, getOptionalComponent } from '@ir-engine/ecs'
+import { getOptionalComponent } from '@ir-engine/ecs'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 
 import { useEffect } from 'react'
 import { WebGLRenderer } from 'three'
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { ResourceState, ResourceType } from '../resources/ResourceState'
 import { RendererComponent } from './components/RendererComponent'
 import { WebGLRendererSystem } from './WebGLRendererSystem'
@@ -62,7 +63,8 @@ export function getShaderComplexity(resources: Record<string, any>): number {
 }
 
 const execute = () => {
-  const renderer = getOptionalComponent(Engine.instance.viewerEntity, RendererComponent)?.renderer as WebGLRenderer
+  const renderer = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+    ?.renderer as WebGLRenderer
 
   if (!renderer) return
 

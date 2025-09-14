@@ -1,33 +1,11 @@
-import { ComponentType, getComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
+import { Entity, getComponent, setComponent } from '@ir-engine/ecs'
 
 import { getState } from '@ir-engine/hyperflux'
-import { Box3, Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
+import { Frustum, Matrix4, PerspectiveCamera, Quaternion, Sphere, Vector3 } from 'three'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { BoundingBoxComponent, updateBoundingBox } from '../../transform/components/BoundingBoxComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-import { getBoundingBoxVertices } from '../../transform/functions/BoundingBoxFunctions'
 import { CameraComponent } from '../components/CameraComponent'
-import { TargetCameraRotationComponent } from '../components/TargetCameraRotationComponent'
-
-export const setTargetCameraRotation = (entity: Entity, phi: number, theta: number, time = 0.3) => {
-  const cameraRotationTransition = getOptionalComponent(entity, TargetCameraRotationComponent) as
-    | ComponentType<typeof TargetCameraRotationComponent>
-    | undefined
-  if (!cameraRotationTransition) {
-    setComponent(entity, TargetCameraRotationComponent, {
-      phi: phi,
-      phiVelocity: { value: 0 },
-      theta: theta,
-      thetaVelocity: { value: 0 },
-      time: time
-    })
-  } else {
-    cameraRotationTransition.phi = phi
-    cameraRotationTransition.theta = theta
-    cameraRotationTransition.time = time
-  }
-}
 
 /**
  * Computes the distance and center of the camera required to fit the points in the camera's view
@@ -60,16 +38,6 @@ export function computeCameraDistanceAndCenter(
   return { distance, center }
 }
 
-/**
- * Computes the distance and center of the camera required to fit the box in the camera's view
- * @param camera - PerspectiveCamera
- * @param box - Box3 to fit in the camera's view
- * @param padding - Padding value to fit the box in the camera's view
- */
-export function computeCameraDistanceAndCenterFromBox(camera: PerspectiveCamera, box: Box3, padding: number = 1.1) {
-  const points = getBoundingBoxVertices(box)
-  return computeCameraDistanceAndCenter(camera, points, padding)
-}
 /**
  * Camera view angles enum
  */

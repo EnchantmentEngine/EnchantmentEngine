@@ -1,9 +1,10 @@
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import {
   NetworkTopics,
   defineAction,
   defineState,
   getMutableState,
+  getState,
   matches,
   matchesUserID,
   matchesWithDefault,
@@ -13,7 +14,7 @@ import {
 export class AvatarUIActions {
   static setUserTyping = defineAction({
     type: 'ee.client.avatar.USER_IS_TYPING',
-    userID: matchesWithDefault(matchesUserID, () => Engine.instance.userID),
+    userID: matchesWithDefault(matchesUserID, () => getState(EngineState).userID),
     typing: matches.boolean,
     $topic: NetworkTopics.world
   })

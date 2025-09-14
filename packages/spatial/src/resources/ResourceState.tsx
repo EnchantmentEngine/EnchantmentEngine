@@ -15,7 +15,6 @@ import {
 } from 'three'
 
 import {
-  Engine,
   Entity,
   QueryReactor,
   UUIDComponent,
@@ -37,8 +36,6 @@ import iterateObject3D from '../common/functions/iterateObject3D'
 import { PerformanceState } from '../renderer/PerformanceState'
 import { RendererComponent } from '../renderer/components/RendererComponent'
 import { VisibleComponent } from '../renderer/components/VisibleComponent'
-
-// offloadTextureData implemented in engine package, but needs to be called and typed here
 
 declare module 'three/src/textures/Texture.js' {
   export interface Texture {
@@ -185,7 +182,7 @@ const useVisibleVertexCount = () => {
 }
 
 const getRendererInfo = () => {
-  const viewer = Engine?.instance?.viewerEntity as Entity | undefined
+  const viewer = getState(ReferenceSpaceState).viewerEntity
   if (!viewer) return {}
   const renderer = getOptionalComponent(viewer, RendererComponent)?.renderer as WebGLRenderer | undefined
   if (!renderer) return {}

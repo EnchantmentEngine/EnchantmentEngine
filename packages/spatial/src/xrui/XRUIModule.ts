@@ -1,3 +1,4 @@
+import { createXRUI } from './createXRUI'
 import { XRUISystem } from './systems/XRUISystem'
 
-export { XRUISystem }
+export { createXRUI, XRUISystem }

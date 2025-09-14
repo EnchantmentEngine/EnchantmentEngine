@@ -1,4 +1,5 @@
-import config from '@ir-engine/common/src/config'
+import { MediaSettingsType } from '@ir-engine/common/src/config'
+import useEngineSetting from '@ir-engine/common/src/hooks/useEngineSetting'
 import multiLogger from '@ir-engine/common/src/logger'
 import {
   MediasoupMediaProducerActions,
@@ -51,6 +52,8 @@ const MicrophoneReactor = () => {
   const mediasoupSelfProducerState = useMutableState(MediasoupSelfProducerState)
   const camAudioProducer = mediasoupSelfProducerState.camAudioProducer.value
 
+  const mediaSettings = useEngineSetting('client').data?.mediaSettings as MediaSettingsType | undefined
+
   const mediaStreamAudioSourceNode = useHookstate(null as MediaStreamAudioSourceNode | null)
 
   useEffect(() => {
@@ -66,7 +69,6 @@ const MicrophoneReactor = () => {
     const transport = MediasoupTransportState.getTransport(network.id, 'send') as WebRTCTransportExtension
 
     const codecOptions = { ...VideoConstants.CAM_AUDIO_CODEC_OPTIONS }
-    const mediaSettings = config.client.mediaSettings
     if (mediaSettings?.audio) codecOptions.opusMaxAverageBitrate = mediaSettings.audio.maxBitrate * 1000
 
     const abortController = new AbortController()
@@ -117,9 +119,7 @@ const MicrophoneReactor = () => {
   return null
 }
 
-const getCodecEncodings = (service: 'video' | 'screenshare') => {
-  const mediaSettings = config.client.mediaSettings
-  const settings = mediaSettings[service]
+const getCodecEncodings = (settings?: MediaSettingsType['screenshare'] | MediaSettingsType['video']) => {
   let codec, encodings
   if (settings) {
     switch (settings.codec) {
@@ -154,6 +154,7 @@ const WebcamReactor = () => {
   const ready = mediaNetworkState?.ready?.value
   const mediasoupSelfProducerState = useMutableState(MediasoupSelfProducerState)
   const camVideoProducer = mediasoupSelfProducerState.camVideoProducer.value
+  const mediaSettings = useEngineSetting('client').data?.mediaSettings as MediaSettingsType | undefined
 
   useEffect(() => {
     if (!webcamEnabled || !ready || !webcamMediaStream) return
@@ -168,7 +169,7 @@ const WebcamReactor = () => {
 
     const transport = MediasoupTransportState.getTransport(network.id, 'send') as WebRTCTransportExtension
 
-    const { codec, encodings } = getCodecEncodings('video')
+    const { codec, encodings } = getCodecEncodings(mediaSettings?.video)
 
     const abortController = new AbortController()
 
@@ -225,6 +226,7 @@ const ScreenshareReactor = () => {
   const screenVideoProducer = mediasoupSelfProducerState.screenVideoProducer.value
   const screenAudioProducer = mediasoupSelfProducerState.screenAudioProducer.value
   const screenShareAudioPaused = mediaStreamState.screenShareAudioPaused.value
+  const mediaSettings = useEngineSetting('client').data?.mediaSettings as MediaSettingsType | undefined
 
   useEffect(() => {
     if (!screenshareEnabled || !ready || !screenshareMediaStream) return
@@ -242,7 +244,7 @@ const ScreenshareReactor = () => {
 
     const transport = MediasoupTransportState.getTransport(network.id, 'send') as WebRTCTransportExtension
 
-    const { codec, encodings } = getCodecEncodings('screenshare')
+    const { codec, encodings } = getCodecEncodings(mediaSettings?.screenshare)
 
     const abortController = new AbortController()
 

@@ -14,9 +14,6 @@ import {
   THUMBNAIL_WIDTH
 } from '@ir-engine/common/src/constants/AvatarConstants'
 import { AvatarType } from '@ir-engine/common/src/schema.type.module'
-
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import { FileToAssetExt } from '@ir-engine/spatial/src/resources/AssetType'
 import { Button, Input } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
@@ -51,11 +48,6 @@ const AvatarModifyMenu = ({ selectedAvatar }: Props) => {
   const [isSaving, setIsSaving] = useState(false)
   const avatarRef = useRef<HTMLInputElement | null>(null)
   const thumbnailRef = useRef<HTMLInputElement | null>(null)
-
-  const [avaturnEnabled, rpmEnabled] = useFeatureFlags([
-    FeatureFlags.Client.Menu.Avaturn,
-    FeatureFlags.Client.Menu.ReadyPlayerMe
-  ])
 
   let thumbnailSrc = state.thumbnailUrl
   if (state.thumbnailFile) {
@@ -292,29 +284,25 @@ const AvatarModifyMenu = ({ selectedAvatar }: Props) => {
           <AvatarPreview avatarUrl={avatarSrc} />
         </div>
         <div className="col-span-1 grid grid-cols-1 gap-y-3">
-          {rpmEnabled && (
-            <Button
-              fullWidth
-              onClick={() => {
-                const Menu = AvatarCreatorMenu2(SupportedSdks.ReadyPlayerMe)
-                ModalState.openModal(<Menu showBackButton={false} previewEnabled={true} />)
-              }}
-            >
-              {t('user:usermenu.profile.useReadyPlayerMe')}
-            </Button>
-          )}
+          <Button
+            fullWidth
+            onClick={() => {
+              const Menu = AvatarCreatorMenu2(SupportedSdks.ReadyPlayerMe)
+              ModalState.openModal(<Menu showBackButton={false} previewEnabled={true} />)
+            }}
+          >
+            {t('user:usermenu.profile.useReadyPlayerMe')}
+          </Button>
 
-          {avaturnEnabled && (
-            <Button
-              fullWidth
-              onClick={() => {
-                const Menu = AvatarCreatorMenu2(SupportedSdks.Avaturn)
-                ModalState.openModal(<Menu showBackButton={false} previewEnabled={true} />)
-              }}
-            >
-              {t('user:usermenu.profile.useAvaturn')}
-            </Button>
-          )}
+          <Button
+            fullWidth
+            onClick={() => {
+              const Menu = AvatarCreatorMenu2(SupportedSdks.Avaturn)
+              ModalState.openModal(<Menu showBackButton={false} previewEnabled={true} />)
+            }}
+          >
+            {t('user:usermenu.profile.useAvaturn')}
+          </Button>
 
           <Input
             labelProps={{

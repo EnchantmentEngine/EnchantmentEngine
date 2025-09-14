@@ -11,9 +11,9 @@ import {
   UserName,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs/src/Engine'
-import { NetworkState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getState, NetworkState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
+import { EngineState } from '@ir-engine/ecs'
 import { Tooltip } from '@ir-engine/ui'
 import { CheckCircleLg, CheckLg, MessageTextSquare01Lg, User01Lg, XCloseLg } from '@ir-engine/ui/src/icons'
 import AvatarImage from '@ir-engine/ui/src/primitives/tailwind/AvatarImage'
@@ -43,7 +43,7 @@ const getChannelName = (channel: ChannelType) => {
   return (
     channel.name ||
     channel.channelUsers
-      .filter((channelUser) => channelUser.user?.id !== Engine.instance.userID)
+      .filter((channelUser) => channelUser.user?.id !== getState(EngineState).userID)
       .map((channelUser) => channelUser.user?.name)
       .filter(Boolean)
       .join(', ')

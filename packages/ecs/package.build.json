@@ -11,12 +11,12 @@
   "types": "./index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ir-engine/ir-engine.git"
+    "url": "git://github.com/enchantmentengine/enchantmentengine.git"
   },
   "author": "Infinite Reality Engine",
   "license": "CPAL",
   "bugs": {
-    "url": "https://github.com/ir-engine/ir-engine/issues"
+    "url": "https://github.com/enchantmentengine/enchantmentengine/issues"
   },
   "dependencies": {
     "@ir-engine/hyperflux": "^1.0.3",

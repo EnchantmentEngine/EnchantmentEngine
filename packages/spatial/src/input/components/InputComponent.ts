@@ -352,14 +352,14 @@ export const InputComponent = defineComponent({
     })
     useExecute(
       () => {
-        const inputSources = InputComponent.getInputSourceEntities(entity)
-        hasFocus.set(inputSources.length > 0)
+        const focus = InputComponent.getInputSourceEntities(entity).length > 0
+        if (focus !== hasFocus.value) hasFocus.set(focus)
       },
       // we want to evaluate input sources after the input system group has run, after all input systems
       // have had a chance to respond to input and/or capture input sources
       { after: InputSystemGroup }
     )
-    return hasFocus
+    return hasFocus.value
   }
 })
 

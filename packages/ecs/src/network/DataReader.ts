@@ -1,8 +1,7 @@
 import { TypedArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { getComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
-import { Network, PeerID } from '@ir-engine/hyperflux'
+import { HyperFlux, Network, PeerID } from '@ir-engine/hyperflux'
 
 import { NetworkId, NetworkObjectAuthorityTag, NetworkObjectComponent } from './NetworkObjectComponent'
 import { NetworkSchemaState } from './NetworkSerializationState'
@@ -224,7 +223,7 @@ export const readDataPacket = (network: Network, packet: ArrayBuffer, jitterBuff
   const view = createViewCursor(packet)
   const { peerIndex, simulationTime } = readMetadata(view)
   const fromPeerID = network.peerIndexToPeerID[peerIndex]
-  const isLoopback = !!fromPeerID && fromPeerID === Engine.instance.store.peerID
+  const isLoopback = !!fromPeerID && fromPeerID === HyperFlux.store.peerID
   if (isLoopback) return
   jitterBufferTaskList.push({
     simulationTime,

@@ -7,6 +7,6 @@ export const ComputedTransformComponent = defineComponent({
 
   schema: Schema.Object({
     referenceEntities: Schema.Array(EntitySchema.Entity()),
-    computeFunction: Schema.Call()
+    computeFunction: Schema.Func([], Schema.Void())
   })
 })

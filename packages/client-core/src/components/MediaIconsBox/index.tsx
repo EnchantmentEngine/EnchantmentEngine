@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { useMediaNetwork } from '@ir-engine/client-core/src/common/services/MediaInstanceConnectionService'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
@@ -11,8 +11,6 @@ import { SpectateEntityState } from '@ir-engine/spatial/src/camera/systems/Spect
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { RegisteredWidgets, WidgetAppActions } from '../../systems/WidgetAppService'
 
-import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
-import { FeatureFlags } from '@ir-engine/common/src/constants/FeatureFlags'
 import multiLogger from '@ir-engine/common/src/logger'
 import { EngineState } from '@ir-engine/ecs'
 import { MediaStreamService, MediaStreamState } from '@ir-engine/hyperflux'
@@ -29,12 +27,11 @@ import {
   VideoRecorderOffMd
 } from '@ir-engine/ui/src/icons'
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
-import { MdFlipCameraAndroid } from 'react-icons/md'
+import { MdFlipCameraAndroid, MdOutlineViewInAr } from 'react-icons/md'
 import { VrIcon } from '../../common/components/Icons/VrIcon'
 import { RecordingUIState } from '../../systems/ui/RecordingsWidgetUI'
 import LocationIconButton from '../../user/components/LocationIconButton'
 import { clientContextParams } from '../../util/ClientContextState'
-import { useShelfStyles } from '../Shelves/useShelfStyles'
 
 const logger = multiLogger.child({ component: 'client-core:MediaIconsBox', modifier: clientContextParams })
 
@@ -42,9 +39,6 @@ export const MediaIconsBox = () => {
   const { t } = useTranslation()
   const playbackState = useMutableState(PlaybackState)
   const recordingState = useMutableState(RecordingState)
-
-  const location = useLocation()
-  const { topShelfStyle } = useShelfStyles()
 
   const currentLocation = useHookstate(getMutableState(LocationState).currentLocation.location)
   const networkState = useMutableState(NetworkState)
@@ -64,7 +58,7 @@ export const MediaIconsBox = () => {
   const numVideoDevices = mediaStreamState.availableVideoDevices.value.length
   const hasAudioDevice = mediaStreamState.availableAudioDevices.value.length > 0
   const hasVideoDevice = numVideoDevices > 0
-  const isMotionCaptureEnabled = mediaStreamState.faceTracking.value
+  // const isMotionCaptureEnabled = mediaStreamState.faceTracking.value
   const isCamVideoEnabled = !!mediaStreamState.webcamMediaStream.value && mediaStreamState.webcamEnabled.value
   const isCamAudioEnabled = !!mediaStreamState.microphoneMediaStream.value && mediaStreamState.microphoneEnabled.value
   const isScreenVideoEnabled =
@@ -76,14 +70,6 @@ export const MediaIconsBox = () => {
   const supportsAR = xrState.supportedSessionModes['immersive-ar'].value
   const xrMode = xrState.sessionMode.value
   const supportsVR = xrState.supportedSessionModes['immersive-vr'].value
-
-  const [
-    // motionCaptureEnabled,
-    xrEnabled
-  ] = useFeatureFlags([
-    // FeatureFlags.Client.Menu.MotionCapture,
-    FeatureFlags.Client.Menu.XR
-  ])
 
   const toggleRecording = () => {
     const activeRecording = recordingState.recordingID.value
@@ -193,7 +179,6 @@ export const MediaIconsBox = () => {
       {!isMobile &&
       !(typeof navigator.mediaDevices.getDisplayMedia === 'undefined') &&
       screenshareEnabled &&
-      mediaNetworkReady &&
       mediaNetworkState?.ready.value ? (
         <LocationIconButton
           tooltip={{
@@ -205,7 +190,7 @@ export const MediaIconsBox = () => {
           onClick={MediaStreamState.toggleScreenshare}
         />
       ) : null}
-      {supportsVR && xrEnabled && (
+      {supportsVR && (
         <LocationIconButton
           tooltip={{
             title: t('user:menu.enterVR')
@@ -217,7 +202,7 @@ export const MediaIconsBox = () => {
           }}
         />
       )}
-      {/* {supportsAR && xrEnabled && (
+      {supportsAR && (
         <LocationIconButton
           id="UserAR"
           tooltip={{
@@ -228,7 +213,7 @@ export const MediaIconsBox = () => {
           }}
           icon={MdOutlineViewInAr}
         />
-      )} */}
+      )}
       {spectating && (
         <button
           type="button"

@@ -7,7 +7,6 @@ import { AuthState } from '@ir-engine/client-core/src/user/services/AuthService'
 import { useFind, useGet } from '@ir-engine/common'
 import { userAvatarPath, UserName, userPath } from '@ir-engine/common/src/schema.type.module'
 import { useExecute } from '@ir-engine/ecs'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { AudioState } from '@ir-engine/engine/src/audio/AudioState'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
 import { MotionCaptureSystem, timeSeriesMocapData } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
@@ -15,6 +14,7 @@ import { applyScreenshareToTexture } from '@ir-engine/engine/src/scene/functions
 import {
   getMutableState,
   getState,
+  HyperFlux,
   MediaChannelState,
   MediaStreamInterface,
   MediaStreamState,
@@ -132,7 +132,7 @@ export const useUserMediaWindowsHook = (
 
       const isSelf =
         !mediaNetwork ||
-        peerID === Engine.instance.store.peerID ||
+        peerID === HyperFlux.store.peerID ||
         (mediaNetwork?.peers &&
           Object.values(mediaNetwork.peers).find((peer) => peer.userId === selfUser.id)?.peerID === peerID) ||
         peerID === 'self'
@@ -316,7 +316,7 @@ export const useUserMediaWindowHook = ({ peerID, type }: WindowType) => {
   const mediaNetwork = NetworkState.mediaNetwork
   const isSelf =
     !mediaNetwork ||
-    peerID === Engine.instance.store.peerID ||
+    peerID === HyperFlux.store.peerID ||
     (mediaNetwork?.peers &&
       Object.values(mediaNetwork.peers).find((peer) => peer.userId === selfUser.id)?.peerID === peerID) ||
     peerID === 'self'

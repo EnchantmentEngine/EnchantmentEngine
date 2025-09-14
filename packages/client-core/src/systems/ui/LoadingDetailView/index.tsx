@@ -1,9 +1,9 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
-import { useXRUIState } from '@ir-engine/engine/src/xrui/useXRUIState'
 import { hookstate, State } from '@ir-engine/hyperflux'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
+import { useXRUIState } from '@ir-engine/spatial/src/xrui/useXRUIState'
 
 import ProgressBar from './SimpleProgressBar'
 import LoadingDetailViewStyle from './style'

@@ -24,7 +24,6 @@ import {
   UserType
 } from '@ir-engine/common/src/schema.type.module'
 import { EntityID, SourceID, UUIDComponent } from '@ir-engine/ecs'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import {
@@ -181,14 +180,13 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
   initializeSpatialEngine()
 
   await setupIPs()
-  const network = await initializeNetwork(app, hostId, Engine.instance.store.peerID, topic)
+  const network = await initializeNetwork(app, hostId, HyperFlux.store.peerID, topic)
 
   dispatchAction(
     NetworkActions.peerJoined({
-      $cache: true,
       $network: network.id,
       $topic: network.topic,
-      peerID: Engine.instance.store.peerID,
+      peerID: HyperFlux.store.peerID,
       peerIndex: 0,
       userID: hostId
     })
@@ -439,7 +437,6 @@ const handleChannelUserRemoved = (app: Application) => async (params) => {
     network.transports[matchingPeer.peerID]?.end?.()
     dispatchAction(
       NetworkActions.peerLeft({
-        $cache: true,
         $network: network.id,
         $topic: network.topic,
         peerID: matchingPeer.peerID,

@@ -24,13 +24,6 @@ import {
   textureCompress,
   weld
 } from '@gltf-transform/functions'
-import {
-  ExtractedImageTransformParameters,
-  extractParameters,
-  ModelFormat,
-  ModelTransformParameters,
-  ResourceTransforms
-} from '@ir-engine/engine/src/assets/classes/ModelTransform'
 import { baseName, dropRoot, pathJoin } from '@ir-engine/engine/src/assets/functions/miscUtils'
 import { getState } from '@ir-engine/hyperflux'
 import { KTX2Encoder } from '@ir-engine/xrui/core/textures/KTX2Encoder'
@@ -39,12 +32,14 @@ import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
 import { getPixels } from 'ndarray-pixels'
 import { LoaderUtils } from 'three'
 import { v4 as uuidv4 } from 'uuid'
+import {
+  ExtractedImageTransformParameters,
+  ModelFormat,
+  ModelTransformParameters,
+  ResourceTransforms
+} from './ModelTransform'
 
 import { MATCH_ASSET_PROJECT_FILENAME_REGEX, VALID_FILENAME_REGEX } from '@ir-engine/common/src/regex'
-import {
-  EEResourceID,
-  EEResourceIDExtension
-} from '@ir-engine/engine/src/assets/compression/extensions/EE_ResourceIDTransformer'
 import { uploadProjectFiles } from '../functions/assetFunctions'
 import { EditorState } from '../services/EditorServices'
 import { ImportSettingsState } from '../services/ImportSettingsState'
@@ -419,13 +414,8 @@ const createTextureOperations = (
       }
 
       if (shouldResize || shouldConvertToKTX) {
-        const resourceId = texture.getExtension<EEResourceID>(EEResourceIDExtension.EXTENSION_NAME)?.resourceId
-        const resourceParms = resources.images.find(
-          (resource) => resource.enabled && resource.resourceId === resourceId
-        )
         const params = {
           ...args,
-          ...(resourceParms ? extractParameters(resourceParms) : {}),
           maxTextureSize,
           textureCompressionType
         }
