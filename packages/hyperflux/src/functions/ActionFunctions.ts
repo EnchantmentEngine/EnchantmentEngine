@@ -258,9 +258,6 @@ export function defineAction<Shape extends Omit<ActionShape<Action>, keyof Actio
   actionCreator.resolvedActionShape = resolvedActionShape as ResolvedActionShape<Shape>
   actionCreator.type = shape.type as Shape['type']
   actionCreator.matches = matchesShape
-  actionCreator.extend = <ExtendShape extends ActionShape<Action>>(extendShape: ExtendShape & ActionOptions) => {
-    return { ...shape, ...extendShape, type: [extendShape.type, ...(Array.isArray(type) ? type : [type])] }
-  }
   actionCreator.receive = (actionReceptor: (action: ResolvedAction) => void) => {
     const hookableReceptor = createHookableFunction(actionReceptor)
     hookableReceptor['matchesAction'] = matchesShape

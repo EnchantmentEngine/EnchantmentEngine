@@ -1,9 +1,11 @@
 import matches from 'ts-matches'
 
-import { matchesEntityUUID } from '@ir-engine/ecs'
+import { matchesEntityUUID, SpawnEntityProps } from '@ir-engine/ecs'
 import { defineAction, NetworkTopics } from '@ir-engine/hyperflux'
-import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
 
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { spawnObject, SpawnObjectProps } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { matchesIkTarget } from '../animation/Util'
 
 export class AvatarNetworkAction {
@@ -48,3 +50,14 @@ export class AvatarNetworkAction {
     })
   )
 }
+
+export type SpawnAvatarProps = SpawnObjectProps & {
+  [GLTFComponent.jsonID]: {
+    avatarURL: string
+  }
+  [NameComponent.jsonID]: {
+    name: string
+  }
+}
+
+export const spawnAvatar = (props: SpawnEntityProps<SpawnAvatarProps>) => spawnObject(props)

@@ -4,17 +4,13 @@ import { AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'th
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { defineActionQueue, getState } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { lerp } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
 
 import { AnimationState } from '../AnimationManager'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarNetworkAction } from '../state/AvatarNetworkActions'
 import { preloadedAnimations } from './Util'
-
-/** @todo replace this with event sourcing */
-const animationQueue = defineActionQueue(AvatarNetworkAction.setAnimationState.matches)
 
 export const getAnimationAction = (name: string, mixer: AnimationMixer, animations?: AnimationClip[]) => {
   const manager = getState(AnimationState)

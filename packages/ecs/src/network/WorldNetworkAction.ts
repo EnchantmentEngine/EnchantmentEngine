@@ -1,14 +1,22 @@
 import { matchesEntityID, matchesEntitySourceID } from '@ir-engine/ecs'
 import {
+  ActionOptions,
   defineAction,
+  dispatchAction,
   getState,
+  matches,
   matchesPeerID,
   matchesUserID,
   matchesWithDefault,
-  NetworkTopics
+  NetworkTopics,
+  PeerID,
+  UserID,
+  Validator
 } from '@ir-engine/hyperflux'
 import { EngineState } from '../EngineState'
-import { matchesEntityUUID } from '../Entity'
+import { EntityID, EntityUUID, matchesEntityUUID, SourceID } from '../Entity'
+
+export const matchesComponent = matches.object as Validator<unknown, Record<string, object>>
 
 export class WorldNetworkAction {
   static spawnEntity = defineAction({
@@ -18,6 +26,7 @@ export class WorldNetworkAction {
     parentUUID: matchesEntityUUID,
     ownerID: matchesWithDefault(matchesUserID, () => getState(EngineState).userID),
     authorityPeerId: matchesPeerID.optional(),
+    components: matchesComponent, // matches Record<JsonID, SerializedSchema> of component type
     $topic: NetworkTopics.world
   })
 
@@ -42,4 +51,17 @@ export class WorldNetworkAction {
     newAuthority: matchesPeerID,
     $topic: NetworkTopics.world
   })
+}
+
+export type SpawnEntityProps<T extends Record<string, object>> = {
+  components: T
+  entityID: EntityID
+  entitySourceID: SourceID
+  parentUUID: EntityUUID
+  ownerID?: UserID
+  authorityPeerId?: PeerID
+} & ActionOptions
+
+export const spawnEntity = <T extends Record<string, object>>(props: SpawnEntityProps<T>) => {
+  dispatchAction(WorldNetworkAction.spawnEntity(props))
 }

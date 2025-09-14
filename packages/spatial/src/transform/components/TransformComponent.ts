@@ -32,12 +32,12 @@ const assignScale = (entity: Entity): Vector3 =>
 export const TransformComponent = defineComponent({
   name: 'TransformComponent',
 
-  jsonID: 'IR_transform',
+  jsonID: 'IR_transform' as const,
 
   schema: Schema.Object({
     position: T.Vec3(),
     rotation: T.Quaternion(),
-    scale: T.Vec3(),
+    scale: T.Vec3(undefined, { default: new Vector3(1, 1, 1) }),
     matrix: T.Mat4(undefined, { serialized: false }),
     matrixWorld: T.Mat4(undefined, { serialized: false })
   }),
