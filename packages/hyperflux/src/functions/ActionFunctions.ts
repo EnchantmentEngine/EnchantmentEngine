@@ -1,8 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 
 import { Schema } from '../schemas/JSONSchemas'
-import type { SchemaDefinition, Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
-import { Kind } from '../schemas/JSONSchemaTypes'
+import type { Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
 import { CheckSchemaValue, CreateSchemaValue } from '../schemas/JSONSchemaUtils'
 import { OpaqueType } from '../types/OpaqueType'
 import { NetworkID, PeerID, UserID } from '../types/Types'
@@ -78,8 +77,6 @@ export type ActionOptions = {
   $ERROR?: { message: string; stack: string[] }
 }
 
-export type ResolvedActionType<Shape = any> = Action
-
 /** Utility: deep equality (used in caching logic) */
 export function deepEqual(x: any, y: any): boolean {
   if (x === y) return true
@@ -95,13 +92,10 @@ export function deepEqual(x: any, y: any): boolean {
   return false
 }
 
-// -------------------------------------------------------------
-// Action Definition API (compiled schemas)
-// -------------------------------------------------------------
 export interface ActionCreator<
   TType extends string,
   Properties extends TProperties,
-  Schema extends TObjectSchema<any>
+  Schema extends TObjectSchema<Properties>
 > {
   (partial?: Partial<Static<Schema>> & ActionOptions): Action & Static<Schema> & { type: TType | string[] }
   type: TType
@@ -117,18 +111,22 @@ export interface ActionCreator<
   matchesAction: { test: (a: Action) => boolean }
   receive: (
     receptor: (action: Action & Static<Schema> & { type: TType | string[] }) => void
-  ) => ActionReceptor<Properties, TType>
+  ) => ActionReceptor<Properties, Schema, TType>
 }
 
-export type ActionReceptor<P extends Record<string, any>, TType extends string> = ((
-  action: Action & P & { type: TType | string[] }
-) => void) & {
+export type ActionReceptor<
+  Properties extends TProperties,
+  Schema extends TObjectSchema<Properties>,
+  TType extends string
+> = ((action: Action & Static<Schema> & { type: TType | string[] }) => void) & {
   matchesAction: { test: (a: Action) => boolean }
-  validate: (filter: (action: Action & P & { type: TType | string[] }) => boolean) => ActionReceptor<P, TType>
-  validator?: (action: Action & P & { type: TType | string[] }) => boolean
+  validate: (
+    filter: (action: Action & Static<Schema> & { type: TType | string[] }) => boolean
+  ) => ActionReceptor<Properties, Schema, TType>
+  validator?: (action: Action & Static<Schema> & { type: TType | string[] }) => boolean
 }
 
-export function isActionReceptor(f: any): f is ActionReceptor<any, any> {
+export function isActionReceptor(f: any): f is ActionReceptor<any, any, any> {
   return !!f && typeof f === 'function' && !!f.matchesAction
 }
 
@@ -196,7 +194,7 @@ export function defineAction<
       hookable.validator = fn
       return hookable
     }
-    return hookable as ActionReceptor<P, TType>
+    return hookable as ActionReceptor<Properties, Schema, TType>
   }
 
   ActionDefinitions[primaryType] = creator as any
@@ -247,7 +245,7 @@ export function addOutgoingTopicIfNecessary(topic: Topic) {
   }
 }
 
-const applyIncomingActionsToAllQueues = (action: Required<ResolvedActionType>) => {
+const applyIncomingActionsToAllQueues = (action: Action) => {
   for (const [queueHandle, queue] of HyperFlux.store.actions.queues) {
     if (queueHandle.test(action)) {
       // if the action is out of order, mark the queue as needing resync
@@ -373,9 +371,6 @@ export const clearOutgoingActions = (topic: Topic) => {
   queue.length = 0
 }
 
-// -------------------------------------------------------------
-// Action Queues
-// -------------------------------------------------------------
 export type ActionMatcher = { test: (a: Action) => boolean }
 
 export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
@@ -399,40 +394,49 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
     return queueInstance
   }
 
-  const actionQueueGetter = () => {
+  const actionQueueGetter: ActionQueueHandle = () => {
     const queueInstance = getOrCreateInstance()
     const result = queueInstance.actions.slice(queueInstance.nextIndex) as Action[]
     queueInstance.nextIndex = queueInstance.actions.length
     return result
   }
 
-  ;(actionQueueGetter as any).test = (a: Action) => shapes.some((s) => s.test(a))
-  ;(actionQueueGetter as any).shapeHash = shapeHash
+  actionQueueGetter.test = (a: Action) => shapes.some((s) => s.test(a))
+  actionQueueGetter.shapeHash = shapeHash
 
   Object.defineProperty(actionQueueGetter, 'instance', {
     get: () => getOrCreateInstance()
   })
+
+  actionQueueGetter.needsResync = false
   Object.defineProperty(actionQueueGetter, 'needsResync', {
     get: () => getOrCreateInstance().needsResync,
     set: (val) => {
       getOrCreateInstance().needsResync = val
     }
   })
-  ;(actionQueueGetter as any).resync = () => {
+  actionQueueGetter.resync = () => {
     const queue = getOrCreateInstance()
     queue.actions = HyperFlux.store.actions.history
-      .filter((a: Action) => (actionQueueGetter as any).test(a))
+      .filter((a: Action) => actionQueueGetter.test(a))
       .sort((a: Action, b: Action) => (a.$time || 0) - (b.$time || 0))
     queue.nextIndex = 0
-    ;(actionQueueGetter as any).needsResync = false
+    queue.needsResync = false
   }
 
-  return actionQueueGetter as any
+  return actionQueueGetter
 }
 
 export const createActionQueue = defineActionQueue
 
-export type ActionQueueHandle = ReturnType<typeof defineActionQueue>
+export type ActionQueueHandle = {
+  (): Action[]
+  test: (a: Action) => boolean
+  shapeHash: string
+  needsResync: boolean
+  resync: () => void
+}
+
 export type ActionQueueInstance = {
   actions: Action[]
   nextIndex: number
@@ -443,8 +447,3 @@ export type ActionQueueInstance = {
 export const removeActionQueue = (queueHandle: ActionQueueHandle) => {
   HyperFlux.store.actions.queues.delete(queueHandle)
 }
-
-export const dispatchSchemaAction = <T extends string, S extends SchemaDefinition & { [Kind]: 'Object' }>(
-  creator: ActionCreator<Static<S> & Record<string, any>, T>,
-  partial?: Partial<Static<S>> & ActionOptions
-) => dispatchAction(creator(partial as any))

@@ -21,7 +21,7 @@ export * from '@hookstate/identifiable'
 export const NO_PROXY = { noproxy: true }
 export const NO_PROXY_STEALTH = { noproxy: true, stealth: true }
 
-export type ReceptorMap = Record<string, ActionReceptor<any>>
+export type ReceptorMap = Record<string, ActionReceptor<any, any, any>>
 
 export type StateDefinition<S, I, E, Receptors extends ReceptorMap> = {
   name: string

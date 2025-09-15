@@ -5,22 +5,26 @@ import { NetworkID, PeerID, UserID } from '../types/Types'
 import { NetworkPeer } from './NetworkState'
 
 export class NetworkActions {
-  static peerJoined = defineAction({
-    type: 'ee.engine.network.PEER_JOINED',
-    schema: Schema.Object({
-      peerID: Schema.PeerID({ required: true }),
-      peerIndex: Schema.Number({ required: true }),
-      userID: Schema.UserID({ required: true })
-    })
-  })
+  static peerJoined = defineAction(
+    Schema.Object(
+      {
+        peerID: Schema.PeerID({ required: true }),
+        peerIndex: Schema.Number({ required: true }),
+        userID: Schema.UserID({ required: true })
+      },
+      { $id: 'ee.engine.network.PEER_JOINED' }
+    )
+  )
 
-  static peerLeft = defineAction({
-    type: 'ee.engine.network.PEER_LEFT',
-    schema: Schema.Object({
-      peerID: Schema.PeerID({ required: true }),
-      userID: Schema.UserID({ required: true })
-    })
-  })
+  static peerLeft = defineAction(
+    Schema.Object(
+      {
+        peerID: Schema.PeerID({ required: true }),
+        userID: Schema.UserID({ required: true })
+      },
+      { $id: 'ee.engine.network.PEER_LEFT' }
+    )
+  )
 }
 
 export const NetworkPeerState = defineState({

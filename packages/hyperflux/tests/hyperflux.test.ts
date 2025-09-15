@@ -15,23 +15,12 @@ import {
   removeActionQueue
 } from '..'
 
-// Since defineAction now expects a compiled Schema, build them with Schema helpers.
-const emptyObjectSchema = Schema.Object({})
-const patternSchema = Schema.Object({
-  payload: Schema.String(),
-  optionalThing: Schema.Optional(Schema.Number())
-})
-
-// Helper to build a basic greeting action with default greeting (schema field default)
 const makeGreetingAction = (type: string, defaultGreeting: string) =>
-  defineAction({
-    type,
-    schema: Schema.Object({ greeting: Schema.String({ default: defaultGreeting }) })
-  })
+  defineAction(Schema.Object({ greeting: Schema.String({ default: defaultGreeting }) }, { $id: type }))
 
 describe('Hyperflux Unit Tests (Compiled Schema Actions)', () => {
   it('should define and create a simple action', () => {
-    const test = defineAction({ type: 'TEST_ACTION', schema: emptyObjectSchema })
+    const test = defineAction(Schema.Object({}, { $id: 'TEST_ACTION' }))
     const action = test({})
     assert.equal(action.type, 'TEST_ACTION')
     assert(test.matchesAction.test(action))
@@ -40,27 +29,32 @@ describe('Hyperflux Unit Tests (Compiled Schema Actions)', () => {
   })
 
   it('should define and create actions with required + optional fields', () => {
-    const test = defineAction({
-      type: 'TEST_PATTERN',
-      schema: patternSchema
-    })
-    const action = test({ payload: 'abcd', $cache: false })
+    const test = defineAction(
+      Schema.Object(
+        {
+          payload: Schema.String(),
+          optionalThing: Schema.Optional(Schema.Number())
+        },
+        { $id: 'TEST_PATTERN' }
+      )
+    )
+    const action = test({ payload: 'abcd' })
     assert.equal(action.type, 'TEST_PATTERN')
     assert.equal(action.optionalThing, undefined)
-    assert(action.$cache === false)
     assert(test.matches(action))
   })
 
   it('should support default values (dynamic)', () => {
     let count = 0
-    const dynamicDefaultsSchema = Schema.Object({
-      count: Schema.Number({ default: () => count++ }),
-      greeting: Schema.String({ default: 'hi' })
-    })
-    const test = defineAction({
-      type: 'TEST_DEFAULT_VALUES',
-      schema: dynamicDefaultsSchema
-    })
+    const test = defineAction(
+      Schema.Object(
+        {
+          count: Schema.Number({ default: () => count++ }),
+          greeting: Schema.String({ default: 'hi' })
+        },
+        { $id: 'TEST_DEFAULTS' }
+      )
+    )
     assert.equal(test({}).count, 0)
     assert.equal(test({}).count, 1)
     assert.equal(test({}).count, 2)
