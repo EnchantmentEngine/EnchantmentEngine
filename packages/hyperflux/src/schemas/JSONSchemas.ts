@@ -248,11 +248,11 @@ export const Schema = {
 
   /** UserID type schema helper, defaults to '' */
   UserID: (options?: TTypedSchema<UserID>['options']) =>
-    Schema.String({ serialized: true, ...options, id: 'UserUUID' }) as unknown as TTypedSchema<UserID>,
+    Schema.String({ serialized: true, ...options, $id: 'UserUUID' }) as unknown as TTypedSchema<UserID>,
 
   /** PeerID type schema helper, defaults to '' */
   PeerID: (options?: TTypedSchema<PeerID>['options']) =>
-    Schema.String({ serialized: true, ...options, id: 'PeerUUID' }) as unknown as TTypedSchema<PeerID>,
+    Schema.String({ serialized: true, ...options, $id: 'PeerUUID' }) as unknown as TTypedSchema<PeerID>,
 
   Proxy: <T extends SchemaDefinition>(schema: T) =>
     ({

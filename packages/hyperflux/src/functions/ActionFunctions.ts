@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import type { SchemaDefinition, Static } from '../schemas/JSONSchemaTypes'
+import { Schema } from '../schemas/JSONSchemas'
+import type { SchemaDefinition, Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
 import { Kind } from '../schemas/JSONSchemaTypes'
 import { CheckSchemaValue, CreateSchemaValue } from '../schemas/JSONSchemaUtils'
 import { OpaqueType } from '../types/OpaqueType'
@@ -97,18 +98,26 @@ export function deepEqual(x: any, y: any): boolean {
 // -------------------------------------------------------------
 // Action Definition API (compiled schemas)
 // -------------------------------------------------------------
-export type ActionCreator<P extends Record<string, any>, TType extends string> = {
-  (partial?: Partial<P> & ActionOptions): Action & P & { type: TType | string[] }
+export interface ActionCreator<
+  TType extends string,
+  Properties extends TProperties,
+  Schema extends TObjectSchema<any>
+> {
+  (partial?: Partial<Static<Schema>> & ActionOptions): Action & Static<Schema> & { type: TType | string[] }
   type: TType
-  schema: SchemaDefinition
-  validate: (payload: unknown) => payload is P
-  extend: <CT extends string, CS extends SchemaDefinition, CP extends Record<string, any>>(def: {
-    type: CT
-    schema: CS
-  }) => ActionCreator<CP, CT>
-  receive: (fn: (action: Action & P & { type: TType | string[] }) => void) => ActionReceptor<P, TType>
-  matches: (a: Action) => a is Action & P & { type: TType | string[] }
+  schema: Schema
+  validate: (payload: unknown) => payload is Static<Schema>
+  extend: <ExtendSchema extends TObjectSchema<any>>(
+    extensionDefinition: ExtendSchema
+  ) => TObjectSchema<
+    (Schema extends TObjectSchema<infer BaseProps> ? BaseProps : never) &
+      (ExtendSchema extends TObjectSchema<infer ExtendProps> ? ExtendProps : never)
+  >
+  matches: (a: Action) => a is Action & Static<Schema> & { type: TType | string[] }
   matchesAction: { test: (a: Action) => boolean }
+  receive: (
+    receptor: (action: Action & Static<Schema> & { type: TType | string[] }) => void
+  ) => ActionReceptor<Properties, TType>
 }
 
 export type ActionReceptor<P extends Record<string, any>, TType extends string> = ((
@@ -123,26 +132,27 @@ export function isActionReceptor(f: any): f is ActionReceptor<any, any> {
   return !!f && typeof f === 'function' && !!f.matchesAction
 }
 
-export const ActionDefinitions: Record<string, ActionCreator<any, string>> = {}
+export const ActionDefinitions: Record<string, ActionCreator<string, any, any>> = {}
 
-export function defineAction<TType extends string, S extends SchemaDefinition & { [Kind]: 'Object' }>(def: {
-  type: TType | [TType, ...string[]]
-  schema: S
-  meta?: Partial<ActionOptions>
-}): ActionCreator<Static<S> & Record<string, any>, TType> {
-  type P = Static<S> & Record<string, any>
-  const typeChain = Array.isArray(def.type) ? def.type : [def.type]
+export function defineAction<
+  TType extends string,
+  Properties extends TProperties,
+  Schema extends TObjectSchema<Properties>
+>(definition: Schema): ActionCreator<TType, Properties, Schema> {
+  type P = Static<Schema>
+  if (!definition.options?.$id) throw new Error('Action schema must have an id in options.$id')
+  const typeChain = Array.isArray(definition.options.$id) ? definition.options.$id : [definition.options.$id]
   const primaryType = typeChain[0] as TType
 
   const validate = (payload: unknown): payload is P => {
-    return CheckSchemaValue(def.schema, payload)
+    return CheckSchemaValue(definition, payload)
   }
 
   const creator = ((partial?: Partial<P> & ActionOptions) => {
-    const payload: any = CreateSchemaValue(def.schema)
+    const payload: any = CreateSchemaValue(definition)
     if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
 
-    if (!CheckSchemaValue(def.schema, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
+    if (!CheckSchemaValue(definition, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
 
     const action: Action = {
       ...payload,
@@ -150,27 +160,32 @@ export function defineAction<TType extends string, S extends SchemaDefinition & 
     }
 
     if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) (action as any)[k] = v
-    if (def.meta) Object.assign(action, def.meta)
+    if (definition.options!.metadata) Object.assign(action, definition.options!.metadata)
 
     return action as Action & P & { type: TType | string[] }
-  }) as ActionCreator<P, TType>
+  }) as ActionCreator<TType, Properties, Schema>
 
   creator.type = primaryType
-  creator.schema = def.schema
+  creator.schema = definition
   creator.validate = validate
-  creator.extend = (ext) =>
-    defineAction({
-      type: [ext.type, ...typeChain],
-      schema: ext.schema as any
-    }) as any
+  creator.extend = (extensionDefinition) => {
+    const combinedID = extensionDefinition.options?.$id
+      ? Array.isArray(extensionDefinition.options.$id)
+        ? [primaryType, ...extensionDefinition.options.$id]
+        : [primaryType, extensionDefinition.options.$id]
+      : [primaryType]
+    const combinedProperties = {
+      ...(definition.properties || {}),
+      ...(extensionDefinition.properties || {})
+    } as TProperties
+    return Schema.Object(combinedProperties, { $id: combinedID as any }) as any
+  }
   creator.matches = (a: Action): a is Action & P & { type: TType | string[] } => {
     if (!a || !a.type) return false
     const types = Array.isArray(a.type) ? a.type : [a.type]
     if (!types.includes(primaryType)) return false
     const subset: any = {}
-    if ((def.schema as any)[Kind] === 'Object') {
-      for (const key of Object.keys((def.schema as any).properties || {})) subset[key] = (a as any)[key]
-    }
+    for (const key of Object.keys(definition.properties || {})) subset[key] = (a as any)[key]
     return validate(subset)
   }
   creator.matchesAction = { test: (a: Action) => creator.matches(a) }
