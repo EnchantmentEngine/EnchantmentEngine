@@ -77,6 +77,11 @@ export const Schema = {
       ...buildSchema('String', options)
     }) as TStringSchema,
 
+  TypedString: <T extends string>(options?: TStringSchema['options']) =>
+    ({
+      ...buildSchema('String', options)
+    }) as unknown as TTypedSchema<T>,
+
   /**
    * Schema that infers as the const values of an object, requires that the object to infer as be passed in, default to the first value of the object
    */

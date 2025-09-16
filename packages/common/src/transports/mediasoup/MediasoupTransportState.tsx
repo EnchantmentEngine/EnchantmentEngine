@@ -6,74 +6,115 @@ import {
   getMutableState,
   getState,
   isClient,
-  matches,
-  matchesPeerID,
   Network,
   NetworkActions,
   NetworkID,
   NetworkState,
   none,
   PeerID,
+  Schema,
+  TTypedSchema,
   useHookstate,
-  useMutableState,
-  Validator
+  useMutableState
 } from '@ir-engine/hyperflux'
 
 export class MediasoupTransportActions {
-  static requestTransport = defineAction({
-    type: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_CREATE',
-    peerID: matchesPeerID,
-    direction: matches.literals('send', 'recv'),
-    sctpCapabilities: matches.object
-  })
-
-  static requestTransportError = defineAction({
-    type: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_ERROR_CREATE',
-    error: matches.string,
-    direction: matches.literals('send', 'recv')
-  })
-
-  static transportCreated = defineAction({
-    type: 'ee.engine.network.mediasoup.TRANSPORT_CREATED',
-    peerID: matchesPeerID,
-    transportID: matches.string,
-    direction: matches.literals('send', 'recv'),
-    sctpParameters: matches.object,
-    iceParameters: matches.object,
-    iceCandidates: matches.arrayOf(matches.object),
-    iceServers: matches.arrayOf(matches.object),
-    dtlsParameters: matches.object as Validator<
-      unknown,
+  static requestTransport = defineAction(
+    Schema.Object(
       {
-        role?: 'client' | 'server' | 'auto'
-        fingerprints: { algorithm: string; value: string }[]
+        peerID: Schema.PeerID(),
+        direction: Schema.LiteralUnion(['send', 'recv'] as const),
+        sctpCapabilities: Schema.Any()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_CREATE'
       }
-    >
-  })
+    )
+  )
 
-  static requestTransportConnect = defineAction({
-    type: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_CONNECT',
-    requestID: matches.string,
-    transportID: matches.string,
-    dtlsParameters: matches.object
-  })
+  static requestTransportError = defineAction(
+    Schema.Object(
+      {
+        error: Schema.String(),
+        direction: Schema.LiteralUnion(['send', 'recv'] as const)
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_ERROR_CREATE'
+      }
+    )
+  )
 
-  static requestTransportConnectError = defineAction({
-    type: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_ERROR_CONNECT',
-    requestID: matches.string,
-    error: matches.string
-  })
+  static transportCreated = defineAction(
+    Schema.Object(
+      {
+        peerID: Schema.PeerID(),
+        transportID: Schema.String(),
+        direction: Schema.LiteralUnion(['send', 'recv'] as const),
+        sctpParameters: Schema.Any(),
+        iceParameters: Schema.Any(),
+        iceCandidates: Schema.Array(Schema.Any()),
+        iceServers: Schema.Array(Schema.Any()),
+        dtlsParameters: Schema.Record(
+          Schema.String(),
+          Schema.Any() as TTypedSchema<{
+            role?: 'client' | 'server' | 'auto'
+            fingerprints: { algorithm: string; value: string }[]
+          }>
+        )
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.TRANSPORT_CREATED'
+      }
+    )
+  )
 
-  static transportConnected = defineAction({
-    type: 'ee.engine.network.mediasoup.TRANSPORT_CONNECTED',
-    requestID: matches.string,
-    transportID: matches.string
-  })
+  static requestTransportConnect = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        transportID: Schema.String(),
+        dtlsParameters: Schema.Any()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_CONNECT'
+      }
+    )
+  )
 
-  static transportClosed = defineAction({
-    type: 'ee.engine.network.mediasoup.TRANSPORT_CLOSED',
-    transportID: matches.string
-  })
+  static requestTransportConnectError = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        error: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.TRANSPORT_REQUEST_ERROR_CONNECT'
+      }
+    )
+  )
+
+  static transportConnected = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        transportID: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.TRANSPORT_CONNECTED'
+      }
+    )
+  )
+
+  static transportClosed = defineAction(
+    Schema.Object(
+      {
+        transportID: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.TRANSPORT_CLOSED'
+      }
+    )
+  )
 }
 
 export const MediasoupTransportObjectsState = defineState({

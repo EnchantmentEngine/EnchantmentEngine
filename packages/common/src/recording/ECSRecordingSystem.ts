@@ -48,7 +48,6 @@ import {
   removeDataChannelHandler,
   Schema,
   Topic,
-  TTypedSchema,
   UserID,
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
@@ -59,15 +58,11 @@ import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarC
 import { mocapDataChannelType } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 
-/** UserID type schema helper, defaults to '' */
-const RecordingIDSchema = (options?: TTypedSchema<RecordingID>['options']) =>
-  Schema.String({ serialized: true, ...options, $id: 'RecordingID' }) as unknown as TTypedSchema<RecordingID>
-
 export class ECSRecordingActions {
   static startRecording = defineAction(
     Schema.Object(
       {
-        recordingID: RecordingIDSchema({ required: true })
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
       },
       {
         $id: 'ee.core.motioncapture.START_RECORDING' as const
@@ -78,7 +73,7 @@ export class ECSRecordingActions {
   static recordingStarted = defineAction(
     Schema.Object(
       {
-        recordingID: RecordingIDSchema({ required: true })
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
       },
       {
         $id: 'ee.core.motioncapture.RECORDING_STARTED' as const
@@ -89,7 +84,7 @@ export class ECSRecordingActions {
   static stopRecording = defineAction(
     Schema.Object(
       {
-        recordingID: RecordingIDSchema({ required: true })
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
       },
       {
         $id: 'ee.core.motioncapture.STOP_RECORDING' as const
@@ -100,7 +95,7 @@ export class ECSRecordingActions {
   static startPlayback = defineAction(
     Schema.Object(
       {
-        recordingID: RecordingIDSchema({ required: true }),
+        recordingID: Schema.TypedString<RecordingID>({ required: true }),
         targetUser: Schema.Optional(Schema.UserID()),
         autoplay: Schema.Bool({ default: false })
       },
@@ -113,7 +108,7 @@ export class ECSRecordingActions {
   static playbackChanged = defineAction(
     Schema.Object(
       {
-        recordingID: RecordingIDSchema({ required: true }),
+        recordingID: Schema.TypedString<RecordingID>({ required: true }),
         playing: Schema.Bool({ required: true })
       },
       {
@@ -125,7 +120,7 @@ export class ECSRecordingActions {
   static stopPlayback = defineAction(
     Schema.Object(
       {
-        recordingID: RecordingIDSchema({ required: true })
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
       },
       {
         $id: 'ee.core.motioncapture.STOP_PLAYBACK' as const

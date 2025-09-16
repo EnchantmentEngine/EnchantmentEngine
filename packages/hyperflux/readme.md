@@ -47,13 +47,19 @@ counter.count.set(counter.count.get() + 1)
 #### Defining and Dispatching Actions
 
 ```typescript
-import { defineAction, dispatchAction, matchesWithDefault, matches } from '@ir-engine/hyperflux'
+import { defineAction, dispatchAction, matchesWithDefault, Schema } from '@ir-engine/hyperflux'
 
 // Define an action that increments a counter
-const increment = defineAction({
-  type: 'INCREMENT',
-  amount: matchesWithDefault(matches.number, () => 1)
-})
+const increment = defineAction(
+  Schema.Object(
+    {
+      amount: Schema.Number({ default: 1 })
+    },
+    {
+      $id: 'INCREMENT'
+    }
+  )
+)
 
 // Create and dispatch the action
 dispatchAction(increment({ amount: 5 }))
@@ -105,19 +111,36 @@ import {
 
 // Define actions for the counter
 export class CounterActions {
-  static increment = defineAction({
-    type: 'counter.INCREMENT',
-    amount: matches.number
-  })
+  static increment = defineAction(
+    Schema.Object(
+      {
+        amount: Schema.Number({ default: 1 })
+      },
+      {
+        $id: 'counter.INCREMENT'
+      }
+    )
+  )
 
-  static decrement = defineAction({
-    type: 'counter.DECREMENT',
-    amount: matches.number
-  })
+  static decrement = defineAction(
+    Schema.Object(
+      {
+        amount: Schema.Number({ default: 1 })
+      },
+      {
+        $id: 'counter.DECREMENT'
+      }
+    )
+  )
 
-  static reset = defineAction({
-    type: 'counter.RESET'
-  })
+  static reset = defineAction(
+    Schema.Object(
+      {},
+      {
+        $id: 'counter.RESET'
+      }
+    )
+  )
 }
 
 // Define the state for the counter
@@ -163,7 +186,6 @@ export default Counter
 In this example, the `CounterState` has several receptors that listen for different actions defined in `CounterActions`. When an action is dispatched, the corresponding receptor updates the state.
 
 Note: `applyIncomingActions` must be run for actions to be received and processed.
-
 
 #### Event Sourcing and Agent-Centric Networking
 
