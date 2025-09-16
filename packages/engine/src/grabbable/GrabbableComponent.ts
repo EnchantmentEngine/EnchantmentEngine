@@ -2,8 +2,8 @@ import { useEffect } from 'react'
 
 import { UUIDComponent, getComponent, hasComponent, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, setComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, matchesEntityUUID } from '@ir-engine/ecs/src/Entity'
-import { defineAction, dispatchAction, getState, isClient, matches } from '@ir-engine/hyperflux'
+import { Entity } from '@ir-engine/ecs/src/Entity'
+import { defineAction, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
@@ -133,12 +133,20 @@ export const GrabberComponent = defineComponent({
 })
 
 export class GrabbableNetworkAction {
-  static setGrabbedObject = defineAction({
-    type: 'ee.engine.grabbable.SET_GRABBED_OBJECT',
-    entityUUID: matchesEntityUUID,
-    grabbed: matches.boolean,
-    attachmentPoint: matches.literals('left', 'right').optional(),
-    grabberEntityUUID: matchesEntityUUID,
-    $topic: NetworkTopics.world
-  })
+  static setGrabbedObject = defineAction(
+    Schema.Object(
+      {
+        entityUUID: EntitySchema.EntityUUID(),
+        grabbed: Schema.Bool(),
+        attachmentPoint: Schema.Optional(Schema.LiteralUnion(['left', 'right'])),
+        grabberEntityUUID: EntitySchema.EntityUUID()
+      },
+      {
+        $id: 'ee.engine.grabbable.SET_GRABBED_OBJECT',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 }

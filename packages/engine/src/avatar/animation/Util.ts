@@ -1,4 +1,4 @@
-import { matches } from '@ir-engine/hyperflux'
+import { Schema } from '@ir-engine/hyperflux'
 
 export const ikTargets = {
   rightHand: 'rightHand',
@@ -36,6 +36,4 @@ export const preloadedAnimations = {
   emotes: 'emotes'
 }
 
-export const matchesIkTarget = matches.some(
-  ...Object.keys(ikTargets).map((k: keyof typeof ikTargets) => matches.literal(k))
-)
+export const matchesIkTarget = Schema.LiteralUnion([...(Object.keys(ikTargets) as Array<keyof typeof ikTargets>)])

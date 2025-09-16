@@ -5,10 +5,9 @@ import {
   deserializeComponent,
   Entity,
   EntityID,
+  EntitySchema,
   EntityUUID,
   getComponent,
-  matchesEntityID,
-  matchesEntitySourceID,
   SourceID,
   useComponent,
   useHasComponent,
@@ -20,18 +19,17 @@ import {
   defineState,
   dispatchAction,
   getMutableState,
-  matches,
   NetworkState,
   NetworkTopics,
   NO_PROXY,
   none,
+  Schema,
   Static,
   TObjectSchema,
   TProperties,
   useHookstate,
   useImmediateEffect,
-  useMutableState,
-  Validator
+  useMutableState
 } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
@@ -79,20 +77,25 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
  *   data: { name: "Prefab Instance 123" }
  * })
  */
-export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(definition: {
+export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties = {}>(definition: {
   name: string
   jsonID: string
   schema: S
   reactor?: (props: { entity: Entity; prefab: Static<S> }) => null | JSX.Element
 }) => {
   const $Actions = {
-    spawn: defineAction({
-      type: 'ir.engine.prefab_' + definition.name,
-      entityID: matchesEntityID,
-      entitySourceID: matchesEntitySourceID,
-      /** @todo once actions use JSON Schemas, we can include that strictness here */
-      data: matches.object as Validator<unknown, Static<S>>
-    })
+    spawn: defineAction(
+      Schema.Object(
+        {
+          entityID: EntitySchema.EntityID(),
+          entitySourceID: EntitySchema.SourceID(),
+          ...definition.schema.properties
+        },
+        {
+          $id: 'ir.engine.prefab_' + definition.name
+        }
+      )
+    )
   }
 
   const $State = defineState({
@@ -104,7 +107,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
       onSpawn: $Actions.spawn.receive((action) => {
         getMutableState($State)[
           UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
-        ].set(Object.fromEntries(Object.keys(definition.schema.properties).map((k) => [k, action.data[k]])))
+        ].set(Object.fromEntries(Object.keys(definition.schema.properties).map((k: keyof P) => [k, action[k]])))
       }),
       onDestroyObject: WorldNetworkAction.destroyEntity.receive((action) => {
         getMutableState($State)[action.entityUUID].set(none)
