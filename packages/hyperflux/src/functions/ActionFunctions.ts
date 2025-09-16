@@ -413,8 +413,12 @@ export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> |
   actionQueueGetter.test = (a: A) => shapes.some((s) => s.test(a))
   actionQueueGetter.shapeHash = shapeHash
 
+  actionQueueGetter.instance = getOrCreateInstance()
   Object.defineProperty(actionQueueGetter, 'instance', {
-    get: () => getOrCreateInstance()
+    get: () => getOrCreateInstance(),
+    set: (val) => {
+      throw new Error('Cannot set instance of ActionQueueHandle')
+    }
   })
 
   actionQueueGetter.needsResync = false
@@ -441,6 +445,7 @@ export type ActionQueueHandle<A extends Action> = {
   test: (a: A) => boolean
   shapeHash: string
   needsResync: boolean
+  instance: ActionQueueInstance<A>
   resync: () => void
 }
 

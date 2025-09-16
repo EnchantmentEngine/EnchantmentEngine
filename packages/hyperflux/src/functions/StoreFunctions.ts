@@ -53,7 +53,7 @@ export interface HyperStore {
     /** Incoming actions */
     incoming: Array<Required<Action>>
     /** All actions that have been applied, in the order they were processed */
-    history: Array<Action>
+    history: Array<Required<Action>>
     /** All action UUIDs that have been processed and should not be processed again */
     knownUUIDs: Set<string>
     /** Outgoing actions */
