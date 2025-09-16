@@ -35,7 +35,7 @@ export class SpectateActions {
     Schema.Object(
       {
         spectatorUserID: Schema.UserID({ required: true }),
-        spectatingEntity: Schema.Optional(EntitySchema.EntityUUID())
+        spectatingEntity: Schema.Optional(EntitySchema.EntityID())
       },
       {
         $id: 'ee.engine.Engine.SPECTATE_USER',

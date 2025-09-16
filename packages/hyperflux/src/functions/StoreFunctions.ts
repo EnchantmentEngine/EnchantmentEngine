@@ -49,7 +49,7 @@ export interface HyperStore {
 
   actions: {
     /** All queues that have been created */
-    queues: Map<ActionQueueHandle, ActionQueueInstance>
+    queues: Map<ActionQueueHandle<any>, ActionQueueInstance<any>>
     /** Incoming actions */
     incoming: Array<Required<Action>>
     /** All actions that have been applied, in the order they were processed */

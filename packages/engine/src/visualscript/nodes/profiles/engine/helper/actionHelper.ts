@@ -68,7 +68,7 @@ export function registerActionDispatchers() {
 }
 
 type State = {
-  queue: ActionQueueHandle
+  queue: ActionQueueHandle<any>
   systemUUID: SystemUUID
 }
 const initialState = (): State => ({

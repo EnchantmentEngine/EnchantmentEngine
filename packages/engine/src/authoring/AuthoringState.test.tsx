@@ -769,7 +769,7 @@ describe('AuthoringState', () => {
 
       const actions = HyperFlux.store.actions.incoming
       expect(actions).toHaveLength(1)
-      const action = actions[0] as typeof AuthoringActions.ops.matches._TYPE
+      const action = actions[0] as typeof AuthoringActions.ops._TYPE
       expect(action.type).toBe(AuthoringActions.ops.type)
       expect(action.ops[sourceID1]).toBeDefined()
       expect(action.ops[sourceID1]).toHaveLength(1)
@@ -801,7 +801,7 @@ describe('AuthoringState', () => {
 
       const actions = HyperFlux.store.actions.incoming
       expect(actions).toHaveLength(1)
-      const action = actions[0] as typeof AuthoringActions.ops.matches._TYPE
+      const action = actions[0] as typeof AuthoringActions.ops._TYPE
       expect(action.type).toBe(AuthoringActions.ops.type)
       expect(action.ops[sourceID1]).toBeDefined()
       expect(action.ops[sourceID1]).toHaveLength(1)

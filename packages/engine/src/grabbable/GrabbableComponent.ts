@@ -138,7 +138,7 @@ export class GrabbableNetworkAction {
       {
         entityUUID: EntitySchema.EntityUUID(),
         grabbed: Schema.Bool(),
-        attachmentPoint: Schema.Optional(Schema.LiteralUnion(['left', 'right'])),
+        attachmentPoint: Schema.Optional(Schema.LiteralUnion(['left', 'right'] as const)),
         grabberEntityUUID: EntitySchema.EntityUUID()
       },
       {

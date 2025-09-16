@@ -92,14 +92,20 @@ export function deepEqual(x: any, y: any): boolean {
   return false
 }
 
+export type ResolvedAction<
+  TType extends string,
+  Properties extends TProperties,
+  Schema extends TObjectSchema<Properties>
+> = Required<Action> & Static<Schema> & { type: TType | string[] }
+
 export interface ActionCreator<
   TType extends string,
   Properties extends TProperties,
   Schema extends TObjectSchema<Properties>
 > {
-  (partial?: Partial<Static<Schema>> & ActionOptions): Action & Static<Schema> & { type: TType | string[] }
+  (partial?: Partial<Static<Schema>> & ActionOptions): ResolvedAction<TType, Properties, Schema>
   type: TType
-  _TYPE: Required<Action> & Static<Schema> & { type: TType | string[] } // hack to get the type of the action at compile time
+  _TYPE: ResolvedAction<TType, Properties, Schema> // hack to get the type of the action at compile time
   schema: Schema
   validate: (payload: unknown) => payload is Static<Schema>
   extend: <ExtendSchema extends TObjectSchema<any>>(
@@ -108,10 +114,10 @@ export interface ActionCreator<
     (Schema extends TObjectSchema<infer BaseProps> ? BaseProps : never) &
       (ExtendSchema extends TObjectSchema<infer ExtendProps> ? ExtendProps : never)
   >
-  matches: (a: Action) => a is Action & Static<Schema> & { type: TType | string[] }
-  matchesAction: { test: (a: Action) => boolean }
+  test: (a: Action) => a is ResolvedAction<TType, Properties, Schema>
+  matches: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
   receive: (
-    receptor: (action: Action & Static<Schema> & { type: TType | string[] }) => void
+    receptor: (action: ResolvedAction<TType, Properties, Schema>) => void
   ) => ActionReceptor<Properties, Schema, TType>
 }
 
@@ -119,12 +125,12 @@ export type ActionReceptor<
   Properties extends TProperties,
   Schema extends TObjectSchema<Properties>,
   TType extends string
-> = ((action: Action & Static<Schema> & { type: TType | string[] }) => void) & {
-  matchesAction: { test: (a: Action) => boolean }
+> = ((action: ResolvedAction<TType, Properties, Schema>) => void) & {
+  matchesAction: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
   validate: (
-    filter: (action: Action & Static<Schema> & { type: TType | string[] }) => boolean
+    filter: (action: ResolvedAction<TType, Properties, Schema>) => boolean
   ) => ActionReceptor<Properties, Schema, TType>
-  validator?: (action: Action & Static<Schema> & { type: TType | string[] }) => boolean
+  validator?: (action: ResolvedAction<TType, Properties, Schema>) => boolean
 }
 
 export function isActionReceptor(f: any): f is ActionReceptor<any, any, any> {
@@ -179,7 +185,7 @@ export function defineAction<
     } as TProperties
     return Schema.Object(combinedProperties, { $id: combinedID as any }) as any
   }
-  creator.matches = (a: Action): a is Action & P & { type: TType | string[] } => {
+  creator.test = (a: Required<Action>): a is ResolvedAction<TType, Properties, Schema> => {
     if (!a || !a.type) return false
     const types = Array.isArray(a.type) ? a.type : [a.type]
     if (!types.includes(primaryType)) return false
@@ -187,10 +193,10 @@ export function defineAction<
     for (const key of Object.keys(definition.properties || {})) subset[key] = a[key]
     return validate(subset)
   }
-  creator.matchesAction = { test: (a: Action) => creator.matches(a) }
+  creator.matches = { test: (a: Action) => creator.test(a) }
   creator.receive = (receptor) => {
     const hookable = createHookableFunction(receptor) as any
-    hookable.matchesAction = { test: (a: Action) => creator.matches(a) }
+    hookable.matchesAction = { test: (a: Action) => creator.test(a) }
     hookable.validate = (fn) => {
       hookable.validator = fn
       return hookable
@@ -377,9 +383,9 @@ export const clearOutgoingActions = (topic: Topic) => {
   queue.length = 0
 }
 
-export type ActionMatcher = { test: (a: Action) => boolean }
+export type ActionMatcher<A extends Action> = { test: (a: A) => boolean }
 
-export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
+export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> | ActionMatcher<A>[]) {
   const shapes = Array.isArray(matchers) ? matchers : [matchers]
   const shapeHash = shapes.map((_, i) => `m${i}`).join('|')
 
@@ -397,17 +403,17 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
       queueMap.set(actionQueueGetter, queueInstance)
       reactorRoot?.cleanupFunctions.add(() => removeActionQueue(actionQueueGetter))
     }
-    return queueInstance
+    return queueInstance as ActionQueueInstance<A>
   }
 
-  const actionQueueGetter: ActionQueueHandle = () => {
+  const actionQueueGetter: ActionQueueHandle<A> = () => {
     const queueInstance = getOrCreateInstance()
     const result = queueInstance.actions.slice(queueInstance.nextIndex)
     queueInstance.nextIndex = queueInstance.actions.length
     return result
   }
 
-  actionQueueGetter.test = (a: Action) => shapes.some((s) => s.test(a))
+  actionQueueGetter.test = (a: A) => shapes.some((s) => s.test(a))
   actionQueueGetter.shapeHash = shapeHash
 
   Object.defineProperty(actionQueueGetter, 'instance', {
@@ -424,8 +430,8 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
   actionQueueGetter.resync = () => {
     const queue = getOrCreateInstance()
     queue.actions = HyperFlux.store.actions.history
-      .filter((a: Action) => actionQueueGetter.test(a))
-      .sort((a: Action, b: Action) => (a.$time || 0) - (b.$time || 0))
+      .filter((a: Action) => actionQueueGetter.test(a as A))
+      .sort((a: Action, b: Action) => (a.$time || 0) - (b.$time || 0)) as A[]
     queue.nextIndex = 0
     queue.needsResync = false
   }
@@ -433,23 +439,21 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
   return actionQueueGetter
 }
 
-export const createActionQueue = defineActionQueue
-
-export type ActionQueueHandle = {
-  (): Action[]
-  test: (a: Action) => boolean
+export type ActionQueueHandle<A extends Action> = {
+  (): A[]
+  test: (a: A) => boolean
   shapeHash: string
   needsResync: boolean
   resync: () => void
 }
 
-export type ActionQueueInstance = {
-  actions: Action[]
+export type ActionQueueInstance<A extends Action> = {
+  actions: A[]
   nextIndex: number
   needsResync: boolean
   reactorRoot: ReactorRoot | undefined
 }
 
-export const removeActionQueue = (queueHandle: ActionQueueHandle) => {
+export const removeActionQueue = <A extends Action>(queueHandle: ActionQueueHandle<A>) => {
   HyperFlux.store.actions.queues.delete(queueHandle)
 }

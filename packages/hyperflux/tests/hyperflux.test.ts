@@ -17,7 +17,7 @@ import {
 
 describe('Hyperflux Unit Tests', () => {
   it('should be able to define and create an action', () => {
-    const test = defineAction(
+    const actionDefinition = defineAction(
       Schema.Object(
         {},
         {
@@ -26,17 +26,17 @@ describe('Hyperflux Unit Tests', () => {
       )
     )
     // @ts-expect-error - should type error if providing unknown fields, but should pass pattern matching
-    assert(test.matches(test({ unknown: true })))
-    const action = test({})
+    assert(actionDefinition.test(actionDefinition({ unknown: true })))
+    const action = actionDefinition({})
     // assert the action has the correct type, both at runtime and compile time
-    test._TYPE === action // compile time check
+    actionDefinition._TYPE === action // compile time check
     assert.equal(action.type, 'TEST_ACTION')
-    assert(test.matches(action))
-    assert(test.matches({ type: 'FAIL' }) === false)
+    assert(actionDefinition.test(action))
+    assert(actionDefinition.test({ type: 'FAIL' }) === false)
   })
 
   it('should be able to define and create actions with pattern matching', () => {
-    const test = defineAction(
+    const actionDefinition = defineAction(
       Schema.Object(
         {
           payload: Schema.String({ required: true }),
@@ -51,15 +51,15 @@ describe('Hyperflux Unit Tests', () => {
     // @ ts-expect-error - should type error if missing required fields, and should throw error
     // assert.throws(() => test({}))
     // @ts-expect-error - should type error if providing wrong type, and should throw error
-    assert.throws(() => test({ payload: 100 }))
-    const action = test({ payload: 'abcd' })
+    assert.throws(() => actionDefinition({ payload: 100 }))
+    const action = actionDefinition({ payload: 'abcd' })
     assert.equal(action.type, 'TEST_PATTERN_MATCHING')
     assert.equal(action.optionalThing, null)
-    assert(test.matches(action))
+    assert(actionDefinition.test(action))
   })
 
   it('should be able to define and create actions with action options', () => {
-    const test = defineAction(
+    const actionDefinition = defineAction(
       Schema.Object(
         {},
         {
@@ -67,15 +67,15 @@ describe('Hyperflux Unit Tests', () => {
         }
       )
     )
-    const action = test({})
+    const action = actionDefinition({})
     assert(action.type === 'TEST_OPTIONS')
-    assert(test.matches(action))
-    assert(test.matches({ type: 'TEST' }) === false)
+    assert(actionDefinition.test(action))
+    assert(actionDefinition.test({ type: 'TEST' }) === false)
   })
 
   it('should be able to define and create actions with default values', () => {
     let count = 0
-    const test = defineAction(
+    const actionDefinition = defineAction(
       Schema.Object(
         {
           count: Schema.Number({ default: () => count++ }),
@@ -86,17 +86,17 @@ describe('Hyperflux Unit Tests', () => {
         }
       )
     )
-    assert.equal(test({}).count, 0)
-    assert.equal(test({}).count, 1)
-    assert.equal(test({}).count, 2)
-    assert.equal(test({}).count, 3)
-    const action = test({})
+    assert.equal(actionDefinition({}).count, 0)
+    assert.equal(actionDefinition({}).count, 1)
+    assert.equal(actionDefinition({}).count, 2)
+    assert.equal(actionDefinition({}).count, 3)
+    const action = actionDefinition({})
     assert.equal(action.count, 4)
     assert.equal(action.greeting, 'hi')
-    const action2 = test({ greeting: 'hello' })
+    const action2 = actionDefinition({ greeting: 'hello' })
     assert.equal(action2.count, 5)
     assert.equal(action2.greeting, 'hello')
-    assert(test.matches(action2))
+    assert(actionDefinition.test(action2))
   })
 
   it('should be able to dispatch an action to a local store', () => {
@@ -115,7 +115,7 @@ describe('Hyperflux Unit Tests', () => {
     )
     dispatchAction(greet({}))
     assert.equal(store.actions.incoming.length, 1)
-    assert(greet.matches(store.actions.incoming[0]))
+    assert(greet.test(store.actions.incoming[0]))
     assert(store.actions.incoming[0].$to == 'all')
     assert(store.actions.incoming[0].$time <= Date.now())
     applyIncomingActions()
@@ -171,7 +171,7 @@ describe('Hyperflux Unit Tests', () => {
       )
     )
     dispatchAction(greet({}))
-    assert(greet.matches(store.actions.incoming[0]))
+    assert(greet.test(store.actions.incoming[0]))
     assert.equal(store.actions.incoming.length, 1)
     assert(store.actions.incoming[0].$to == 'all')
     assert(store.actions.incoming[0].$time <= Date.now())
@@ -200,7 +200,7 @@ describe('Hyperflux Unit Tests', () => {
     )
     dispatchAction(greet({}))
     clearOutgoingActions(store.defaultTopic)
-    assert(greet.matches(store.actions.incoming[0]))
+    assert(greet.test(store.actions.incoming[0]))
     applyIncomingActions()
     assert(store.actions.history.length)
   })
@@ -370,7 +370,7 @@ describe('Hyperflux Unit Tests', () => {
     const store = createHyperStore({
       getDispatchTime: () => Date.now()
     })
-    const queue = defineActionQueue([greet.matchesAction, goodbye.matchesAction])
+    const queue = defineActionQueue([greet.matches, goodbye.matches])
     assert.equal(queue().length, 0)
     dispatchAction(greet({}))
     dispatchAction(goodbye({}))
@@ -380,10 +380,10 @@ describe('Hyperflux Unit Tests', () => {
     applyIncomingActions()
     const actions = queue()
     assert.equal(actions.length, 4)
-    assert(greet.matches(actions[0]))
-    assert(goodbye.matches(actions[1]))
-    assert(greet.matches(actions[2]))
-    assert(goodbye.matches(actions[3]))
+    assert(greet.test(actions[0]))
+    assert(goodbye.test(actions[1]))
+    assert(greet.test(actions[2]))
+    assert(goodbye.test(actions[3]))
   })
 
   it('should be able to force a resync for action queues with out-of-order action', () => {
@@ -413,7 +413,7 @@ describe('Hyperflux Unit Tests', () => {
       getDispatchTime: () => Date.now()
     })
 
-    const queue = defineActionQueue([greet.matchesAction, goodbye.matchesAction])
+    const queue = defineActionQueue([greet.matches, goodbye.matches])
     dispatchAction(goodbye({ $time: 200 }))
     dispatchAction(greet({ $time: 100 }))
 
@@ -431,8 +431,8 @@ describe('Hyperflux Unit Tests', () => {
     // receive queue
     const actions = queue()
     assert.equal(actions.length, 2)
-    assert(greet.matches(actions[0]))
-    assert(goodbye.matches(actions[1]))
+    assert(greet.test(actions[0]))
+    assert(goodbye.test(actions[1]))
   })
 
   it('should be able to create multiple action queues of the same type, that are independently managed', () => {
@@ -462,8 +462,8 @@ describe('Hyperflux Unit Tests', () => {
       getDispatchTime: () => Date.now()
     })
 
-    const queue1 = defineActionQueue([greet.matchesAction, goodbye.matchesAction])
-    const queue2 = defineActionQueue([greet.matchesAction, goodbye.matchesAction])
+    const queue1 = defineActionQueue([greet.matches, goodbye.matches])
+    const queue2 = defineActionQueue([greet.matches, goodbye.matches])
     dispatchAction(goodbye({ $time: 200 }))
     dispatchAction(greet({ $time: 100 }))
     applyIncomingActions()
@@ -473,14 +473,14 @@ describe('Hyperflux Unit Tests', () => {
 
     const actions1 = queue1()
     assert.equal(actions1.length, 2)
-    assert(greet.matches(actions1[0]))
-    assert(goodbye.matches(actions1[1]))
+    assert(greet.test(actions1[0]))
+    assert(goodbye.test(actions1[1]))
     removeActionQueue(queue1)
 
     const actions2 = queue2()
     assert.equal(actions2.length, 2)
-    assert(greet.matches(actions2[0]))
-    assert(goodbye.matches(actions2[1]))
+    assert(greet.test(actions2[0]))
+    assert(goodbye.test(actions2[1]))
   })
 
   it('should be able to create action queues that reset when given actions out of order', () => {
@@ -510,7 +510,7 @@ describe('Hyperflux Unit Tests', () => {
       getDispatchTime: () => Date.now()
     })
 
-    const queue = defineActionQueue([greet.matchesAction, goodbye.matchesAction])
+    const queue = defineActionQueue([greet.matches, goodbye.matches])
     dispatchAction(goodbye({ $time: 200 }))
     dispatchAction(greet({ $time: 100 }))
     applyIncomingActions()
@@ -519,14 +519,14 @@ describe('Hyperflux Unit Tests', () => {
 
     const actions1 = queue()
     assert.equal(actions1.length, 2)
-    assert(greet.matches(actions1[0]))
-    assert(goodbye.matches(actions1[1]))
+    assert(greet.test(actions1[0]))
+    assert(goodbye.test(actions1[1]))
 
     dispatchAction(greet({ $time: 300 }))
     applyIncomingActions()
     const actions2 = queue()
     assert.equal(actions2.length, 1)
-    assert(greet.matches(actions2[0]))
+    assert(greet.test(actions2[0]))
 
     dispatchAction(goodbye({ $time: 50 }))
     applyIncomingActions()
@@ -534,10 +534,10 @@ describe('Hyperflux Unit Tests', () => {
 
     const actions3 = queue()
     assert.equal(actions3.length, 4)
-    assert(goodbye.matches(actions3[0]))
-    assert(greet.matches(actions3[1]))
-    assert(goodbye.matches(actions3[2]))
-    assert(greet.matches(actions3[3]))
+    assert(goodbye.test(actions3[0]))
+    assert(greet.test(actions3[1]))
+    assert(goodbye.test(actions3[2]))
+    assert(greet.test(actions3[3]))
   })
 
   it('should be able to create networked state with receptors', () => {
