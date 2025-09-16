@@ -104,7 +104,7 @@ export interface ActionCreator<
   Schema extends TObjectSchema<Properties>
 > {
   (partial?: Partial<Static<Schema>> & ActionOptions): ResolvedAction<TType, Properties, Schema>
-  type: TType
+  type: TType | string[]
   _TYPE: ResolvedAction<TType, Properties, Schema> // hack to get the type of the action at compile time
   schema: Schema
   validate: (payload: unknown) => payload is Static<Schema>
@@ -170,15 +170,15 @@ export function defineAction<
     return action as Action & P & { type: TType | string[] }
   }) as ActionCreator<TType, Properties, Schema>
 
-  creator.type = primaryType
+  creator.type = typeChain.length === 1 ? primaryType : typeChain
   creator.schema = definition
   creator.validate = validate
   creator.extend = (extensionDefinition) => {
     const combinedID = extensionDefinition.options?.$id
       ? Array.isArray(extensionDefinition.options.$id)
-        ? [primaryType, ...extensionDefinition.options.$id]
-        : [primaryType, extensionDefinition.options.$id]
-      : [primaryType]
+        ? [...typeChain, ...extensionDefinition.options.$id]
+        : [...typeChain, extensionDefinition.options.$id]
+      : [...typeChain]
     const combinedProperties = {
       ...(definition.properties || {}),
       ...(extensionDefinition.properties || {})
@@ -237,10 +237,7 @@ export const dispatchAction = <A extends Action>(_action: A) => {
     action.$stack = stack
   }
 
-  const internal = action as Required<Pick<ActionOptions, '$uuid' | '$time' | '$topic' | '$to' | '$peer' | '$user'>> &
-    Action
-
-  HyperFlux.store.actions.incoming.push(internal as any)
+  HyperFlux.store.actions.incoming.push(action as Required<Action>)
   addOutgoingTopicIfNecessary(topic as Topic)
   return Object.freeze(action) as A
 }

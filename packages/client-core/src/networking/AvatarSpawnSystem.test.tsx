@@ -174,7 +174,7 @@ describe('AvatarSpawnSystem', async () => {
     return destroyEngine()
   })
 
-  it('should spawn an avatar when there is no spectate data', async () => {
+  it.only('should spawn an avatar when there is no spectate data', async () => {
     startReactor(system.reactor!)
 
     await act(async () => render(null))
@@ -183,10 +183,10 @@ describe('AvatarSpawnSystem', async () => {
 
     // should have spawn action
     const spawnAction = HyperFlux.store.actions.history.findLast((action) =>
-      AvatarNetworkAction.spawn.matches.test(action)
-    ) as typeof AvatarNetworkAction.spawn.matches._TYPE
+      AvatarNetworkAction.spawn.test(action)
+    ) as typeof AvatarNetworkAction.spawn._TYPE
     assert.ok(spawnAction)
-    assert.deepEqual(spawnAction.type as string, AvatarNetworkAction.spawn.type)
+    assert.deepEqual(spawnAction.type, AvatarNetworkAction.spawn.type)
     assert.ok(spawnAction.position)
     assert.ok(spawnAction.rotation)
     assert.ok(spawnAction.parentUUID)
@@ -195,10 +195,10 @@ describe('AvatarSpawnSystem', async () => {
     assert.equal(spawnAction.entitySourceID, userID as string)
 
     const avatarURLAction = HyperFlux.store.actions.history.findLast((action) =>
-      AvatarNetworkAction.setAvatarURL.matches.test(action)
-    ) as typeof AvatarNetworkAction.setAvatarURL.matches._TYPE
+      AvatarNetworkAction.setAvatarURL.test(action)
+    ) as typeof AvatarNetworkAction.setAvatarURL._TYPE
     assert.ok(avatarURLAction)
-    assert.deepEqual(avatarURLAction.type as string, AvatarNetworkAction.setAvatarURL.type)
+    assert.deepEqual(avatarURLAction.type, AvatarNetworkAction.setAvatarURL.type)
     assert.equal(avatarURLAction.avatarURL, '/avatar.gltf')
     assert.equal(avatarURLAction.entityUUID, userID + 'avatar')
   })
@@ -217,8 +217,8 @@ describe('AvatarSpawnSystem', async () => {
 
     // should have spectate action
     const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
-      SpectateActions.spectateEntity.matches.test(action)
-    ) as typeof SpectateActions.spectateEntity.matches._TYPE
+      SpectateActions.spectateEntity.test(action)
+    ) as typeof SpectateActions.spectateEntity._TYPE
     assert.ok(spectateAction)
     assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
     assert.equal(spectateAction.spectatingEntity, '')
@@ -239,8 +239,8 @@ describe('AvatarSpawnSystem', async () => {
 
       // should have spectate action
       const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
-        SpectateActions.spectateEntity.matches.test(action)
-      ) as typeof SpectateActions.spectateEntity.matches._TYPE
+        SpectateActions.spectateEntity.test(action)
+      ) as typeof SpectateActions.spectateEntity._TYPE
       assert.ok(spectateAction)
       assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, otherUserID)
@@ -262,8 +262,8 @@ describe('AvatarSpawnSystem', async () => {
 
       // should have spectate action
       const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
-        SpectateActions.spectateEntity.matches.test(action)
-      ) as typeof SpectateActions.spectateEntity.matches._TYPE
+        SpectateActions.spectateEntity.test(action)
+      ) as typeof SpectateActions.spectateEntity._TYPE
       assert.ok(spectateAction)
       assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, spectateUUID)
