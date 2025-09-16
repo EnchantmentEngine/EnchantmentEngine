@@ -147,7 +147,7 @@ export function defineAction<
     return CheckSchemaValue(definition, payload)
   }
 
-  const creator = ((partial?: P & ActionOptions) => {
+  const creator = ((partial: P & ActionOptions) => {
     const payload = CreateSchemaValue(definition)
     if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
 
@@ -267,7 +267,9 @@ const createEventSourceQueues = (action: Action) => {
   for (const definition of StateDefinitions.values()) {
     if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
 
-    const matchedActions = Object.values(definition.receptors).map((r: any) => r.matchesAction)
+    const matchedActions = Object.values(definition.receptors).map(
+      (r: ActionReceptor<any, any, any>) => r.matchesAction
+    )
     if (!matchedActions.some((m) => m.test(action))) continue
 
     const receptorActionQueue = defineActionQueue(matchedActions)
@@ -285,7 +287,7 @@ const createEventSourceQueues = (action: Action) => {
       for (const act of receptorActionQueue()) {
         for (const defReceptor of Object.values(definition.receptors!)) {
           try {
-            const receptor = defReceptor as any
+            const receptor = defReceptor as ActionReceptor<any, any, any>
             if (receptor.matchesAction.test(act)) {
               if (receptor.validator && !receptor.validator(act)) continue
               receptor(act)

@@ -20,7 +20,7 @@ export const T = {
         deserialize: (curr, value) => curr.copy(value),
         default: () => new Vector2(init.x, init.y),
         ...options,
-        id: 'Vec2'
+        $id: 'Vec2'
       }
     ),
 
@@ -36,7 +36,7 @@ export const T = {
         deserialize: (curr, value) => curr.copy(value),
         default: () => new Vector3(init.x, init.y, init.z),
         ...options,
-        id: 'Vec3'
+        $id: 'Vec3'
       }
     ),
 
@@ -53,7 +53,7 @@ export const T = {
         deserialize: (curr, value) => curr.copy(value),
         default: () => new Vector4(init.x, init.y, init.z, init.w),
         ...options,
-        id: 'Vec4'
+        $id: 'Vec4'
       }
     ),
 
@@ -71,7 +71,7 @@ export const T = {
         deserialize: (curr, value) => curr.copy(value),
         default: () => new Quaternion(init.x, init.y, init.z, init.w),
         ...options,
-        id: 'Quaternion'
+        $id: 'Quaternion'
       }
     ),
 
@@ -88,7 +88,7 @@ export const T = {
         deserialize: (curr, value) => curr.copy(value),
         default: () => new Matrix4().fromArray(init),
         ...options,
-        id: 'Mat4'
+        $id: 'Mat4'
       }
     ),
 
@@ -103,7 +103,7 @@ export const T = {
         deserialize: (curr, value) => curr.copy(value),
         default: () => new Box3(init?.min, init?.max),
         ...options,
-        id: 'Box3'
+        $id: 'Box3'
       }
     ),
 
@@ -128,7 +128,7 @@ export const T = {
         serialize: (value) => (value instanceof Color ? value.getHex() : new Color(value).getHex()),
         default: () => (isColorObj(init) ? new Color(init.r, init.g, init.b) : new Color(init)),
         ...options,
-        id: 'Color'
+        $id: 'Color'
       }
     )
 }
