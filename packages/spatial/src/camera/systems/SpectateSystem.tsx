@@ -3,10 +3,10 @@ import { MathUtils } from 'three'
 
 import {
   EngineState,
+  EntitySchema,
   EntityUUID,
   getComponent,
   getOptionalComponent,
-  matchesEntityID,
   removeComponent,
   setComponent,
   UUIDComponent,
@@ -17,9 +17,9 @@ import {
   defineState,
   getMutableState,
   getState,
-  matchesUserID,
   NetworkTopics,
   none,
+  Schema,
   useHookstate,
   useMutableState,
   UserID
@@ -31,18 +31,34 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 import { FlyControlComponent } from '../components/FlyControlComponent'
 
 export class SpectateActions {
-  static spectateEntity = defineAction({
-    type: 'ee.engine.Engine.SPECTATE_USER' as const,
-    spectatorUserID: matchesUserID,
-    spectatingEntity: matchesEntityID.optional(),
-    $topic: NetworkTopics.world
-  })
+  static spectateEntity = defineAction(
+    Schema.Object(
+      {
+        spectatorUserID: Schema.UserID({ required: true }),
+        spectatingEntity: Schema.Optional(EntitySchema.EntityUUID())
+      },
+      {
+        $id: 'ee.engine.Engine.SPECTATE_USER',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 
-  static exitSpectate = defineAction({
-    type: 'ee.engine.Engine.EXIT_SPECTATE' as const,
-    spectatorUserID: matchesUserID,
-    $topic: NetworkTopics.world
-  })
+  static exitSpectate = defineAction(
+    Schema.Object(
+      {
+        spectatorUserID: Schema.UserID({ required: true })
+      },
+      {
+        $id: 'ee.engine.Engine.EXIT_SPECTATE',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 }
 
 export const SpectateEntityState = defineState({

@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D, ShadowMaterial } from 'three'
-import matches from 'ts-matches'
 
 import {
   createEntity,
@@ -19,9 +18,9 @@ import { defineAction, getState, Schema, useHookstate, useMutableState } from '@
 
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { NameComponent } from '../common/NameComponent'
-import { matchesQuaternion, matchesVector3 } from '../common/functions/MatchesUtils'
 import { MeshComponent } from '../renderer/components/MeshComponent'
 import { ObjectComponent } from '../renderer/components/ObjectComponent'
+import { T } from '../schema/schemaFunctions'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { XRState } from './XRState'
 
@@ -113,22 +112,40 @@ function PersistentAnchorReactor() {
 }
 
 export class PersistentAnchorActions {
-  static anchorFound = defineAction({
-    type: 'xre.anchor.anchorFound' as const,
-    name: matches.string,
-    position: matchesVector3,
-    rotation: matchesQuaternion
-  })
+  static anchorFound = defineAction(
+    Schema.Object(
+      {
+        name: Schema.String(),
+        position: T.Vec3(),
+        rotation: T.Quaternion()
+      },
+      {
+        $id: 'xre.anchor.anchorFound' as const
+      }
+    )
+  )
 
-  static anchorUpdated = defineAction({
-    type: 'xre.anchor.anchorUpdated' as const,
-    name: matches.string,
-    position: matchesVector3,
-    rotation: matchesQuaternion
-  })
+  static anchorUpdated = defineAction(
+    Schema.Object(
+      {
+        name: Schema.String(),
+        position: T.Vec3(),
+        rotation: T.Quaternion()
+      },
+      {
+        $id: 'xre.anchor.anchorUpdated' as const
+      }
+    )
+  )
 
-  static anchorLost = defineAction({
-    type: 'xre.anchor.anchorLost' as const,
-    name: matches.string
-  })
+  static anchorLost = defineAction(
+    Schema.Object(
+      {
+        name: Schema.String()
+      },
+      {
+        $id: 'xre.anchor.anchorLost' as const
+      }
+    )
+  )
 }
