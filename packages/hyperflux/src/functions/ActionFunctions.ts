@@ -99,6 +99,7 @@ export interface ActionCreator<
 > {
   (partial?: Partial<Static<Schema>> & ActionOptions): Action & Static<Schema> & { type: TType | string[] }
   type: TType
+  _TYPE: Required<Action> & Static<Schema> & { type: TType | string[] } // hack to get the type of the action at compile time
   schema: Schema
   validate: (payload: unknown) => payload is Static<Schema>
   extend: <ExtendSchema extends TObjectSchema<any>>(
@@ -146,8 +147,8 @@ export function defineAction<
     return CheckSchemaValue(definition, payload)
   }
 
-  const creator = ((partial?: Partial<P> & ActionOptions) => {
-    const payload: any = CreateSchemaValue(definition)
+  const creator = ((partial?: P & ActionOptions) => {
+    const payload = CreateSchemaValue(definition)
     if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
 
     if (!CheckSchemaValue(definition, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
@@ -157,7 +158,7 @@ export function defineAction<
       type: typeChain.length === 1 ? primaryType : typeChain
     }
 
-    if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) (action as any)[k] = v
+    if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) action[k] = v
     if (definition.options!.metadata) Object.assign(action, definition.options!.metadata)
 
     return action as Action & P & { type: TType | string[] }
@@ -182,22 +183,25 @@ export function defineAction<
     if (!a || !a.type) return false
     const types = Array.isArray(a.type) ? a.type : [a.type]
     if (!types.includes(primaryType)) return false
-    const subset: any = {}
-    for (const key of Object.keys(definition.properties || {})) subset[key] = (a as any)[key]
+    const subset = {}
+    for (const key of Object.keys(definition.properties || {})) subset[key] = a[key]
     return validate(subset)
   }
   creator.matchesAction = { test: (a: Action) => creator.matches(a) }
   creator.receive = (receptor) => {
     const hookable = createHookableFunction(receptor) as any
     hookable.matchesAction = { test: (a: Action) => creator.matches(a) }
-    hookable.validate = (fn: any) => {
+    hookable.validate = (fn) => {
       hookable.validator = fn
       return hookable
     }
     return hookable as ActionReceptor<Properties, Schema, TType>
   }
 
-  ActionDefinitions[primaryType] = creator as any
+  // this is a hack to get the type of the action at compile time
+  creator['_TYPE'] = null as any
+
+  ActionDefinitions[primaryType] = creator
   return creator
 }
 
@@ -245,16 +249,16 @@ export function addOutgoingTopicIfNecessary(topic: Topic) {
   }
 }
 
-const applyIncomingActionsToAllQueues = (action: Action) => {
+const applyIncomingActionsToAllQueues = (action: Required<Action>) => {
   for (const [queueHandle, queue] of HyperFlux.store.actions.queues) {
     if (queueHandle.test(action)) {
       // if the action is out of order, mark the queue as needing resync
       if (queue.actions.length > 0) {
-        const last = queue.actions.at(-1) as Action
+        const last = queue.actions.at(-1)
         if (last && last.$time !== undefined && action.$time !== undefined && last.$time > action.$time)
           queue.needsResync = true
       }
-      queue.actions.push(action as Action)
+      queue.actions.push(action)
     }
   }
 }
@@ -264,7 +268,7 @@ const createEventSourceQueues = (action: Action) => {
     if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
 
     const matchedActions = Object.values(definition.receptors).map((r: any) => r.matchesAction)
-    if (!matchedActions.some((m: any) => m.test(action))) continue
+    if (!matchedActions.some((m) => m.test(action))) continue
 
     const receptorActionQueue = defineActionQueue(matchedActions)
     definition.receptorActionQueue = receptorActionQueue
@@ -301,22 +305,22 @@ const createEventSourceQueues = (action: Action) => {
   }
 }
 
-const _applyIncomingAction = (action: Action) => {
+const _applyIncomingAction = (action: Required<Action>) => {
   if (action.$uuid && HyperFlux.store.actions.knownUUIDs.has(action.$uuid)) {
     try {
       JSON.stringify(action)
     } catch {
       console.log('error in logging repeat action', action)
     }
-    const idx = HyperFlux.store.actions.incoming.indexOf(action as any)
+    const idx = HyperFlux.store.actions.incoming.indexOf(action)
     if (idx !== -1) HyperFlux.store.actions.incoming.splice(idx, 1)
     return
   }
   createEventSourceQueues(action)
   applyIncomingActionsToAllQueues(action)
-  const messageStackError = (e: any) => {
-    const message = (e as Error).message
-    const stack = (e as Error).stack?.split('\n') || []
+  const messageStackError = (e: Error) => {
+    const message = e.message
+    const stack = e.stack?.split('\n') || []
     stack.shift()
     action.$ERROR = { message, stack }
     HyperFlux.store.logger('hyperflux:action').error(e)
@@ -326,21 +330,21 @@ const _applyIncomingAction = (action: Action) => {
   } catch (e) {
     messageStackError(e)
   } finally {
-    HyperFlux.store.actions.history.push(action as Action)
+    HyperFlux.store.actions.history.push(action)
     if (action.$uuid) HyperFlux.store.actions.knownUUIDs.add(action.$uuid)
-    const idx = HyperFlux.store.actions.incoming.indexOf(action as any)
+    const idx = HyperFlux.store.actions.incoming.indexOf(action)
     if (idx !== -1) HyperFlux.store.actions.incoming.splice(idx, 1)
   }
 }
 
-const _forwardIfNecessary = (action: Action) => {
+const _forwardIfNecessary = (action: Required<Action>) => {
   if (!action.$topic) return
   addOutgoingTopicIfNecessary(action.$topic as Topic)
   if (HyperFlux.store.peerID === action.$peer || HyperFlux.store.forwardingTopics.has(action.$topic as Topic)) {
     const outgoingActions = HyperFlux.store.actions.outgoing[action.$topic as Topic]
     if (!outgoingActions) return
     if (action.$uuid && outgoingActions.forwardedUUIDs.has(action.$uuid)) return
-    ;(outgoingActions.queue as Action[]).push(action)
+    outgoingActions.queue.push(action)
     if (action.$uuid) outgoingActions.forwardedUUIDs.add(action.$uuid)
   }
 }
@@ -350,7 +354,7 @@ const applyEventSourcingToAllQueues = () => {
 }
 
 export const applyIncomingActions = () => {
-  const incoming = HyperFlux.store.actions.incoming as Action[]
+  const incoming = HyperFlux.store.actions.incoming
   if (!incoming.length) return
   const now = HyperFlux.store.getDispatchTime()
   const actions = incoming.slice()
@@ -396,7 +400,7 @@ export function defineActionQueue(matchers: ActionMatcher[] | ActionMatcher) {
 
   const actionQueueGetter: ActionQueueHandle = () => {
     const queueInstance = getOrCreateInstance()
-    const result = queueInstance.actions.slice(queueInstance.nextIndex) as Action[]
+    const result = queueInstance.actions.slice(queueInstance.nextIndex)
     queueInstance.nextIndex = queueInstance.actions.length
     return result
   }

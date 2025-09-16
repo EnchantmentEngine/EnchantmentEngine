@@ -519,7 +519,7 @@ export async function handleWebRtcTransportCreate(
  * - Sends the producer to the client that created it
  */
 export async function handleProduceData(
-  action: typeof MediasoupDataProducerActions.requestProducer.matches._TYPE
+  action: typeof MediasoupDataProducerActions.requestProducer._TYPE
 ): Promise<any> {
   const network = getState(NetworkState).networks[action.$network] as SocketWebRTCServerNetwork
 
