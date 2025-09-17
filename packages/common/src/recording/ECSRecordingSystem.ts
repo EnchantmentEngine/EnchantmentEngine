@@ -787,10 +787,10 @@ const playbackStopped = (userId: UserID, recordingID: RecordingID, network?: Net
 }
 
 /** @todo replace action queue with event sourcing */
-const startRecordingActionQueue = defineActionQueue(ECSRecordingActions.startRecording.matches)
-const stopRecordingActionQueue = defineActionQueue(ECSRecordingActions.stopRecording.matches)
-const startPlaybackActionQueue = defineActionQueue(ECSRecordingActions.startPlayback.matches)
-const stopPlaybackActionQueue = defineActionQueue(ECSRecordingActions.stopPlayback.matches)
+const startRecordingActionQueue = defineActionQueue(ECSRecordingActions.startRecording)
+const stopRecordingActionQueue = defineActionQueue(ECSRecordingActions.stopRecording)
+const startPlaybackActionQueue = defineActionQueue(ECSRecordingActions.startPlayback)
+const stopPlaybackActionQueue = defineActionQueue(ECSRecordingActions.stopPlayback)
 
 const execute = () => {
   const recordingState = getState(RecordingState)

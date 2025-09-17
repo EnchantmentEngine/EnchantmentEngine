@@ -491,8 +491,8 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
       //  TODO - this is an anti pattern, how else can we resolve this? inject a system?
       try {
         const transportConnected = await new Promise<any>((resolve, reject) => {
-          const actionQueue = defineActionQueue(MediasoupTransportActions.transportConnected.matches)
-          const errorQueue = defineActionQueue(MediasoupTransportActions.requestTransportConnectError.matches)
+          const actionQueue = defineActionQueue(MediasoupTransportActions.transportConnected)
+          const errorQueue = defineActionQueue(MediasoupTransportActions.requestTransportConnectError)
 
           const cleanup = () => {
             destroySystem(systemUUID)
@@ -580,8 +580,8 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
         //  TODO - this is an anti pattern, how else can we resolve this? inject a system?
         try {
           const producerPromise = await new Promise<any>((resolve, reject) => {
-            const actionQueue = defineActionQueue(MediasoupMediaProducerActions.producerCreated.matches)
-            const errorQueue = defineActionQueue(MediasoupMediaProducerActions.requestProducerError.matches)
+            const actionQueue = defineActionQueue(MediasoupMediaProducerActions.producerCreated)
+            const errorQueue = defineActionQueue(MediasoupMediaProducerActions.requestProducerError)
 
             const cleanup = () => {
               destroySystem(systemUUID)
@@ -646,8 +646,8 @@ export const onTransportCreated = async (networkID: NetworkID, transportDefiniti
         //  TODO - this is an anti pattern, how else can we resolve this? inject a system?
         try {
           const producerPromise = await new Promise<any>((resolve, reject) => {
-            const actionQueue = defineActionQueue(MediasoupDataProducerActions.producerCreated.matches)
-            const errorQueue = defineActionQueue(MediasoupDataProducerActions.requestProducerError.matches)
+            const actionQueue = defineActionQueue(MediasoupDataProducerActions.producerCreated)
+            const errorQueue = defineActionQueue(MediasoupDataProducerActions.requestProducerError)
 
             const cleanup = () => {
               destroySystem(systemUUID)
