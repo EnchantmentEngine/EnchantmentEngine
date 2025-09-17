@@ -27,7 +27,7 @@ import { dispatchAction, getState, HyperFlux, NetworkState, PeerID } from '@ir-e
 import { Application } from '@ir-engine/server-core/declarations'
 
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { EntityID, EntityUUID, getComponent, getOptionalComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, EntityUUID, getComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { AuthTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
@@ -152,6 +152,9 @@ describe('InstanceLoad', () => {
       },
       off: () => {
         dataListenerOff = true
+      },
+      end: () => {
+        dataListenerOff = true
       }
     } as any as Spark
 
@@ -201,6 +204,7 @@ describe('InstanceLoad', () => {
       AvatarNetworkAction.spawn({
         parentUUID,
         avatarURL,
+        ownerID: user.id,
         entityID: AvatarComponent.entityID,
         entitySourceID: userID as any as SourceID,
         name: user.name,
@@ -213,6 +217,7 @@ describe('InstanceLoad', () => {
         parentUUID,
         entityID: 'camera' as EntityID,
         entitySourceID: userID as any as SourceID,
+        ownerID: user.id,
         $peer: peerID,
         $user: user.id
       })
@@ -222,6 +227,7 @@ describe('InstanceLoad', () => {
         parentUUID,
         entityID: 'head' as EntityID,
         entitySourceID: userID as any as SourceID,
+        ownerID: user.id,
         name: 'head',
         blendWeight: 0,
         $peer: peerID,
@@ -233,6 +239,7 @@ describe('InstanceLoad', () => {
         parentUUID,
         entityID: 'leftHand' as EntityID,
         entitySourceID: userID as any as SourceID,
+        ownerID: user.id,
         name: 'leftHand',
         blendWeight: 0,
         $peer: peerID,
@@ -244,6 +251,7 @@ describe('InstanceLoad', () => {
         parentUUID,
         entityID: 'rightHand' as EntityID,
         entitySourceID: userID as any as SourceID,
+        ownerID: user.id,
         name: 'rightHand',
         blendWeight: 0,
         $peer: peerID,
@@ -277,7 +285,8 @@ describe('InstanceLoad', () => {
     const avatarLoaded = await vi.waitUntil(
       () => {
         const avatarEntity = AvatarComponent.getUserAvatarEntity(user.id)
-        return getOptionalComponent(avatarEntity, GLTFComponent)?.progress === 100
+        if (!avatarEntity) return false
+        return GLTFComponent.isSceneLoaded(avatarEntity)
       },
       { timeout: 60000 }
     )
