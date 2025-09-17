@@ -29,7 +29,7 @@ import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery, QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem, useExecute } from '@ir-engine/ecs/src/SystemFunctions'
-import { defineState, getMutableState, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
+import { defineState, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { Vector3_Back } from '@ir-engine/spatial/src/common/constants/MathConstants'
 import {
   createPriorityQueue,
@@ -420,9 +420,7 @@ const reactor = () => {
   const useShadows = useShadowsEnabled()
 
   const [shadowTexture] = useTexture(
-    isClient
-      ? `${getState(DomainConfigState).cloudDomain}/projects/enchantmentengine/default-project/assets/drop-shadow.ktx2`
-      : ''
+    `${getState(DomainConfigState).cloudDomain}/projects/enchantmentengine/default-project/assets/drop-shadow.ktx2`
   )
 
   useEffect(() => {
