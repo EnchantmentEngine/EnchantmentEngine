@@ -77,21 +77,6 @@ export type ActionOptions = {
   $ERROR?: { message: string; stack: string[] }
 }
 
-/** Utility: deep equality (used in caching logic) */
-export function deepEqual(x: any, y: any): boolean {
-  if (x === y) return true
-  if (typeof x == 'object' && x != null && typeof y == 'object' && y != null) {
-    if (Object.keys(x).length != Object.keys(y).length) return false
-    for (const prop in x) {
-      if (typeof y[prop] !== 'undefined') {
-        if (!deepEqual(x[prop], y[prop])) return false
-      } else return false
-    }
-    return true
-  }
-  return false
-}
-
 export type ResolvedAction<
   TType extends string,
   Properties extends TProperties,
@@ -112,7 +97,6 @@ export interface ActionCreator<
     extensionDefinition: ExtendSchema
   ) => MergeObjectSchemas<Schema, ExtendSchema>
   test: (a: Action) => a is ResolvedAction<TType, Properties, Schema>
-  matches: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
   receive: (
     receptor: (action: ResolvedAction<TType, Properties, Schema>) => void
   ) => ActionReceptor<Properties, Schema, TType>
@@ -123,7 +107,7 @@ export type ActionReceptor<
   Schema extends TObjectSchema<Properties>,
   TType extends string
 > = ((action: ResolvedAction<TType, Properties, Schema>) => void) & {
-  matchesAction: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
+  action: ActionCreator<TType, Properties, Schema>
   validate: (
     filter: (action: ResolvedAction<TType, Properties, Schema>) => boolean
   ) => ActionReceptor<Properties, Schema, TType>
@@ -194,19 +178,15 @@ export function defineAction<
     for (const key of Object.keys(definition.properties || {})) subset[key] = a[key]
     return validate(subset)
   }
-  creator.matches = { test: (a: Action) => creator.test(a) }
   creator.receive = (receptor) => {
     const hookable = createHookableFunction(receptor) as any
-    hookable.matchesAction = { test: (a: Action) => creator.test(a) }
+    hookable.action = creator
     hookable.validate = (fn) => {
       hookable.validator = fn
       return hookable
     }
     return hookable as ActionReceptor<Properties, Schema, TType>
   }
-
-  // this is a hack to get the type of the action at compile time
-  creator['_TYPE'] = null as any
 
   ActionDefinitions[primaryType] = creator
   return creator
@@ -271,9 +251,7 @@ const createEventSourceQueues = (action: Action) => {
   for (const definition of StateDefinitions.values()) {
     if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
 
-    const matchedActions = Object.values(definition.receptors).map(
-      (r: ActionReceptor<any, any, any>) => r.matchesAction
-    )
+    const matchedActions = Object.values(definition.receptors).map((r: ActionReceptor<any, any, any>) => r.action)
     if (!matchedActions.some((m) => m.test(action))) continue
 
     const receptorActionQueue = defineActionQueue(matchedActions)
@@ -292,7 +270,7 @@ const createEventSourceQueues = (action: Action) => {
         for (const defReceptor of Object.values(definition.receptors!)) {
           try {
             const receptor = defReceptor as ActionReceptor<any, any, any>
-            if (receptor.matchesAction.test(act)) {
+            if (receptor.action.test(act)) {
               if (receptor.validator && !receptor.validator(act)) continue
               receptor(act)
               hasNewActions = true
@@ -381,11 +359,10 @@ export const clearOutgoingActions = (topic: Topic) => {
   queue.length = 0
 }
 
-export type ActionMatcher<A extends Action> = { test: (a: A) => boolean }
+export type ActionMatcher<A extends Action> = (a: A) => boolean
 
-export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> | ActionMatcher<A>[]) {
-  const shapes = Array.isArray(matchers) ? matchers : [matchers]
-  const shapeHash = shapes.map((_, i) => `m${i}`).join('|')
+export function defineActionQueue<A extends ActionCreator<any, any, any>>(actionDefinition: A | A[]) {
+  const actionDefinitions = Array.isArray(actionDefinition) ? actionDefinition : [actionDefinition]
 
   const getOrCreateInstance = () => {
     const queueMap = HyperFlux.store.actions.queues
@@ -411,8 +388,7 @@ export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> |
     return result
   }
 
-  actionQueueGetter.test = (a: A) => shapes.some((s) => s.test(a))
-  actionQueueGetter.shapeHash = shapeHash
+  actionQueueGetter.test = (a: A) => actionDefinitions.some((s) => s.test(a))
 
   actionQueueGetter.instance = null as any
   Object.defineProperty(actionQueueGetter, 'instance', {
@@ -432,8 +408,8 @@ export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> |
   actionQueueGetter.resync = () => {
     const queue = getOrCreateInstance()
     queue.actions = HyperFlux.store.actions.history
-      .filter((a: Action) => actionQueueGetter.test(a as A))
-      .sort((a: Action, b: Action) => (a.$time || 0) - (b.$time || 0)) as A[]
+      .filter((a: Action) => actionQueueGetter.test(a))
+      .sort((a: A['_TYPE'], b: A['_TYPE']) => (a.$time || 0) - (b.$time || 0)) as A['_TYPE'][]
     queue.nextIndex = 0
     queue.needsResync = false
   }
@@ -441,22 +417,21 @@ export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> |
   return actionQueueGetter
 }
 
-export type ActionQueueHandle<A extends Action> = {
-  (): A[]
-  test: (a: A) => boolean
-  shapeHash: string
+export type ActionQueueHandle<A extends ActionCreator<any, any, any>> = {
+  (): A['_TYPE'][]
+  test: (a: A['_TYPE']) => boolean
   needsResync: boolean
   instance: ActionQueueInstance<A>
   resync: () => void
 }
 
-export type ActionQueueInstance<A extends Action> = {
-  actions: A[]
+export type ActionQueueInstance<A extends ActionCreator<any, any, any>> = {
+  actions: A['_TYPE'][]
   nextIndex: number
   needsResync: boolean
   reactorRoot: ReactorRoot | undefined
 }
 
-export const removeActionQueue = <A extends Action>(queueHandle: ActionQueueHandle<A>) => {
+export const removeActionQueue = <A extends ActionCreator<any, any, any>>(queueHandle: ActionQueueHandle<A>) => {
   HyperFlux.store.actions.queues.delete(queueHandle)
 }

@@ -441,7 +441,7 @@ describe('Hyperflux Unit Tests', () => {
     const store = createHyperStore({
       getDispatchTime: () => Date.now()
     })
-    const queue = defineActionQueue([greet.matches, goodbye.matches])
+    const queue = defineActionQueue([greet, goodbye])
     assert.equal(queue().length, 0)
     dispatchAction(greet({}))
     dispatchAction(goodbye({}))
@@ -484,7 +484,7 @@ describe('Hyperflux Unit Tests', () => {
       getDispatchTime: () => Date.now()
     })
 
-    const queue = defineActionQueue([greet.matches, goodbye.matches])
+    const queue = defineActionQueue([greet, goodbye])
     dispatchAction(goodbye({ $time: 200 }))
     dispatchAction(greet({ $time: 100 }))
 
@@ -533,8 +533,8 @@ describe('Hyperflux Unit Tests', () => {
       getDispatchTime: () => Date.now()
     })
 
-    const queue1 = defineActionQueue([greet.matches, goodbye.matches])
-    const queue2 = defineActionQueue([greet.matches, goodbye.matches])
+    const queue1 = defineActionQueue([greet, goodbye])
+    const queue2 = defineActionQueue([greet, goodbye])
     dispatchAction(goodbye({ $time: 200 }))
     dispatchAction(greet({ $time: 100 }))
     applyIncomingActions()
@@ -581,7 +581,7 @@ describe('Hyperflux Unit Tests', () => {
       getDispatchTime: () => Date.now()
     })
 
-    const queue = defineActionQueue([greet.matches, goodbye.matches])
+    const queue = defineActionQueue([greet, goodbye])
     dispatchAction(goodbye({ $time: 200 }))
     dispatchAction(greet({ $time: 100 }))
     applyIncomingActions()
