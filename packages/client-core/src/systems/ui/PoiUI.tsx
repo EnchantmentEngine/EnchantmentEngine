@@ -7,7 +7,6 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
@@ -17,6 +16,7 @@ import { CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/sr
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
 import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import React, { useEffect, useState } from 'react'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 

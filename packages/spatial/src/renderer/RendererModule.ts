@@ -1,35 +1,17 @@
-import { NameComponent } from '../common/NameComponent'
-import { TransformComponent } from '../transform/components/TransformComponent'
-import { XRAnchorComponent } from '../xr/XRComponents'
-import { DebugRendererSystem } from './DebugRendererSystem'
-import { LightTransformSystem } from './LightTransformSystem'
-import { RenderInfoSystem } from './RenderInfoSystem'
-import { ViewportLightingSystem } from './ViewportLightingSystem'
-import { WebGLRendererSystem } from './WebGLRendererSystem'
-import { MeshComponent } from './components/MeshComponent'
-import { VisibleComponent } from './components/VisibleComponent'
-import { AmbientLightComponent } from './components/lights/AmbientLightComponent'
-import { DirectionalLightComponent } from './components/lights/DirectionalLightComponent'
-import { HemisphereLightComponent } from './components/lights/HemisphereLightComponent'
-import { PointLightComponent } from './components/lights/PointLightComponent'
-import { SpotLightComponent } from './components/lights/SpotLightComponent'
-
-/** Components */
-export {
-  AmbientLightComponent,
-  DebugRendererSystem,
-  DirectionalLightComponent,
-  HemisphereLightComponent,
-  LightTransformSystem,
-  MeshComponent,
-  NameComponent,
-  /** Systems */
-  PointLightComponent,
-  RenderInfoSystem,
-  SpotLightComponent,
-  TransformComponent,
-  ViewportLightingSystem,
-  VisibleComponent,
-  WebGLRendererSystem,
-  XRAnchorComponent
-}
+export { NameComponent } from '../common/NameComponent'
+export { TransformComponent } from '../transform/components/TransformComponent'
+export { XRAnchorComponent } from '../xr/XRComponents'
+export { AmbientLightComponent } from './components/lights/AmbientLightComponent'
+export { DirectionalLightComponent } from './components/lights/DirectionalLightComponent'
+export { HemisphereLightComponent } from './components/lights/HemisphereLightComponent'
+export { PointLightComponent } from './components/lights/PointLightComponent'
+export { SpotLightComponent } from './components/lights/SpotLightComponent'
+export { MeshComponent } from './components/MeshComponent'
+export { VisibleComponent } from './components/VisibleComponent'
+export { DebugRendererSystem } from './DebugRendererSystem'
+export { LightTransformSystem } from './LightTransformSystem'
+export { defineMaterialPlugin } from './materials/defineMaterialPlugin'
+export { MaterialStateComponent, TextureSchema } from './materials/MaterialComponent'
+export { RenderInfoSystem } from './RenderInfoSystem'
+export { ViewportLightingSystem } from './ViewportLightingSystem'
+export { WebGLRendererSystem } from './WebGLRendererSystem'

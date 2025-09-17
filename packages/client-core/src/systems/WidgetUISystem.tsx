@@ -85,9 +85,10 @@ const toggleWidgetsMenu = (handedness: 'left' | 'right' = getState(WidgetAppStat
 
 const inputSourceQuery = defineQuery([InputSourceComponent])
 
-const showWidgetQueue = defineActionQueue(WidgetAppActions.showWidget.matches)
-const registerWidgetQueue = defineActionQueue(WidgetAppActions.registerWidget.matches)
-const unregisterWidgetQueue = defineActionQueue(WidgetAppActions.unregisterWidget.matches)
+/** @todo replace action queue with reactor */
+const showWidgetQueue = defineActionQueue(WidgetAppActions.showWidget)
+const registerWidgetQueue = defineActionQueue(WidgetAppActions.registerWidget)
+const unregisterWidgetQueue = defineActionQueue(WidgetAppActions.unregisterWidget)
 
 const execute = () => {
   const { widgetMenuUI } = getState(WidgetUISystemState)

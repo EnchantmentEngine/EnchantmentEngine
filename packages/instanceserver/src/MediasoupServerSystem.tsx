@@ -39,17 +39,17 @@ import {
 } from './WebRTCFunctions'
 
 /** We do not need event sourcing here, as these actions only exist for the lifetime of the peer's connection */
-const requestConsumerActionQueue = defineActionQueue(MediasoupMediaConsumerActions.requestConsumer.matches)
-const consumerLayersActionQueue = defineActionQueue(MediasoupMediaConsumerActions.consumerLayers.matches)
-const requestProducerActionQueue = defineActionQueue(MediasoupMediaProducerActions.requestProducer.matches)
-const closeProducerActionQueue = defineActionQueue(MediasoupMediaProducerActions.producerClosed.matches)
-const closeConsumerActionQueue = defineActionQueue(MediasoupMediaConsumerActions.consumerClosed.matches)
+const requestConsumerActionQueue = defineActionQueue(MediasoupMediaConsumerActions.requestConsumer)
+const consumerLayersActionQueue = defineActionQueue(MediasoupMediaConsumerActions.consumerLayers)
+const requestProducerActionQueue = defineActionQueue(MediasoupMediaProducerActions.requestProducer)
+const closeProducerActionQueue = defineActionQueue(MediasoupMediaProducerActions.producerClosed)
+const closeConsumerActionQueue = defineActionQueue(MediasoupMediaConsumerActions.consumerClosed)
 
-const dataRequestProducerActionQueue = defineActionQueue(MediasoupDataProducerActions.requestProducer.matches)
-const dataRequestConsumerActionQueue = defineActionQueue(MediasoupDataConsumerActions.requestConsumer.matches)
+const dataRequestProducerActionQueue = defineActionQueue(MediasoupDataProducerActions.requestProducer)
+const dataRequestConsumerActionQueue = defineActionQueue(MediasoupDataConsumerActions.requestConsumer)
 
-const requestTransportActionQueue = defineActionQueue(MediasoupTransportActions.requestTransport.matches)
-const requestTransportConnectActionQueue = defineActionQueue(MediasoupTransportActions.requestTransportConnect.matches)
+const requestTransportActionQueue = defineActionQueue(MediasoupTransportActions.requestTransport)
+const requestTransportConnectActionQueue = defineActionQueue(MediasoupTransportActions.requestTransportConnect)
 
 const execute = () => {
   for (const action of requestConsumerActionQueue()) {

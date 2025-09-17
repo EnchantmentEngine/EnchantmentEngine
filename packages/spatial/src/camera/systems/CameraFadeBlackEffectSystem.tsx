@@ -21,7 +21,7 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 import { CameraActions } from '../CameraState'
 import { CameraSystem } from './CameraSystem'
 
-const fadeToBlackQueue = defineActionQueue(CameraActions.fadeToBlack.matches)
+const fadeToBlackQueue = defineActionQueue(CameraActions.fadeToBlack)
 
 const CameraFadeBlackEffectSystemState = defineState({
   name: 'CameraFadeBlackEffectSystemState',

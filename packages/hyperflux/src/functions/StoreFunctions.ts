@@ -2,7 +2,7 @@ import { State } from '@hookstate/core'
 import { v4 as uuidv4 } from 'uuid'
 
 import { PeerID, UserID } from '../types/Types'
-import { ActionQueueHandle, ActionQueueInstance, ResolvedActionType, Topic } from './ActionFunctions'
+import { Action, ActionQueueHandle, ActionQueueInstance, Topic } from './ActionFunctions'
 import { ReactorRoot } from './ReactorFunctions'
 
 export type StringLiteral<T> = T extends string ? (string extends T ? never : T) : never
@@ -49,13 +49,11 @@ export interface HyperStore {
 
   actions: {
     /** All queues that have been created */
-    queues: Map<ActionQueueHandle, ActionQueueInstance>
-    /** Cached actions */
-    cached: Array<Required<ResolvedActionType>>
+    queues: Map<ActionQueueHandle<any>, ActionQueueInstance<any>>
     /** Incoming actions */
-    incoming: Array<Required<ResolvedActionType>>
+    incoming: Array<Required<Action>>
     /** All actions that have been applied, in the order they were processed */
-    history: Array<ResolvedActionType>
+    history: Array<Required<Action>>
     /** All action UUIDs that have been processed and should not be processed again */
     knownUUIDs: Set<string>
     /** Outgoing actions */
@@ -63,9 +61,9 @@ export interface HyperStore {
       Topic,
       {
         /** All actions that are waiting to be sent */
-        queue: Array<Required<ResolvedActionType>>
+        queue: Array<Required<Action>>
         /** All actions that have been sent */
-        history: Array<Required<ResolvedActionType>>
+        history: Array<Required<Action>>
         /** All incoming action UUIDs that have been processed */
         forwardedUUIDs: Set<string>
       }
@@ -112,7 +110,6 @@ export function createHyperStore(options?: {
     stateReactors: {},
     actions: {
       queues: new Map(),
-      cached: [],
       incoming: [],
       history: [],
       knownUUIDs: new Set(),
@@ -129,6 +126,7 @@ export function createHyperStore(options?: {
     })
   }
   HyperFlux.store = store
+  globalThis.HyperStore = store
   return store
 }
 

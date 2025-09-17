@@ -4,7 +4,7 @@
   "version": "1.0.3",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ir-engine/ir-engine.git"
+    "url": "git://github.com/enchantmentengine/enchantmentengine.git"
   },
   "homepage": "",
   "publishConfig": {

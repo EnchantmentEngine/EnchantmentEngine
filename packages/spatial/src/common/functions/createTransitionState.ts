@@ -19,7 +19,7 @@ export const TransitionStateSchema = (init: ReturnType<typeof createTransitionSt
     },
     {
       default: () => init,
-      id: 'TransitionState'
+      $id: 'TransitionState'
     }
   )
 

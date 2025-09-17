@@ -19,10 +19,6 @@ import { Quaternion, Vector3 } from 'three'
 import { T } from '../../schema/schemaFunctions'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 
-const options = {
-  deserialize: (curr, value) => curr.copy(value)
-}
-
 const assignVec3 = (property: string, entity: Entity): Vector3 => proxifyVector3(RigidBodyComponent[property], entity)
 
 const assignQuat = (property: string, entity: Entity): Quaternion =>

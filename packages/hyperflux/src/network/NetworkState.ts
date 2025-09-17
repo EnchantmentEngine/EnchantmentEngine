@@ -1,17 +1,9 @@
-import {
-  Action,
-  HyperFlux,
-  NetworkID,
-  PeerID,
-  Topic,
-  UserID,
-  defineState,
-  getMutableState,
-  getState,
-  none
-} from '@ir-engine/hyperflux'
-
+import { none } from '@hookstate/core'
+import { Action, Topic } from '../functions/ActionFunctions'
+import { defineState, getMutableState, getState } from '../functions/StateFunctions'
+import { HyperFlux } from '../functions/StoreFunctions'
 import { DataChannelRegistryState, DataChannelType } from '../media/DataChannelRegistry'
+import { NetworkID, PeerID, UserID } from '../types/Types'
 import { NetworkActionFunctions } from './NetworkActionFunctions'
 import { NetworkPeerState } from './NetworkPeerState'
 

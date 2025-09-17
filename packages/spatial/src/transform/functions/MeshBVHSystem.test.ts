@@ -50,8 +50,8 @@ describe('MeshBVHSystem', () => {
     for (const tree of boundTrees) {
       assert.ok(!!tree)
       assert.ok(tree instanceof MeshBVH)
-      // 24 verts in a box * 4 bytes
-      assert.ok((tree as any)._roots[0].byteLength === 96)
+      assert.ok((tree as any)._roots.length === 6) // one for each face
+      assert.ok((tree as any)._roots[0].byteLength === 32) // 8 floats per face
       assert.ok((tree as any).indirect === false)
     }
   })

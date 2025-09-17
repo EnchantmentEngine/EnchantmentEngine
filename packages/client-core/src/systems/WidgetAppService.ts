@@ -1,30 +1,121 @@
-import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
-import { PresentationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
-import {
-  defineAction,
-  defineActionQueue,
-  defineState,
-  dispatchAction,
-  getMutableState,
-  matches,
-  none,
-  Validator
-} from '@ir-engine/hyperflux'
+import { defineAction, defineState, dispatchAction, getMutableState, none, Schema } from '@ir-engine/hyperflux'
 
 import { Widget } from './Widgets'
+
+export class WidgetAppActions {
+  static showWidgetMenu = defineAction(
+    Schema.Object(
+      {
+        shown: Schema.Bool(),
+        handedness: Schema.LiteralUnion(['left', 'right'] as const)
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.SHOW_WIDGET_MENU'
+      }
+    )
+  )
+
+  static registerWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true })
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.REGISTER_WIDGET'
+      }
+    )
+  )
+
+  static unregisterWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true })
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.UNREGISTER_WIDGET'
+      }
+    )
+  )
+
+  static enableWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true }),
+        enabled: Schema.Bool()
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.ENABLE_WIDGET'
+      }
+    )
+  )
+
+  static showWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true }),
+        shown: Schema.Bool({ required: true }),
+        openWidgetMenu: Schema.Optional(Schema.Bool()),
+        handedness: Schema.Optional(Schema.LiteralUnion(['left', 'right'] as const))
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.SHOW_WIDGET'
+      }
+    )
+  )
+}
 
 type WidgetMutableState = Record<string, { enabled: boolean; visible: boolean }>
 
 /** @todo refactor this and WidgetAppState into WidgetState */
 export const RegisteredWidgets = new Map<string, Widget>()
 
+/** @todo make this networkable by making widget store per user */
 export const WidgetAppState = defineState({
   name: 'WidgetAppState',
   initial: () => ({
     widgetsMenuOpen: false,
     widgets: {} as WidgetMutableState,
     handedness: 'left' as 'left' | 'right'
-  })
+  }),
+  receptors: {
+    showWidgetMenu: WidgetAppActions.showWidgetMenu.receive((action) => {
+      const s = getMutableState(WidgetAppState)
+      s.widgetsMenuOpen.set(action.shown)
+      if (action.handedness) s.handedness.set(action.handedness)
+    }),
+    registerWidget: WidgetAppActions.registerWidget.receive((action) => {
+      const s = getMutableState(WidgetAppState)
+      s.widgets.merge({
+        [action.id]: {
+          enabled: true,
+          visible: false
+        }
+      })
+    }),
+    unregisterWidget: WidgetAppActions.unregisterWidget.receive((action) => {
+      const s = getMutableState(WidgetAppState)
+      if (s.widgetsMenuOpen.value) {
+        s.widgetsMenuOpen.set(false)
+      }
+      s.widgets[action.id].set(none)
+    }),
+    enableWidget: WidgetAppActions.enableWidget.receive((action) => {
+      const s = getMutableState(WidgetAppState)
+      s.widgets[action.id].merge({
+        enabled: action.enabled
+      })
+    }),
+    showWidget: WidgetAppActions.showWidget.receive((action) => {
+      const s = getMutableState(WidgetAppState)
+      // if opening or closing a widget, close or open the main menu
+      if (action.handedness) s.handedness.set(action.handedness)
+      if (action.shown) s.widgetsMenuOpen.set(false)
+      if (action.openWidgetMenu && !action.shown) s.widgetsMenuOpen.set(true)
+      s.widgets[action.id].merge({
+        visible: action.shown
+      })
+    })
+  }
 })
 
 export const WidgetAppService = {
@@ -61,91 +152,3 @@ export const WidgetAppService = {
     currentWidget && dispatchAction(WidgetAppActions.showWidget({ id: currentWidget.id, shown: visibility }))
   }
 }
-
-/** @todo convert to functions */
-
-export class WidgetAppActions {
-  static showWidgetMenu = defineAction({
-    type: 'xre.xrui.WidgetAppActions.SHOW_WIDGET_MENU' as const,
-    shown: matches.boolean,
-    handedness: matches.string.optional() as Validator<unknown, 'left' | 'right' | undefined>
-  })
-
-  static registerWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.REGISTER_WIDGET' as const,
-    id: matches.string
-  })
-
-  static unregisterWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.UNREGISTER_WIDGET' as const,
-    id: matches.string
-  })
-
-  static enableWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.ENABLE_WIDGET' as const,
-    id: matches.string,
-    enabled: matches.boolean
-  })
-
-  static showWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.SHOW_WIDGET' as const,
-    id: matches.string,
-    shown: matches.boolean,
-    openWidgetMenu: matches.boolean.optional(),
-    handedness: matches.string.optional() as Validator<unknown, 'left' | 'right' | undefined>
-  })
-}
-
-const showWidgetMenuActionQueue = defineActionQueue(WidgetAppActions.showWidgetMenu.matches)
-const registerWidgetActionQueue = defineActionQueue(WidgetAppActions.registerWidget.matches)
-const unregisterWidgetActionQueue = defineActionQueue(WidgetAppActions.unregisterWidget.matches)
-const enableWidgetActionQueue = defineActionQueue(WidgetAppActions.enableWidget.matches)
-const showWidgetActionQueue = defineActionQueue(WidgetAppActions.showWidget.matches)
-
-export const execute = () => {
-  const s = getMutableState(WidgetAppState)
-
-  for (const action of showWidgetMenuActionQueue()) {
-    s.widgetsMenuOpen.set(action.shown)
-    if (action.handedness) s.handedness.set(action.handedness)
-  }
-
-  for (const action of registerWidgetActionQueue()) {
-    s.widgets.merge({
-      [action.id]: {
-        enabled: true,
-        visible: false
-      }
-    })
-  }
-
-  for (const action of unregisterWidgetActionQueue()) {
-    if (s.widgets[action.id].visible) {
-      s.widgetsMenuOpen.set(true)
-    }
-    s.widgets[action.id].set(none)
-  }
-
-  for (const action of enableWidgetActionQueue()) {
-    s.widgets[action.id].merge({
-      enabled: action.enabled
-    })
-  }
-
-  for (const action of showWidgetActionQueue()) {
-    // if opening or closing a widget, close or open the main menu
-    if (action.handedness) s.handedness.set(action.handedness)
-    if (action.shown) s.widgetsMenuOpen.set(false)
-    if (action.openWidgetMenu && !action.shown) s.widgetsMenuOpen.set(true)
-    s.widgets[action.id].merge({
-      visible: action.shown
-    })
-  }
-}
-
-export const WidgetAppServiceReceptorSystem = defineSystem({
-  uuid: 'ee.engine.widgets.WidgetAppServiceReceptorSystem',
-
-  insert: { after: PresentationSystemGroup }
-  // execute
-})

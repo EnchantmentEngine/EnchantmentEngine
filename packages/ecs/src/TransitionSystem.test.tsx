@@ -23,7 +23,7 @@ describe('TransitionSystem', () => {
         {
           deserialize: (curr, value) => curr.copy(value),
           default: () => new Vector3(),
-          id: 'Vec3'
+          $id: 'Vec3'
         }
       ),
       number: Schema.Number()

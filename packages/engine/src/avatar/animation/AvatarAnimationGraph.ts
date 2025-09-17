@@ -1,22 +1,16 @@
 import { clamp } from 'lodash'
 import { AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Vector3 } from 'three'
 
-import { UUIDComponent } from '@ir-engine/ecs'
-import { getComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
-import { defineActionQueue, getState, NetworkState } from '@ir-engine/hyperflux'
+import { getState } from '@ir-engine/hyperflux'
 import { lerp } from '@ir-engine/spatial/src/common/functions/MathLerpFunctions'
 
-import { NetworkObjectComponent } from '@ir-engine/ecs'
 import { AnimationState } from '../AnimationManager'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarNetworkAction } from '../state/AvatarNetworkActions'
 import { preloadedAnimations } from './Util'
-
-/** @todo replace this with event sourcing */
-const animationQueue = defineActionQueue(AvatarNetworkAction.setAnimationState.matches)
 
 export const getAnimationAction = (name: string, mixer: AnimationMixer, animations?: AnimationClip[]) => {
   const manager = getState(AnimationState)
@@ -31,39 +25,30 @@ export const getAnimationAction = (name: string, mixer: AnimationMixer, animatio
 const currentActionBlendSpeed = 7
 const epsilon = 0.01
 
+export const setAnimation = (
+  targetEntity: Entity,
+  newAnimation: {
+    animationName: string
+    loop: boolean
+    clipName: string
+    needsSkip: boolean | null
+    layer: number | null
+  }
+) => {
+  const animationState = getState(AnimationState)
+  const animationAsset = animationState.loadedAnimations[newAnimation.animationName]
+  if (!animationAsset) {
+    console.warn('[updateAnimationGraph]: Animation asset not loaded', animationAsset, targetEntity)
+    return
+  }
+  const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
+  graph.fadingOut = newAnimation.needsSkip ?? false
+  graph.layer = newAnimation.layer ?? 0
+  playAvatarAnimationFromMixamo(targetEntity, animationAsset, !!newAnimation.loop, newAnimation.clipName)
+}
+
 //blend between locomotion and animation clips
 export const updateAnimationGraph = (avatarEntities: Entity[]) => {
-  for (const newAnimation of animationQueue()) {
-    const targetEntity = UUIDComponent.getEntityByUUID(newAnimation.entityUUID)
-    /** @todo this validation will require some more advanced tooling in event source state once we convert this module to use that paradigm */
-    const networkState = NetworkState.worldNetwork
-    if (targetEntity && networkState) {
-      if (newAnimation.$peer !== getOptionalComponent(targetEntity, NetworkObjectComponent)?.authorityPeerID) continue
-    }
-    if (!hasComponent(targetEntity, AvatarAnimationComponent)) {
-      console.warn(
-        '[updateAnimationGraph]: AvatarAnimationComponent not found on entity',
-        targetEntity,
-        newAnimation.entityUUID
-      )
-      continue
-    }
-    const animationState = getState(AnimationState)
-    const animationAsset = animationState.loadedAnimations[newAnimation.animationAsset]
-    if (!animationAsset) {
-      console.warn(
-        '[updateAnimationGraph]: Animation asset not loaded',
-        newAnimation.animationAsset,
-        newAnimation.entityUUID
-      )
-      continue
-    }
-    const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
-    graph.fadingOut = newAnimation.needsSkip ?? false
-    graph.layer = newAnimation.layer ?? 0
-    playAvatarAnimationFromMixamo(targetEntity, animationAsset, newAnimation.loop!, newAnimation.clipName!)
-  }
-
   for (const entity of avatarEntities) {
     const animationGraph = getComponent(entity, AvatarAnimationComponent).animationGraph
 

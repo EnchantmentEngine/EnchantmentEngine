@@ -14,20 +14,30 @@ import {
   MeshToonMaterial,
   PointsMaterial,
   RawShaderMaterial,
+  Shader,
   ShaderMaterial,
   ShadowMaterial,
-  SpriteMaterial
+  SpriteMaterial,
+  WebGLRenderer
 } from 'three'
 
 // Converted to typescript from Fyrestar https://mevedia.com (https://github.com/Fyrestar/OnBeforeCompilePlugin)
 // Only implemented the OnBeforeCompile part because OnBeforeRender is not working well with the postprocessing.
 
 export type PluginObjectType = {
-  id: string
-  compile
+  compile: (shader: Shader, renderer: WebGLRenderer) => void
 }
 
 export type PluginType = PluginObjectType | typeof Material.prototype.onBeforeCompile
+
+declare module 'three/src/materials/Material.js' {
+  export interface Material {
+    shader: Shader
+    plugins?: PluginType[]
+    _onBeforeCompile: typeof Material.prototype.onBeforeCompile
+    needsUpdate: boolean
+  }
+}
 
 const onBeforeCompile = {
   get: function (this: Material) {

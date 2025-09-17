@@ -33,7 +33,6 @@ import { XRUIComponent } from '@ir-engine/spatial/src/xrui/components/XRUICompon
 import { WebLayer3D } from '@ir-engine/xrui'
 
 import { EngineState, EntitySchema } from '@ir-engine/ecs'
-import { useXRUIState } from '@ir-engine/engine/src/xrui/useXRUIState'
 import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { inFrustum } from '@ir-engine/spatial/src/camera/functions/CameraFunctions'
@@ -43,6 +42,7 @@ import {
   DistanceFromLocalClientComponent
 } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
+import { useXRUIState } from '@ir-engine/spatial/src/xrui/useXRUIState'
 import { useEffect } from 'react'
 import { AvatarComponent } from '../../avatar/components/AvatarComponent'
 import { createUI } from '../functions/createUI'

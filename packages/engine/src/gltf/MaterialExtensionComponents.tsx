@@ -2,10 +2,8 @@ import { GLTF } from '@gltf-transform/core'
 import { Component, ComponentType, defineComponent, getComponent } from '@ir-engine/ecs'
 import { Schema } from '@ir-engine/hyperflux'
 import { Vector2_One, Vector2_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
-import createReadableTexture from '@ir-engine/spatial/src/renderer/functions/createReadableTexture'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
 import {
-  CanvasTexture,
   Color,
   LinearSRGBColorSpace,
   MeshBasicMaterial,
@@ -880,96 +878,3 @@ export const MozillaHubsLightMapComponent = defineComponent({
     return Promise.all(pending)
   }
 })
-
-/**
- * @deprecated - use KHR_materials_ior and KHR_materials_specular instead
- */
-export const KHRMaterialsPBRSpecularGlossinessComponent = defineComponent({
-  name: 'KHRMaterialsPBRSpecularGlossinessComponent',
-  jsonID: 'KHR_materials_pbrSpecularGlossiness',
-  schema: Schema.Object({
-    diffuseFactor: Schema.Optional(Schema.Tuple([Schema.Number(), Schema.Number(), Schema.Number(), Schema.Number()])),
-    diffuseTexture: Schema.Optional(TextureInfoSchema),
-    specularFactor: Schema.Optional(Schema.Tuple([Schema.Number(), Schema.Number(), Schema.Number()])),
-    glossinessFactor: Schema.Optional(Schema.Number()),
-    specularGlossinessTexture: Schema.Optional(TextureInfoSchema)
-  })
-
-  // reactor: () => {
-  //   const entity = useEntityContext()
-  //   const component = useComponent(entity, KHRMaterialsPBRSpecularGlossinessComponent)
-  //   const materialStateComponent = useComponent(entity, MaterialStateComponent)
-
-  //   useEffect(() => {
-  //     setComponent(entity, MaterialDefinitionComponent, { type: 'MeshStandardMaterial' })
-  //     console.warn(
-  //       'KHR_materials_pbrSpecularGlossiness is deprecated. Use KHR_materials_ior and KHR_materials_specular instead.'
-  //     )
-  //   }, [])
-
-  //   useEffect(() => {
-  //     const material = materialStateComponent.material.value as MeshStandardMaterial
-  //     material.setValues({
-  //       color: new Color().fromArray(component.diffuseFactor.value ?? [1, 1, 1, 1]),
-  //       opacity: component.diffuseFactor.value ? component.diffuseFactor.value[3] : 1
-  //     })
-  //     material.needsUpdate = true
-  //   }, [materialStateComponent.material.value.type, component.diffuseFactor.value])
-
-  //   useEffect(() => {
-  //     const material = materialStateComponent.material.value as MeshStandardMaterial
-  //     material.setValues({
-  //       roughness: 1 - (component.glossinessFactor.value ?? 1)
-  //     })
-  //     material.needsUpdate = true
-  //   }, [materialStateComponent.material.value.type, component.glossinessFactor.value])
-
-  //   const options = getParserOptions(entity)
-  //   const map = GLTFLoaderFunctions.useAssignTexture(options, component.diffuseTexture.get(NO_PROXY))
-
-  //   useEffect(() => {
-  //     const material = materialStateComponent.material.value as MeshStandardMaterial
-  //     material.setValues({ map })
-  //     material.needsUpdate = true
-  //   }, [materialStateComponent.material.value.type, map])
-
-  //   const specularGlossinessMap = GLTFLoaderFunctions.useAssignTexture(
-  //     options,
-  //     component.specularGlossinessTexture.get(NO_PROXY)
-  //   )
-
-  //   useEffect(() => {
-  //     if (!specularGlossinessMap) return
-
-  //     const abortController = new AbortController()
-
-  //     invertGlossinessMap(specularGlossinessMap).then((invertedMap) => {
-  //       if (abortController.signal.aborted) return
-
-  //       const material = materialStateComponent.material.value as MeshStandardMaterial
-  //       material.setValues({ roughnessMap: invertedMap })
-  //       material.needsUpdate = true
-  //     })
-
-  //     return () => {
-  //       abortController.abort()
-  //     }
-  //   }, [materialStateComponent.material.value.type, specularGlossinessMap])
-
-  //   return null
-  // }
-})
-
-const invertGlossinessMap = async (glossinessMap: Texture) => {
-  const mapData: Texture = (await createReadableTexture(glossinessMap, { canvas: true })) as Texture
-  const canvas = mapData.image as HTMLCanvasElement
-  const ctx = canvas.getContext('2d')!
-  ctx.globalCompositeOperation = 'difference'
-  ctx.fillStyle = 'white'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-  ctx.globalCompositeOperation = 'source-over'
-  const invertedTexture = new CanvasTexture(canvas)
-  return invertedTexture
-}
-
-export type MaterialExtensionPluginType = { id: string; uniforms: { [key: string]: any } }

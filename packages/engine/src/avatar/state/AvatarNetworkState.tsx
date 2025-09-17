@@ -31,8 +31,7 @@ export const AvatarState = defineState({
 
   receptors: {
     onSpawn: AvatarNetworkAction.spawn.receive((action) => {
-      const avatarUUID = UUIDComponent.join({ entitySourceID: action.entitySourceID!, entityID: action.entityID })
-
+      const avatarUUID = UUIDComponent.join({ entitySourceID: action.entitySourceID, entityID: action.entityID })
       getMutableState(AvatarState)[avatarUUID].merge({
         avatarURL: action.avatarURL,
         name: action.name

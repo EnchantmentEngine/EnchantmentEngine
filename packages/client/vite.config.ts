@@ -10,9 +10,9 @@ import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import svgr from 'vite-plugin-svgr'
 
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
 import { EngineSettingType } from '@ir-engine/common/src/schema.type.module'
 import appRootPath from 'app-root-path'
+import { nodeModulesPolyfillPlugin } from 'esbuild-plugins-node-modules-polyfill'
 import { EngineSettings } from '../common/src/constants/EngineSettings'
 import manifest from './manifest.default.json'
 import packageJson from './package.json'
@@ -231,12 +231,17 @@ export default defineConfig(async () => {
       esbuildOptions: {
         target: 'es2020',
         plugins: [
-          NodeGlobalsPolyfillPlugin({
-            buffer: true,
-            process: true
-          })
+          nodeModulesPolyfillPlugin({
+            globals: {
+              Buffer: true,
+              process: true
+            }
+          }) as any
         ]
       }
+    },
+    worker: {
+      format: 'es'
     },
     plugins: [
       svgr(),

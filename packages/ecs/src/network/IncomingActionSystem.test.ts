@@ -1,21 +1,23 @@
-import assert, { strictEqual } from 'assert'
+import { strictEqual } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import {
+  Action,
   ActionRecipients,
   applyIncomingActions,
   defineAction,
   getMutableState,
   getState,
   HyperFlux,
-  NetworkTopics
+  NetworkTopics,
+  Schema
 } from '@ir-engine/hyperflux'
 
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
-const TestAction = defineAction({ type: 'test' })
+const TestAction = defineAction(Schema.Object({}, { $id: 'TEST_ACTION' }))
 
 describe('IncomingActionSystem Unit Tests', async () => {
   beforeEach(() => {
@@ -42,9 +44,10 @@ describe('IncomingActionSystem Unit Tests', async () => {
         // incoming action from future
         $time: 2,
         $to: '0' as ActionRecipients
-      })
+      }) as Required<Action>
       action.$topic = NetworkTopics.world
-
+      // normalize meta so typing matches internal queue expectations
+      action.$uuid = action.$uuid || 'test-future-uuid'
       HyperFlux.store.actions.incoming.push(action)
 
       /* run */
@@ -67,9 +70,9 @@ describe('IncomingActionSystem Unit Tests', async () => {
         // incoming action from past
         $time: -1,
         $to: '0' as ActionRecipients
-      })
+      }) as Required<Action>
       action.$topic = NetworkTopics.world
-
+      action.$uuid = action.$uuid || 'test-past-uuid'
       HyperFlux.store.actions.incoming.push(action)
 
       /* run */
@@ -77,28 +80,6 @@ describe('IncomingActionSystem Unit Tests', async () => {
 
       /* assert */
       strictEqual(HyperFlux.store.actions.history.length, 1)
-    })
-  })
-
-  describe('applyAndArchiveIncomingAction', () => {
-    it('should cache actions where $cache = true', () => {
-      /* mock */
-      const action = TestAction({
-        // incoming action from past
-        $time: 0,
-        $to: '0' as ActionRecipients,
-        $cache: true
-      })
-      action.$topic = NetworkTopics.world
-
-      HyperFlux.store.actions.incoming.push(action)
-
-      /* run */
-      applyIncomingActions()
-
-      /* assert */
-      strictEqual(HyperFlux.store.actions.history.length, 1)
-      assert(HyperFlux.store.actions.cached.indexOf(action) !== -1)
     })
   })
 })

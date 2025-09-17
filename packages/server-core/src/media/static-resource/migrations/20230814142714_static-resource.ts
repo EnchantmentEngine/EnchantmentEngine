@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
 
 import { staticResourcePath } from '@ir-engine/common/src/schemas/media/static-resource.schema'
+import { locationPath } from '@ir-engine/common/src/schemas/social/location.schema'
 
 export async function up(knex: Knex): Promise<void> {
   const oldTableName = 'static_resource'
@@ -25,26 +26,44 @@ export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable(staticResourcePath, (table) => {
       //@ts-ignore
       table.uuid('id').collate('utf8mb4_bin').primary()
-      table.string('sid', 255).notNullable()
+      table.string('name', 255).nullable().defaultTo(null)
       table.string('hash', 255).notNullable()
-      table.string('url', 255).defaultTo(null)
       table.string('key', 255).defaultTo(null)
       table.string('mimeType', 255).defaultTo(null)
-      table.json('metadata').defaultTo(null)
       table.string('project', 255).defaultTo(null)
-      table.string('driver', 255).defaultTo(null)
+      table.string('thumbnailKey', 255).nullable()
+      table.string('thumbnailMode', 255).nullable()
       table.string('licensing', 255).defaultTo(null)
       table.string('attribution', 255).defaultTo(null)
+      table.string('type', 255).notNullable().defaultTo('file')
+      table.text('dependencies').nullable()
+      table.text('description').nullable()
       table.json('tags').defaultTo(null)
       table.json('stats').defaultTo(null)
+      table.float('width').nullable()
+      table.float('height').nullable()
+      table.float('depth').nullable()
       //@ts-ignore
       table.uuid('userId').collate('utf8mb4_bin').defaultTo(null).index()
+      //@ts-ignore
+      table.uuid('updatedBy', 36).collate('utf8mb4_bin')
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
 
       // Foreign keys
       table.foreign('userId').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
+      table.foreign('updatedBy').references('id').inTable('user').onDelete('SET NULL').onUpdate('CASCADE')
     })
+
+    const sceneIdLocationColumnExists = await knex.schema.hasColumn(locationPath, 'sceneId')
+    if (sceneIdLocationColumnExists === false) {
+      await knex.schema.alterTable(locationPath, async (table) => {
+        //@ts-ignore
+        table.uuid('sceneId').collate('utf8mb4_bin').nullable()
+
+        table.foreign('sceneId').references('id').inTable(staticResourcePath).onDelete('CASCADE').onUpdate('CASCADE')
+      })
+    }
   }
 
   await knex.raw('SET FOREIGN_KEY_CHECKS=1')

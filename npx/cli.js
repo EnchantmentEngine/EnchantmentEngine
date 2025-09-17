@@ -20,7 +20,7 @@ const runCommand = (command) => {
 
 // Checkout repo
 console.log(`Cloning as ${repoName}...`);
-const gitCheckoutCommand = `git clone --depth 1 https://github.com/ir-engine/ir-engine ${repoName}`;
+const gitCheckoutCommand = `git clone --depth 1 https://github.com/enchantmentengine/enchantmentengine ${repoName}`;
 const checkedOut = runCommand(gitCheckoutCommand);
 if (!checkedOut) process.exitCode = -1;
 

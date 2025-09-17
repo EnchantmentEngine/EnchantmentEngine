@@ -34,7 +34,10 @@ export async function up(knex: Knex): Promise<void> {
       table.dateTime('expiresAt').defaultTo(null)
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
+      //@ts-ignore
+      table.uuid('associateUserId').collate('utf8mb4_bin').nullable().index()
 
+      table.foreign('associateUserId').references('id').inTable('user').onDelete('CASCADE').onUpdate('CASCADE')
       table
         .foreign('identityProviderId')
         .references('id')
