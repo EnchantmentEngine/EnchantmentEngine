@@ -152,9 +152,9 @@ describe('definePrefab', () => {
     const actions = HyperFlux.store.actions.history
     expect(actions.length).toBe(1)
     expect(actions[0].type).toStrictEqual([
-      'ee.network.SPAWN_ENTITY',
+      'ee.engine.prefab_TestPrefabSpawn',
       'ee.engine.world.SPAWN_OBJECT',
-      'ee.engine.prefab_TestPrefabSpawn'
+      'ee.network.SPAWN_ENTITY'
     ])
 
     await vi.waitFor(() => {
