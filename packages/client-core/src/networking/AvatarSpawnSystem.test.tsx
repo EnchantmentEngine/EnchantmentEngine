@@ -174,7 +174,7 @@ describe('AvatarSpawnSystem', async () => {
     return destroyEngine()
   })
 
-  it.only('should spawn an avatar when there is no spectate data', async () => {
+  it('should spawn an avatar when there is no spectate data', async () => {
     startReactor(system.reactor!)
 
     await act(async () => render(null))
