@@ -390,7 +390,7 @@ export function defineActionQueue<A extends ActionCreator<any, any, any>>(action
     return result
   }
 
-  actionQueueGetter.test = (a: A) => actionDefinitions.some((s) => s(a))
+  actionQueueGetter.test = (a: A) => actionDefinitions.some((s) => s.test(a))
 
   actionQueueGetter.instance = null as any
   Object.defineProperty(actionQueueGetter, 'instance', {
