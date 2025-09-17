@@ -2,7 +2,7 @@ import { defineAction, NetworkTopics, Schema } from '@ir-engine/hyperflux'
 import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
 
 import { EntitySchema } from '@ir-engine/ecs'
-import { matchesIkTarget } from '../animation/Util'
+import { ikTargets } from '../animation/Util'
 
 export class AvatarNetworkAction {
   static spawn = defineAction(
@@ -66,7 +66,7 @@ export class AvatarNetworkAction {
     SpawnObjectActions.spawnObject.extend(
       Schema.Object(
         {
-          name: matchesIkTarget,
+          name: Schema.LiteralUnion([...(Object.keys(ikTargets) as Array<keyof typeof ikTargets>)]),
           blendWeight: Schema.Number({ required: false, default: 1.0 })
         },
         {
