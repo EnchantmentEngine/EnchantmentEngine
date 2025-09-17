@@ -251,10 +251,8 @@ const createEventSourceQueues = (action: Action) => {
   for (const definition of StateDefinitions.values()) {
     if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
 
-    const matchedActions = Object.values(definition.receptors)
-      .filter((r: ActionReceptor<any, any, any>) => r.action.test(action))
-      .map((r: ActionReceptor<any, any, any>) => r.action)
-    if (!matchedActions.length) continue
+    const matchedActions = Object.values(definition.receptors).map((r: ActionReceptor<any, any, any>) => r.action)
+    if (!matchedActions.some((m) => m.test(action))) continue
 
     const receptorActionQueue = defineActionQueue(matchedActions)
     definition.receptorActionQueue = receptorActionQueue
