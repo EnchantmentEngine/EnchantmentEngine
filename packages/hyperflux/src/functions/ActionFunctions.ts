@@ -107,7 +107,7 @@ export type ActionReceptor<
   Schema extends TObjectSchema<Properties>,
   TType extends string
 > = ((action: ResolvedAction<TType, Properties, Schema>) => void) & {
-  matchesAction: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
+  action: ActionCreator<TType, Properties, Schema>
   validate: (
     filter: (action: ResolvedAction<TType, Properties, Schema>) => boolean
   ) => ActionReceptor<Properties, Schema, TType>
@@ -180,7 +180,7 @@ export function defineAction<
   }
   creator.receive = (receptor) => {
     const hookable = createHookableFunction(receptor) as any
-    hookable.matchesAction = (a: Action) => creator.test(a)
+    hookable.action = creator
     hookable.validate = (fn) => {
       hookable.validator = fn
       return hookable
@@ -251,9 +251,9 @@ const createEventSourceQueues = (action: Action) => {
   for (const definition of StateDefinitions.values()) {
     if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
 
-    const matchedActions = Object.values(definition.receptors).filter((r: ActionReceptor<any, any, any>) =>
-      r.matchesAction(action)
-    ) as ActionCreator<any, any, any>[]
+    const matchedActions = Object.values(definition.receptors)
+      .filter((r: ActionReceptor<any, any, any>) => r.action.test(action))
+      .map((r: ActionReceptor<any, any, any>) => r.action)
     if (!matchedActions.length) continue
 
     const receptorActionQueue = defineActionQueue(matchedActions)
@@ -272,7 +272,7 @@ const createEventSourceQueues = (action: Action) => {
         for (const defReceptor of Object.values(definition.receptors!)) {
           try {
             const receptor = defReceptor as ActionReceptor<any, any, any>
-            if (receptor.matchesAction(act)) {
+            if (receptor.action.test(act)) {
               if (receptor.validator && !receptor.validator(act)) continue
               receptor(act)
               hasNewActions = true
@@ -363,9 +363,8 @@ export const clearOutgoingActions = (topic: Topic) => {
 
 export type ActionMatcher<A extends Action> = (a: A) => boolean
 
-export function defineActionQueue<A extends ActionCreator<any, any, any>>(matchers: A | A[]) {
-  const shapes = Array.isArray(matchers) ? matchers : [matchers]
-  const shapeHash = shapes.map((_, i) => `m${i}`).join('|')
+export function defineActionQueue<A extends ActionCreator<any, any, any>>(actionDefinition: A | A[]) {
+  const actionDefinitions = Array.isArray(actionDefinition) ? actionDefinition : [actionDefinition]
 
   const getOrCreateInstance = () => {
     const queueMap = HyperFlux.store.actions.queues
@@ -391,8 +390,7 @@ export function defineActionQueue<A extends ActionCreator<any, any, any>>(matche
     return result
   }
 
-  actionQueueGetter.test = (a: A) => shapes.some((s) => s(a))
-  actionQueueGetter.shapeHash = shapeHash
+  actionQueueGetter.test = (a: A) => actionDefinitions.some((s) => s(a))
 
   actionQueueGetter.instance = null as any
   Object.defineProperty(actionQueueGetter, 'instance', {
@@ -424,7 +422,6 @@ export function defineActionQueue<A extends ActionCreator<any, any, any>>(matche
 export type ActionQueueHandle<A extends ActionCreator<any, any, any>> = {
   (): A['_TYPE'][]
   test: (a: A['_TYPE']) => boolean
-  shapeHash: string
   needsResync: boolean
   instance: ActionQueueInstance<A>
   resync: () => void
