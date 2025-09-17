@@ -167,7 +167,7 @@ export const createOutgoingDataProducer = async (network: SocketWebRTCServerNetw
   })
 }
 
-export const handleConsumeData = async (action: typeof MediasoupDataConsumerActions.requestConsumer.matches._TYPE) => {
+export const handleConsumeData = async (action: typeof MediasoupDataConsumerActions.requestConsumer._TYPE) => {
   const network = getState(NetworkState).networks[action.$network] as SocketWebRTCServerNetwork
 
   const { $peer: peerID, dataChannel } = action
@@ -338,7 +338,7 @@ export async function createInternalDataConsumer(
 }
 
 export async function handleWebRtcTransportCreate(
-  action: typeof MediasoupTransportActions.requestTransport.matches._TYPE
+  action: typeof MediasoupTransportActions.requestTransport._TYPE
 ): Promise<any> {
   const network = getState(NetworkState).networks[action.$network] as SocketWebRTCServerNetwork
 
@@ -688,7 +688,7 @@ export async function handleProduceData(
 const transportsConnectPending = {} as { [transportID: string]: Promise<void> }
 
 export async function handleWebRtcTransportConnect(
-  action: typeof MediasoupTransportActions.requestTransportConnect.matches._TYPE
+  action: typeof MediasoupTransportActions.requestTransportConnect._TYPE
 ) {
   const { transportID, requestID, dtlsParameters } = action
   const transport = getState(MediasoupTransportObjectsState)[transportID]
@@ -736,9 +736,7 @@ export async function handleWebRtcTransportConnect(
   }
 }
 
-export async function handleRequestProducer(
-  action: typeof MediasoupMediaProducerActions.requestProducer.matches._TYPE
-) {
+export async function handleRequestProducer(action: typeof MediasoupMediaProducerActions.requestProducer._TYPE) {
   const network = getState(NetworkState).networks[action.$network] as SocketWebRTCServerNetwork
 
   const { $peer: peerID, transportID, rtpParameters, paused, requestID, appData, kind } = action
@@ -836,9 +834,7 @@ export async function handleRequestProducer(
   }
 }
 
-export const handleRequestConsumer = async (
-  action: typeof MediasoupMediaConsumerActions.requestConsumer.matches._TYPE
-) => {
+export const handleRequestConsumer = async (action: typeof MediasoupMediaConsumerActions.requestConsumer._TYPE) => {
   const network = getState(NetworkState).networks[action.$network] as SocketWebRTCServerNetwork
 
   const { peerID: mediaPeerId, mediaTag, rtpCapabilities, channelID } = action
@@ -930,9 +926,7 @@ export const handleRequestConsumer = async (
   }
 }
 
-export const handleCloseProducer = async (
-  action: typeof MediasoupMediaProducerActions.producerClosed.matches._TYPE
-) => {
+export const handleCloseProducer = async (action: typeof MediasoupMediaProducerActions.producerClosed._TYPE) => {
   const network = getState(NetworkState).networks[action.$network] as SocketWebRTCServerNetwork
 
   const { producerID } = action
@@ -952,9 +946,7 @@ export const handleCloseProducer = async (
   }
 }
 
-export const handleCloseConsumer = async (
-  action: typeof MediasoupMediaConsumerActions.consumerClosed.matches._TYPE
-) => {
+export const handleCloseConsumer = async (action: typeof MediasoupMediaConsumerActions.consumerClosed._TYPE) => {
   const network = getState(NetworkState).networks[action.$network] as SocketWebRTCServerNetwork
 
   const { consumerID } = action
@@ -975,7 +967,7 @@ export const handleCloseConsumer = async (
 }
 
 export async function handleConsumerSetLayers(
-  action: typeof MediasoupMediaConsumerActions.consumerLayers.matches._TYPE
+  action: typeof MediasoupMediaConsumerActions.consumerLayers._TYPE
 ): Promise<any> {
   const { consumerID, layer } = action
   const consumer = getState(MediasoupMediaProducersConsumersObjectsState).consumers[consumerID] as

@@ -13,7 +13,6 @@ import {
   none,
   PeerID,
   Schema,
-  TTypedSchema,
   useHookstate,
   useMutableState
 } from '@ir-engine/hyperflux'
@@ -54,13 +53,7 @@ export class MediasoupTransportActions {
         iceParameters: Schema.Any(),
         iceCandidates: Schema.Array(Schema.Any()),
         iceServers: Schema.Array(Schema.Any()),
-        dtlsParameters: Schema.Record(
-          Schema.String(),
-          Schema.Any() as TTypedSchema<{
-            role?: 'client' | 'server' | 'auto'
-            fingerprints: { algorithm: string; value: string }[]
-          }>
-        )
+        dtlsParameters: Schema.Any()
       },
       {
         $id: 'ee.engine.network.mediasoup.TRANSPORT_CREATED'
