@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 
 import { Schema } from '../schemas/JSONSchemas'
-import type { Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
+import type { MergeObjectSchemas, Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
 import { CheckSchemaValue, CreateSchemaValue } from '../schemas/JSONSchemaUtils'
 import { OpaqueType } from '../types/OpaqueType'
 import { NetworkID, PeerID, UserID } from '../types/Types'
@@ -110,10 +110,7 @@ export interface ActionCreator<
   validate: (payload: unknown) => payload is Static<Schema>
   extend: <ExtendSchema extends TObjectSchema<any>>(
     extensionDefinition: ExtendSchema
-  ) => TObjectSchema<
-    (Schema extends TObjectSchema<infer BaseProps> ? BaseProps : never) &
-      (ExtendSchema extends TObjectSchema<infer ExtendProps> ? ExtendProps : never)
-  >
+  ) => MergeObjectSchemas<Schema, ExtendSchema>
   test: (a: Action) => a is ResolvedAction<TType, Properties, Schema>
   matches: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
   receive: (
@@ -413,7 +410,7 @@ export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> |
   actionQueueGetter.test = (a: A) => shapes.some((s) => s.test(a))
   actionQueueGetter.shapeHash = shapeHash
 
-  actionQueueGetter.instance = getOrCreateInstance()
+  actionQueueGetter.instance = null as any
   Object.defineProperty(actionQueueGetter, 'instance', {
     get: () => getOrCreateInstance(),
     set: (val) => {

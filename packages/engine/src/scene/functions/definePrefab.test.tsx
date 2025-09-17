@@ -142,16 +142,20 @@ describe('definePrefab', () => {
         parentUUID,
         position: new Vector3(1, 2, 3),
         rotation: new Quaternion(0, 0, 0, 1),
-        data: { health: 150, name: 'Spawned Entity' }
+        health: 150,
+        name: 'Spawned Entity'
       })
     }).not.toThrow()
 
     applyIncomingActions()
 
     const actions = HyperFlux.store.actions.history
-    expect(actions.length).toBe(2)
-    expect(actions[0].type).toBe('ir.engine.prefab_TestPrefabSpawn')
-    expect(actions[1].type).toStrictEqual(['ee.engine.world.SPAWN_OBJECT', 'ee.network.SPAWN_ENTITY'])
+    expect(actions.length).toBe(1)
+    expect(actions[0].type).toStrictEqual([
+      'ee.network.SPAWN_ENTITY',
+      'ee.engine.world.SPAWN_OBJECT',
+      'ee.engine.prefab_TestPrefabSpawn'
+    ])
 
     await vi.waitFor(() => {
       const entity = UUIDComponent.getEntityByUUID(entityUUID)
