@@ -5,10 +5,11 @@ import appRootPath from 'app-root-path'
 import assert from 'assert'
 import { ChildProcess } from 'child_process'
 import { v4 as uuidv4 } from 'uuid'
-import { afterAll, beforeAll, describe, it } from 'vitest'
+import { afterAll, beforeAll, describe, it, vi } from 'vitest'
 
 import { API } from '@ir-engine/common'
 import {
+  avatarPath,
   channelPath,
   channelUserPath,
   identityProviderPath,
@@ -22,14 +23,17 @@ import {
   userPath
 } from '@ir-engine/common/src/schema.type.module'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { getState, HyperFlux, NetworkState, PeerID } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, HyperFlux, NetworkState, PeerID } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { EntityUUID, getComponent, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, EntityUUID, getComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
+import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { AuthTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
+import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import config from '@ir-engine/server-core/src/appconfig'
+import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
 import { Spark } from 'primus'
 import { StartTestFileServer } from '../../server-core/src/createFileServer'
 import { onConnection } from '../src/channels'
@@ -122,7 +126,8 @@ describe('InstanceLoad', () => {
 
     const scene = await app.service(staticResourcePath).get(testScene.data[0].sceneId)
 
-    const entity = UUIDComponent.getEntityByUUID(('root' + scene.id) as EntityUUID)
+    const parentUUID = ('root' + scene.id) as EntityUUID
+    const entity = UUIDComponent.getEntityByUUID(parentUUID)
     assert(entity > 0)
 
     assert.equal(getComponent(entity, GLTFComponent).progress, 100)
@@ -188,5 +193,81 @@ describe('InstanceLoad', () => {
     })
 
     assert.equal(channelUser.total, 1)
+
+    const avatarQuery = await app.service(avatarPath).find()
+    const avatarURL = avatarQuery.data[0].modelResource!.url
+
+    dispatchAction(
+      AvatarNetworkAction.spawn({
+        parentUUID,
+        avatarURL,
+        entityID: AvatarComponent.entityID,
+        entitySourceID: userID as any as SourceID,
+        name: user.name
+      })
+    )
+    dispatchAction(
+      CameraActions.spawnCamera({
+        parentUUID,
+        entityID: 'camera' as EntityID,
+        entitySourceID: userID as any as SourceID
+      })
+    )
+    dispatchAction(
+      AvatarNetworkAction.spawnIKTarget({
+        parentUUID,
+        entityID: 'head' as EntityID,
+        entitySourceID: userID as any as SourceID,
+        name: 'head',
+        blendWeight: 0
+      })
+    )
+    dispatchAction(
+      AvatarNetworkAction.spawnIKTarget({
+        parentUUID,
+        entityID: 'leftHand' as EntityID,
+        entitySourceID: userID as any as SourceID,
+        name: 'leftHand',
+        blendWeight: 0
+      })
+    )
+    dispatchAction(
+      AvatarNetworkAction.spawnIKTarget({
+        parentUUID,
+        entityID: 'rightHand' as EntityID,
+        entitySourceID: userID as any as SourceID,
+        name: 'rightHand',
+        blendWeight: 0
+      })
+    )
+    dispatchAction(
+      AvatarNetworkAction.spawnIKTarget({
+        parentUUID,
+        entityID: 'leftFoot' as EntityID,
+        entitySourceID: userID as any as SourceID,
+        name: 'leftFoot',
+        blendWeight: 0
+      })
+    )
+    dispatchAction(
+      AvatarNetworkAction.spawnIKTarget({
+        parentUUID,
+        entityID: 'rightFoot' as EntityID,
+        entitySourceID: userID as any as SourceID,
+        name: 'rightFoot',
+        blendWeight: 0
+      })
+    )
+
+    /** wait for avatar to spawn successfully */
+    const avatarLoaded = await vi.waitUntil(
+      () => {
+        const avatarEntity = AvatarComponent.getUserAvatarEntity(user.id)
+        return getComponent(avatarEntity, GLTFComponent).progress === 100
+      },
+      { timeout: 60000 }
+    )
+
+    assert(avatarLoaded, 'Avatar failed to load in time')
   })
 })

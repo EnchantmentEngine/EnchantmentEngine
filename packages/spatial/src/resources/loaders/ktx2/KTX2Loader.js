@@ -35,6 +35,7 @@ import {
 	RGFormat,
 	SRGBColorSpace,
 	UnsignedByteType,
+	Texture,
 } from 'three';
 import {
 	read,
@@ -157,6 +158,7 @@ class KTX2Loader extends Loader {
 	}
 
 	init() {
+		if (!isClient) return Promise.resolve(); 
 
 		if ( ! this.transcoderPending ) {
 
@@ -227,6 +229,11 @@ class KTX2Loader extends Loader {
 	}
 
 	load( url, onLoad, onProgress, onError, signal ) {
+
+		if (!isClient) {
+			onLoad(new Texture())
+			return
+		}
 
 		if ( this.workerConfig === null ) {
 

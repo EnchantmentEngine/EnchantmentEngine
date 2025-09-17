@@ -460,7 +460,7 @@ const useGLTFDocument = (entity: Entity) => {
   const isEditing = layer === Layers.Authoring
 
   const dynamicLoadAndNotEditing = !isEditing && !!dynamicLoadComponent && !dynamicLoadComponent?.loaded
-  const gltfComponent = getComponent(entity, GLTFComponent)
+
   useEffect(() => {
     if (dynamicLoadAndNotEditing) return
     if (!url) {

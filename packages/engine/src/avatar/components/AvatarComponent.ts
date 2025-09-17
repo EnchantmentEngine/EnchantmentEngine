@@ -1,5 +1,11 @@
 import { EngineState, EntityID, NetworkObjectComponent, SourceID, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
-import { defineComponent, getComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  defineComponent,
+  getComponent,
+  useComponent,
+  useHasComponent,
+  useOptionalComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { getState, Schema, useMutableState, UserID } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
@@ -80,7 +86,7 @@ export const AvatarComponent = defineComponent({
   },
 
   reactor: ({ entity }) => {
-    const camera = useComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
+    const camera = useOptionalComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent)
     const avatarComponent = useComponent(entity, AvatarComponent)
     const cameraSettingsState = useMutableState(CameraSettingsState)
     const selfAvatarEntity = AvatarComponent.useSelfAvatarEntity()
@@ -88,7 +94,7 @@ export const AvatarComponent = defineComponent({
 
     useEffect(() => {
       setAvatarColliderTransform(entity)
-    }, [avatarComponent?.avatarHeight, camera.near])
+    }, [avatarComponent?.avatarHeight, camera?.near])
 
     useEffect(() => {
       if (selfAvatarEntity === UndefinedEntity) return
