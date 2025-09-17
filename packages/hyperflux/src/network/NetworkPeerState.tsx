@@ -1,30 +1,30 @@
-import {
-  NetworkID,
-  PeerID,
-  UserID,
-  defineAction,
-  defineState,
-  getMutableState,
-  matches,
-  matchesPeerID,
-  matchesUserID,
-  none
-} from '@ir-engine/hyperflux'
+import { defineAction } from '../functions/ActionFunctions'
+import { defineState, getMutableState, none } from '../functions/StateFunctions'
+import { Schema } from '../schemas/JSONSchemas'
+import { NetworkID, PeerID, UserID } from '../types/Types'
 import { NetworkPeer } from './NetworkState'
 
 export class NetworkActions {
-  static peerJoined = defineAction({
-    type: 'ee.engine.network.PEER_JOINED',
-    peerID: matchesPeerID,
-    peerIndex: matches.number,
-    userID: matchesUserID
-  })
+  static peerJoined = defineAction(
+    Schema.Object(
+      {
+        peerID: Schema.PeerID({ required: true }),
+        peerIndex: Schema.Number({ required: true }),
+        userID: Schema.UserID({ required: true })
+      },
+      { $id: 'ee.engine.network.PEER_JOINED' }
+    )
+  )
 
-  static peerLeft = defineAction({
-    type: 'ee.engine.network.PEER_LEFT',
-    peerID: matchesPeerID,
-    userID: matchesUserID
-  })
+  static peerLeft = defineAction(
+    Schema.Object(
+      {
+        peerID: Schema.PeerID({ required: true }),
+        userID: Schema.UserID({ required: true })
+      },
+      { $id: 'ee.engine.network.PEER_LEFT' }
+    )
+  )
 }
 
 export const NetworkPeerState = defineState({
@@ -40,6 +40,7 @@ export const NetworkPeerState = defineState({
   >,
   receptors: {
     onPeerJoined: NetworkActions.peerJoined.receive((action) => {
+      if (!action.$network) return
       const state = getMutableState(NetworkPeerState)
       if (!state.value[action.$network]) {
         state[action.$network].set({
@@ -66,6 +67,7 @@ export const NetworkPeerState = defineState({
       }
     }),
     onPeerLeft: NetworkActions.peerLeft.receive((action) => {
+      if (!action.$network) return
       const state = getMutableState(NetworkPeerState)
 
       if (!state[action.$network].peers[action.peerID]) {
@@ -98,6 +100,7 @@ export const WorldUserState = defineState({
   receptors: {
     onPeerJoined: NetworkActions.peerJoined.receive((action) => {
       const state = getMutableState(WorldUserState)
+      if (!action.$network) return
       if (!state.value[action.userID]) {
         state[action.userID].set({})
       }
@@ -109,6 +112,7 @@ export const WorldUserState = defineState({
       }
     }),
     onPeerLeft: NetworkActions.peerLeft.receive((action) => {
+      if (!action.$network) return
       const state = getMutableState(WorldUserState)
       const userPeers = state[action.userID][action.$network]!
       const index = userPeers.value.indexOf(action.peerID)

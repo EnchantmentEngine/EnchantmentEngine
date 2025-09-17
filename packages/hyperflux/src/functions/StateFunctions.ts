@@ -21,18 +21,19 @@ export * from '@hookstate/identifiable'
 export const NO_PROXY = { noproxy: true }
 export const NO_PROXY_STEALTH = { noproxy: true, stealth: true }
 
-export type ReceptorMap = Record<string, ActionReceptor<any>>
+export type ReceptorMap = Record<string, ActionReceptor<any, any, any>>
 
 export type StateDefinition<S, I, E, Receptors extends ReceptorMap> = {
   name: string
   initial: SetInitialStateAction<S>
   extension?: ExtensionFactory<S, I, E>
   receptors?: Receptors
-  receptorActionQueue?: ActionQueueHandle
+  receptorActionQueue?: ActionQueueHandle<any>
   reactor?: any // why does React.FC break types?
 }
 
 export const StateDefinitions = new Map<string, StateDefinition<any, any, any, any>>()
+globalThis.StateDefinitions = StateDefinitions
 
 export const setInitialState = (def: StateDefinition<any, any, any, any>) => {
   const initial = typeof def.initial === 'function' ? (def.initial as any)() : JSON.parse(JSON.stringify(def.initial))

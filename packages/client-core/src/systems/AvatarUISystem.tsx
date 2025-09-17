@@ -179,8 +179,8 @@ const execute = () => {
           return peer.userId === ownerId
         })
         if (peer) {
-          const peerMediaState = getState(MediaChannelState)[peer.peerID][webcamVideoMediaChannelType]
-          const stream = peerMediaState.stream
+          const peerMediaState = getState(MediaChannelState)[peer.peerID]?.[webcamVideoMediaChannelType]
+          const stream = peerMediaState?.stream
           if (!stream) continue
           const track = stream.getVideoTracks()[0]
           const active = !peerMediaState.paused

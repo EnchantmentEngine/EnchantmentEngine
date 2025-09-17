@@ -1,22 +1,19 @@
-import { matches, Parser, Validator } from 'ts-matches'
 import { v4 as uuidv4 } from 'uuid'
 
-import { createHookableFunction } from './createHookableFunction'
-
+import { Schema } from '../schemas/JSONSchemas'
+import type { MergeObjectSchemas, Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
+import { CheckSchemaValue, CreateSchemaValue } from '../schemas/JSONSchemaUtils'
 import { OpaqueType } from '../types/OpaqueType'
 import { NetworkID, PeerID, UserID } from '../types/Types'
+import { createHookableFunction } from './createHookableFunction'
 import { isDev } from './EnvironmentConstants'
 import { ReactorReconciler, ReactorRoot } from './ReactorFunctions'
 import { setInitialState, StateDefinitions } from './StateFunctions'
 import { HyperFlux } from './StoreFunctions'
 
-export { matches, Validator } from 'ts-matches'
-
-export const matchesUserID = matches.string as Validator<unknown, UserID>
-export const matchesPeerID = matches.string as Validator<unknown, PeerID>
-
 export type Topic = OpaqueType<'Topic'> & string
 
+/** Generic action (flat payload + meta) */
 export type Action = {
   /**
    * The type of action
@@ -80,209 +77,147 @@ export type ActionOptions = {
   $ERROR?: { message: string; stack: string[] }
 }
 
-export type ActionShape<ActionType extends Action> = {
-  [key in keyof ActionType]: key extends 'type'
-    ? ActionType[key]
-    : ActionType[key] extends Validator<unknown, unknown>
-    ? ActionType[key]
-    : ActionType[key] extends string | number | boolean | any
-    ? ActionType[key] | Validator<unknown, ActionType[key]>
-    : ActionType[key] extends MatchesWithDefault<unknown>
-    ? ActionType[key]
-    : never
-}
-
-// type t = ActionShape<{store:'test', type:'hello', count: MatchesWithDefault<number>}>
-
-export type ResolvedActionShape<Shape extends ActionShape<any>> = {
-  [key in keyof Shape]: Shape[key] extends Validator<unknown, infer B>
-    ? Validator<unknown, Exclude<B, Validator<any, any>>>
-    : Shape[key] extends MatchesWithDefault<infer C>
-    ? Validator<unknown, Exclude<C, Validator<any, any>>>
-    : Shape[key] extends string | number | boolean | any
-    ? Validator<unknown, Exclude<Shape[key], Validator<any, any>>>
-    : never
-}
-
-// type t = ResolvedActionShape<{store:'test', type:'hello', count: MatchesWithDefault<number>}>
-
-export type ResolvedActionShapeWithOptionals<Shape extends ActionShape<any>> = {
-  [key in keyof Shape]: Shape[key] extends Validator<unknown, infer B>
-    ? Validator<unknown, Exclude<B, Validator<any, any>>>
-    : Shape[key] extends MatchesWithDefault<infer C>
-    ? Validator<unknown, Exclude<C, Validator<any, any>> | undefined>
-    : Shape[key] extends string | number | boolean | any
-    ? Validator<unknown, Exclude<Shape[key], Validator<any, any>> | undefined>
-    : never
-}
-
-// type t = PartialActionShape<{store:'test', type:'hello', param: number, count: MatchesWithDefault<number>}>
-
-type ActionTypeFromShape<Shape extends ActionShape<any>> = {
-  [key in keyof Shape]: Shape[key] extends Validator<unknown, infer A>
-    ? Shape[key]['_TYPE'] | A
-    : Shape[key] extends MatchesWithDefault<Shape[key]>
-    ? Shape[key]['matches']
-    : Exclude<Shape[key], Validator<any, any>>
-}
-
-// type x = ResolvedActionShape<ActionShape<any>>
-// // type t = ResolvedActionType<ActionShape<any>>
-// type z = ResolvedActionType
-// type t = ResolvedActionType<{store:'test', type:Validator<unknown,'hello'>|'hello', name:string, param: Validator<unknown,number>, count: MatchesWithDefault<number>}>
-
-type IsOptional<T> = null extends T ? true : undefined extends T ? true : false
-
-type JustOptionalKeys<Shape extends ActionShape<any>> = {
-  [key in keyof Shape]: Shape[key] extends Validator<unknown, infer B>
-    ? true extends IsOptional<B>
-      ? key
-      : never
-    : true extends IsOptional<Shape[key]>
-    ? key
-    : never
-}[keyof Shape]
-
-type JustRequiredKeys<Shape extends ActionShape<any>> = {
-  [key in keyof Shape]: Shape[key] extends Validator<unknown, infer B>
-    ? true extends IsOptional<B>
-      ? never
-      : key
-    : true extends IsOptional<Shape[key]>
-    ? never
-    : key
-}[keyof Shape]
-
-type JustOptionals<S extends ActionShape<any>> = Pick<S, JustOptionalKeys<S>>
-type JustRequired<S extends ActionShape<any>> = Pick<S, JustRequiredKeys<S>>
-
-export type ResolvedActionType<Shape extends ActionShape<Action> = ActionShape<{ type: string | string[] }>> = Required<
-  ActionTypeFromShape<ResolvedActionShape<Shape>> & ActionOptions
->
-export type PartialActionType<Shape extends ActionShape<any>> = Omit<
-  Partial<ActionTypeFromShape<JustOptionals<ResolvedActionShapeWithOptionals<Shape>>>> &
-    ActionOptions &
-    Required<ActionTypeFromShape<JustRequired<ResolvedActionShapeWithOptionals<Shape>>>>,
-  'type' | 'store'
->
-
-// type t = PartialActionType<{store:'TEST',type:'TEST',name:string, bla:Validator<unknown, any>}>
-// type t2 = ResolvedActionShape<{type:'test', count:MatchesWithDefault<number>}>
-// type t3 = ResolvedActionShapeWithOptionals<{type:'test', count:MatchesWithDefault<number>}>
-// type t = PartialActionType<{type:'test', count:MatchesWithDefault<number>}>
-
-/**
- * Defines an action
- * @param actionShape
- * @returns a function that creates an instance of the defined action
- */
-export const ActionDefinitions = {} as Record<string, any>
-
-export type ActionReceptor<A extends ActionShape<Action>> = ((action: A) => void) & {
-  matchesAction: Validator<A, any>
-  validate: (validator: (action: ResolvedActionType<A>) => boolean) => ActionReceptor<A>
-  validator?: (action: A) => boolean
-}
-
-export function isActionReceptor<A extends ActionShape<Action>>(f: any): f is ActionReceptor<A> {
-  return 'matchesAction' in f
-}
-
-export function defineAction<Shape extends Omit<ActionShape<Action>, keyof ActionOptions>>(
-  shape: Shape & ActionOptions
-) {
-  type ResolvedAction = ResolvedActionType<Shape>
-  type PartialAction = PartialActionType<Shape>
-
-  const shapeEntries = Object.entries(shape)
-
-  // handle default callback properties
-  const defaultEntries = shapeEntries.filter(
-    ([k, v]: [string, any]) =>
-      typeof v === 'object' && ('defaultValue' in v || ('parser' in v && v.parser.description.name === 'Default'))
-  ) as unknown as Array<[string, MatchesWithDefault<any> | Validator<unknown, unknown>]>
-  const defaultValidators = Object.fromEntries(
-    defaultEntries.map(([k, v]) => [k, v instanceof Validator ? v : v.matches])
-  )
-
-  // handle literal shape properties
-  const literalEntries = shapeEntries.filter(([k, v]) => typeof v !== 'object') as Array<
-    [string, string | number | boolean]
-  >
-  const literalValidators = Object.fromEntries(literalEntries.map(([k, v]) => [k, matches.literal(v)]))
-
-  // handle option properties
-  const optionEntries = shapeEntries.filter(([k, v]) => k.startsWith('$')) as Array<
-    [string, ActionOptions[keyof ActionOptions]]
-  >
-  const optionValidators = Object.fromEntries(
-    optionEntries.map(([k, v]) => [k, matches.guard<unknown, typeof v>((val): val is typeof v => deepEqual(val, v))])
-  )
-
-  const type = shape.type
-  const primaryType = Array.isArray(type) ? type[0] : type
-
-  // create resolved action shape
-  const resolvedActionShape = Object.assign({}, shape, optionValidators, literalValidators, defaultValidators, {
-    type: matches.some(
-      matches.literal(primaryType),
-      matches.guard<string, any>(function (val): val is any {
-        return Array.isArray(val) ? val.includes(primaryType) : val === primaryType
-      })
-    )
-  }) as any
-  delete resolvedActionShape.$topic
-
-  const allValuesNull = Object.fromEntries(Object.entries(resolvedActionShape).map(([k]) => [k, null]))
-
-  const matchesShape = matches.shape(resolvedActionShape) as Validator<unknown, ResolvedAction>
-
-  const actionCreator = (partialAction: PartialAction) => {
-    const defaultValues = Object.fromEntries(
-      defaultEntries.map(([k, v]) => [
-        k,
-        partialAction[k] ?? ('defaultValue' in v ? v.defaultValue() : v.parser['defaultValue'])
-      ]) as [string, any]
-    )
-    const action = {
-      ...allValuesNull,
-      ...Object.fromEntries([...optionEntries, ...literalEntries]),
-      ...defaultValues,
-      ...partialAction,
-      type
+/** Utility: deep equality (used in caching logic) */
+export function deepEqual(x: any, y: any): boolean {
+  if (x === y) return true
+  if (typeof x == 'object' && x != null && typeof y == 'object' && y != null) {
+    if (Object.keys(x).length != Object.keys(y).length) return false
+    for (const prop in x) {
+      if (typeof y[prop] !== 'undefined') {
+        if (!deepEqual(x[prop], y[prop])) return false
+      } else return false
     }
-    return matchesShape.unsafeCast(action) as ResolvedAction
+    return true
+  }
+  return false
+}
+
+export type ResolvedAction<
+  TType extends string,
+  Properties extends TProperties,
+  Schema extends TObjectSchema<Properties>
+> = Required<Action> & Static<Schema> & { type: TType | string[] }
+
+export interface ActionCreator<
+  TType extends string,
+  Properties extends TProperties,
+  Schema extends TObjectSchema<Properties>
+> {
+  (partial?: Partial<Static<Schema>> & ActionOptions): ResolvedAction<TType, Properties, Schema>
+  type: TType | string[]
+  _TYPE: ResolvedAction<TType, Properties, Schema> // hack to get the type of the action at compile time
+  schema: Schema
+  validate: (payload: unknown) => payload is Static<Schema>
+  extend: <ExtendSchema extends TObjectSchema<any>>(
+    extensionDefinition: ExtendSchema
+  ) => MergeObjectSchemas<Schema, ExtendSchema>
+  test: (a: Action) => a is ResolvedAction<TType, Properties, Schema>
+  matches: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
+  receive: (
+    receptor: (action: ResolvedAction<TType, Properties, Schema>) => void
+  ) => ActionReceptor<Properties, Schema, TType>
+}
+
+export type ActionReceptor<
+  Properties extends TProperties,
+  Schema extends TObjectSchema<Properties>,
+  TType extends string
+> = ((action: ResolvedAction<TType, Properties, Schema>) => void) & {
+  matchesAction: ActionMatcher<ResolvedAction<TType, Properties, Schema>>
+  validate: (
+    filter: (action: ResolvedAction<TType, Properties, Schema>) => boolean
+  ) => ActionReceptor<Properties, Schema, TType>
+  validator?: (action: ResolvedAction<TType, Properties, Schema>) => boolean
+}
+
+export function isActionReceptor(f: any): f is ActionReceptor<any, any, any> {
+  return !!f && typeof f === 'function' && !!f.matchesAction
+}
+
+export const ActionDefinitions: Record<string, ActionCreator<string, any, any>> = {}
+
+export function defineAction<
+  TType extends string,
+  Properties extends TProperties,
+  Schema extends TObjectSchema<Properties>
+>(definition: Schema): ActionCreator<TType, Properties, Schema> {
+  type P = Static<Schema>
+  if (!definition.options?.$id) throw new Error('Action schema must have an id in options.$id')
+  const typeChain = Array.isArray(definition.options.$id) ? definition.options.$id : [definition.options.$id]
+  const primaryType = typeChain[0] as TType
+
+  const validate = (payload: unknown): payload is P => {
+    return CheckSchemaValue(definition, payload)
   }
 
-  actionCreator.actionShape = shape as Omit<typeof shape, keyof ActionOptions>
-  actionCreator.resolvedActionShape = resolvedActionShape as ResolvedActionShape<Shape>
-  actionCreator.type = shape.type as Shape['type']
-  actionCreator.matches = matchesShape
-  actionCreator.extend = <ExtendShape extends ActionShape<Action>>(extendShape: ExtendShape & ActionOptions) => {
-    return { ...shape, ...extendShape, type: [extendShape.type, ...(Array.isArray(type) ? type : [type])] }
-  }
-  actionCreator.receive = (actionReceptor: (action: ResolvedAction) => void) => {
-    const hookableReceptor = createHookableFunction(actionReceptor)
-    hookableReceptor['matchesAction'] = matchesShape
-    hookableReceptor['validate'] = (actionValidator: (action: ResolvedAction) => boolean) => {
-      hookableReceptor['validator'] = actionValidator
-      return hookableReceptor
+  const creator = ((partial: P & ActionOptions) => {
+    const payload = CreateSchemaValue(definition)
+    if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
+
+    if (!CheckSchemaValue(definition, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
+
+    const metadata = definition.options?.metadata ?? {}
+    const action: Action = {
+      ...metadata,
+      ...payload,
+      type: typeChain.length === 1 ? primaryType : typeChain
     }
-    return hookableReceptor as typeof hookableReceptor & ActionReceptor<Shape>
+
+    if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) action[k] = v
+
+    return action as Action & P & { type: TType | string[] }
+  }) as ActionCreator<TType, Properties, Schema>
+
+  creator.type = typeChain.length === 1 ? primaryType : typeChain
+  creator.schema = definition
+  creator.validate = validate
+  creator.extend = (extensionDefinition) => {
+    if (!extensionDefinition.options?.$id) throw new Error('Action schema must have an id in options.$id')
+    const combinedID = Array.isArray(extensionDefinition.options.$id)
+      ? [...extensionDefinition.options.$id, ...typeChain]
+      : [extensionDefinition.options.$id, ...typeChain]
+    const combinedProperties = {
+      ...(definition.properties || {}),
+      ...(extensionDefinition.properties || {})
+    } as TProperties
+    const metadata = {
+      ...definition.options?.metadata,
+      ...extensionDefinition.options?.metadata
+    }
+    return Schema.Object(combinedProperties, { $id: combinedID as any, metadata }) as any
+  }
+  creator.test = (a: Required<Action>): a is ResolvedAction<TType, Properties, Schema> => {
+    if (!a || !a.type) return false
+    const types = Array.isArray(a.type) ? a.type : [a.type]
+    if (!types.includes(primaryType)) return false
+    const subset = {}
+    for (const key of Object.keys(definition.properties || {})) subset[key] = a[key]
+    return validate(subset)
+  }
+  creator.matches = { test: (a: Action) => creator.test(a) }
+  creator.receive = (receptor) => {
+    const hookable = createHookableFunction(receptor) as any
+    hookable.matchesAction = { test: (a: Action) => creator.test(a) }
+    hookable.validate = (fn) => {
+      hookable.validator = fn
+      return hookable
+    }
+    return hookable as ActionReceptor<Properties, Schema, TType>
   }
 
-  ActionDefinitions[actionCreator.type as string] = actionCreator
-  return actionCreator
+  // this is a hack to get the type of the action at compile time
+  creator['_TYPE'] = null as any
+
+  ActionDefinitions[primaryType] = creator
+  return creator
 }
 
 /**
  * Dispatch actions to the store.
  * @param action
- * @param topics @todo potentially in the future, support dispatching to multiple topics
- * @param store
  */
 export const dispatchAction = <A extends Action>(_action: A) => {
-  const action = JSON.parse(JSON.stringify(_action))
+  const action = JSON.parse(JSON.stringify(_action)) as A
 
   const peerID = HyperFlux.store.peerID
   const agentID = HyperFlux.store.getAgentID()
@@ -292,7 +227,8 @@ export const dispatchAction = <A extends Action>(_action: A) => {
   action.$to = action.$to ?? 'all'
   action.$time = action.$time ?? HyperFlux.store.getDispatchTime() + HyperFlux.store.defaultDispatchDelay()
   action.$uuid = action.$uuid ?? uuidv4()
-  const topic = (action.$topic = action.$topic ?? HyperFlux.store.defaultTopic)
+  action.$topic = action.$topic ?? HyperFlux.store.defaultTopic
+  const topic = action.$topic
 
   if (isDev && !action.$stack) {
     const trace = { stack: '' }
@@ -302,16 +238,13 @@ export const dispatchAction = <A extends Action>(_action: A) => {
     action.$stack = stack
   }
 
-  HyperFlux.store.actions.incoming.push(action as Required<ResolvedActionType>)
-
-  addOutgoingTopicIfNecessary(topic)
-
-  return Object.freeze(action) as ResolvedActionType<A>
+  HyperFlux.store.actions.incoming.push(action as Required<Action>)
+  addOutgoingTopicIfNecessary(topic as Topic)
+  return Object.freeze(action) as A
 }
 
 export function addOutgoingTopicIfNecessary(topic: Topic) {
   if (!HyperFlux.store.actions.outgoing[topic]) {
-    // HyperFlux.store.logger('hyperflux:action').info(`Added topic ${topic}`)
     HyperFlux.store.actions.outgoing[topic] = {
       queue: [],
       history: [],
@@ -320,54 +253,48 @@ export function addOutgoingTopicIfNecessary(topic: Topic) {
   }
 }
 
-const applyIncomingActionsToAllQueues = (action: Required<ResolvedActionType>) => {
+const applyIncomingActionsToAllQueues = (action: Required<Action>) => {
   for (const [queueHandle, queue] of HyperFlux.store.actions.queues) {
     if (queueHandle.test(action)) {
       // if the action is out of order, mark the queue as needing resync
-      if (queue.actions.length > 0 && queue.actions.at(-1)!.$time > action.$time) {
-        queue.needsResync = true
+      if (queue.actions.length > 0) {
+        const last = queue.actions.at(-1)
+        if (last && last.$time !== undefined && action.$time !== undefined && last.$time > action.$time)
+          queue.needsResync = true
       }
       queue.actions.push(action)
     }
   }
 }
 
-const createEventSourceQueues = (action: Required<ResolvedActionType>) => {
+const createEventSourceQueues = (action: Action) => {
   for (const definition of StateDefinitions.values()) {
     if (!definition.receptors || HyperFlux.store.receptors[definition.name]) continue
 
     const matchedActions = Object.values(definition.receptors).map(
-      (r: ActionReceptor<ResolvedActionType>) => r.matchesAction
+      (r: ActionReceptor<any, any, any>) => r.matchesAction
     )
     if (!matchedActions.some((m) => m.test(action))) continue
 
     const receptorActionQueue = defineActionQueue(matchedActions)
     definition.receptorActionQueue = receptorActionQueue
-
-    // set resync to true to ensure the queue exists immediately
     receptorActionQueue.needsResync = true
 
     if (!HyperFlux.store.stateMap[definition.name]) setInitialState(definition)
 
     const applyEventSourcing = () => {
-      // queue may need to be reset when actions are recieved out of order
-      // or when state needs to be rolled back
       if (receptorActionQueue.needsResync) {
-        // reset the state to the initial value when the queue is reset
         setInitialState(definition)
         receptorActionQueue.resync()
       }
-
       let hasNewActions = false
-
-      // apply each action to each matching receptor, in order
-      for (const action of receptorActionQueue()) {
-        for (const definitionReceptor of Object.values(definition.receptors!)) {
+      for (const act of receptorActionQueue()) {
+        for (const defReceptor of Object.values(definition.receptors!)) {
           try {
-            const receptor = definitionReceptor as ActionReceptor<ResolvedActionType>
-            if (receptor.matchesAction.test(action)) {
-              if (receptor.validator && !receptor.validator(action)) continue
-              receptor(action)
+            const receptor = defReceptor as ActionReceptor<any, any, any>
+            if (receptor.matchesAction.test(act)) {
+              if (receptor.validator && !receptor.validator(act)) continue
+              receptor(act)
               hasNewActions = true
             }
           } catch (e) {
@@ -375,8 +302,6 @@ const createEventSourceQueues = (action: Required<ResolvedActionType>) => {
           }
         }
       }
-
-      // if new actions were applied, synchronously run the reactor
       if (hasNewActions && HyperFlux.store.stateReactors[definition.name]) {
         ReactorReconciler.flushSync(() => HyperFlux.store.stateReactors[definition.name].run())
       }
@@ -386,86 +311,66 @@ const createEventSourceQueues = (action: Required<ResolvedActionType>) => {
   }
 }
 
-const _applyIncomingAction = (action: Required<ResolvedActionType>) => {
-  // ensure actions are idempotent
-  if (HyperFlux.store.actions.knownUUIDs.has(action.$uuid)) {
-    //Certain actions were causing logger.info to throw errors since it JSON.stringifies inputs, and those
-    //actions had circular references. Just try/catching the logger.info call was not catching them properly,
-    //So the solution was to attempt to JSON.stringify them manually first to see if that would error.
+const _applyIncomingAction = (action: Required<Action>) => {
+  if (action.$uuid && HyperFlux.store.actions.knownUUIDs.has(action.$uuid)) {
     try {
-      const jsonStringified = JSON.stringify(action)
-      // logger.info('Repeat action %o', action)
-    } catch (err) {
-      console.log('error in logging action', action)
+      JSON.stringify(action)
+    } catch {
+      console.log('error in logging repeat action', action)
     }
     const idx = HyperFlux.store.actions.incoming.indexOf(action)
-    HyperFlux.store.actions.incoming.splice(idx, 1)
+    if (idx !== -1) HyperFlux.store.actions.incoming.splice(idx, 1)
     return
   }
-
   createEventSourceQueues(action)
-
   applyIncomingActionsToAllQueues(action)
-
-  try {
-    //Certain actions were causing logger.info to throw errors since it JSON.stringifies inputs, and those
-    //actions had circular references. Just try/catching the logger.info call was not catching them properly,
-    //So the solution was to attempt to JSON.stringify them manually first to see if that would error.
-    try {
-      // HyperFlux.store.logger('hyperflux:action').info(`[Action]: ${action.type} %o`, action)
-    } catch (err) {
-      console.log('error in logging action', action)
-    }
-  } catch (e) {
-    const message = (e as Error).message
-    const stack = (e as Error).stack!.split('\n')
+  const messageStackError = (e: Error) => {
+    const message = e.message
+    const stack = e.stack?.split('\n') || []
     stack.shift()
     action.$ERROR = { message, stack }
     HyperFlux.store.logger('hyperflux:action').error(e)
+  }
+  try {
+    /* receptor execution handled separately */
+  } catch (e) {
+    messageStackError(e)
   } finally {
     HyperFlux.store.actions.history.push(action)
-    HyperFlux.store.actions.knownUUIDs.add(action.$uuid)
+    if (action.$uuid) HyperFlux.store.actions.knownUUIDs.add(action.$uuid)
     const idx = HyperFlux.store.actions.incoming.indexOf(action)
-    HyperFlux.store.actions.incoming.splice(idx, 1)
+    if (idx !== -1) HyperFlux.store.actions.incoming.splice(idx, 1)
   }
 }
 
-const _forwardIfNecessary = (action: Required<ResolvedActionType>) => {
-  addOutgoingTopicIfNecessary(action.$topic)
-  if (HyperFlux.store.peerID === action.$peer || HyperFlux.store.forwardingTopics.has(action.$topic)) {
-    const outgoingActions = HyperFlux.store.actions.outgoing[action.$topic]
-    if (outgoingActions.forwardedUUIDs.has(action.$uuid)) return
+const _forwardIfNecessary = (action: Required<Action>) => {
+  if (!action.$topic) return
+  addOutgoingTopicIfNecessary(action.$topic as Topic)
+  if (HyperFlux.store.peerID === action.$peer || HyperFlux.store.forwardingTopics.has(action.$topic as Topic)) {
+    const outgoingActions = HyperFlux.store.actions.outgoing[action.$topic as Topic]
+    if (!outgoingActions) return
+    if (action.$uuid && outgoingActions.forwardedUUIDs.has(action.$uuid)) return
     outgoingActions.queue.push(action)
-    outgoingActions.forwardedUUIDs.add(action.$uuid)
+    if (action.$uuid) outgoingActions.forwardedUUIDs.add(action.$uuid)
   }
 }
 
-/** Drain event sourced queues and run receptors */
 const applyEventSourcingToAllQueues = () => {
   for (const receptors of Object.values(HyperFlux.store.receptors)) receptors()
 }
 
-/**
- * Process incoming actions
- */
 export const applyIncomingActions = () => {
   const incoming = HyperFlux.store.actions.incoming
   if (!incoming.length) return
-
   const now = HyperFlux.store.getDispatchTime()
   const actions = incoming.slice()
   for (const action of actions) {
     _forwardIfNecessary(action)
-    if (action.$time <= now) _applyIncomingAction(action)
+    if (action.$time === undefined || action.$time <= now) _applyIncomingAction(action)
   }
-
   applyEventSourcingToAllQueues()
 }
 
-/**
- * Clear the outgoing action queue
- * @param store
- */
 export const clearOutgoingActions = (topic: Topic) => {
   if (!HyperFlux.store.actions.outgoing[topic]) return
   const { queue, history, forwardedUUIDs } = HyperFlux.store.actions.outgoing[topic]
@@ -476,15 +381,16 @@ export const clearOutgoingActions = (topic: Topic) => {
   queue.length = 0
 }
 
-export function defineActionQueue<V extends Validator<unknown, ResolvedActionType>>(validator: V[] | V) {
-  const shapes = Array.isArray(validator) ? validator : [validator]
-  const shapeHash = shapes.map(Parser.parserAsString).join('|')
+export type ActionMatcher<A extends Action> = { test: (a: A) => boolean }
+
+export function defineActionQueue<A extends Action>(matchers: ActionMatcher<A> | ActionMatcher<A>[]) {
+  const shapes = Array.isArray(matchers) ? matchers : [matchers]
+  const shapeHash = shapes.map((_, i) => `m${i}`).join('|')
 
   const getOrCreateInstance = () => {
     const queueMap = HyperFlux.store.actions.queues
     const reactorRoot = HyperFlux.store.getCurrentReactorRoot()
     let queueInstance = queueMap.get(actionQueueGetter)!
-
     if (!queueInstance) {
       queueInstance = {
         actions: [],
@@ -493,34 +399,27 @@ export function defineActionQueue<V extends Validator<unknown, ResolvedActionTyp
         reactorRoot
       }
       queueMap.set(actionQueueGetter, queueInstance)
-      reactorRoot?.cleanupFunctions.add(() => {
-        removeActionQueue(actionQueueGetter)
-      })
+      reactorRoot?.cleanupFunctions.add(() => removeActionQueue(actionQueueGetter))
     }
-    /** @todo sometimes there is no reactor root, which throws this unnecessarily */
-    //  else if (queueInstance.reactorRoot !== reactorRoot) {
-    //   throw new Error('Action queue is being used by multiple reactors')
-    // }
-
-    return queueInstance
+    return queueInstance as ActionQueueInstance<A>
   }
 
-  const actionQueueGetter = (): V['_TYPE'][] => {
+  const actionQueueGetter: ActionQueueHandle<A> = () => {
     const queueInstance = getOrCreateInstance()
-    const result = queueInstance.actions.slice(queueInstance.nextIndex) as V['_TYPE'][]
+    const result = queueInstance.actions.slice(queueInstance.nextIndex)
     queueInstance.nextIndex = queueInstance.actions.length
     return result
   }
 
-  actionQueueGetter.test = (a: Action) => {
-    return shapes.some((s) => s.test(a))
-  }
-
+  actionQueueGetter.test = (a: A) => shapes.some((s) => s.test(a))
   actionQueueGetter.shapeHash = shapeHash
 
-  actionQueueGetter.instance = null! as ActionQueueInstance
+  actionQueueGetter.instance = null as any
   Object.defineProperty(actionQueueGetter, 'instance', {
-    get: () => getOrCreateInstance()
+    get: () => getOrCreateInstance(),
+    set: (val) => {
+      throw new Error('Cannot set instance of ActionQueueHandle')
+    }
   })
 
   actionQueueGetter.needsResync = false
@@ -530,61 +429,34 @@ export function defineActionQueue<V extends Validator<unknown, ResolvedActionTyp
       getOrCreateInstance().needsResync = val
     }
   })
-
   actionQueueGetter.resync = () => {
-    // make sure actions are sorted by time, earliest first
     const queue = getOrCreateInstance()
-    queue.actions = HyperFlux.store.actions.history.filter(actionQueueGetter.test).sort((a, b) => a.$time - b.$time)
+    queue.actions = HyperFlux.store.actions.history
+      .filter((a: Action) => actionQueueGetter.test(a as A))
+      .sort((a: Action, b: Action) => (a.$time || 0) - (b.$time || 0)) as A[]
     queue.nextIndex = 0
-    actionQueueGetter.needsResync = false
+    queue.needsResync = false
   }
 
   return actionQueueGetter
 }
 
-/**
- * @deprecated use defineActionQueue instead
- */
-export const createActionQueue = defineActionQueue
+export type ActionQueueHandle<A extends Action> = {
+  (): A[]
+  test: (a: A) => boolean
+  shapeHash: string
+  needsResync: boolean
+  instance: ActionQueueInstance<A>
+  resync: () => void
+}
 
-export type ActionQueueHandle = ReturnType<typeof defineActionQueue>
-export type ActionQueueInstance = {
-  actions: Required<ResolvedActionType>[]
+export type ActionQueueInstance<A extends Action> = {
+  actions: A[]
   nextIndex: number
   needsResync: boolean
   reactorRoot: ReactorRoot | undefined
 }
 
-export const removeActionQueue = (queueHandle: ActionQueueHandle) => {
+export const removeActionQueue = <A extends Action>(queueHandle: ActionQueueHandle<A>) => {
   HyperFlux.store.actions.queues.delete(queueHandle)
-}
-
-export type MatchesWithDefault<A> = { matches: Validator<unknown, A>; defaultValue: () => A }
-
-export type ActionCreator<A extends ActionShape<Action>> = {
-  (partialAction?: PartialActionType<A>): Required<ActionTypeFromShape<ResolvedActionShape<A>> & ActionOptions>
-  actionShape: A
-  resolvedActionShape: ResolvedActionShape<A>
-  type: A['type']
-  matches: Validator<unknown, ResolvedActionType<A>>
-}
-
-export const matchesWithDefault = <A>(matches: Validator<unknown, A>, defaultValue: () => A): MatchesWithDefault<A> => {
-  return { matches, defaultValue }
-}
-
-export function deepEqual(x: any, y: any): boolean {
-  if (x === y) {
-    return true
-  } else if (typeof x == 'object' && x != null && typeof y == 'object' && y != null) {
-    if (Object.keys(x).length != Object.keys(y).length) return false
-
-    for (const prop in x) {
-      if (typeof y[prop] !== 'undefined') {
-        if (!deepEqual(x[prop], y[prop])) return false
-      } else return false
-    }
-
-    return true
-  } else return false
 }

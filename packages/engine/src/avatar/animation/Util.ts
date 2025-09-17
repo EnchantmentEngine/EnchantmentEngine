@@ -1,5 +1,3 @@
-import { matches } from '@ir-engine/hyperflux'
-
 export const ikTargets = {
   rightHand: 'rightHand',
   leftHand: 'leftHand',
@@ -35,7 +33,3 @@ export const preloadedAnimations = {
   locomotion: 'locomotion',
   emotes: 'emotes'
 }
-
-export const matchesIkTarget = matches.some(
-  ...Object.keys(ikTargets).map((k: keyof typeof ikTargets) => matches.literal(k))
-)

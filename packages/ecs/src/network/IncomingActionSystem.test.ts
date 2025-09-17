@@ -4,18 +4,20 @@ import { afterEach, beforeEach, describe, it } from 'vitest'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import {
+  Action,
   ActionRecipients,
   applyIncomingActions,
   defineAction,
   getMutableState,
   getState,
   HyperFlux,
-  NetworkTopics
+  NetworkTopics,
+  Schema
 } from '@ir-engine/hyperflux'
 
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
-const TestAction = defineAction({ type: 'test' })
+const TestAction = defineAction(Schema.Object({}, { $id: 'TEST_ACTION' }))
 
 describe('IncomingActionSystem Unit Tests', async () => {
   beforeEach(() => {
@@ -42,9 +44,10 @@ describe('IncomingActionSystem Unit Tests', async () => {
         // incoming action from future
         $time: 2,
         $to: '0' as ActionRecipients
-      })
+      }) as Required<Action>
       action.$topic = NetworkTopics.world
-
+      // normalize meta so typing matches internal queue expectations
+      action.$uuid = action.$uuid || 'test-future-uuid'
       HyperFlux.store.actions.incoming.push(action)
 
       /* run */
@@ -67,9 +70,9 @@ describe('IncomingActionSystem Unit Tests', async () => {
         // incoming action from past
         $time: -1,
         $to: '0' as ActionRecipients
-      })
+      }) as Required<Action>
       action.$topic = NetworkTopics.world
-
+      action.$uuid = action.$uuid || 'test-past-uuid'
       HyperFlux.store.actions.incoming.push(action)
 
       /* run */

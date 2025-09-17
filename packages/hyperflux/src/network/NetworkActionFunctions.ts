@@ -1,13 +1,7 @@
-import {
-  Action,
-  addOutgoingTopicIfNecessary,
-  clearOutgoingActions,
-  dispatchAction,
-  getState,
-  HyperFlux,
-  PeerID
-} from '@ir-engine/hyperflux'
-
+import { Action, addOutgoingTopicIfNecessary, clearOutgoingActions, dispatchAction } from '../functions/ActionFunctions'
+import { getState } from '../functions/StateFunctions'
+import { HyperFlux } from '../functions/StoreFunctions'
+import { PeerID } from '../types/Types'
 import { Network, NetworkState } from './NetworkState'
 
 const receiveIncomingActions = (network: Network, fromPeerID: PeerID, actions: Required<Action>[]) => {

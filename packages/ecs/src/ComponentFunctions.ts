@@ -763,7 +763,7 @@ function createPropagationArgsNumber<C extends Component>(
   component: C
 ) {
   if (obj === UndefinedEntity) return obj
-  if ((schema[Kind] as any) === 'Number' && schema?.options?.['id'] === 'Entity') {
+  if ((schema[Kind] as any) === 'Number' && schema?.options?.$id === 'Entity') {
     const referencedEntity = obj as Entity
 
     // if the entity is already in the linked layer, return the current arg

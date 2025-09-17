@@ -179,7 +179,7 @@ export const MediaIconsBox = () => {
       {!isMobile &&
       !(typeof navigator.mediaDevices.getDisplayMedia === 'undefined') &&
       screenshareEnabled &&
-      mediaNetworkState?.ready.value ? (
+      mediaNetworkState?.ready?.value ? (
         <LocationIconButton
           tooltip={{
             title: t('user:menu.shareScreen')

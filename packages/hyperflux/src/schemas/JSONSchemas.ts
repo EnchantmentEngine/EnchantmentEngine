@@ -1,4 +1,4 @@
-import { PeerID, UserID } from '@ir-engine/hyperflux'
+import { PeerID, UserID } from '../types/Types'
 import {
   Kind,
   Kinds,
@@ -76,6 +76,11 @@ export const Schema = {
     ({
       ...buildSchema('String', options)
     }) as TStringSchema,
+
+  TypedString: <T extends string>(options?: TStringSchema['options']) =>
+    ({
+      ...buildSchema('String', options)
+    }) as unknown as TTypedSchema<T>,
 
   /**
    * Schema that infers as the const values of an object, requires that the object to infer as be passed in, default to the first value of the object
@@ -248,11 +253,11 @@ export const Schema = {
 
   /** UserID type schema helper, defaults to '' */
   UserID: (options?: TTypedSchema<UserID>['options']) =>
-    Schema.String({ serialized: true, ...options, id: 'UserUUID' }) as unknown as TTypedSchema<UserID>,
+    Schema.String({ serialized: true, ...options, $id: 'UserUUID' }) as unknown as TTypedSchema<UserID>,
 
   /** PeerID type schema helper, defaults to '' */
   PeerID: (options?: TTypedSchema<PeerID>['options']) =>
-    Schema.String({ serialized: true, ...options, id: 'PeerUUID' }) as unknown as TTypedSchema<PeerID>,
+    Schema.String({ serialized: true, ...options, $id: 'PeerUUID' }) as unknown as TTypedSchema<PeerID>,
 
   Proxy: <T extends SchemaDefinition>(schema: T) =>
     ({

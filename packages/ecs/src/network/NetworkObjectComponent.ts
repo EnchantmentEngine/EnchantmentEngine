@@ -10,7 +10,7 @@ export type NetworkId = OpaqueType<'networkId'> & number
 export const NetworkSchema = {
   /** NetworkID type schema helper, defaults to 0 */
   NetworkID: (options?: TTypedSchema<NetworkId>['options']) =>
-    Schema.Number({ ...options, id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
+    Schema.Number({ ...options, $id: 'NetworkID' }) as unknown as TTypedSchema<NetworkId>
 }
 
 const proxyNetworkId = proxySoAStore(() => NetworkObjectComponent.networkId)

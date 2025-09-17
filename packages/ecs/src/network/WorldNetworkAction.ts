@@ -1,45 +1,68 @@
-import { matchesEntityID, matchesEntitySourceID } from '@ir-engine/ecs'
-import {
-  defineAction,
-  getState,
-  matchesPeerID,
-  matchesUserID,
-  matchesWithDefault,
-  NetworkTopics
-} from '@ir-engine/hyperflux'
+import { defineAction, getState, NetworkTopics, Schema } from '@ir-engine/hyperflux'
 import { EngineState } from '../EngineState'
-import { matchesEntityUUID } from '../Entity'
+import { EntitySchema } from '../Schemas'
 
 export class WorldNetworkAction {
-  static spawnEntity = defineAction({
-    type: 'ee.network.SPAWN_ENTITY',
-    entityID: matchesEntityID,
-    entitySourceID: matchesEntitySourceID,
-    parentUUID: matchesEntityUUID,
-    ownerID: matchesWithDefault(matchesUserID, () => getState(EngineState).userID),
-    authorityPeerId: matchesPeerID.optional(),
-    $topic: NetworkTopics.world
-  })
+  static spawnEntity = defineAction(
+    Schema.Object(
+      {
+        entityID: EntitySchema.EntityID({ required: true }),
+        entitySourceID: EntitySchema.SourceID({ required: true }),
+        parentUUID: EntitySchema.EntityUUID({ required: true }),
+        ownerID: Schema.UserID({ required: true, default: () => getState(EngineState).userID }),
+        authorityPeerId: Schema.Optional(Schema.PeerID())
+      },
+      {
+        $id: 'ee.network.SPAWN_ENTITY',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 
-  static destroyEntity = defineAction({
-    type: 'ee.network.DESTROY_ENTITY',
-    entityUUID: matchesEntityUUID,
-    $topic: NetworkTopics.world
-  })
+  static destroyEntity = defineAction(
+    Schema.Object(
+      {
+        entityUUID: EntitySchema.EntityUUID({ required: true })
+      },
+      {
+        $id: 'ee.network.DESTROY_ENTITY',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 
-  static requestAuthorityOverObject = defineAction({
-    /** @todo embed $to restriction */
-    type: 'ee.engine.world.REQUEST_AUTHORITY_OVER_ENTITY',
-    entityUUID: matchesEntityUUID,
-    newAuthority: matchesPeerID,
-    $topic: NetworkTopics.world
-  })
+  static requestAuthorityOverObject = defineAction(
+    Schema.Object(
+      {
+        entityUUID: EntitySchema.EntityUUID({ required: true }),
+        newAuthority: Schema.PeerID({ required: true })
+      },
+      {
+        $id: 'ee.network.REQUEST_AUTHORITY_OVER_ENTITY',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 
-  static transferAuthorityOfObject = defineAction({
-    type: 'ee.engine.world.TRANSFER_AUTHORITY_OF_ENTITY',
-    ownerID: matchesUserID,
-    entityUUID: matchesEntityUUID,
-    newAuthority: matchesPeerID,
-    $topic: NetworkTopics.world
-  })
+  static transferAuthorityOfObject = defineAction(
+    Schema.Object(
+      {
+        ownerID: Schema.UserID({ required: true }),
+        entityUUID: EntitySchema.EntityUUID({ required: true }),
+        newAuthority: Schema.PeerID({ required: true })
+      },
+      {
+        $id: 'ee.network.TRANSFER_AUTHORITY_OF_ENTITY',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 }

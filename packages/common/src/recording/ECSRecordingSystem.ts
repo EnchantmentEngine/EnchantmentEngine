@@ -1,6 +1,5 @@
 import { decode, encode } from 'msgpackr'
 import { PassThrough } from 'stream'
-import matches, { Validator } from 'ts-matches'
 
 import { API } from '@ir-engine/common'
 import {
@@ -41,13 +40,13 @@ import {
   getState,
   HyperFlux,
   isClient,
-  matchesUserID,
   Network,
   NetworkActions,
   NetworkState,
   NetworkTopics,
   PeerID,
   removeDataChannelHandler,
+  Schema,
   Topic,
   UserID,
   webcamAudioMediaChannelType,
@@ -60,43 +59,85 @@ import { mocapDataChannelType } from '@ir-engine/engine/src/mocap/MotionCaptureS
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 
 export class ECSRecordingActions {
-  static startRecording = defineAction({
-    type: 'ee.core.motioncapture.START_RECORDING' as const,
-    recordingID: matches.string as Validator<unknown, RecordingID>
-  })
+  static startRecording = defineAction(
+    Schema.Object(
+      {
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
+      },
+      {
+        $id: 'ee.core.motioncapture.START_RECORDING' as const
+      }
+    )
+  )
 
-  static recordingStarted = defineAction({
-    type: 'ee.core.motioncapture.RECORDING_STARTED' as const,
-    recordingID: matches.string as Validator<unknown, RecordingID>
-  })
+  static recordingStarted = defineAction(
+    Schema.Object(
+      {
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
+      },
+      {
+        $id: 'ee.core.motioncapture.RECORDING_STARTED' as const
+      }
+    )
+  )
 
-  static stopRecording = defineAction({
-    type: 'ee.core.motioncapture.STOP_RECORDING' as const,
-    recordingID: matches.string as Validator<unknown, RecordingID>
-  })
+  static stopRecording = defineAction(
+    Schema.Object(
+      {
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
+      },
+      {
+        $id: 'ee.core.motioncapture.STOP_RECORDING' as const
+      }
+    )
+  )
 
-  static startPlayback = defineAction({
-    type: 'ee.core.motioncapture.PLAY_RECORDING' as const,
-    recordingID: matches.string as Validator<unknown, RecordingID>,
-    targetUser: matchesUserID.optional(),
-    autoplay: matches.boolean
-  })
+  static startPlayback = defineAction(
+    Schema.Object(
+      {
+        recordingID: Schema.TypedString<RecordingID>({ required: true }),
+        targetUser: Schema.Optional(Schema.UserID()),
+        autoplay: Schema.Bool({ default: false })
+      },
+      {
+        $id: 'ee.core.motioncapture.PLAY_RECORDING' as const
+      }
+    )
+  )
 
-  static playbackChanged = defineAction({
-    type: 'ee.core.motioncapture.PLAYBACK_CHANGED' as const,
-    recordingID: matches.string as Validator<unknown, RecordingID>,
-    playing: matches.boolean
-  })
+  static playbackChanged = defineAction(
+    Schema.Object(
+      {
+        recordingID: Schema.TypedString<RecordingID>({ required: true }),
+        playing: Schema.Bool({ required: true })
+      },
+      {
+        $id: 'ee.core.motioncapture.PLAYBACK_CHANGED' as const
+      }
+    )
+  )
 
-  static stopPlayback = defineAction({
-    type: 'ee.core.motioncapture.STOP_PLAYBACK' as const,
-    recordingID: matches.string as Validator<unknown, RecordingID>
-  })
+  static stopPlayback = defineAction(
+    Schema.Object(
+      {
+        recordingID: Schema.TypedString<RecordingID>({ required: true })
+      },
+      {
+        $id: 'ee.core.motioncapture.STOP_PLAYBACK' as const
+      }
+    )
+  )
 
-  static error = defineAction({
-    type: 'ee.core.motioncapture.ERROR' as const,
-    error: matches.string
-  })
+  static error = defineAction(
+    Schema.Object(
+      {
+        error: Schema.String({ required: true })
+      },
+      {
+        $id: 'ee.core.motioncapture.ERROR' as const
+      }
+    )
+  )
 }
 
 export type RecordingConfigSchema = {
@@ -335,7 +376,7 @@ export const dispatchError = (error: string, targetPeer: PeerID, topic: Topic) =
   dispatchAction(ECSRecordingActions.error({ error, $to: targetPeer, $topic: topic }))
 }
 
-export const onStartRecording = async (action: ReturnType<typeof ECSRecordingActions.startRecording>) => {
+export const onStartRecording = async (action: typeof ECSRecordingActions.startRecording._TYPE) => {
   const api = API.instance
 
   const recording = await api.service(recordingPath).get(action.recordingID)
@@ -460,7 +501,7 @@ export const onStartRecording = async (action: ReturnType<typeof ECSRecordingAct
   activeRecordings.set(recording.id, activeRecording)
 }
 
-export const onStopRecording = async (action: ReturnType<typeof ECSRecordingActions.stopRecording>) => {
+export const onStopRecording = async (action: typeof ECSRecordingActions.stopRecording._TYPE) => {
   const api = API.instance
 
   const activeRecording = activeRecordings.get(action.recordingID)
@@ -506,7 +547,7 @@ export const onStopRecording = async (action: ReturnType<typeof ECSRecordingActi
   activeRecordings.delete(action.recordingID)
 }
 
-export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActions.startPlayback>) => {
+export const onStartPlayback = async (action: typeof ECSRecordingActions.startPlayback._TYPE) => {
   const api = API.instance
 
   const recording = await api.service(recordingPath).get(action.recordingID, { isInternal: true })
@@ -668,7 +709,7 @@ export const onStartPlayback = async (action: ReturnType<typeof ECSRecordingActi
   }
 }
 
-export const onStopPlayback = async (action: ReturnType<typeof ECSRecordingActions.stopPlayback>) => {
+export const onStopPlayback = async (action: typeof ECSRecordingActions.stopPlayback._TYPE) => {
   const api = API.instance
 
   const recording = await api.service(recordingPath).get(action.recordingID)
