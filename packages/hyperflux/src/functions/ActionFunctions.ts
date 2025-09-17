@@ -171,11 +171,10 @@ export function defineAction<
   creator.schema = definition
   creator.validate = validate
   creator.extend = (extensionDefinition) => {
-    const combinedID = extensionDefinition.options?.$id
-      ? Array.isArray(extensionDefinition.options.$id)
-        ? [...typeChain, ...extensionDefinition.options.$id]
-        : [...typeChain, extensionDefinition.options.$id]
-      : [...typeChain]
+    if (!extensionDefinition.options?.$id) throw new Error('Action schema must have an id in options.$id')
+    const combinedID = Array.isArray(extensionDefinition.options.$id)
+      ? [...extensionDefinition.options.$id, ...typeChain]
+      : [extensionDefinition.options.$id, ...typeChain]
     const combinedProperties = {
       ...(definition.properties || {}),
       ...(extensionDefinition.properties || {})

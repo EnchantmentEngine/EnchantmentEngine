@@ -99,6 +99,45 @@ describe('Hyperflux Unit Tests', () => {
     assert(actionDefinition.test(action2))
   })
 
+  it('should be able to extend action definitions', () => {
+    const BaseAction = defineAction(
+      Schema.Object(
+        {
+          base: Schema.String({ default: 'base' })
+        },
+        {
+          $id: 'BASE_ACTION'
+        }
+      )
+    )
+    const ExtendedAction = defineAction(
+      BaseAction.extend(
+        Schema.Object(
+          {
+            extended: Schema.String({ default: 'extended' })
+          },
+          { $id: 'EXTENDED_ACTION' }
+        )
+      )
+    )
+    const FurtherExtendedAction = defineAction(
+      ExtendedAction.extend(
+        Schema.Object(
+          {
+            further: Schema.String({ default: 'further' })
+          },
+          { $id: 'FURTHER_EXTENDED_ACTION' }
+        )
+      )
+    )
+    const action = FurtherExtendedAction({})
+    assert.deepStrictEqual(action.type, ['FURTHER_EXTENDED_ACTION', 'EXTENDED_ACTION', 'BASE_ACTION'])
+    assert.equal(action.base, 'base')
+    assert.equal(action.extended, 'extended')
+    assert.equal(action.further, 'further')
+    assert(FurtherExtendedAction.test(action))
+  })
+
   it('should be able to dispatch an action to a local store', () => {
     const store = createHyperStore({
       getDispatchTime: () => Date.now()
@@ -605,5 +644,62 @@ describe('Hyperflux Unit Tests', () => {
 
     assert.equal(hospitality.greetingCount.value, 0)
     assert.equal(hospitality.firstGreeting.value, 'bye')
+  })
+
+  it('should be able to receive inherited actions in receptors', () => {
+    const BaseAction = defineAction(Schema.Object({}, { $id: 'BASE_ACTION' }))
+    const ExtendedAction = defineAction(BaseAction.extend(Schema.Object({}, { $id: 'EXTENDED_ACTION' })))
+    const FurtherExtendedAction = defineAction(
+      ExtendedAction.extend(Schema.Object({}, { $id: 'FURTHER_EXTENDED_ACTION' }))
+    )
+    const AnotherExtendedAction = defineAction(BaseAction.extend(Schema.Object({}, { $id: 'ANOTHER_EXTENDED_ACTION' })))
+
+    const ActionState = defineState({
+      name: 'test.actions',
+
+      initial: () => ({
+        baseCount: 0,
+        extendedCount: 0,
+        furtherCount: 0,
+        anotherExtendedCount: 0
+      }),
+
+      receptors: {
+        onBase: BaseAction.receive((action) => {
+          const state = getMutableState(ActionState)
+          state.baseCount.set((v) => v + 1)
+        }),
+        onExtended: ExtendedAction.receive((action) => {
+          const state = getMutableState(ActionState)
+          state.extendedCount.set((v) => v + 1)
+        }),
+        onFurther: FurtherExtendedAction.receive((action) => {
+          const state = getMutableState(ActionState)
+          state.furtherCount.set((v) => v + 1)
+        }),
+        onAnotherExtended: AnotherExtendedAction.receive((action) => {
+          const state = getMutableState(ActionState)
+          state.anotherExtendedCount.set((v) => v + 1)
+        })
+      }
+    })
+
+    const store = createHyperStore({
+      getDispatchTime: () => Date.now()
+    })
+
+    const actionState = getMutableState(ActionState)
+
+    dispatchAction(BaseAction({}))
+    dispatchAction(ExtendedAction({}))
+    dispatchAction(FurtherExtendedAction({}))
+    dispatchAction(AnotherExtendedAction({}))
+
+    applyIncomingActions()
+
+    assert.equal(actionState.baseCount.value, 4)
+    assert.equal(actionState.extendedCount.value, 2)
+    assert.equal(actionState.furtherCount.value, 1)
+    assert.equal(actionState.anotherExtendedCount.value, 1)
   })
 })

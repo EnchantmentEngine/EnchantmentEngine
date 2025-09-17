@@ -8,8 +8,8 @@ export const SpawnObjectActions = {
     WorldNetworkAction.spawnEntity.extend(
       Schema.Object(
         {
-          position: T.Vec3(),
-          rotation: T.Quaternion()
+          position: Schema.Optional(T.Vec3()),
+          rotation: Schema.Optional(T.Quaternion())
         },
         {
           $id: 'ee.engine.world.SPAWN_OBJECT'
