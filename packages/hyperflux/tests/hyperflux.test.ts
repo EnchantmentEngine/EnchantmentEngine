@@ -138,6 +138,38 @@ describe('Hyperflux Unit Tests', () => {
     assert(FurtherExtendedAction.test(action))
   })
 
+  it('should extend action preserving metadata', () => {
+    const BaseAction = defineAction(
+      Schema.Object(
+        {
+          base: Schema.String({ default: 'base' })
+        },
+        {
+          $id: 'BASE_ACTION',
+          metadata: { $topic: 'topic' }
+        }
+      )
+    )
+    const ExtendedAction = defineAction(
+      BaseAction.extend(
+        Schema.Object(
+          {
+            extended: Schema.String({ default: 'extended' })
+          },
+          { $id: 'EXTENDED_ACTION' }
+        )
+      )
+    )
+
+    const action = ExtendedAction({})
+
+    assert.deepStrictEqual(action.type, ['EXTENDED_ACTION', 'BASE_ACTION'])
+    assert.equal(action.base, 'base')
+    assert.equal(action.extended, 'extended')
+    assert(ExtendedAction.test(action))
+    assert.deepEqual(action.$topic, 'topic')
+  })
+
   it('should be able to dispatch an action to a local store', () => {
     const store = createHyperStore({
       getDispatchTime: () => Date.now()

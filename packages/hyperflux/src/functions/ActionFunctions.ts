@@ -156,13 +156,14 @@ export function defineAction<
 
     if (!CheckSchemaValue(definition, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
 
+    const metadata = definition.options?.metadata ?? {}
     const action: Action = {
+      ...metadata,
       ...payload,
       type: typeChain.length === 1 ? primaryType : typeChain
     }
 
     if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) action[k] = v
-    if (definition.options!.metadata) Object.assign(action, definition.options!.metadata)
 
     return action as Action & P & { type: TType | string[] }
   }) as ActionCreator<TType, Properties, Schema>
@@ -179,7 +180,11 @@ export function defineAction<
       ...(definition.properties || {}),
       ...(extensionDefinition.properties || {})
     } as TProperties
-    return Schema.Object(combinedProperties, { $id: combinedID as any }) as any
+    const metadata = {
+      ...definition.options?.metadata,
+      ...extensionDefinition.options?.metadata
+    }
+    return Schema.Object(combinedProperties, { $id: combinedID as any, metadata }) as any
   }
   creator.test = (a: Required<Action>): a is ResolvedAction<TType, Properties, Schema> => {
     if (!a || !a.type) return false
