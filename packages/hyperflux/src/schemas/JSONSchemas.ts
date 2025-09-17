@@ -25,18 +25,18 @@ import {
   TVoidSchema
 } from './JSONSchemaTypes'
 
-const buildOptions = (options?: Options): Options => {
-  const defaultOptions = {
+const buildOptions = <T = unknown>(options?: Options<T>): Options<T> => {
+  const defaultOptions: Options<T> = {
     serialized: true
   }
 
-  return { ...defaultOptions, ...options }
+  return { ...defaultOptions, ...(options ?? {}) } as Options<T>
 }
 
-const buildSchema = <Opt extends Options>(kind: Kinds, options?: Opt) => {
+const buildSchema = <T = unknown, Opt extends Options<T> = Options<T>>(kind: Kinds, options?: Opt) => {
   return {
     [Kind]: kind,
-    options: buildOptions(options)
+    options: buildOptions<T>(options)
   }
 }
 
@@ -74,12 +74,12 @@ export const Schema = {
   /** Schema that infers as a string, defaults to '' */
   String: (options?: TStringSchema['options']) =>
     ({
-      ...buildSchema('String', options)
+      ...buildSchema<string>('String', options)
     }) as TStringSchema,
 
   TypedString: <T extends string>(options?: TStringSchema['options']) =>
     ({
-      ...buildSchema('String', options)
+      ...buildSchema<string>('String', options)
     }) as unknown as TTypedSchema<T>,
 
   /**
@@ -241,7 +241,7 @@ export const Schema = {
    * @returns
    */
   Type: <T>(options?: TTypedSchema<T>['options'], props?: TProperties) =>
-    Schema.SerializedClass(props ?? {}, { default: () => undefined, ...options }) as unknown as TTypedSchema<T>,
+    Schema.SerializedClass(props ?? {}, { ...options }) as unknown as TTypedSchema<T>,
 
   /**
    * Create a schema object that infers as an any type, the value is serialized
