@@ -8,7 +8,6 @@ import { getState } from '@ir-engine/hyperflux'
 import { t } from 'i18next'
 import { CopyPasteFunctions, EntityCopyDataType } from '../../functions/CopyPasteFunctions'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
-import { isEntityGlb } from '../../functions/utils'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import { SelectionState } from '../../services/SelectionServices'
 
@@ -128,9 +127,7 @@ export function ecsHierarchyTreeWalker(rootEntity: Entity): HierarchyTreeNodeTyp
     const childIndex = eTree.childIndex ?? 0
     const children = eTree.children
 
-    //@todo temporary check for glb so we don't display children we can't save edits to
-    const hideChildren = isEntityGlb(entity)
-    const isLeaf = !children || children.length === 0 || hideChildren //check glb here to hide expansion chevron
+    const isLeaf = !children.length
     const sourceID = UUIDComponent.get(rootEntity)
     const isCollapsed = !getState(HierarchyTreeState).expandedNodes[sourceID]?.[entity]
     const isRendered = originalIsRendered && !isCollapsed
@@ -144,11 +141,8 @@ export function ecsHierarchyTreeWalker(rootEntity: Entity): HierarchyTreeNodeTyp
       isRendered: originalIsRendered,
       parentEntity
     })
-    if (children && !hideChildren) {
-      //do not push children of glb
-      for (let i = children.length - 1; i >= 0; i--) {
-        frontier.push({ entity: children[i], depth: depth + 1, lastChild: i === 0, isRendered })
-      }
+    for (let i = children.length - 1; i >= 0; i--) {
+      frontier.push({ entity: children[i], depth: depth + 1, lastChild: i === 0, isRendered })
     }
   }
   return result
