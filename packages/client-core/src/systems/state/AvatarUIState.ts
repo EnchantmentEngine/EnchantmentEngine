@@ -1,22 +1,21 @@
-import { Engine } from '@ir-engine/ecs'
-import {
-  NetworkTopics,
-  defineAction,
-  defineState,
-  getMutableState,
-  matches,
-  matchesUserID,
-  matchesWithDefault,
-  none
-} from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { NetworkTopics, Schema, defineAction, defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
 
 export class AvatarUIActions {
-  static setUserTyping = defineAction({
-    type: 'ee.client.avatar.USER_IS_TYPING',
-    userID: matchesWithDefault(matchesUserID, () => Engine.instance.userID),
-    typing: matches.boolean,
-    $topic: NetworkTopics.world
-  })
+  static setUserTyping = defineAction(
+    Schema.Object(
+      {
+        userID: Schema.UserID({ required: true, default: () => getState(EngineState).userID }),
+        typing: Schema.Bool({ required: true })
+      },
+      {
+        $id: 'ee.client.avatar.USER_IS_TYPING',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 }
 
 export const AvatarUIState = defineState({

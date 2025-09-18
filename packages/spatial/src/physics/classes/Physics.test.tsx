@@ -1,7 +1,7 @@
 import { RigidBodyType, ShapeType, TempContactForceEvent, Vector, World } from '@dimforge/rapier3d-compat'
 import assert from 'assert'
 import sinon from 'sinon'
-import { BoxGeometry, Mesh, Quaternion, SphereGeometry, Vector3 } from 'three'
+import { BoxGeometry, BufferGeometry, Float32BufferAttribute, Mesh, Quaternion, SphereGeometry, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { EntityID, SourceID, createEntity } from '@ir-engine/ecs'
@@ -38,7 +38,6 @@ import {
   removeEntity
 } from '@ir-engine/ecs'
 import { act, render } from '@testing-library/react'
-import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry'
 import { Epsilon, assertFloat, assertVec } from '../../../tests/util/assert'
 import { smootheLerpAlpha } from '../../common/functions/MathLerpFunctions'
 import { MeshComponent } from '../../renderer/components/MeshComponent'
@@ -2022,8 +2021,8 @@ describe('Physics : Rapier->ECS API', () => {
       })
 
       it('should encapsulate mesh with sphere when set to match mesh', () => {
-        const line = new LineGeometry()
-        line.setPositions([0, 0, 2, 0, 0, 6]) //line of length 4
+        const line = new BufferGeometry()
+        line.setAttribute('position', new Float32BufferAttribute([0, 0, 2, 0, 0, 6], 3))
         setComponent(testEntity, MeshComponent, new Mesh(line))
         setComponent(testEntity, ColliderComponent, { shape: Shapes.Sphere, matchMesh: true })
         const result = Physics.createColliderDesc(physicsWorld, testEntity, rootEntity)

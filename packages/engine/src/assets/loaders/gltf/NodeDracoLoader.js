@@ -14,6 +14,7 @@
 //
 // 'use strict';
 
+import { FileLoader } from '@ir-engine/spatial/src/resources/loaders/base/FileLoader'
 import {
   BufferGeometry,
   DefaultLoadingManager,
@@ -27,19 +28,14 @@ import {
   Uint32BufferAttribute,
   Uint8BufferAttribute
 } from 'three'
-import { FileLoader } from '@ir-engine/spatial/src/resources/loaders/base/FileLoader'
-
-import draco from 'draco3dgltf'
 
 let DRACO_DECODER
 let DRACO_ENCODER
 
 export const loadDRACODecoderNode = async () => {
   if (typeof DRACO_DECODER === 'undefined') {
-    [DRACO_DECODER, DRACO_ENCODER] = await Promise.all([
-      draco.createDecoderModule(),
-      draco.createEncoderModule()
-    ])
+    const { default: draco } = await import('draco3dgltf')
+    ;[DRACO_DECODER, DRACO_ENCODER] = await Promise.all([draco.createDecoderModule(), draco.createEncoderModule()])
   }
 }
 

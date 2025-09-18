@@ -5,7 +5,6 @@
 
 import {
   createEntity,
-  Engine,
   Entity,
   EntityID,
   EntityTreeComponent,
@@ -19,10 +18,11 @@ import {
   useEntityContext,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { useMutableState } from '@ir-engine/hyperflux'
+import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { useEffect } from 'react'
 import { Vector2 } from 'three'
 import { NameComponent } from '../../common/NameComponent'
+import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { RendererComponent } from '../../renderer/components/RendererComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { XRState } from '../../xr/XRState'
@@ -139,10 +139,12 @@ export const useXRInputSources = () => {
 
     const addInputSource = (source: XRInputSource) => {
       const eid = createEntity()
-      setComponent(eid, InputSourceComponent, { source, sourceEntity: Engine.instance.viewerEntity })
+      setComponent(eid, InputSourceComponent, { source, sourceEntity: getState(ReferenceSpaceState).viewerEntity })
       setComponent(eid, EntityTreeComponent, {
         parentEntity:
-          source.targetRayMode === 'tracked-pointer' ? Engine.instance.localFloorEntity : Engine.instance.viewerEntity
+          source.targetRayMode === 'tracked-pointer'
+            ? getState(ReferenceSpaceState).localFloorEntity
+            : getState(ReferenceSpaceState).viewerEntity
       })
       setComponent(eid, TransformComponent)
       setComponent(eid, NameComponent, 'InputSource-handed:' + source.handedness + '-mode:' + source.targetRayMode)

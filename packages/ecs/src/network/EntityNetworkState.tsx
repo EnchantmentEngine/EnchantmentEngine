@@ -2,12 +2,12 @@ import React, { useLayoutEffect } from 'react'
 
 import {
   createEntity,
-  Engine,
   EntityID,
   EntityTreeComponent,
   EntityUUID,
   EntityUUIDPair,
   getOptionalComponent,
+  removeComponent,
   removeEntity,
   setComponent,
   SourceID,
@@ -18,6 +18,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   NetworkPeerState,
   NetworkState,
   none,
@@ -28,7 +29,12 @@ import {
   UserID
 } from '@ir-engine/hyperflux'
 import { EngineState } from '../EngineState'
-import { NetworkId, NetworkObjectComponent } from './NetworkObjectComponent'
+import {
+  NetworkId,
+  NetworkObjectAuthorityTag,
+  NetworkObjectComponent,
+  NetworkObjectOwnedTag
+} from './NetworkObjectComponent'
 import { WorldNetworkAction } from './WorldNetworkAction'
 
 export const EntityNetworkState = defineState({
@@ -177,6 +183,18 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
     )
   }, [userConnected, state.requestingPeerId.value])
 
+  useLayoutEffect(() => {
+    const entity = UUIDComponent.getEntityByUUID(props.uuid)
+    if (state.authorityPeerId.value === HyperFlux.store.peerID) setComponent(entity, NetworkObjectAuthorityTag)
+    else removeComponent(entity, NetworkObjectAuthorityTag)
+  }, [state.authorityPeerId.value])
+
+  useLayoutEffect(() => {
+    const entity = UUIDComponent.getEntityByUUID(props.uuid)
+    if (state.ownerId.value === getState(EngineState).userID) setComponent(entity, NetworkObjectOwnedTag)
+    else removeComponent(entity, NetworkObjectOwnedTag)
+  }, [state.ownerId.value])
+
   const authorityPeer = state.authorityPeerId.value ?? state.ownerPeer.value
   const isAuthorInNetwork = !!(worldNetwork && networkPeerState[worldNetwork.id]?.peers[authorityPeer])
 
@@ -195,13 +213,13 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
       // Use the lowest peer as the new authority
       const lowestPeer = [...NetworkState.worldNetwork.users[userID]].sort((a, b) => (a > b ? 1 : -1))[0]
-      if (lowestPeer !== Engine.instance.store.peerID) return
+      if (lowestPeer !== HyperFlux.store.peerID) return
 
       dispatchAction(
         WorldNetworkAction.transferAuthorityOfObject({
           ownerID: state.ownerId.value,
           entityUUID: props.uuid,
-          newAuthority: Engine.instance.store.peerID
+          newAuthority: HyperFlux.store.peerID
         })
       )
     }
@@ -212,6 +230,7 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
 
 /**
  * Get a deterministic network ID scoped to each owner peer
+ * @todo this causes temporary desync when a new entity is spawned, as network IDs may change
  */
 const useNetworkID = (uuid: EntityUUID) => {
   const state = useMutableState(EntityNetworkState)

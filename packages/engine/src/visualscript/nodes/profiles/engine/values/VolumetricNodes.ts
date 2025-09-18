@@ -1,10 +1,6 @@
-import { Tween } from '@tweenjs/tween.js'
-
-import { createEntity, removeEntity } from '@ir-engine/ecs'
 import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { VolumetricComponent } from '@ir-engine/engine/src/scene/components/VolumetricComponent'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
 import { NodeCategory, makeFlowNodeDefinition } from '@ir-engine/visual-script'
 
 /**
@@ -75,26 +71,8 @@ export const fadeVolumetricAudioVolume = makeFlowNodeDefinition({
     const targetVolume = read<number>('targetVolume')
     const duration = read<number>('duration')
 
-    const volumetricComponent = getComponent(entity, VolumetricComponent)
-    const volumeSlider: any = {}
+    VolumetricComponent.setTransition(entity, 'volume', targetVolume, { duration: duration * 1000 })
 
-    Object.defineProperty(volumeSlider, 'volume', {
-      get: () => volumetricComponent.volume,
-      set: (value) => {
-        setComponent(entity, VolumetricComponent, { volume: value })
-      }
-    })
-    const tweenEntity = createEntity()
-    setComponent(
-      tweenEntity,
-      TweenComponent,
-      new Tween<any>(volumeSlider)
-        .to({ volume: targetVolume }, duration * 1000)
-        .start()
-        .onComplete(() => {
-          removeEntity(tweenEntity)
-        })
-    )
     commit('flow')
   }
 })

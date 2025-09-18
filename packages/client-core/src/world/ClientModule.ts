@@ -1,5 +1,3 @@
-import { WidgetAppServiceReceptorSystem } from '../systems/WidgetAppService'
-
 import { OverlaySystem } from '@ir-engine/client-core/src/systems/OverlaySystem'
 import { AvatarSpawnSystem } from '../networking/AvatarSpawnSystem'
 import { AudioDuckingSystem } from '../systems/AudioDuckingSystem'
@@ -31,6 +29,5 @@ export {
   PositionalAudioSystem,
   UserUISystem,
   WarningUISystem,
-  WidgetAppServiceReceptorSystem,
   WidgetUISystem
 }

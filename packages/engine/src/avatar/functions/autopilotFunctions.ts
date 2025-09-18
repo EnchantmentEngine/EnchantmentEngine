@@ -3,7 +3,6 @@ import { CylinderGeometry, Mesh, MeshBasicMaterial, Quaternion, Vector3 } from '
 import { createEntity } from '@ir-engine/ecs'
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineState, getMutableState, getState } from '@ir-engine/hyperflux'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
@@ -17,6 +16,7 @@ import { addObjectToGroup } from '@ir-engine/spatial/src/renderer/components/Obj
 import { setVisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { AvatarControllerComponent } from '../components/AvatarControllerComponent'
 
 export const interactionGroups = getInteractionGroups(
@@ -40,13 +40,13 @@ export const autopilotSetPosition = (entity: Entity) => {
   const physicsWorld = Physics.getWorld(entity)
   if (!physicsWorld) return
 
-  const inputPointerEntity = InputPointerComponent.getPointersForCamera(Engine.instance.viewerEntity)[0]
+  const inputPointerEntity = InputPointerComponent.getPointersForCamera(getState(ReferenceSpaceState).viewerEntity)[0]
   if (!inputPointerEntity) return
   const pointerPosition = getComponent(inputPointerEntity, InputPointerComponent).position
 
   const castedRay = Physics.castRayFromCamera(
     physicsWorld,
-    getComponent(Engine.instance.cameraEntity, CameraComponent),
+    getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent),
     pointerPosition,
     autopilotRaycastArgs
   )

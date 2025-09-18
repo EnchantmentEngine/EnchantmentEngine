@@ -14,9 +14,9 @@ import {
   projectPath,
   scopePath
 } from '@ir-engine/common/src/schema.type.module'
-import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
-import { Engine } from '@ir-engine/ecs'
+import { EngineState } from '@ir-engine/ecs'
 import { Button, Checkbox, Input, Tooltip } from '@ir-engine/ui'
 import { ContextMenu } from '@ir-engine/ui/src/components/tailwind/ContextMenu'
 import Accordion from '@ir-engine/ui/src/primitives/tailwind/Accordion'
@@ -146,7 +146,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
 
   const adminScopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'admin:admin' as ScopeType
     }
   })
@@ -155,7 +155,7 @@ const ProjectPage = ({ studioPath }: { studioPath: string }) => {
 
   const editorScopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'projects:write' as ScopeType
     }
   })

@@ -3,7 +3,7 @@
   "version": "1.0.3",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ir-engine/ir-engine.git"
+    "url": "git://github.com/enchantmentengine/enchantmentengine.git"
   },
   "engines": {
     "node": ">= 22.11.0"
@@ -16,7 +16,7 @@
   "types": "lib/index.d.ts",
   "npmClient": "npm",
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
+    "check-errors": "tsc --noemit",
     "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts"
   },
   "resolutions": {

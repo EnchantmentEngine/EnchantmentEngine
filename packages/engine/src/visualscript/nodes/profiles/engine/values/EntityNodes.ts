@@ -2,7 +2,6 @@ import { cloneDeep, isEqual, uniqueId } from 'lodash'
 
 import { UUIDComponent, removeEntity } from '@ir-engine/ecs'
 import { ComponentMap, Layers, getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { Entity, EntityUUID, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { SystemUUID, defineSystem, destroySystem } from '@ir-engine/ecs/src/SystemFunctions'
@@ -24,6 +23,8 @@ import {
   toVector3
 } from '@ir-engine/visual-script'
 
+import { getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { addEntityToScene } from '../helper/entityHelper'
 
 type State = {
@@ -79,7 +80,7 @@ export const getCameraEntity = makeFunctionNodeDefinition({
   in: {},
   out: { entity: 'entity' },
   exec: ({ write }) => {
-    const entity = Engine.instance.cameraEntity
+    const entity = getState(ReferenceSpaceState).viewerEntity
     write('entity', entity)
   }
 })

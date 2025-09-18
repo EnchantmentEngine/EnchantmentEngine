@@ -6,12 +6,25 @@ import * as bitECS from 'bitecs'
 import React from 'react'
 
 import {
+  CreateSchemaValue,
   DeepReadonly,
+  DeserializeSchemaValue,
+  HasRequiredSchema,
+  HasRequiredSchemaValues,
+  HasValidSchemaValues,
   HyperFlux,
+  IsSingleValueSchema,
+  Kind,
   None,
   ReactorRoot,
+  Schema,
+  SchemaDefinition,
+  SerializeSchema,
   SimpleStore,
   State,
+  Static,
+  SchemaDefinition as TSchema,
+  TTypedSchema,
   createSimpleStore,
   getState,
   hookSimpleStore,
@@ -23,22 +36,11 @@ import { ECSState } from './ECSState'
 import { Easing, EasingFunction } from './EasingFunctions'
 import { Entity, UndefinedEntity } from './Entity'
 import { QueryReactor, defineQuery, removeQuery } from './QueryFunctions'
+import { EntitySchema } from './Schemas'
 import { defineSystem } from './SystemFunctions'
 import { PresentationSystemGroup } from './SystemGroups'
 import { Transitionable, TransitionableTypes, getTransitionableKeyForType } from './Transitionable'
 import { createResizableTypeArray } from './bitecsLegacy'
-import { Kind, Schema, Static, Schema as TSchema, TTypedSchema } from './schemas/JSONSchemaTypes'
-import {
-  CreateSchemaValue,
-  DeserializeSchemaValue,
-  HasRequiredSchema,
-  HasRequiredSchemaValues,
-  HasSchemaValidators,
-  HasValidSchemaValues,
-  IsSingleValueSchema,
-  SerializeSchema
-} from './schemas/JSONSchemaUtils'
-import { S } from './schemas/JSONSchemas'
 
 /**
  * === SECTION ===
@@ -229,8 +231,8 @@ export type ComponentPropertyFromPath<T, Path extends string> = IsDirectProperty
  * ```ts
  * export const MyComponent = defineComponent({
  *   name: 'MyComponent',
- *   schema: S.Object({
- *     prop: S.String('default')
+ *   schema: Schema.Object({
+ *     prop: Schema.String('default')
  *   }),
  *   onSet: (entity, component, json) => {
  *     // side effects
@@ -650,8 +652,8 @@ export const deserializeComponent = <C extends Component>(
 
   const args = Component.schema ? DeserializeSchemaValue(Component.schema, component, json) : json
 
-  if (Component.schema && HasSchemaValidators(Component.schema)) {
-    const [valid, key] = HasValidSchemaValues(Component.schema, args, component, entity)
+  if (Component.schema) {
+    const [valid, key] = HasValidSchemaValues(Component.schema, args, component)
     if (!valid)
       throw new Error(`${component.name}:deserializeComponent Invalid value for key ${key} ${JSON.stringify(args)}`)
   }
@@ -752,7 +754,7 @@ function shouldPropagate(entityLayer: LayerID, layer: LayerID): boolean {
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Number
  * */
 function createPropagationArgsNumber<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -761,7 +763,7 @@ function createPropagationArgsNumber<C extends Component>(
   component: C
 ) {
   if (obj === UndefinedEntity) return obj
-  if ((schema[Kind] as any) === 'Number' && schema?.options?.['id'] === 'Entity') {
+  if ((schema[Kind] as any) === 'Number' && schema?.options?.$id === 'Entity') {
     const referencedEntity = obj as Entity
 
     // if the entity is already in the linked layer, return the current arg
@@ -778,7 +780,7 @@ function createPropagationArgsNumber<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is of type any
  * */
 function createPropagationArgsAny<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -800,7 +802,7 @@ function createPropagationArgsAny<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Class
  * */
 function createPropagationArgsClass<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -828,7 +830,7 @@ function createPropagationArgsClass<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is an Object
  * */
 function createPropagationArgsObject<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -851,7 +853,7 @@ function createPropagationArgsObject<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Record
  * */
 function createPropagationArgsRecord<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -874,7 +876,7 @@ function createPropagationArgsRecord<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is an Array
  * */
 function createPropagationArgsArray<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -896,7 +898,7 @@ function createPropagationArgsArray<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Tuple
  * */
 function createPropagationArgsTuple<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -918,7 +920,7 @@ function createPropagationArgsTuple<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} when schema[Kind] is a Union
  * */
 function createPropagationArgsUnion<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -938,7 +940,7 @@ function createPropagationArgsUnion<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs} for the default case
  * */
 function createPropagationArgsDefault<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   obj: any,
   layer: LayerID,
@@ -965,7 +967,7 @@ function createPropagationArgsDefault<C extends Component>(
  * @description Returns an object containing the args required by {@link createPropagationArgs}
  * */
 function createPropagationArgsInner<C extends Component>(
-  schema: Schema,
+  schema: SchemaDefinition,
   key: string | number,
   data: any,
   layer: LayerID,
@@ -1120,13 +1122,13 @@ export const LayerRelations = {
 export const LayerComponents = Object.entries(Layers).map(([name, layer]) => {
   return defineComponent({
     name: `${name}LayerComponent`,
-    schema: S.Object({
-      relations: S.Record(
-        S.Enum(Layers, {
+    schema: Schema.Object({
+      relations: Schema.Record(
+        Schema.Enum(Layers, {
           $comment:
             "A numeric enum, ie. the value of one of the following key-value pairs: 'Simulation': 0, 'Authoring': 1"
         }),
-        S.Entity()
+        EntitySchema.Entity()
       )
     }),
 
@@ -1226,20 +1228,20 @@ export const TransitionComponent = defineComponent({
 
   jsonID: 'IR_transition',
 
-  schema: S.Array(
-    S.Object({
-      componentJsonID: S.String(),
-      propertyPath: S.String(),
-      transitionableType: S.String(),
-      duration: S.Number({ default: 500 }),
-      easing: S.String({ default: Easing.exponential.inOut.path }),
-      initialValue: S.Type<TransitionableTypes | undefined>({ serialized: false }),
-      events: S.Array(
-        S.Object({
-          age: S.Number(),
-          toValue: S.Type<TransitionableTypes>(),
-          duration: S.Number(),
-          easing: S.String()
+  schema: Schema.Array(
+    Schema.Object({
+      componentJsonID: Schema.String(),
+      propertyPath: Schema.String(),
+      transitionableType: Schema.String(),
+      duration: Schema.Number({ default: 500 }),
+      easing: Schema.String({ default: Easing.exponential.inOut.path }),
+      initialValue: Schema.Type<TransitionableTypes | undefined>({ serialized: false }),
+      events: Schema.Array(
+        Schema.Object({
+          age: Schema.Number(),
+          toValue: Schema.Type<TransitionableTypes>(),
+          duration: Schema.Number(),
+          easing: Schema.String()
         }),
         { serialized: false }
       )

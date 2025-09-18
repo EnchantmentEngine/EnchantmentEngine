@@ -2,11 +2,11 @@ import React, { useEffect } from 'react'
 import { MathUtils } from 'three'
 
 import {
-  Engine,
+  EngineState,
+  EntitySchema,
   EntityUUID,
   getComponent,
   getOptionalComponent,
-  matchesEntityID,
   removeComponent,
   setComponent,
   UUIDComponent,
@@ -17,9 +17,9 @@ import {
   defineState,
   getMutableState,
   getState,
-  matchesUserID,
   NetworkTopics,
   none,
+  Schema,
   useHookstate,
   useMutableState,
   UserID
@@ -31,18 +31,34 @@ import { TransformComponent } from '../../transform/components/TransformComponen
 import { FlyControlComponent } from '../components/FlyControlComponent'
 
 export class SpectateActions {
-  static spectateEntity = defineAction({
-    type: 'ee.engine.Engine.SPECTATE_USER' as const,
-    spectatorUserID: matchesUserID,
-    spectatingEntity: matchesEntityID.optional(),
-    $topic: NetworkTopics.world
-  })
+  static spectateEntity = defineAction(
+    Schema.Object(
+      {
+        spectatorUserID: Schema.UserID({ required: true }),
+        spectatingEntity: Schema.Optional(EntitySchema.EntityID())
+      },
+      {
+        $id: 'ee.engine.Engine.SPECTATE_USER',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 
-  static exitSpectate = defineAction({
-    type: 'ee.engine.Engine.EXIT_SPECTATE' as const,
-    spectatorUserID: matchesUserID,
-    $topic: NetworkTopics.world
-  })
+  static exitSpectate = defineAction(
+    Schema.Object(
+      {
+        spectatorUserID: Schema.UserID({ required: true })
+      },
+      {
+        $id: 'ee.engine.Engine.EXIT_SPECTATE',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 }
 
 export const SpectateEntityState = defineState({
@@ -73,14 +89,14 @@ export const SpectateEntityState = defineState({
   reactor: () => {
     const state = useMutableState(SpectateEntityState)
 
-    if (!state.value[Engine.instance.userID]) return null
+    if (!state.value[getState(EngineState).userID]) return null
 
     return <SpectatorReactor />
   }
 })
 
 const SpectatorReactor = () => {
-  const state = useHookstate(getMutableState(SpectateEntityState)[Engine.instance.userID])
+  const state = useHookstate(getMutableState(SpectateEntityState)[getState(EngineState).userID])
 
   useEffect(() => {
     const cameraEntity = getState(ReferenceSpaceState).viewerEntity

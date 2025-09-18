@@ -2,8 +2,9 @@ import { Shader } from 'three'
 
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineMaterialPlugin } from '@ir-engine/engine/src/material/defineMaterialPlugin'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
+import { defineMaterialPlugin } from '@ir-engine/spatial/src/renderer/materials/defineMaterialPlugin'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import {
   envmapParsReplaceLambert,
@@ -17,13 +18,13 @@ export const EnvMapComponent = defineComponent({
   name: 'EnvMapComponent',
   jsonID: 'EE_envmap',
 
-  schema: S.Object({
-    type: S.LiteralUnion(Object.values(EnvMapSourceType), { default: EnvMapSourceType.Skybox }),
+  schema: Schema.Object({
+    type: Schema.LiteralUnion(Object.values(EnvMapSourceType), { default: EnvMapSourceType.Skybox }),
     envMapSourceColor: T.Color('#8080FF'),
-    envMapSourceURL: S.String(),
-    envMapCubemapURL: S.String(),
-    envMapSourceEntityUUID: S.EntityID(),
-    envMapIntensity: S.Number({ default: 1 })
+    envMapSourceURL: Schema.String(),
+    envMapCubemapURL: Schema.String(),
+    envMapSourceEntityUUID: EntitySchema.EntityID(),
+    envMapIntensity: Schema.Number({ default: 1 })
   }),
 
   errors: ['MISSING_FILE']
@@ -34,7 +35,7 @@ export const BoxProjectionPlugin = defineMaterialPlugin({
 
   jsonID: 'IR_envmap_box_projection',
 
-  uniforms: S.Object({
+  uniforms: Schema.Object({
     cubeMapSize: T.Vec3(),
     cubeMapPos: T.Vec3()
   }),

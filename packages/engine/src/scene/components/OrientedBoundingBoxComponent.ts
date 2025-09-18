@@ -4,7 +4,7 @@ import { iterateEntityNode } from '@ir-engine/ecs'
 import { defineComponent, getOptionalComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
@@ -14,12 +14,12 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 export const OrientedBoundingBoxComponent = defineComponent({
   name: 'OrientedBoundingBoxComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     box: T.Box3()
   })
 })
 
-export const updateBoundingBox = (entity: Entity) => {
+export const updateOrientedBoundingBox = (entity: Entity) => {
   const boxComponent = getOptionalComponent(entity, OrientedBoundingBoxComponent)
 
   if (!boxComponent) {

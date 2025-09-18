@@ -27,14 +27,12 @@ import {
   userAvatarPath,
   userPath
 } from '@ir-engine/common/src/schema.type.module'
-import { EngineState } from '@ir-engine/ecs'
 import {
   defineState,
   getMutableState,
   getState,
   stateNamespaceKey,
-  syncStateWithLocalStorage,
-  useHookstate
+  syncStateWithLocalStorage
 } from '@ir-engine/hyperflux'
 import { MessageResponse, ParentCommunicator } from '../../common/iframeCOM'
 import { AuthStrategiesType } from '../../common/initialAuthState'
@@ -852,23 +850,4 @@ function parseLoginDisplayCredential(credentials) {
   const displayIcon = loginDisplayVc.credentialSubject.displayIcon || DEFAULT_ICON
 
   return { displayName, displayIcon }
-}
-
-export const useAuthenticated = () => {
-  const authState = getMutableState(AuthState)
-  const userID = useHookstate(authState.user.id).value
-  const isAuthenticated = useHookstate(authState.isAuthenticated).value
-
-  useEffect(() => {
-    AuthService.doLoginAuto()
-    return () => {
-      communicator.destroy()
-    }
-  }, [])
-
-  useEffect(() => {
-    getMutableState(EngineState).userID.set(userID)
-  }, [userID])
-
-  return isAuthenticated
 }

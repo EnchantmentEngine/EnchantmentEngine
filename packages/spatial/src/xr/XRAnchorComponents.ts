@@ -1,28 +1,26 @@
 import { useEffect } from 'react'
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D, ShadowMaterial } from 'three'
-import matches from 'ts-matches'
 
 import {
-  Engine,
-  EntityTreeComponent,
-  EntityUUID,
-  S,
-  UUIDComponent,
   createEntity,
   defineComponent,
+  EntityTreeComponent,
+  EntityUUID,
   getComponent,
   removeEntity,
   setComponent,
   useComponent,
   useEntityContext,
-  useOptionalComponent
+  useOptionalComponent,
+  UUIDComponent
 } from '@ir-engine/ecs'
-import { defineAction, useHookstate, useMutableState } from '@ir-engine/hyperflux'
+import { defineAction, getState, Schema, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 
+import { ReferenceSpaceState } from '../ReferenceSpaceState'
 import { NameComponent } from '../common/NameComponent'
-import { matchesQuaternion, matchesVector3 } from '../common/functions/MatchesUtils'
 import { MeshComponent } from '../renderer/components/MeshComponent'
 import { ObjectComponent } from '../renderer/components/ObjectComponent'
+import { T } from '../schema/schemaFunctions'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { XRState } from './XRState'
 
@@ -34,13 +32,13 @@ export const PersistentAnchorComponent = defineComponent({
   name: 'PersistentAnchorComponent',
   jsonID: 'EE_persistent_anchor',
 
-  schema: S.Object({
+  schema: Schema.Object({
     /** an identifiable name for this anchor */
-    name: S.String({ default: '' }),
+    name: Schema.String({ default: '' }),
     /** whether to show this object as a wireframe upon tracking - useful for debugging */
-    wireframe: S.Bool({ default: false }),
+    wireframe: Schema.Bool({ default: false }),
     /** internal - whether this anchor is currently being tracked */
-    active: S.Bool({ default: false })
+    active: Schema.Bool({ default: false })
   }),
 
   reactor: PersistentAnchorReactor
@@ -70,7 +68,7 @@ function PersistentAnchorReactor() {
     /** remove from scene and add to world origins */
     const originalParent = UUIDComponent.get(getComponent(entity, EntityTreeComponent).parentEntity)
     originalParentEntityUUID.set(originalParent)
-    setComponent(entity, EntityTreeComponent, { parentEntity: Engine.instance.localFloorEntity })
+    setComponent(entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).localFloorEntity })
     TransformComponent.dirty[entity] = 1
 
     const wireframe = anchor.wireframe
@@ -114,22 +112,40 @@ function PersistentAnchorReactor() {
 }
 
 export class PersistentAnchorActions {
-  static anchorFound = defineAction({
-    type: 'xre.anchor.anchorFound' as const,
-    name: matches.string,
-    position: matchesVector3,
-    rotation: matchesQuaternion
-  })
+  static anchorFound = defineAction(
+    Schema.Object(
+      {
+        name: Schema.String(),
+        position: T.Vec3(),
+        rotation: T.Quaternion()
+      },
+      {
+        $id: 'xre.anchor.anchorFound' as const
+      }
+    )
+  )
 
-  static anchorUpdated = defineAction({
-    type: 'xre.anchor.anchorUpdated' as const,
-    name: matches.string,
-    position: matchesVector3,
-    rotation: matchesQuaternion
-  })
+  static anchorUpdated = defineAction(
+    Schema.Object(
+      {
+        name: Schema.String(),
+        position: T.Vec3(),
+        rotation: T.Quaternion()
+      },
+      {
+        $id: 'xre.anchor.anchorUpdated' as const
+      }
+    )
+  )
 
-  static anchorLost = defineAction({
-    type: 'xre.anchor.anchorLost' as const,
-    name: matches.string
-  })
+  static anchorLost = defineAction(
+    Schema.Object(
+      {
+        name: Schema.String()
+      },
+      {
+        $id: 'xre.anchor.anchorLost' as const
+      }
+    )
+  )
 }

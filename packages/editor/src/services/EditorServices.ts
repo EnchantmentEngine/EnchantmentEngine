@@ -1,21 +1,7 @@
-import { LayoutData } from 'rc-dock'
-
-import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
-import { UUIDComponent } from '@ir-engine/ecs'
 import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { AssetModifiedState } from '@ir-engine/engine/src/gltf/GLTFState'
-import { LinkState } from '@ir-engine/engine/src/scene/components/LinkComponent'
-
 import { defineState, getMutableState, getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import { useEffect } from 'react'
-
-export const UIMode = {
-  BASIC: 'BASIC',
-  ADVANCED: 'ADVANCED'
-} as const
-
-export type UIModeType = (typeof UIMode)[keyof typeof UIMode]
 
 export type ActiveLowerPanel = 'properties' | 'inspector'
 
@@ -28,10 +14,7 @@ export const EditorState = defineState({
     scenePath: null as string | null,
     /** just used to store the id of the current scene asset */
     sceneAssetID: null as string | null,
-    panelLayout: {} as LayoutData,
     rootEntity: UndefinedEntity,
-    uiEnabled: true,
-    uiMode: UIMode.ADVANCED,
     canvasRef: null as React.RefObject<HTMLElement> | null,
     activeLowerPanel: 'properties' as ActiveLowerPanel
   }),
@@ -61,22 +44,5 @@ export const EditorState = defineState({
     if (rootSourceID !== sourceID) {
       modifiedState[rootSourceID].set(true)
     }
-  },
-  isInActiveScene: (entity: Entity) => {
-    const rootEntity = getState(EditorState).rootEntity
-    const sourceEntity = UUIDComponent.getSourceEntity(entity)
-    return sourceEntity === rootEntity
-  },
-  reactor: () => {
-    const linkState = useMutableState(LinkState)
-
-    useEffect(() => {
-      if (!linkState.location.value) return
-
-      NotificationService.dispatchNotify('Scene navigation is disabled in the studio', { variant: 'warning' })
-      linkState.location.set(undefined)
-    }, [linkState.location])
-
-    return null
   }
 })

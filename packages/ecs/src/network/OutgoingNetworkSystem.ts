@@ -1,9 +1,8 @@
-import { Engine } from '@ir-engine/ecs/src/Engine'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { SimulationSystemGroup } from '@ir-engine/ecs/src/SystemGroups'
 
-import { Network, NetworkState } from '@ir-engine/hyperflux'
+import { HyperFlux, Network, NetworkState } from '@ir-engine/hyperflux'
 import { createDataWriter } from './DataWriter'
 import { ecsDataChannelType } from './IncomingNetworkSystem'
 import { NetworkObjectAuthorityTag, NetworkObjectComponent } from './NetworkObjectComponent'
@@ -19,7 +18,7 @@ const serializeAndSend = (serialize: ReturnType<typeof createDataWriter>) => {
   if (ents.length > 0) {
     const network = NetworkState.worldNetwork as Network
     if (!network.peers) return
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const data = serialize(network, peerID, ents)
 
     // todo: insert historian logic here

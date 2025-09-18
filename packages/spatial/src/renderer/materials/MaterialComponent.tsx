@@ -1,7 +1,21 @@
-import { FrontSide, IUniform, Material, MeshStandardMaterial as MeshStandardMaterial0, Shader, Vector2 } from 'three'
+import {
+  Color,
+  FrontSide,
+  IUniform,
+  Material,
+  MeshStandardMaterial as MeshStandardMaterial0,
+  Texture,
+  Uniform,
+  Vector2,
+  Vector3,
+  Vector4
+} from 'three'
 
 import {
   ComponentType,
+  ECSState,
+  PresentationSystemGroup,
+  SystemUUID,
   UUIDComponent,
   createEntity,
   defineComponent,
@@ -9,16 +23,31 @@ import {
   getOptionalComponent,
   hasComponent,
   setComponent,
+  useComponent,
   useEntityContext,
+  useExecute,
   useOptionalComponent
 } from '@ir-engine/ecs'
 import { Entity, EntityUUID, EntityUUIDPair } from '@ir-engine/ecs/src/Entity'
-import { PluginType } from '@ir-engine/spatial/src/common/functions/OnBeforeCompilePlugin'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { defineState, getMutableState, getState, none } from '@ir-engine/hyperflux'
+import { EntitySchema } from '@ir-engine/ecs'
+import {
+  NO_PROXY,
+  Schema,
+  SchemaDefinition,
+  Static,
+  TObjectSchema,
+  TProperties,
+  defineState,
+  getMutableState,
+  getState,
+  none,
+  useHookstate
+} from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
 import { NameComponent } from '../../common/NameComponent'
+import { useTexture } from '../../resources/resourceLoaderHooks'
+import { T } from '../../schema/schemaFunctions'
 import { MeshComponent } from '../components/MeshComponent'
 import { setMeshMaterial } from './materialFunctions'
 import MeshBasicMaterial from './prototypes/MeshBasicMaterial.mat'
@@ -43,16 +72,8 @@ export type PrototypeArgumentValue = {
   max?: number
   options?: any[]
 }
-
 export type PrototypeArgument = {
   [_: string]: PrototypeArgumentValue
-}
-
-export type SerializedTexture = {
-  source: string
-  channel: number
-  repeat: Vector2
-  offset: Vector2
 }
 
 export const MaterialPrototypeDefinitions = defineState({
@@ -71,17 +92,161 @@ export const MaterialPrototypeDefinitions = defineState({
     }) as Record<string, MaterialPrototypeDefinition>
 })
 
+/**
+ * A JSON Schema for a texture uniform.
+ * - `string` for remote textures
+ * - `null` for no texture
+ */
+export const TextureSchema = () =>
+  Schema.Union([Schema.String(), Schema.Null(), Schema.Type<Texture>()], {
+    default: null,
+    metadata: { $isTexture: true }
+  }) // @todo replace $isTexture with $id
+
+export type TextureSchemaType = Static<ReturnType<typeof TextureSchema>>
+
+export const isTextureUniform = (uniformSchema: SchemaDefinition) => !!uniformSchema.options?.metadata?.$isTexture
+
+export type ValidUniformTypes = boolean | number | string | Vector2 | Vector3 | Vector4 | Color | Texture | null
+
+export type UniformRecord = Record<string, ValidUniformTypes>
+
+export const useUniforms = <T extends TObjectSchema<TProperties>>(
+  entity: Entity,
+  schemas: T,
+  uniformValues: UniformRecord,
+  onUpdate?: (uniforms: Static<T>, deltaSeconds: number) => void,
+  systemUUID?: SystemUUID
+) => {
+  const textureUniformState = useHookstate(
+    () =>
+      Object.fromEntries(
+        Object.entries(schemas.properties!)
+          .filter(([key, value]) => isTextureUniform(value))
+          .map(([key, value]) => [key, new Uniform(null)])
+      ) as Record<keyof UniformRecord, Uniform<Texture | null>>
+  )
+
+  const textureUniforms = textureUniformState.get(NO_PROXY) as Record<keyof UniformRecord, Uniform<Texture | null>>
+  const textureState = useHookstate(
+    () =>
+      Object.fromEntries(Object.keys(textureUniforms).map((key) => [key, null])) as Record<
+        keyof UniformRecord,
+        Texture | null
+      >
+  )
+
+  const uniforms = useHookstate(
+    () =>
+      Object.fromEntries(
+        Object.entries(schemas.properties)
+          .map(([key, value]) => {
+            if (isTextureUniform(schemas.properties![key])) return [key, new Uniform(null)]
+            return [key, new Uniform(value !== null && typeof value === 'object' && 'index' in value ? null : value)]
+          })
+          .filter(Boolean)
+      ) as Record<keyof UniformRecord, Uniform>
+  ).get(NO_PROXY) as Record<keyof UniformRecord, Uniform>
+
+  for (const key in textureUniforms) {
+    const src = uniformValues[key]
+    const [texture] = useTexture(typeof src === 'string' ? src : '', entity)
+    useEffect(() => {
+      textureUniformState[key].nested('value').set(texture)
+      textureState[key].set(texture)
+    }, [texture])
+  }
+
+  useExecute(
+    () => {
+      if (!uniformValues) return
+      if (onUpdate) onUpdate(uniformValues, getState(ECSState).deltaSeconds)
+      for (const key in uniforms) {
+        uniforms[key].value = key in textureUniforms ? textureUniforms[key].value : uniformValues[key]
+      }
+    },
+    { before: PresentationSystemGroup, uuid: systemUUID }
+  )
+
+  return { textureState, uniforms }
+}
+
+/**
+ * Material System
+ * - automatically synchronizes material changes to the mesh, including fallback for unassigned materials
+ * - extensible via material plugins
+ */
+
+export type SerializedTexture = {
+  source: string
+  channel: number
+  repeat: Vector2
+  offset: Vector2
+}
+
 export const MaterialPluginComponents = {} as Record<string, ComponentType<any>>
+
+const MaterialUniformSchemaProperties = {
+  /**
+   * These schema properties map directly to threejs' internal uniforms.
+   */
+  opacity: Schema.Number({ default: 1, minimum: 0, maximum: 1 }),
+  diffuse: T.Color(), // Material.color
+  emissive: T.Color(),
+  emissiveIntensity: Schema.Number({ default: 1, minimum: 0, maximum: 1 }),
+  alphaMap: TextureSchema(),
+  bumpMap: TextureSchema(),
+  bumpScale: Schema.Number({ default: 1, minimum: 0 }),
+  normalMap: TextureSchema(),
+  displacementMap: TextureSchema(),
+  emissiveMap: TextureSchema(),
+  specularMap: TextureSchema(),
+  alphaTest: Schema.Number({ default: 0, minimum: 0, maximum: 1 })
+}
+
+// advanced material properties
+
+// metallic: number
+// roughness: number
+// occlusionMap: texture
+// occlusionStrength: number
+
+// lightMap: texture
+// aoMap: texture
+
+const MaterialUniformSchema = Schema.Object(MaterialUniformSchemaProperties)
+
+export const MaterialComponent = defineComponent({
+  name: 'MaterialComponent',
+
+  // jsonID: 'IR_material',
+
+  schema: Schema.Object({
+    ...MaterialUniformSchemaProperties,
+    alphaMode: Schema.LiteralUnion(['OPAQUE', 'MASK', 'BLEND'], { default: 'OPAQUE' }),
+    alphaCutoff: Schema.Number({ default: 0.5, minimum: 0, maximum: 1 }),
+    doubleSided: Schema.Bool({ default: false })
+  }),
+
+  reactor: ({ entity }) => {
+    const component = useComponent(entity, MaterialComponent)
+
+    /** Only pass in properties that are uniforms */
+    useUniforms(entity, MaterialUniformSchema, component)
+
+    return null
+  }
+})
 
 export const MaterialStateComponent = defineComponent({
   name: 'MaterialStateComponent',
 
   jsonID: 'IR_material',
 
-  schema: S.Object({
-    material: S.Type<Material>(),
+  schema: Schema.Object({
+    material: Schema.Type<Material>(),
     // serialized data (textures as URLs, colors as numbers etc)
-    parameters: S.Record(S.String(), S.Any())
+    parameters: Schema.Record(Schema.String(), Schema.Any())
   }),
 
   fallbackMaterialUUIDPair: {
@@ -95,6 +260,9 @@ export const MaterialStateComponent = defineComponent({
     )
     if (!fallbackMaterialEntity) {
       fallbackMaterialEntity = createEntity()
+      /**
+       * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#default-material
+       */
       const fallbackMaterial = new MeshStandardMaterial0({
         name: 'Fallback Material',
         color: 0xffffff,
@@ -149,7 +317,7 @@ export const MaterialStateComponent = defineComponent({
   }
 })
 
-export const MaterialReferenceState = defineState({
+const MaterialReferenceState = defineState({
   name: 'MaterialReferenceState',
   // map of MaterialStateComponent entity to MaterialInstanceComponent entities
   initial: () => ({}) as Record<Entity, Entity[]>
@@ -158,7 +326,7 @@ export const MaterialReferenceState = defineState({
 export const MaterialInstanceComponent = defineComponent({
   name: 'MaterialInstanceComponent',
 
-  schema: S.Object({ entities: S.Array(S.Entity()) }),
+  schema: Schema.Object({ entities: Schema.Array(EntitySchema.Entity()) }),
 
   onRemove: (entity) => {
     const entities = getOptionalComponent(entity, MaterialInstanceComponent)?.entities
@@ -231,15 +399,6 @@ const MaterialInstanceSubReactor = (props: {
   }, [materialStateComponent?.material, meshComponent])
 
   return null
-}
-
-declare module 'three/src/materials/Material.js' {
-  export interface Material {
-    shader: Shader
-    plugins?: PluginType[]
-    _onBeforeCompile: typeof Material.prototype.onBeforeCompile
-    needsUpdate: boolean
-  }
 }
 
 declare module 'three/src/renderers/shaders/ShaderLib.js' {

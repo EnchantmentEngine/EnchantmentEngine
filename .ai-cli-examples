@@ -1,11 +1,11 @@
 # Get a specific property from a state (properties defined by the shape of the state)
-Engine.instance.store.stateMap['NameComponentState'].get().entitiesByName
+HyperFlux.store.stateMap['NameComponentState'].get().entitiesByName
 # Get a component value for an entity (defined by the schema of the component)
 ComponentMap.get('NameComponent').valueMap[entity]
 # Get a SoA storage property for an entity (returns a number)
 ComponentMap.get('DistanceFromCameraComponent').squaredDistance[entity]
 # List all defined states
-Object.keys(Engine.instance.store.stateMap)
+Object.keys(HyperFlux.store.stateMap)
 # List all defined components
 Array.from(ComponentMap.keys())
 # Check if entity has component
@@ -17,7 +17,7 @@ ComponentMap.get('UUIDComponent').getEntityByUUID('entityContextID' + 'entityID'
 # Simple Scene Analysis
 (() => {
   // 1. Get camera information
-  const cameraEntity = Engine.instance.store.stateMap['ReferenceSpaceState'].get().viewerEntity;
+  const cameraEntity = HyperFlux.store.stateMap['ReferenceSpaceState'].get().viewerEntity;
   const cameraPosition = ComponentMap.get('TransformComponent').valueMap[cameraEntity].position;
   
   // 2. Find light entities

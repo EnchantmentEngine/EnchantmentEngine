@@ -1,7 +1,6 @@
 import { useUserAvatarThumbnail } from '@ir-engine/client-core/src/hooks/useUserAvatarThumbnail'
 import { useFind } from '@ir-engine/common'
 import { ChannelID, channelPath, ChannelType } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
 import { EngineState } from '@ir-engine/ecs/src/EngineState'
 import { getState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import React, { useEffect } from 'react'
@@ -13,7 +12,7 @@ export const getChannelName = (channel: ChannelType) => {
   return (
     channel.name ||
     channel.channelUsers
-      .filter((channelUser) => channelUser.user?.id !== Engine.instance.userID)
+      .filter((channelUser) => channelUser.user?.id !== getState(EngineState).userID)
       .map((channelUser) => channelUser.user?.name)
       .filter(Boolean)
       .join(', ')

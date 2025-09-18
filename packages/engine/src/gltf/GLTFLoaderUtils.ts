@@ -1,10 +1,9 @@
 import {
   Box3,
+  BufferAttribute,
   ColorManagement,
-  FrontSide,
   Interpolant,
   LinearSRGBColorSpace,
-  MeshStandardMaterial,
   Quaternion,
   Sphere,
   TriangleFanDrawMode,
@@ -41,7 +40,8 @@ export function toTrianglesDrawMode(geometry, drawMode) {
           indices.push(i)
         }
 
-        geometry.setIndex(indices)
+        const indexArray = position.count > 65535 ? new Uint32Array(indices) : new Uint16Array(indices)
+        geometry.setIndex(new BufferAttribute(indexArray, 1))
         index = geometry.getIndex()
       } else {
         console.error(
@@ -87,7 +87,8 @@ export function toTrianglesDrawMode(geometry, drawMode) {
     // build final geometry
 
     const newGeometry = geometry.clone()
-    newGeometry.setIndex(newIndices)
+    const newIndexArray = newIndices.length > 65535 ? new Uint32Array(newIndices) : new Uint16Array(newIndices)
+    newGeometry.setIndex(new BufferAttribute(newIndexArray, 1))
     newGeometry.clearGroups()
 
     return newGeometry
@@ -406,25 +407,6 @@ export function addPrimitiveAttributes(geometry, primitiveDef, parser) {
   return Promise.all(pending).then(function () {
     return primitiveDef.targets !== undefined ? addMorphTargets(geometry, primitiveDef.targets, parser) : geometry
   })
-}
-
-/**
- * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#default-material
- */
-export function createDefaultMaterial(cache) {
-  if (cache['DefaultMaterial'] === undefined) {
-    cache['DefaultMaterial'] = new MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: 0x000000,
-      metalness: 1,
-      roughness: 1,
-      transparent: false,
-      depthTest: true,
-      side: FrontSide
-    })
-  }
-
-  return cache['DefaultMaterial']
 }
 
 export function addUnknownExtensionsToUserData(knownExtensions, object, objectDef) {

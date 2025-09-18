@@ -6,21 +6,14 @@ import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
 import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ResourceAssetType, ResourceState } from '@ir-engine/spatial/src/resources/ResourceState'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
 import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import React from 'react'
 import { AnimationComponent } from '../components/AnimationComponent'
 
-const tweenQuery = defineQuery([TweenComponent])
 const animationQuery = defineQuery([AnimationComponent, VisibleComponent])
 
 const execute = () => {
   const { deltaSeconds } = getState(ECSState)
-
-  for (const entity of tweenQuery()) {
-    const tween = getComponent(entity, TweenComponent)
-    tween.update()
-  }
 
   for (const entity of animationQuery()) {
     const animationComponent = getComponent(entity, AnimationComponent)

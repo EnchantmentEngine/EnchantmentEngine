@@ -144,7 +144,7 @@ describe('XR8Pipeline', () => {
         expect(typeof onEvent).toBe('function')
         // Run and Check the result
         onEvent(Expected)
-        const result = getIncomingAction(PersistentAnchorActions.anchorFound.type)
+        const result = getIncomingAction(PersistentAnchorActions.anchorFound.type as string)
         assert(result)
         expect(typeof result).toBe('object')
         // @ts-expect-error Silence error about the name property not existing
@@ -182,7 +182,7 @@ describe('XR8Pipeline', () => {
         expect(typeof onEvent).toBe('function')
         // Run and Check the result
         onEvent(Expected)
-        const result = getIncomingAction(PersistentAnchorActions.anchorUpdated.type)
+        const result = getIncomingAction(PersistentAnchorActions.anchorUpdated.type as string)
         assert(result)
         expect(typeof result).toBe('object')
         // @ts-expect-error Silence error about the name property not existing
@@ -217,7 +217,7 @@ describe('XR8Pipeline', () => {
         onEvent(Expected)
         // Run and Check the result
         onEvent(Expected)
-        const result = getIncomingAction(PersistentAnchorActions.anchorLost.type)
+        const result = getIncomingAction(PersistentAnchorActions.anchorLost.type as string)
         assert(result)
         expect(typeof result).toBe('object')
         // @ts-expect-error Silence error about the name property not existing

@@ -1,7 +1,5 @@
 import {
-  CreateSchemaValue,
   Entity,
-  S,
   UndefinedEntity,
   createEngine,
   createEntity,
@@ -10,6 +8,7 @@ import {
   removeEntity,
   setComponent
 } from '@ir-engine/ecs'
+import { CreateSchemaValue, Schema } from '@ir-engine/hyperflux'
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { assertArray } from '../../../tests/util/assert'
@@ -20,7 +19,7 @@ type ComputedTransformComponentData = {
   computeFunction: (() => void) | undefined
 }
 
-const defaultSchemaFunction = CreateSchemaValue(S.Call())
+const defaultSchemaFunction = CreateSchemaValue(Schema.Func([], Schema.Void()))
 
 const ComputedTransformComponentDefaults: ComputedTransformComponentData = {
   referenceEntities: [] as Entity[],

@@ -1,4 +1,4 @@
-import { Entity, S, useEntityContext } from '@ir-engine/ecs'
+import { Entity, useEntityContext } from '@ir-engine/ecs'
 import {
   defineComponent,
   entityExists,
@@ -14,13 +14,10 @@ import { Physics } from '../classes/Physics'
 import { Body, BodyTypes } from '../types/PhysicsTypes'
 
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
+import { Schema } from '@ir-engine/hyperflux'
 import { Quaternion, Vector3 } from 'three'
 import { T } from '../../schema/schemaFunctions'
 import { TransformComponent } from '../../transform/components/TransformComponent'
-
-const options = {
-  deserialize: (curr, value) => curr.copy(value)
-}
 
 const assignVec3 = (property: string, entity: Entity): Vector3 => proxifyVector3(RigidBodyComponent[property], entity)
 
@@ -30,20 +27,20 @@ const assignQuat = (property: string, entity: Entity): Quaternion =>
 export const RigidBodyComponent = defineComponent({
   name: 'RigidBodyComponent',
   jsonID: 'EE_rigidbody',
-  schema: S.Object({
-    type: S.Enum(BodyTypes, {
+  schema: Schema.Object({
+    type: Schema.Enum(BodyTypes, {
       $comment: "A string enum, ie. one of the following values: 'fixed', 'dynamic', 'kinematic'",
       default: BodyTypes.Fixed
     }),
-    ccd: S.Bool({ default: false }),
-    allowRolling: S.Bool({ default: true }),
-    enabledRotations: S.Tuple([S.Bool(), S.Bool(), S.Bool()], { default: [true, true, true] }),
+    ccd: Schema.Bool({ default: false }),
+    allowRolling: Schema.Bool({ default: true }),
+    enabledRotations: Schema.Tuple([Schema.Bool(), Schema.Bool(), Schema.Bool()], { default: [true, true, true] }),
     // rigidbody desc values
-    canSleep: S.Bool({ default: true }),
-    gravityScale: S.Number({ default: 1 }),
+    canSleep: Schema.Bool({ default: true }),
+    gravityScale: Schema.Number({ default: 1 }),
     // internal
     /** @deprecated  @todo make the physics api properly reactive to remove this property  */
-    initialized: S.Bool({ default: false, serialized: false }),
+    initialized: Schema.Bool({ default: false, serialized: false }),
     previousPosition: T.Vec3(undefined, { serialized: false }),
     previousRotation: T.Quaternion(undefined, { serialized: false }),
     position: T.Vec3(undefined, { serialized: false }),
@@ -53,7 +50,7 @@ export const RigidBodyComponent = defineComponent({
     linearVelocity: T.Vec3(undefined, { serialized: false }),
     angularVelocity: T.Vec3(undefined, { serialized: false }),
     /** If multiplier is 0, ridigbody moves immediately to target pose, linearly interpolating between substeps */
-    targetKinematicLerpMultiplier: S.Number({ default: 0, serialized: false })
+    targetKinematicLerpMultiplier: Schema.Number({ default: 0, serialized: false })
   }),
 
   storage: {

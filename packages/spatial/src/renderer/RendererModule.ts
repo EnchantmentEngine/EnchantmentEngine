@@ -1,29 +1,13 @@
-import { TransformComponent } from '../transform/components/TransformComponent'
-import { XRAnchorComponent } from '../xr/XRComponents'
-import { DebugRendererSystem } from './DebugRendererSystem'
-import { LightTransformSystem } from './LightTransformSystem'
-import { RenderInfoSystem } from './RenderInfoSystem'
-import { ViewportLightingSystem } from './ViewportLightingSystem'
-import { WebGLRendererSystem } from './WebGLRendererSystem'
-import { AmbientLightComponent } from './components/lights/AmbientLightComponent'
-import { DirectionalLightComponent } from './components/lights/DirectionalLightComponent'
-import { HemisphereLightComponent } from './components/lights/HemisphereLightComponent'
-import { PointLightComponent } from './components/lights/PointLightComponent'
-import { SpotLightComponent } from './components/lights/SpotLightComponent'
+export { defineMaterialPlugin } from './materials/defineMaterialPlugin'
+export { MaterialStateComponent, TextureSchema } from './materials/MaterialComponent'
 
-/** Components */
-export {
-  AmbientLightComponent,
-  /** Systems */
-  DebugRendererSystem,
-  DirectionalLightComponent,
-  HemisphereLightComponent,
-  LightTransformSystem,
-  PointLightComponent,
-  RenderInfoSystem,
-  SpotLightComponent,
-  TransformComponent,
-  ViewportLightingSystem,
-  WebGLRendererSystem,
-  XRAnchorComponent
-}
+export { AmbientLightComponent } from './components/lights/AmbientLightComponent'
+export { DirectionalLightComponent } from './components/lights/DirectionalLightComponent'
+export { HemisphereLightComponent } from './components/lights/HemisphereLightComponent'
+export { PointLightComponent } from './components/lights/PointLightComponent'
+export { SpotLightComponent } from './components/lights/SpotLightComponent'
+export { DebugRendererSystem } from './DebugRendererSystem'
+export { LightTransformSystem } from './LightTransformSystem'
+export { RenderInfoSystem } from './RenderInfoSystem'
+export { ViewportLightingSystem } from './ViewportLightingSystem'
+export { WebGLRendererSystem } from './WebGLRendererSystem'

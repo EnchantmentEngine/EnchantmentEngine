@@ -7,6 +7,7 @@ import {
   SRGBColorSpace,
   WebGLRenderer
 } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 
 import { TextureData, TextureHash, WebLayerManagerBase } from '../WebLayerManagerBase'
 import { WebLayer3D } from './WebLayer3D'
@@ -16,7 +17,7 @@ export interface ThreeTextureData {
   compressedTexture?: CompressedTexture
 }
 export class WebLayerManager extends WebLayerManagerBase {
-  static initialize(renderer: WebGLRenderer, ktx2Loader) {
+  static initialize(renderer: WebGLRenderer | WebGPURenderer, ktx2Loader) {
     WebLayerManager.instance = new WebLayerManager()
     WebLayerManager.instance.renderer = renderer
     WebLayerManager.instance.ktx2Loader = ktx2Loader
@@ -25,7 +26,7 @@ export class WebLayerManager extends WebLayerManagerBase {
 
   static instance: WebLayerManager
 
-  renderer!: WebGLRenderer
+  renderer!: WebGLRenderer | WebGPURenderer
   textureEncoding = SRGBColorSpace
   // ktx2Loader: KTX2Loader // todo, currently the type exists in the engine package, which we cannot import here
   ktx2Loader: any
@@ -61,6 +62,8 @@ export class WebLayerManager extends WebLayerManagerBase {
             t.minFilter = LinearMipmapLinearFilter
             t.colorSpace = this.textureEncoding
             this.texturesByHash.get(textureData.hash)!.compressedTexture = t
+            // Once compressed texture is ready, drop CPU-side canvas to save memory
+            this.clearTextureCanvas(textureData)
             resolve(undefined)
           },
           () => {},

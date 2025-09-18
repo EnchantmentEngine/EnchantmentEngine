@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { Color, SpotLight } from 'three'
 
-import { S, useEntityContext } from '@ir-engine/ecs'
+import { useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
+import { Schema, useHookstate, useImmediateEffect, useMutableState } from '@ir-engine/hyperflux'
 
 import { T } from '../../../schema/schemaFunctions'
 import { isMobileXRHeadset } from '../../../xr/XRState'
@@ -22,16 +22,16 @@ export const SpotLightComponent = defineComponent({
   name: 'SpotLightComponent',
   jsonID: 'EE_spot_light',
 
-  schema: S.Object({
+  schema: Schema.Object({
     color: T.Color(0xffffff),
-    intensity: S.Number({ default: 10 }),
-    range: S.Number({ default: 0 }),
-    decay: S.Number({ default: 2 }),
-    angle: S.Number({ default: Math.PI / 3 }),
-    penumbra: S.Number({ default: 1 }),
-    castShadow: S.Bool({ default: false }),
-    shadowBias: S.Number({ default: 0 }),
-    shadowRadius: S.Number({ default: 1 })
+    intensity: Schema.Number({ default: 10 }),
+    range: Schema.Number({ default: 0 }),
+    decay: Schema.Number({ default: 2 }),
+    angle: Schema.Number({ default: Math.PI / 3 }),
+    penumbra: Schema.Number({ default: 1 }),
+    castShadow: Schema.Bool({ default: false }),
+    shadowBias: Schema.Number({ default: 0 }),
+    shadowRadius: Schema.Number({ default: 1 })
   }),
 
   reactor: function () {

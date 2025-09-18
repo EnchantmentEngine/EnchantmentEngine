@@ -1,14 +1,6 @@
-import {
-  defineState,
-  getMutableState,
-  getState,
-  HyperFlux,
-  NO_PROXY,
-  useMutableState,
-  VIDEO_CONSTRAINTS
-} from '@ir-engine/hyperflux'
-
 import { useEffect } from 'react'
+import { defineState, getMutableState, getState, NO_PROXY, useMutableState } from '../functions/StateFunctions'
+import { HyperFlux } from '../functions/StoreFunctions'
 import {
   createPeerMediaChannels,
   MediaChannelState,
@@ -18,6 +10,7 @@ import {
   webcamAudioMediaChannelType,
   webcamVideoMediaChannelType
 } from './MediaChannelState'
+import { VIDEO_CONSTRAINTS } from './VideoConstants'
 
 export const MediaStreamState = defineState({
   name: 'MediaStreamState',

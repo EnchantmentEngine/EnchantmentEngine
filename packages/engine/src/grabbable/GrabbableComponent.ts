@@ -2,19 +2,19 @@ import { useEffect } from 'react'
 
 import { UUIDComponent, getComponent, hasComponent, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, setComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity, matchesEntityUUID } from '@ir-engine/ecs/src/Entity'
-import { defineAction, dispatchAction, getState, isClient, matches } from '@ir-engine/hyperflux'
+import { Entity } from '@ir-engine/ecs/src/Entity'
+import { defineAction, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { NetworkTopics } from '@ir-engine/hyperflux'
+import { EntitySchema } from '@ir-engine/ecs'
+import { NetworkTopics, Schema } from '@ir-engine/hyperflux'
 import { AvatarComponent } from '../avatar/components/AvatarComponent'
 import { InteractableComponent, XRUIVisibilityOverride } from '../interaction/components/InteractableComponent'
 
 // @todo move this to spatial package schema definitions
-export const XRHandedness = S.LiteralUnion(['none', 'left', 'right'])
+export const XRHandedness = Schema.LiteralUnion(['none', 'left', 'right'])
 
 /**
  * GrabbableComponent
@@ -113,9 +113,9 @@ const grabCallback = (grabbableEntity: Entity) => {
 export const GrabbedComponent = defineComponent({
   name: 'GrabbedComponent',
 
-  schema: S.Object({
+  schema: Schema.Object({
     attachmentPoint: XRHandedness,
-    grabberEntity: S.Entity()
+    grabberEntity: EntitySchema.Entity()
   })
 })
 
@@ -126,20 +126,27 @@ export const GrabbedComponent = defineComponent({
 export const GrabberComponent = defineComponent({
   name: 'GrabberComponent',
 
-  schema: S.Object({
-    left: S.Entity(),
-    right: S.Entity()
+  schema: Schema.Object({
+    left: EntitySchema.Entity(),
+    right: EntitySchema.Entity()
   })
 })
 
 export class GrabbableNetworkAction {
-  static setGrabbedObject = defineAction({
-    type: 'ee.engine.grabbable.SET_GRABBED_OBJECT',
-    entityUUID: matchesEntityUUID,
-    grabbed: matches.boolean,
-    attachmentPoint: matches.literals('left', 'right').optional(),
-    grabberEntityUUID: matchesEntityUUID,
-    $cache: true,
-    $topic: NetworkTopics.world
-  })
+  static setGrabbedObject = defineAction(
+    Schema.Object(
+      {
+        entityUUID: EntitySchema.EntityUUID(),
+        grabbed: Schema.Bool(),
+        attachmentPoint: Schema.Optional(Schema.LiteralUnion(['left', 'right'] as const)),
+        grabberEntityUUID: EntitySchema.EntityUUID()
+      },
+      {
+        $id: 'ee.engine.grabbable.SET_GRABBED_OBJECT',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 }

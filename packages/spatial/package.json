@@ -7,13 +7,13 @@
   },
   "description": "Core spatial system for the Infinite Reality Engine",
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
+    "check-errors": "tsc --noemit",
     "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts",
     "test-coverage": "npm run test-coverage-generate ; npm run test-coverage-launch",
     "test-coverage-generate": "npm run test -- --coverage --silent",
     "test-coverage-launch": "vite preview --open --outDir coverage"
   },
-  "repository": "http://github.com/ir-engine/ir-engine",
+  "repository": "http://github.com/enchantmentengine/enchantmentengine",
   "author": "Infinite Reality Engine",
   "license": "CPAL",
   "dependencies": {
@@ -21,7 +21,6 @@
     "@dimforge/rapier3d-compat": "0.11.2",
     "@ir-engine/ecs": "^1.0.3",
     "@ir-engine/hyperflux": "^1.0.3",
-    "@tweenjs/tween.js": "^23.1.2",
     "lodash": "4.17.21",
     "noisejs": "2.1.0",
     "postprocessing": "6.37.3",
@@ -29,7 +28,6 @@
     "react-dom": "18.2.0",
     "three": "0.176.0",
     "three-mesh-bvh": "0.9.0",
-    "ts-matches": "5.3.0",
     "web-worker": "1.2.0"
   },
   "devDependencies": {

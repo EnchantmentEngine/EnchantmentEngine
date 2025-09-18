@@ -1,21 +1,16 @@
-import { ModalState } from '@ir-engine/client-core/src/common/services/ModalState'
 import { staticResourcePath } from '@ir-engine/common/src/schema.type.module'
 import { getMutableState, getState, NO_PROXY, useHookstate, useMutableState } from '@ir-engine/hyperflux'
-import ErrorDialog from '@ir-engine/ui/src/components/tailwind/ErrorDialog'
 import PopupMenu from '@ir-engine/ui/src/primitives/tailwind/PopupMenu'
-import { t } from 'i18next'
 import { DockLayout, DockMode, LayoutData } from 'rc-dock'
 import React, { useEffect, useRef } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import Toolbar from '../components/toolbar/Toolbar'
 import { cmdOrCtrlString } from '../functions/utils'
-import { EditorErrorState } from '../services/EditorErrorServices'
 import { ActiveLowerPanel, EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
 import { DndWrapper } from './dnd/DndWrapper'
 import DragLayer from './dnd/DragLayer'
 
-import { NotificationService } from '@ir-engine/client-core/src/common/services/NotificationService'
 import useFeatureFlags from '@ir-engine/client-core/src/hooks/useFeatureFlags'
 import { useZendesk } from '@ir-engine/client-core/src/hooks/useZendesk'
 import { LocationState } from '@ir-engine/client-core/src/social/services/LocationService'
@@ -40,7 +35,6 @@ import { PropertiesPanelTab } from '../panels/properties'
 import { ScenePanelTab } from '../panels/scenes'
 import { ViewportPanelTab } from '../panels/viewport'
 import { VisualScriptPanelTab } from '../panels/visualscript'
-import { EditorWarningState } from '../services/EditorWarningServices'
 import { UIAddonsState } from '../services/UIAddonsState'
 import { ClickPlacementState } from '../systems/ClickPlacementSystem'
 import './EditorContainer.css'
@@ -54,30 +48,6 @@ export const DockContainer = ({ children, id = 'editor-dock', dividerAlpha = 0 }
     <div id={id} className="dock-container" style={dockContainerStyles as React.CSSProperties}>
       {children}
     </div>
-  )
-}
-
-const onEditorWarning = (warning) => {
-  console.warn(warning)
-  NotificationService.dispatchNotify(warning, {
-    variant: 'warning'
-  })
-
-  // popover design doesnt match the figma designs, we use notification for now
-  /*ModalState.showPopupover(
-    <WarningDialog title={t('editor:warning')} description={warning || t('editor:warningMsg')} />
-  )*/
-}
-
-const onEditorError = (error) => {
-  console.error(error)
-  if (error['aborted']) {
-    ModalState.closeModal()
-    return
-  }
-
-  ModalState.openModal(
-    <ErrorDialog title={error.title || t('editor:error')} description={error.message || t('editor:errorMsg')} />
   )
 }
 
@@ -124,7 +94,7 @@ const defaultLayout = (flags: {
 }
 
 const EditorContainer = () => {
-  const { sceneAssetID, sceneName, projectName, scenePath, uiEnabled, rootEntity, canvasRef, activeLowerPanel } =
+  const { sceneAssetID, sceneName, projectName, scenePath, rootEntity, canvasRef, activeLowerPanel } =
     useMutableState(EditorState)
   const { metadata } = useMutableState(ClickPlacementState).value
   const editorUIAddon = useMutableState(UIAddonsState).editor
@@ -138,9 +108,6 @@ const EditorContainer = () => {
   getState(AuthoringState)
 
   const engineState = useMutableState(EngineState)
-
-  const errorState = useMutableState(EditorErrorState).error
-  const warningState = useMutableState(EditorWarningState).warning
 
   const dockPanelRef = useRef<DockLayout>(null)
 
@@ -226,18 +193,6 @@ const EditorContainer = () => {
   }, [scenePath])
 
   useEffect(() => {
-    if (errorState && errorState.value) {
-      onEditorError(errorState.value)
-    }
-  }, [errorState])
-
-  useEffect(() => {
-    if (warningState && warningState.value) {
-      onEditorWarning(warningState.value)
-    }
-  }, [warningState])
-
-  useEffect(() => {
     const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
       if (EditorState.isModified()) {
         event.preventDefault()
@@ -263,21 +218,19 @@ const EditorContainer = () => {
   return (
     <main className="pointer-events-auto">
       <div id="editor-container" className="flex flex-col" style={scenePath.value ? { background: 'transparent' } : {}}>
-        {uiEnabled.value && (
-          <DndWrapper id="editor-container">
-            <DragLayer />
-            <Toolbar />
-            <div className="mt-1 flex overflow-hidden">
-              <DockContainer>
-                <DockLayout
-                  ref={dockPanelRef}
-                  defaultLayout={memoizedDefaultLayout}
-                  style={{ position: 'absolute', left: 5, top: 50, right: 5, bottom: 5 }}
-                />
-              </DockContainer>
-            </div>
-          </DndWrapper>
-        )}
+        <DndWrapper id="editor-container">
+          <DragLayer />
+          <Toolbar />
+          <div className="mt-1 flex overflow-hidden">
+            <DockContainer>
+              <DockLayout
+                ref={dockPanelRef}
+                defaultLayout={memoizedDefaultLayout}
+                style={{ position: 'absolute', left: 5, top: 50, right: 5, bottom: 5 }}
+              />
+            </DockContainer>
+          </div>
+        </DndWrapper>
         {Object.entries(editorUIAddon.container.get(NO_PROXY)).map(([key, value]) => {
           return value
         })}

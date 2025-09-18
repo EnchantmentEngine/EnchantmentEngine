@@ -1,5 +1,6 @@
+import { EntitySchema } from '@ir-engine/ecs'
 import { defineComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 /**
  * Component for entities that serve as points of interest for the camera system.
@@ -9,8 +10,8 @@ export const PoiComponent = defineComponent({
   name: 'PoiComponent',
   jsonID: 'IR_poi_component',
 
-  schema: S.Object({
-    hotspotEntityUUIDs: S.Array(S.EntityUUID(), {
+  schema: Schema.Object({
+    hotspotEntityUUIDs: Schema.Array(EntitySchema.EntityUUID(), {
       $comment: 'Optional entities that can be hotspots within this POI'
     })
   })

@@ -20,7 +20,7 @@ import {
   UserType
 } from '@ir-engine/common/src/schema.type.module'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine, EntityUUID } from '@ir-engine/ecs'
+import { EntityUUID } from '@ir-engine/ecs'
 import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAvatar'
@@ -30,6 +30,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  HyperFlux,
   NetworkActions,
   NetworkState,
   PeerID
@@ -192,15 +193,15 @@ export function getUserIdFromPeerID(network: SocketWebRTCServerNetwork, peerID: 
   return client?.userId
 }
 
-function getCachedActionsForPeer(toPeerID: PeerID) {
+function getActionsForPeer(toPeerID: PeerID) {
   // send all cached and outgoing actions to joining user
-  const cachedActions = [] as Required<Action>[]
-  for (const action of Engine.instance.store.actions.cached) {
+  const actions = [] as Required<Action>[]
+  for (const action of HyperFlux.store.actions.history) {
     if (action.$peer === toPeerID) continue
-    if (action.$to === 'all' || action.$to === toPeerID) cachedActions.push({ ...action, $stack: undefined! })
+    if (action.$to === 'all' || action.$to === toPeerID) actions.push({ ...action, $stack: undefined! })
   }
 
-  return cachedActions
+  return actions
 }
 
 export const handleConnectingPeer = async (
@@ -232,7 +233,6 @@ export const handleConnectingPeer = async (
 
   const joinAction = dispatchAction(
     NetworkActions.peerJoined({
-      $cache: true,
       $network: network.id,
       $topic: network.topic,
       $peer: peerID,
@@ -266,7 +266,7 @@ export const handleConnectingPeer = async (
 
   logger.info('Connect to world from ' + userId)
 
-  const cachedActions = getCachedActionsForPeer(peerID)
+  const cachedActions = getActionsForPeer(peerID)
     .map((action) => {
       return cloneDeep(action)
     })
@@ -407,7 +407,6 @@ export async function handleDisconnect(network: SocketWebRTCServerNetwork, peerI
     }
     dispatchAction(
       NetworkActions.peerLeft({
-        $cache: true,
         $network: network.id,
         $topic: network.topic,
         peerID,

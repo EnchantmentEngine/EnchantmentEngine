@@ -116,7 +116,7 @@ type WalkerEntry = {
   isRendered: boolean
 }
 
-export function ecsHierarchyTreeWalker(rootEntity: Entity, enableHideGlbChildren: boolean): HierarchyTreeNodeType[] {
+export function ecsHierarchyTreeWalker(rootEntity: Entity): HierarchyTreeNodeType[] {
   const result: HierarchyTreeNodeType[] = []
   const frontier: WalkerEntry[] = [{ entity: rootEntity, depth: 0, lastChild: true, isRendered: true }]
   while (frontier.length > 0) {
@@ -129,7 +129,7 @@ export function ecsHierarchyTreeWalker(rootEntity: Entity, enableHideGlbChildren
     const children = eTree.children
 
     //@todo temporary check for glb so we don't display children we can't save edits to
-    const hideChildren = isEntityGlb(entity) && enableHideGlbChildren
+    const hideChildren = isEntityGlb(entity)
     const isLeaf = !children || children.length === 0 || hideChildren //check glb here to hide expansion chevron
     const sourceID = UUIDComponent.get(rootEntity)
     const isCollapsed = !getState(HierarchyTreeState).expandedNodes[sourceID]?.[entity]

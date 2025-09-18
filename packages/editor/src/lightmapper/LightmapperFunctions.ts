@@ -298,7 +298,8 @@ const uploadLightmapTexture = async (renderTarget: WebGLRenderTarget, entity: En
     return null
   }
 
-  const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!
+  const renderer = getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent)
+    .renderer! as WebGLRenderer
 
   const floatPixels = new Float32Array(4 * renderTarget.width * renderTarget.height)
   renderer.readRenderTargetPixels(renderTarget, 0, 0, renderTarget.width, renderTarget.height, floatPixels)
@@ -354,14 +355,14 @@ const handleBakeLightmap = (
   if (!entities.length) console.error('No atlased entities to bake')
 
   const textures = AtlasingFunctions.renderAtlasTextures(
-    getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!,
+    getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer! as WebGLRenderer,
     entities.map((entity) => getComponent(entity, MeshComponent)),
     resolution,
     true
   )
 
   const [renderTexture, raycastMesh, orthographicCamera, raycastMaterial] = Lightmapper.initialize(
-    getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer!,
+    getComponent(getState(ReferenceSpaceState).viewerEntity, RendererComponent).renderer! as WebGLRenderer,
     textures.positionTexture,
     textures.normalTexture,
     Lightmapper.getBakeBVH(entities as Entity[]),

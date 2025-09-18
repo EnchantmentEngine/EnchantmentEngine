@@ -3,7 +3,7 @@
   "version": "1.0.3",
   "main": "index.ts",
   "description": "A set of utilities for using DOM elements to create immerive user interfaces",
-  "homepage": "https://github.com/ir-engine/ir-engine#readme",
+  "homepage": "https://github.com/enchantmentengine/enchantmentengine#readme",
   "keywords": [
     "3D",
     "AR",
@@ -15,7 +15,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/ir-engine/ir-engine.git"
+    "url": "git://github.com/enchantmentengine/enchantmentengine.git"
   },
   "author": {
     "name": "Infinite Reality Engine Collective",
@@ -23,7 +23,7 @@
     "url": "http://github.com/ir-engine"
   },
   "bugs": {
-    "url": "https://github.com/ir-engine/ir-engine/issues"
+    "url": "https://github.com/enchantmentengine/enchantmentengine/issues"
   },
   "engines": {
     "node": ">= 22.11.0"

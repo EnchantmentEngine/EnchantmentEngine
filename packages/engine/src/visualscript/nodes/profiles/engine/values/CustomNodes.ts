@@ -1,4 +1,3 @@
-import { Tween } from '@tweenjs/tween.js'
 import {
   AdditiveAnimationBlendMode,
   AnimationActionLoopStyles,
@@ -6,21 +5,11 @@ import {
   LoopOnce,
   LoopPingPong,
   LoopRepeat,
-  Material,
   MathUtils,
-  Mesh,
-  NormalAnimationBlendMode,
-  Object3D
+  NormalAnimationBlendMode
 } from 'three'
 
-import {
-  getComponent,
-  getOptionalComponent,
-  hasComponent,
-  removeComponent,
-  setComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
-import { Engine } from '@ir-engine/ecs/src/Engine'
+import { getComponent, hasComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { PositionalAudioComponent } from '@ir-engine/engine/src/audio/components/PositionalAudioComponent'
 import { AnimationState } from '@ir-engine/engine/src/avatar/AnimationManager'
@@ -29,11 +18,9 @@ import { MediaComponent } from '@ir-engine/engine/src/scene/components/MediaComp
 import { VideoComponent } from '@ir-engine/engine/src/scene/components/VideoComponent'
 import { PlayMode, PlayModeType } from '@ir-engine/engine/src/scene/constants/PlayMode'
 import { dispatchAction, getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
-import iterateObject3D from '@ir-engine/spatial/src/common/functions/iterateObject3D'
-import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
-import { TweenComponent } from '@ir-engine/spatial/src/transform/components/TweenComponent'
 import { ContentFitType } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import { endXRSession, requestXRSession } from '@ir-engine/spatial/src/xr/XRSessionFunctions'
 import { NodeCategory, makeFlowNodeDefinition, makeFunctionNodeDefinition } from '@ir-engine/visual-script'
@@ -346,7 +333,7 @@ export const setCameraZoom = makeFlowNodeDefinition({
   out: { flow: 'flow' },
   initialState: undefined,
   triggered: ({ read, commit }) => {
-    const entity = Engine.instance.cameraEntity
+    const entity = getState(ReferenceSpaceState).viewerEntity
     const zoom = read<number>('zoom')
     setComponent(entity, FollowCameraComponent, { targetDistance: zoom })
     commit('flow')
@@ -432,81 +419,3 @@ export const redirectToURL = makeFlowNodeDefinition({
     window.location.assign(url)
   }
 })
-
-/**
- * fadeMesh: fade in/out mesh
- */
-export const fadeMesh = makeFlowNodeDefinition({
-  typeName: 'engine/fadeMesh',
-  category: NodeCategory.Engine,
-  label: 'Fade Mesh',
-  in: {
-    flow: 'flow',
-    entity: 'entity',
-    fadeOut: 'boolean',
-    duration: 'float'
-  },
-  out: { flow: 'flow' },
-  initialState: undefined,
-  triggered: ({ read, commit }) => {
-    const entity = read<Entity>('entity')
-    const fadeOut = read<boolean>('fadeOut')
-    const duration = read<number>('duration')
-
-    const obj3d: Object3D | null = getOptionalComponent(entity, ObjectComponent) ?? null
-    const meshMaterials = obj3d
-      ? iterateObject3D(
-          obj3d,
-          (child: Mesh) => {
-            const result = child.material as Material
-            result.transparent = true
-            return result
-          },
-          (child: Mesh) =>
-            child?.isMesh &&
-            !!child.material &&
-            !Array.isArray(child.material) &&
-            typeof child.material.transparent === 'boolean'
-        )
-      : []
-
-    const opacitySlider: { opacity: number; _opacity: number } = { opacity: 1, _opacity: 1 }
-    Object.defineProperty(opacitySlider, 'opacity', {
-      get: () => opacitySlider._opacity,
-      set: (value) => {
-        opacitySlider._opacity = value
-        for (const material of meshMaterials) {
-          material.opacity = value
-        }
-      }
-    })
-    if (fadeOut) {
-      opacitySlider.opacity = 1
-      setComponent(
-        entity,
-        TweenComponent,
-        new Tween<any>(opacitySlider)
-          .to({ opacity: 0 }, duration * 1000)
-          .start()
-          .onComplete(() => {
-            removeComponent(entity, TweenComponent)
-          })
-      )
-    } else {
-      opacitySlider.opacity = 0
-      setComponent(
-        entity,
-        TweenComponent,
-        new Tween<any>(opacitySlider)
-          .to({ opacity: 1 }, duration * 1000)
-          .start()
-          .onComplete(() => {
-            removeComponent(entity, TweenComponent)
-          })
-      )
-    }
-    commit('flow')
-  }
-})
-
-//scene transition

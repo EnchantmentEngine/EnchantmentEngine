@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 import multiLogger from '@ir-engine/common/src/logger'
 import { InstanceID, projectsPath } from '@ir-engine/common/src/schema.type.module'
-import { Engine } from '@ir-engine/ecs'
 import {
+  HyperFlux,
   Network,
   NetworkActions,
   NetworkState,
@@ -22,6 +22,7 @@ import { loadEngineInjection } from '@ir-engine/projects/loadEngineInjection'
 
 import { useFind } from '@ir-engine/common'
 import { EngineState } from '@ir-engine/ecs'
+import React from 'react'
 import { AuthState } from '../../user/services/AuthService'
 
 const logger = multiLogger.child({ component: 'client-core:world' })
@@ -43,6 +44,17 @@ export const useEngineInjection = () => {
   return loaded.value
 }
 
+type Props = {
+  children: React.ReactNode
+  fallback?: JSX.Element
+}
+
+export const EngineInjection = ({ children, fallback }: Props) => {
+  const engineInjection = useEngineInjection()
+  if (!engineInjection) return fallback ?? <></>
+  return <Suspense fallback={fallback}>{children}</Suspense>
+}
+
 export const useNetwork = (props: { online?: boolean }) => {
   const userID = useMutableState(EngineState).userID.value
   const ageVerified = useMutableState(AuthState).user.ageVerified.value
@@ -61,7 +73,7 @@ export const useNetwork = (props: { online?: boolean }) => {
   useEffect(() => {
     if (props.online || !userID) return
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     const peerIndex = 1
     const networkID = userID as any as InstanceID
 
@@ -78,7 +90,7 @@ export const useNetwork = (props: { online?: boolean }) => {
       NetworkActions.peerJoined({
         $network: networkID,
         $topic: network.topic,
-        $to: Engine.instance.store.peerID,
+        $to: HyperFlux.store.peerID,
         peerID,
         peerIndex,
         userID
@@ -90,7 +102,7 @@ export const useNetwork = (props: { online?: boolean }) => {
         NetworkActions.peerLeft({
           $network: networkID,
           $topic: network.topic,
-          $to: Engine.instance.store.peerID,
+          $to: HyperFlux.store.peerID,
           peerID,
           userID
         })

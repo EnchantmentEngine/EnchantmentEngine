@@ -2,7 +2,6 @@ import { NotificationService } from '@ir-engine/client-core/src/common/services/
 import { VALID_HEIRARCHY_SEARCH_REGEX } from '@ir-engine/common/src/regex'
 import {
   Entity,
-  EntityArrayBoundary,
   EntityTreeComponent,
   getAncestorWithComponents,
   getChildrenWithComponents,
@@ -10,6 +9,7 @@ import {
   hasComponent,
   isAncestor,
   Layers,
+  QueryReactor,
   traverseEntityNode,
   UndefinedEntity,
   useOptionalComponent,
@@ -30,8 +30,7 @@ import useUpload from '../../components/assets/useUpload'
 import { DnDFileType, FileDataType, ItemTypes, SupportedFileTypes } from '../../constants/AssetTypes'
 import { addMediaNode } from '../../functions/addMediaNode'
 import { EditorControlFunctions } from '../../functions/EditorControlFunctions'
-import { cmdOrCtrlString, isEntityGlb } from '../../functions/utils'
-import { EditorHelperState } from '../../services/EditorHelperState'
+import { cmdOrCtrlString } from '../../functions/utils'
 import { EditorState } from '../../services/EditorServices'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
 import { SelectionState } from '../../services/SelectionServices'
@@ -79,11 +78,6 @@ function bothContainsRigidbody(dragEntity: Entity | Entity[], targetEntity: Enti
       targetHasRb && containsRigidbodyInChildren(dragEntity)
 }
 
-function isGlbIssue(entity: Entity): boolean {
-  //@todo update this when we support adding children to GLB based prefabs
-  return isEntityGlb(entity) //&& !getMutableState(EditorHelperState).showGlbChildren.value
-}
-
 const didHierarchyChange = (prev: HierarchyTreeNodeType[], curr: HierarchyTreeNodeType[]) => {
   if (prev.length !== curr.length) return true
 
@@ -116,9 +110,7 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   const renamingEntity = useHookstate<Entity | null>(null)
   const contextMenu = useHookstate({ entity: UndefinedEntity, anchorEvent: undefined as React.MouseEvent | undefined })
   const entities = useQuery([UUIDComponent], Layers.Authoring)
-  const showGlbChildren = useMutableState(EditorHelperState).showGlbChildren
 
-  const childEntities = useQuery([EntityTreeComponent], Layers.Authoring)
   const reparentRefresh = useHookstate(0)
   const childIndexRefresh = useHookstate(0)
 
@@ -145,13 +137,11 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
   }
 
   const hierarchyNodes = useMemo(
-    () => ecsHierarchyTreeWalker(rootEntity, !showGlbChildren.value),
+    () => ecsHierarchyTreeWalker(rootEntity),
     [
       hierarchyTreeState.expandedNodes[sourceID],
       selectionState.selectedEntities,
-      showGlbChildren,
       entities,
-      childEntities,
       reparentRefresh,
       childIndexRefresh,
       rootEntity
@@ -184,7 +174,11 @@ const HierarchySnapshotReactor = (props: { children?: ReactNode; rootEntity: Ent
 
   return (
     <>
-      <EntityArrayBoundary entities={childEntities} ChildEntityReactor={ChildEntityReactor} />
+      <QueryReactor
+        Components={[EntityTreeComponent]}
+        layer={Layers.Authoring}
+        ChildEntityReactor={ChildEntityReactor}
+      />
       <HierarchyTreeContext.Provider
         value={{
           nodes: displayedNodes,
@@ -274,7 +268,6 @@ export const useHierarchyTreeDrop = (node?: HierarchyTreeNodeType, place?: 'On' 
           const updateRigidbodyCheck = node.entity !== lastTargetNode
           setTargetNode(node.entity)
 
-          if (isGlbIssue(node.entity)) return true
           // Check rigidbody condition and update state
           const hasRigidbodyWarning =
             (!updateRigidbodyCheck && rigidbodyParentingWarning) ||
@@ -299,11 +292,6 @@ export const useHierarchyTreeDrop = (node?: HierarchyTreeNodeType, place?: 'On' 
 
   const dropItem = (item: FileDataType | DnDFileType | DragItemType, monitor: DropTargetMonitor): void => {
     if (node?.entity) {
-      //check for glb issue (adding child to glb prefab)
-      if (isGlbIssue(node.entity)) {
-        NotificationService.dispatchNotify(t('editor:warnings.addChildToGlbError'), { variant: 'warning' })
-        return
-      }
       // Check if this is a rigidbody drop case that needs special handling
       if ('type' in item && item.type === ItemTypes.Node && place === 'On') {
         // If this is a rigidbody drop onto another rigidbody hierarchy, show warning and exit early

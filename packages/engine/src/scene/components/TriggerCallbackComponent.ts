@@ -1,5 +1,5 @@
-import { defineComponent, removeComponent, setComponent, useEntityContext } from '@ir-engine/ecs'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { defineComponent, EntitySchema, removeComponent, setComponent, useEntityContext } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { TriggerComponent } from '@ir-engine/spatial/src/physics/components/TriggerComponent'
 import { useEffect } from 'react'
 
@@ -7,21 +7,21 @@ export const TriggerCallbackComponent = defineComponent({
   name: 'TriggerCallbackComponent',
   jsonID: 'EE_trigger',
 
-  schema: S.Object({
-    triggers: S.Array(
-      S.Object({
+  schema: Schema.Object({
+    triggers: Schema.Array(
+      Schema.Object({
         /**
          * The function to call on the CallbackComponent of the targetEntity when the trigger volume is entered.
          */
-        onEnter: S.String(),
+        onEnter: Schema.String(),
         /**
          * The function to call on the CallbackComponent of the targetEntity when the trigger volume is exited.
          */
-        onExit: S.String(),
+        onExit: Schema.String(),
         /**
          * empty string represents self
          */
-        target: S.EntityID()
+        target: EntitySchema.EntityID()
       })
     )
   }),

@@ -10,8 +10,7 @@ import {
   useComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
-import { getMutableState, getState, isClient, useHookstate } from '@ir-engine/hyperflux'
+import { getMutableState, getState, isClient, Schema, useHookstate } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -21,8 +20,8 @@ export const ScenePreviewCameraComponent = defineComponent({
   name: 'EE_scenePreviewCamera',
   jsonID: 'EE_scene_preview_camera',
 
-  schema: S.Object({
-    camera: S.Class(() => new PerspectiveCamera(80, 16 / 9, 0.2, 8000), { serialized: false })
+  schema: Schema.Object({
+    camera: Schema.Class(() => new PerspectiveCamera(80, 16 / 9, 0.2, 8000), { serialized: false })
   }),
 
   reactor: function () {

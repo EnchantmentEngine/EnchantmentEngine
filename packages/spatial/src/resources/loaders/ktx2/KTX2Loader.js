@@ -35,6 +35,7 @@ import {
 	RGFormat,
 	SRGBColorSpace,
 	UnsignedByteType,
+	Texture,
 } from 'three';
 import {
 	read,
@@ -67,6 +68,7 @@ import { FileLoader } from '../base/FileLoader';
 import { Loader } from '../base/Loader';
 import { isClient } from '@ir-engine/hyperflux'
 import { CompressedTexture, CompressedArrayTexture } from 'three';
+
 import { WorkerPool } from '@ir-engine/spatial/src/common/classes/WorkerPool'
 
 import { DisplayP3ColorSpace, LinearDisplayP3ColorSpace } from '@ir-engine/spatial/src/threejsPatches'
@@ -120,45 +122,43 @@ class KTX2Loader extends Loader {
 
 	}
 
-	detectSupport( renderer ) {
-
-		if ( renderer.isWebGPURenderer === true ) {
-
-			this.workerConfig = {
-				astcSupported: renderer.hasFeature( 'texture-compression-astc' ),
-				etc1Supported: false,
-				etc2Supported: renderer.hasFeature( 'texture-compression-etc2' ),
-				dxtSupported: renderer.hasFeature( 'texture-compression-bc' ),
-				bptcSupported: false,
-				pvrtcSupported: false
-			};
-
-		} else {
-
-			this.workerConfig = {
-				astcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_astc' ),
+	detectWebGLSupport( renderer ) {
+		this.workerConfig = {
+			astcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_astc' ),
 				etc1Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc1' ),
 				etc2Supported: renderer.extensions.has( 'WEBGL_compressed_texture_etc' ),
 				dxtSupported: renderer.extensions.has( 'WEBGL_compressed_texture_s3tc' ),
 				bptcSupported: renderer.extensions.has( 'EXT_texture_compression_bptc' ),
 				pvrtcSupported: renderer.extensions.has( 'WEBGL_compressed_texture_pvrtc' )
 					|| renderer.extensions.has( 'WEBKIT_WEBGL_compressed_texture_pvrtc' )
-			};
+		};
 
-			if ( renderer.capabilities.isWebGL2 ) {
+		if ( renderer.capabilities.isWebGL2 ) {
 
-				// https://github.com/mrdoob/three.js/pull/22928
-				this.workerConfig.etc1Supported = false;
-
-			}
+			// https://github.com/mrdoob/three.js/pull/22928
+			this.workerConfig.etc1Supported = false;
 
 		}
 
 		return this;
+	}
 
+	async detectWebGPUSupport() {
+		const renderSettings = getState(RendererState)
+		this.workerConfig = {
+			astcSupported: renderSettings.features.astcSupported,
+			etc1Supported: renderSettings.features.etc1Supported,
+			etc2Supported: renderSettings.features.etc2Supported,
+			dxtSupported: renderSettings.features.dxtSupported,
+			bptcSupported: renderSettings.features.bptcSupported,
+			pvrtcSupported: renderSettings.features.pvrtcSupported
+		};
+
+		return this;
 	}
 
 	init() {
+		if (!isClient) return Promise.resolve(); 
 
 		if ( ! this.transcoderPending ) {
 
@@ -229,6 +229,11 @@ class KTX2Loader extends Loader {
 	}
 
 	load( url, onLoad, onProgress, onError, signal ) {
+
+		if (!isClient) {
+			onLoad(new Texture())
+			return
+		}
 
 		if ( this.workerConfig === null ) {
 

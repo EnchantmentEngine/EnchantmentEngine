@@ -22,16 +22,19 @@ export async function up(knex: Knex): Promise<void> {
       table.string('ipAddress', 255).defaultTo(null)
       table.string('channelId', 255).defaultTo(null)
       table.string('podName', 255).defaultTo(null)
-      table.integer('currentUsers', 11).defaultTo(0)
       table.boolean('ended').defaultTo(false)
       table.boolean('assigned').defaultTo(false)
       table.dateTime('assignedAt').defaultTo(null)
       //@ts-ignore
       table.uuid('locationId').collate('utf8mb4_bin').defaultTo(null).index()
+      //@ts-ignore
+      table.uuid('projectId', 36).collate('utf8mb4_bin').nullable().index()
+
       table.dateTime('createdAt').notNullable()
       table.dateTime('updatedAt').notNullable()
 
       table.foreign('locationId').references('id').inTable('location').onDelete('SET NULL').onUpdate('CASCADE')
+      table.foreign('projectId').references('id').inTable('project').onDelete('CASCADE').onUpdate('CASCADE')
     })
   }
 

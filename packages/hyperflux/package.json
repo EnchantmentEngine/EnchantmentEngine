@@ -8,19 +8,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/ir-engine/ir-engine.git"
+    "url": "git://github.com/enchantmentengine/enchantmentengine.git"
   },
   "author": "",
   "license": "CPAL",
   "bugs": {
-    "url": "https://github.com/ir-engine/ir-engine/issues"
+    "url": "https://github.com/enchantmentengine/enchantmentengine/issues"
   },
   "dependencies": {
     "@hookstate/identifiable": "^4.0.0",
     "@hookstate/core": "4.0.1",
     "react": "18.2.0",
     "react-reconciler": "0.29.0",
-    "ts-matches": "5.3.0",
     "ts-toolbelt": "^9.6.0",
     "uuid": "9.0.0"
   },
@@ -28,7 +27,6 @@
     "@types/node": "^22.5.2",
     "@types/react-reconciler": "^0.28.2",
     "cross-env": "^7.0.3",
-    "ts-matches": "5.3.0",
     "typescript": "5.8.3",
     "vite": "5.4.8",
     "vite-plugin-dts": "^3.9.1",
@@ -36,12 +34,12 @@
     "vite-plugin-static-copy": "^1.0.6"
   },
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
+    "check-errors": "tsc --noemit",
     "test": "cross-env TEST=true vitest run --config=../../vitest.client.config.ts",
     "test-coverage": "npm run test-coverage-generate ; npm run test-coverage-launch",
     "test-coverage-generate": "npm run test -- --coverage --silent",
     "test-coverage-launch": "vite preview --open --outDir coverage",
-    "build": "ts-node --swc build.ts",
+    "build": "tsx build.ts",
     "build-publish": "npm run build && cd dist && npm publish --access public --dry-run"
   },
   "overrides": {

@@ -17,6 +17,24 @@ import { RenderSettingsState } from './WebGLRendererSystem'
 
 describe('PerformanceState', () => {
   const mockRenderer = {
+    renderer: {
+      getContext: (context: string) => {
+        return mockRenderer.renderContext as WebGLRenderingContext
+      },
+      getContextAttributes: () => {
+        return {
+          alpha: true,
+          antialias: true,
+          depth: true,
+          desynchronized: false,
+          failIfMajorPerformanceCaveat: false,
+          powerPreference: 'default',
+          premultipliedAlpha: true,
+          preserveDrawingBuffer: false,
+          stencil: true
+        }
+      }
+    },
     canvas: {
       getContext: (context: string) => {
         return mockRenderer.renderContext as WebGLRenderingContext
@@ -57,7 +75,7 @@ describe('PerformanceState', () => {
     createEngine()
     initializeSpatialEngine()
     getMutableState(EngineState).isEditing.set(false)
-    getMutableState(RendererState).automatic.set(true)
+    getMutableState(RendererState).merge({ automatic: true, backend: 'Webgl' })
     getMutableState(PerformanceState).merge({
       initialized: true,
       enabled: true

@@ -5,7 +5,7 @@ import { defineComponent, hasComponent, setComponent, useComponent } from '@ir-e
 import { useMutableState } from '@ir-engine/hyperflux'
 import { GraphJSON, IRegistry, VisualScriptState, defaultVisualScript } from '@ir-engine/visual-script'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { parseStorageProviderURLs } from '@ir-engine/spatial/src/resources/parseSceneJSON'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { useVisualScriptRunner } from '../systems/useVisualScriptRunner'
@@ -20,20 +20,20 @@ export const VisualScriptComponent = defineComponent({
   name: 'VisualScriptComponent',
   jsonID: 'EE_visual_script',
 
-  schema: S.Object({
-    domain: S.Enum(VisualScriptDomain, {
+  schema: Schema.Object({
+    domain: Schema.Enum(VisualScriptDomain, {
       $comment: "A string enum, ie. one of the following values: 'ECS'",
       default: VisualScriptDomain.ECS
     }),
-    visualScript: S.Type<GraphJSON | null>({
+    visualScript: Schema.Type<GraphJSON | null>({
       default: () => parseStorageProviderURLs(defaultVisualScript),
       deserialize(curr, value) {
         if (!value) return value
         return parseStorageProviderURLs(value)
       }
     }),
-    run: S.Bool(),
-    disabled: S.Bool()
+    run: Schema.Bool(),
+    disabled: Schema.Bool()
   }),
 
   // we make reactor for each component handle the engine

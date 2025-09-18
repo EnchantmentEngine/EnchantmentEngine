@@ -93,7 +93,7 @@ export function findProximity(
   const userID = getState(EngineState).userID as string
   if (!userID) return
 
-  const isCameraAttachedToAvatar = XRState.isCameraAttachedToAvatar
+  const shouldViewerFollowController = XRState.shouldViewerFollowController
 
   // @todo need a better way to do this
 
@@ -101,7 +101,7 @@ export function findProximity(
   const selfAvatarEntity = UUIDComponent.getEntityByUUID((userID + 'avatar') as EntityUUID)
 
   // use sourceEid if controller (one InputSource per controller), otherwise use avatar rather than InputSource-emulated-pointer
-  const inputSourceEntity = isCameraAttachedToAvatar && isSpatialInput ? sourceEid : selfAvatarEntity
+  const inputSourceEntity = shouldViewerFollowController && isSpatialInput ? sourceEid : selfAvatarEntity
 
   // Skip Proximity Heuristic when the entity is undefined
   if (inputSourceEntity === UndefinedEntity) return

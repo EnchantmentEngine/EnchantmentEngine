@@ -36,7 +36,8 @@ import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/re
 import { ContentFitTypeSchema } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
 import { isMobileXRHeadset } from '@ir-engine/spatial/src/xr/XRState'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { Vector2_One } from '@ir-engine/spatial/src/common/constants/MathConstants'
@@ -68,34 +69,34 @@ class VideoTexturePriorityQueue extends VideoTexture {
   update() {}
 }
 
-const WrappingSchema = S.LiteralUnion([RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping], {
+const WrappingSchema = Schema.LiteralUnion([RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping], {
   default: ClampToEdgeWrapping
 })
 
-const ProjectionSchema = S.LiteralUnion(['Flat', 'Equirectangular360'], { default: 'Flat' })
+const ProjectionSchema = Schema.LiteralUnion(['Flat', 'Equirectangular360'], { default: 'Flat' })
 
 export const VideoComponent = defineComponent({
   name: 'EE_video',
   jsonID: 'EE_video',
 
-  schema: S.Object({
+  schema: Schema.Object({
     side: SideSchema(DoubleSide),
     uvOffset: T.Vec2(),
     uvScale: T.Vec2(Vector2_One),
     alphaUVOffset: T.Vec2(),
     wrapS: WrappingSchema,
     wrapT: WrappingSchema,
-    useAlpha: S.Bool({ default: false }),
-    useAlphaInvert: S.Bool({ default: false }),
-    alphaThreshold: S.Number({ default: 0.5 }),
+    useAlpha: Schema.Bool({ default: false }),
+    useAlphaInvert: Schema.Bool({ default: false }),
+    alphaThreshold: Schema.Number({ default: 0.5 }),
     fit: ContentFitTypeSchema('stretch'),
     projection: ProjectionSchema,
-    mediaUUID: S.EntityID(),
+    mediaUUID: EntitySchema.EntityID(),
 
     // internal
-    videoMeshEntity: S.Entity({ serialized: false }),
+    videoMeshEntity: EntitySchema.Entity({ serialized: false }),
     currentVideoSize: T.Vec2(Vector2_One, { serialized: false }),
-    texture: S.Type<VideoTexturePriorityQueue | null>({ serialized: false })
+    texture: Schema.Type<VideoTexturePriorityQueue | null>({ serialized: false })
   }),
 
   onRemove: (entity, component) => {

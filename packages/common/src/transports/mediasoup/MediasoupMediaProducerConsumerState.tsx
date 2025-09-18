@@ -9,15 +9,14 @@ import {
   NetworkID,
   NetworkState,
   PeerID,
-  Validator,
+  Schema,
+  TTypedSchema,
   defineAction,
   defineState,
   dispatchAction,
   getMutableState,
   getState,
   isClient,
-  matches,
-  matchesPeerID,
   none,
   useHookstate,
   useMutableState
@@ -31,90 +30,144 @@ import {
 } from './MediasoupTransportState'
 
 export class MediasoupMediaProducerActions {
-  static requestProducer = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_CREATE_PRODUCER',
-    requestID: matches.string,
-    transportID: matches.string,
-    kind: matches.literals('audio', 'video').optional(),
-    rtpParameters: matches.object,
-    paused: matches.boolean,
-    appData: matches.object as Validator<unknown, MediaStreamAppData>
-  })
+  static requestProducer = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        transportID: Schema.String(),
+        kind: Schema.Optional(Schema.LiteralUnion(['audio', 'video'] as const)),
+        rtpParameters: Schema.Any(),
+        paused: Schema.Bool(),
+        appData: Schema.Any() as TTypedSchema<MediaStreamAppData>
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_CREATE_PRODUCER'
+      }
+    )
+  )
 
-  static requestProducerError = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_CREATE_PRODUCER_ERROR',
-    requestID: matches.string,
-    error: matches.string
-  })
+  static requestProducerError = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        error: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_CREATE_PRODUCER_ERROR'
+      }
+    )
+  )
 
-  static producerCreated = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_PRODUCER_CREATED',
-    requestID: matches.string,
-    producerID: matches.string,
-    transportID: matches.string,
-    peerID: matchesPeerID,
-    mediaTag: matches.string as Validator<unknown, MediaChannelType>,
-    channelID: matches.string as Validator<unknown, ChannelID>,
-    $cache: true
-  })
+  static producerCreated = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        producerID: Schema.String(),
+        transportID: Schema.String(),
+        peerID: Schema.PeerID(),
+        mediaTag: Schema.TypedString<MediaChannelType>(),
+        channelID: Schema.TypedString<ChannelID>()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_PRODUCER_CREATED'
+      }
+    )
+  )
 
-  static producerClosed = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_CLOSED_PRODUCER',
-    producerID: matches.string,
-    $cache: true
-  })
+  static producerClosed = defineAction(
+    Schema.Object(
+      {
+        producerID: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_CLOSE_PRODUCER'
+      }
+    )
+  )
 
-  static producerPaused = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_PRODUCER_PAUSED',
-    producerID: matches.string,
-    paused: matches.boolean,
-    globalMute: matches.boolean,
-    $cache: {
-      removePrevious: ['producerID']
-    }
-  })
+  static producerPaused = defineAction(
+    Schema.Object(
+      {
+        producerID: Schema.String(),
+        paused: Schema.Bool(),
+        globalMute: Schema.Bool()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_PRODUCER_PAUSED'
+      }
+    )
+  )
 }
 
 export class MediasoupMediaConsumerActions {
-  static requestConsumer = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_REQUEST_CONSUMER',
-    peerID: matchesPeerID,
-    mediaTag: matches.string as Validator<unknown, MediaChannelType>,
-    rtpCapabilities: matches.object,
-    channelID: matches.string as Validator<unknown, ChannelID>
-  })
+  static requestConsumer = defineAction(
+    Schema.Object(
+      {
+        peerID: Schema.PeerID(),
+        mediaTag: Schema.TypedString<MediaChannelType>(),
+        rtpCapabilities: Schema.Any(),
+        channelID: Schema.TypedString<ChannelID>()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_REQUEST_CONSUMER'
+      }
+    )
+  )
 
-  static consumerCreated = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_CREATED_CONSUMER',
-    consumerID: matches.string,
-    transportID: matches.string,
-    peerID: matchesPeerID,
-    mediaTag: matches.string as Validator<unknown, MediaChannelType>,
-    channelID: matches.string as Validator<unknown, ChannelID>,
-    producerID: matches.string,
-    kind: matches.literals('audio', 'video').optional(),
-    rtpParameters: matches.object,
-    consumerType: matches.string,
-    paused: matches.boolean,
-    producerPaused: matches.boolean
-  })
+  static consumerCreated = defineAction(
+    Schema.Object(
+      {
+        consumerID: Schema.String(),
+        transportID: Schema.String(),
+        peerID: Schema.PeerID(),
+        mediaTag: Schema.TypedString<MediaChannelType>(),
+        channelID: Schema.TypedString<ChannelID>(),
+        producerID: Schema.String(),
+        kind: Schema.Optional(Schema.LiteralUnion(['audio', 'video'] as const)),
+        rtpParameters: Schema.Any(),
+        consumerType: Schema.String(),
+        paused: Schema.Bool(),
+        producerPaused: Schema.Bool()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_CREATED_CONSUMER'
+      }
+    )
+  )
 
-  static consumerLayers = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_CONSUMER_LAYERS',
-    consumerID: matches.string,
-    layer: matches.number
-  })
+  static consumerLayers = defineAction(
+    Schema.Object(
+      {
+        consumerID: Schema.String(),
+        layer: Schema.Number()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_CONSUMER_LAYERS'
+      }
+    )
+  )
+  static consumerClosed = defineAction(
+    Schema.Object(
+      {
+        consumerID: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_CLOSE_CONSUMER'
+      }
+    )
+  )
 
-  static consumerClosed = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_CLOSED_CONSUMER',
-    consumerID: matches.string
-  })
-
-  static consumerPaused = defineAction({
-    type: 'ee.engine.network.mediasoup.MEDIA_CONSUMER_PAUSED',
-    consumerID: matches.string,
-    paused: matches.boolean
-  })
+  static consumerPaused = defineAction(
+    Schema.Object(
+      {
+        consumerID: Schema.String(),
+        paused: Schema.Bool()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.MEDIA_CONSUMER_PAUSED'
+      }
+    )
+  )
 }
 
 export const MediasoupMediaProducersConsumersObjectsState = defineState({

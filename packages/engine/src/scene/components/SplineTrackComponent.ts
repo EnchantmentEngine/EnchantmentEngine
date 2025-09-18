@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { EntityTreeComponent, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
+import { EntitySchema, EntityTreeComponent, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
   getAuthoringCounterpart,
@@ -14,7 +14,7 @@ import { useExecute } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 import { PhysicsSystem } from '@ir-engine/spatial/src/physics/systems/PhysicsSystem'
 import { SplineComponent } from './SplineComponent'
 
@@ -27,15 +27,15 @@ export const SplineTrackComponent = defineComponent({
   name: 'SplineTrackComponent',
   jsonID: 'EE_spline_track',
 
-  schema: S.Object({
-    splineEntityUUID: S.EntityID(),
-    velocity: S.Number({ default: 1.0 }),
-    enableRotation: S.Bool({ default: false }),
-    lockToXZPlane: S.Bool({ default: true }),
-    loop: S.Bool({ default: true }),
+  schema: Schema.Object({
+    splineEntityUUID: EntitySchema.EntityID(),
+    velocity: Schema.Number({ default: 1.0 }),
+    enableRotation: Schema.Bool({ default: false }),
+    lockToXZPlane: Schema.Bool({ default: true }),
+    loop: Schema.Bool({ default: true }),
 
     // internal
-    alpha: S.Number({ default: 0, serialized: false })
+    alpha: Schema.Number({ default: 0, serialized: false })
   }),
 
   reactor: function (props) {

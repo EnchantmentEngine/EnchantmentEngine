@@ -1,9 +1,10 @@
 import assert from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
-import { Engine, EntityID, UndefinedEntity, createEntity, destroyEngine, removeEntity } from '@ir-engine/ecs'
+import { EntityID, UndefinedEntity, createEntity, destroyEngine, removeEntity } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import {
+  HyperFlux,
   NetworkActions,
   NetworkState,
   NetworkTopics,
@@ -21,7 +22,7 @@ describe('SpectateSystem', async () => {
   describe('SpectateEntityState', async () => {
     beforeEach(async () => {
       createEngine()
-      Engine.instance.store.defaultDispatchDelay = () => 0
+      HyperFlux.store.defaultDispatchDelay = () => 0
       viewerEntity = createEntity()
     })
 
@@ -34,7 +35,7 @@ describe('SpectateSystem', async () => {
       createMockNetwork(NetworkTopics.world)
 
       const userID = 'user id' as UserID
-      const peerID = Engine.instance.store.peerID
+      const peerID = HyperFlux.store.peerID
 
       const network = NetworkState.worldNetwork
 
@@ -52,7 +53,7 @@ describe('SpectateSystem', async () => {
           spectatorUserID: userID,
           spectatingEntity: 'entity' as EntityID,
           $topic: NetworkTopics.world,
-          $peer: Engine.instance.store.peerID
+          $peer: HyperFlux.store.peerID
         })
       )
       applyIncomingActions()
@@ -65,7 +66,7 @@ describe('SpectateSystem', async () => {
       createMockNetwork(NetworkTopics.world)
 
       const userID = 'user id' as UserID
-      const peerID = Engine.instance.store.peerID
+      const peerID = HyperFlux.store.peerID
 
       const network = NetworkState.worldNetwork
 
@@ -83,7 +84,7 @@ describe('SpectateSystem', async () => {
           spectatorUserID: userID,
           spectatingEntity: 'entity' as EntityID,
           $topic: NetworkTopics.world,
-          $peer: Engine.instance.store.peerID
+          $peer: HyperFlux.store.peerID
         })
       )
 
@@ -96,7 +97,7 @@ describe('SpectateSystem', async () => {
         SpectateActions.exitSpectate({
           spectatorUserID: userID,
           $topic: NetworkTopics.world,
-          $peer: Engine.instance.store.peerID
+          $peer: HyperFlux.store.peerID
         })
       )
       applyIncomingActions()

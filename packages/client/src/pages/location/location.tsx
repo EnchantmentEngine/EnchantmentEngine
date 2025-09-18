@@ -12,8 +12,12 @@ import { useEngineCanvas } from '@ir-engine/spatial/src/renderer/functions/useEn
 import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 
 import { MultiplayerState } from '@ir-engine/client-core/src/common/services/MultiplayerState'
-import { useEngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
+import { NotificationSnackbar } from '@ir-engine/client-core/src/common/services/NotificationService'
+import { useThemeProvider } from '@ir-engine/client-core/src/common/services/ThemeService'
+import { LoadWebappInjection, useLoadWebappInjection } from '@ir-engine/client-core/src/components/LoadWebappInjection'
+import { EngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
+import { useAuthenticated } from '@ir-engine/client-core/src/user/services/Authenticate'
 import { getMutableState, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import '../styles.scss'
 
@@ -21,28 +25,37 @@ const LocationRoutes = () => {
   const ref = useRef<HTMLElement>(document.body)
   const ready = useHookstate(getMutableState(LoadingUISystemState).ready).value
 
+  useThemeProvider()
+
+  useAuthenticated()
+
+  useLoadWebappInjection()
+
   useSpatialEngine()
   useEngineCanvas(ref)
   useBrowserCheck()
 
-  const projectsLoaded = useEngineInjection()
-
   const multiplayer = useMutableState(MultiplayerState).world
 
   return (
-    <Suspense>
-      {projectsLoaded && (
-        <Routes>
-          <Route path=":locationName/*" element={<LocationPage online={multiplayer.value} />} />
-        </Routes>
-      )}
-      {!ready && (
-        <div className="relative flex h-dvh w-dvw items-center justify-center bg-white" style={{ zIndex: 100 }}>
-          <LoadingView fullScreen animated title={t('common:loader.loadingApp')} titleClassname="text-black" />
-        </div>
-      )}
+    <>
+      <NotificationSnackbar />
+      <LoadWebappInjection>
+        <EngineInjection>
+          <Suspense>
+            <Routes>
+              <Route path=":locationName/*" element={<LocationPage online={multiplayer.value} />} />
+            </Routes>
+            {!ready && (
+              <div className="relative flex h-dvh w-dvw items-center justify-center bg-white" style={{ zIndex: 100 }}>
+                <LoadingView fullScreen animated title={t('common:loader.loadingApp')} titleClassname="text-black" />
+              </div>
+            )}
+          </Suspense>
+        </EngineInjection>
+      </LoadWebappInjection>
       <Debug />
-    </Suspense>
+    </>
   )
 }
 

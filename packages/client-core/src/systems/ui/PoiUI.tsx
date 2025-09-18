@@ -1,11 +1,4 @@
-import {
-  defineSystem,
-  Engine,
-  Entity,
-  EntityTreeComponent,
-  PresentationSystemGroup,
-  QueryReactor
-} from '@ir-engine/ecs'
+import { defineSystem, Entity, EntityTreeComponent, PresentationSystemGroup, QueryReactor } from '@ir-engine/ecs'
 import {
   getOptionalComponent,
   Layers,
@@ -14,7 +7,6 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs/src/ComponentFunctions'
-import { createXRUI } from '@ir-engine/engine/src/xrui/createXRUI'
 import { getState, useMutableState } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
@@ -24,6 +16,7 @@ import { CameraScrollBehavior, PoiScrollTransition } from '@ir-engine/spatial/sr
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ComputedTransformComponent } from '@ir-engine/spatial/src/transform/components/ComputedTransformComponent'
 import { ObjectFitFunctions } from '@ir-engine/spatial/src/transform/functions/ObjectFitFunctions'
+import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import React, { useEffect, useState } from 'react'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 
@@ -49,7 +42,7 @@ const PoiReactor = () => {
   useEffect(() => {
     const xrui = createPoiUI(entity)
     setComponent(xrui.entity, EntityTreeComponent, {
-      parentEntity: Engine.instance.originEntity
+      parentEntity: getState(ReferenceSpaceState).originEntity
     })
 
     const { viewerEntity } = getState(ReferenceSpaceState)
@@ -75,7 +68,7 @@ const PoiReactor = () => {
 export const createPoiUI = (entity: Entity, aspectRatio: number = 1) => {
   const PoiUi = () => <PoiUiView entity={entity} />
   const ui = createXRUI(PoiUi, null, { interactable: false })
-  setComponent(ui.entity, EntityTreeComponent, { parentEntity: Engine.instance.originEntity })
+  setComponent(ui.entity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })
   setComponent(ui.entity, NameComponent, 'poi-ui-' + entity)
   return ui
 }
@@ -102,12 +95,7 @@ const PoiUiView = (props: PoiUiProps) => {
     if (!rendererComponent.canvas) return
     setCanvasWidth(rendererComponent.canvas.clientWidth)
     setCanvasHeight(rendererComponent.canvas.clientHeight)
-  }, [
-    rendererComponent.canvas,
-    rendererComponent.needsResize,
-    rendererComponent.canvas?.clientWidth,
-    rendererComponent.canvas?.clientHeight
-  ])
+  }, [rendererComponent.canvas, rendererComponent.canvas?.clientWidth, rendererComponent.canvas?.clientHeight])
 
   const previousClicked = () => {
     const transitionType = cameraSettingsState.poiScrollTransitionType.value

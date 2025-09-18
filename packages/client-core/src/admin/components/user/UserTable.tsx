@@ -9,8 +9,8 @@ import {
   userPath
 } from '@ir-engine/common/src/schema.type.module'
 import { toDisplayDateTime } from '@ir-engine/common/src/utils/datetime-sql'
-import { Engine } from '@ir-engine/ecs'
-import { State, getMutableState, useHookstate } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { State, getMutableState, getState, useHookstate } from '@ir-engine/hyperflux'
 import { Checkbox } from '@ir-engine/ui'
 import ConfirmDialog from '@ir-engine/ui/src/components/tailwind/ConfirmDialog'
 import { Edit01Lg, InfoCircleLg, Trash04Lg } from '@ir-engine/ui/src/icons'
@@ -63,7 +63,7 @@ export default function UserTable({
 
   const scopeQuery = useFind(scopePath, {
     query: {
-      userId: Engine.instance.userID,
+      userId: getState(EngineState).userID,
       type: 'location:write' as ScopeType,
       paginate: false
     }

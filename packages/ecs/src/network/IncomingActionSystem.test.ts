@@ -1,26 +1,29 @@
-import assert, { strictEqual } from 'assert'
+import { strictEqual } from 'assert'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
-import { createEngine, destroyEngine, Engine } from '@ir-engine/ecs/src/Engine'
+import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
 import {
+  Action,
   ActionRecipients,
   applyIncomingActions,
   defineAction,
   getMutableState,
   getState,
-  NetworkTopics
+  HyperFlux,
+  NetworkTopics,
+  Schema
 } from '@ir-engine/hyperflux'
 
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 
-const TestAction = defineAction({ type: 'test' })
+const TestAction = defineAction(Schema.Object({}, { $id: 'TEST_ACTION' }))
 
 describe('IncomingActionSystem Unit Tests', async () => {
   beforeEach(() => {
     createEngine()
     // this is hacky but works and preserves the logic
-    Engine.instance.store.getDispatchTime = () => {
+    HyperFlux.store.getDispatchTime = () => {
       return getState(ECSState).simulationTime
     }
     createMockNetwork()
@@ -41,23 +44,24 @@ describe('IncomingActionSystem Unit Tests', async () => {
         // incoming action from future
         $time: 2,
         $to: '0' as ActionRecipients
-      })
+      }) as Required<Action>
       action.$topic = NetworkTopics.world
-
-      Engine.instance.store.actions.incoming.push(action)
+      // normalize meta so typing matches internal queue expectations
+      action.$uuid = action.$uuid || 'test-future-uuid'
+      HyperFlux.store.actions.incoming.push(action)
 
       /* run */
       applyIncomingActions()
 
       /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 0)
+      strictEqual(HyperFlux.store.actions.history.length, 0)
 
       // fixed tick update
       ecsState.simulationTime.set(2)
       applyIncomingActions()
 
       /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 1)
+      strictEqual(HyperFlux.store.actions.history.length, 1)
     })
 
     it('should immediately apply incoming action from the past or present', () => {
@@ -66,38 +70,16 @@ describe('IncomingActionSystem Unit Tests', async () => {
         // incoming action from past
         $time: -1,
         $to: '0' as ActionRecipients
-      })
+      }) as Required<Action>
       action.$topic = NetworkTopics.world
-
-      Engine.instance.store.actions.incoming.push(action)
+      action.$uuid = action.$uuid || 'test-past-uuid'
+      HyperFlux.store.actions.incoming.push(action)
 
       /* run */
       applyIncomingActions()
 
       /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 1)
-    })
-  })
-
-  describe('applyAndArchiveIncomingAction', () => {
-    it('should cache actions where $cache = true', () => {
-      /* mock */
-      const action = TestAction({
-        // incoming action from past
-        $time: 0,
-        $to: '0' as ActionRecipients,
-        $cache: true
-      })
-      action.$topic = NetworkTopics.world
-
-      Engine.instance.store.actions.incoming.push(action)
-
-      /* run */
-      applyIncomingActions()
-
-      /* assert */
-      strictEqual(Engine.instance.store.actions.history.length, 1)
-      assert(Engine.instance.store.actions.cached.indexOf(action) !== -1)
+      strictEqual(HyperFlux.store.actions.history.length, 1)
     })
   })
 })

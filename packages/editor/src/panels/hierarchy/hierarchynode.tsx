@@ -73,7 +73,6 @@ function toValidHierarchyNodeName(entity: Entity, name: string): string {
 }
 
 export default React.memo(function HierarchyTreeNode(props: ListChildComponentProps<undefined>) {
-  const showGlbChildrenFeatureFlag = useMutableState(EditorHelperState).showGlbChildren.value
   const { t } = useTranslation()
   const nodes = useHierarchyNodes()
   const node = nodes[props.index]
@@ -166,7 +165,7 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     rigidbodyParentingWarning
   } = useHierarchyTreeDrop(node, 'On')
   const isOverAndCanDrop = isOverOn && canDropOn
-  const showGlbRedState = isOverAndCanDrop && !showGlbChildrenFeatureFlag && isEntityGlb(entity)
+  const showGlbRedState = isOverAndCanDrop && isEntityGlb(entity)
   const showRigidbodyRedState = isOverAndCanDrop && rigidbodyParentingWarning
   const showRedState = showGlbRedState || showRigidbodyRedState
 

@@ -5,7 +5,8 @@ import { defineComponent, getComponent, setComponent } from '@ir-engine/ecs/src/
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { getState } from '@ir-engine/hyperflux'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { EntitySchema } from '@ir-engine/ecs'
+import { Schema } from '@ir-engine/hyperflux'
 import { isTouchAvailable } from '../../common/functions/DetectFeatures'
 import { XRHandComponent, XRSpaceComponent } from '../../xr/XRComponents'
 import { ReferenceSpace, XRState } from '../../xr/XRState'
@@ -16,15 +17,15 @@ import { DefaultButtonBindings } from './InputComponent'
 export const InputSourceComponent = defineComponent({
   name: 'InputSourceComponent',
 
-  schema: S.Object({
-    sourceEntity: S.Entity(),
-    source: S.Type<XRInputSource>({ default: {} as XRInputSource }),
-    buttons: S.Type<Readonly<ButtonStateMap<typeof DefaultButtonBindings>>>({ default: {} }),
-    raycaster: S.Class(() => new Raycaster()),
-    intersections: S.Array(
-      S.Object({
-        entity: S.Entity(),
-        distance: S.Number()
+  schema: Schema.Object({
+    sourceEntity: EntitySchema.Entity(),
+    source: Schema.Type<XRInputSource>({ default: {} as XRInputSource }),
+    buttons: Schema.Type<Readonly<ButtonStateMap<typeof DefaultButtonBindings>>>({ default: {} }),
+    raycaster: Schema.Class(() => new Raycaster()),
+    intersections: Schema.Array(
+      Schema.Object({
+        entity: EntitySchema.Entity(),
+        distance: Schema.Number()
       })
     )
   }),

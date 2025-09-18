@@ -1,16 +1,22 @@
-import matches from 'ts-matches'
-
-import { EntityUUID, matchesEntityUUID, WorldNetworkAction } from '@ir-engine/ecs'
-import { defineAction, defineState, getMutableState, NetworkTopics, none } from '@ir-engine/hyperflux'
+import { EntitySchema, EntityUUID, WorldNetworkAction } from '@ir-engine/ecs'
+import { defineAction, defineState, getMutableState, NetworkTopics, none, Schema } from '@ir-engine/hyperflux'
 
 export class MountPointActions {
-  static mountInteraction = defineAction({
-    type: 'ee.engine.interactions.MOUNT' as const,
-    mounted: matches.boolean,
-    targetMount: matchesEntityUUID,
-    mountedEntity: matchesEntityUUID,
-    $topic: NetworkTopics.world
-  })
+  static mountInteraction = defineAction(
+    Schema.Object(
+      {
+        mounted: Schema.Bool(),
+        targetMount: EntitySchema.EntityUUID(),
+        mountedEntity: EntitySchema.EntityUUID()
+      },
+      {
+        $id: 'ee.engine.interactions.MOUNT',
+        metadata: {
+          $topic: NetworkTopics.world
+        }
+      }
+    )
+  )
 }
 
 export const MountPointState = defineState({

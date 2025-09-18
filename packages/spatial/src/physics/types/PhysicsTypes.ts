@@ -2,7 +2,7 @@ import RAPIER, { ActiveCollisionTypes, RigidBodyType, ShapeType, Vector } from '
 
 import { Entity } from '@ir-engine/ecs/src/Entity'
 
-import { S } from '@ir-engine/ecs/src/schemas/JSONSchemas'
+import { Schema } from '@ir-engine/hyperflux'
 
 export interface Vec3 {
   x: number
@@ -108,4 +108,4 @@ export const RapierShapeToString = {
 }
 
 export type Shape = (typeof Shapes)[keyof typeof Shapes]
-export const ShapeSchema = (init?: Shape) => S.LiteralUnion(Object.values(Shapes) as Shape[], { default: init })
+export const ShapeSchema = (init?: Shape) => Schema.LiteralUnion(Object.values(Shapes) as Shape[], { default: init })

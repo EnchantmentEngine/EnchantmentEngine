@@ -7,32 +7,30 @@ import {
   EntityID,
   EntityUUID,
   getComponent,
-  matchesEntityID,
-  matchesEntitySourceID,
   SourceID,
-  Static,
-  TObjectSchema,
-  TProperties,
   useComponent,
   useHasComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-
 import {
+  ActionCreator,
   defineAction,
   defineState,
   dispatchAction,
   getMutableState,
-  matches,
+  MergeObjectSchemas,
   NetworkState,
   NetworkTopics,
   NO_PROXY,
   none,
+  Schema,
+  Static,
+  TObjectSchema,
+  TProperties,
   useHookstate,
   useImmediateEffect,
-  useMutableState,
-  Validator
+  useMutableState
 } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { SpawnObjectActions } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
@@ -59,9 +57,9 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
  * // Define a prefab
  * const MyPrefabComponent = definePrefab({
  *   name: 'MyPrefab',
- *   jsonID: 'my-prefab',
- *   schema: S.Object({
- *     name: S.String()
+ *   jsonID: 'MY_prefab',
+ *   schema: Schema.Object({
+ *     name: Schema.String()
  *   }),
  *   reactor: ({ entity, prefab }) => {
  *     useEffect(() => {
@@ -73,31 +71,31 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
  *
  * // Spawn dynamically at runtime
  * MyPrefabComponent.spawn({
- *   entityUUID: 'unique-id',
+ *   entityID: 'entity-id',
+ *   entitySourceID: 'source-id',
  *   parentUUID: 'parent-id',
  *   position: new Vector3(0, 0, 0),
  *   rotation: new Quaternion(),
- *   data: { name: "Prefab Instance 123" }
+ *   name: "Prefab Instance 123"
  * })
  */
-export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(definition: {
+export const definePrefab = <P extends TProperties, S extends TObjectSchema<P>>(definition: {
   name: string
   jsonID: string
   schema: S
   reactor?: (props: { entity: Entity; prefab: Static<S> }) => null | JSX.Element
 }) => {
   const $Actions = {
-    spawn: defineAction({
-      type: 'ir.engine.prefab_' + definition.name,
-      entityID: matchesEntityID,
-      entitySourceID: matchesEntitySourceID,
-      /** @todo once actions use JSON Schemas, we can include that strictness here */
-      data: matches.object as Validator<unknown, Static<S>>
-    })
+    spawn: defineAction(
+      SpawnObjectActions.spawnObject.extend(
+        Schema.Object(definition.schema.properties, { $id: 'ee.engine.prefab_' + definition.name })
+      ) as any as MergeObjectSchemas<typeof SpawnObjectActions.spawnObject.schema, S>
+      /** @todo types are really broken :( */
+    ) as ActionCreator<string, any, any>
   }
 
   const $State = defineState({
-    name: 'ir.engine.prefab_' + definition.name,
+    name: 'ee.engine.prefab_' + definition.name,
 
     initial: {} as Record<EntityUUID, Static<S>>,
 
@@ -105,7 +103,7 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
       onSpawn: $Actions.spawn.receive((action) => {
         getMutableState($State)[
           UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
-        ].set(Object.fromEntries(Object.keys(definition.schema.properties).map((k) => [k, action.data[k]])))
+        ].set(Object.fromEntries(Object.keys(definition.schema.properties).map((k: keyof P) => [k, action[k]])))
       }),
       onDestroyObject: WorldNetworkAction.destroyEntity.receive((action) => {
         getMutableState($State)[action.entityUUID].set(none)
@@ -156,25 +154,19 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
    * @param props.rotation - The initial rotation quaternion
    * @param props.data - The prefab data matching the schema definition
    */
-  const spawnPrefab = (props: {
-    entityID: EntityID
-    entitySourceID: SourceID
-    parentUUID: EntityUUID
-    position: Vector3
-    rotation: Quaternion
-    data: Static<S>
-  }) => {
+  const spawnPrefab = (
+    props: {
+      entityID: EntityID
+      entitySourceID: SourceID
+      parentUUID: EntityUUID
+      position: Vector3
+      rotation: Quaternion
+    } & Static<S>
+  ) => {
+    const { entityID, entitySourceID, parentUUID, position, rotation, ...data } = props
     dispatchAction(
       $Actions.spawn({
-        entityID: props.entityID,
-        entitySourceID: props.entitySourceID,
-        /** @todo fix when actions use JSON Schemas */
-        // @ts-ignore
-        data: props.data
-      })
-    )
-    dispatchAction(
-      SpawnObjectActions.spawnObject({
+        ...data,
         entityID: props.entityID,
         entitySourceID: props.entitySourceID,
         parentUUID: props.parentUUID,
@@ -206,15 +198,14 @@ export const definePrefab = <S extends TObjectSchema<P>, P extends TProperties>(
 
         const entityUUIDPair = getComponent(entity, UUIDComponent)
 
-        dispatchAction(
-          $Actions.spawn({
-            entityID: entityUUIDPair.entityID,
-            entitySourceID: entityUUIDPair.entitySourceID,
-            /** @todo fix when actions use JSON Schemas */
-            // @ts-ignore
-            data: getComponent(entity, $Component)
-          })
-        )
+        spawnPrefab({
+          entityID: entityUUIDPair.entityID,
+          entitySourceID: entityUUIDPair.entitySourceID,
+          parentUUID: none,
+          position: new Vector3(),
+          rotation: new Quaternion(),
+          ...getComponent(entity, $Component)
+        })
         return () => {
           const entityUUID = UUIDComponent.join(entityUUIDPair)
           dispatchAction(WorldNetworkAction.destroyEntity({ entityUUID }))

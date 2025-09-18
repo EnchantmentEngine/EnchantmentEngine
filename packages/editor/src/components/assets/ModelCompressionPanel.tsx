@@ -2,10 +2,6 @@ import React, { useEffect } from 'react'
 import { LoaderUtils } from 'three'
 
 import {
-  transformModel as clientSideTransformModel,
-  ModelTransformStatus
-} from '@ir-engine/common/src/model/ModelTransformFunctions'
-import {
   Entity,
   getAncestorWithComponents,
   iterateEntityNode,
@@ -16,7 +12,8 @@ import { setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import {
   DefaultModelTransformParameters as defaultParams,
   ModelTransformParameters
-} from '@ir-engine/engine/src/assets/classes/ModelTransform'
+} from '@ir-engine/editor/src/optimize/ModelTransform'
+import { ModelTransformStatus, transformModel } from '@ir-engine/editor/src/optimize/ModelTransformFunctions'
 import { Heuristic, VariantComponent } from '@ir-engine/engine/src/scene/components/VariantComponent'
 import { getState, NO_PROXY, none, useHookstate } from '@ir-engine/hyperflux'
 
@@ -64,7 +61,7 @@ const createLODVariants = async (
   }))
 
   const transformMetadata: Record<string, any>[] = []
-  await clientSideTransformModel(
+  await transformModel(
     srcURL,
     lodVariantParams,
     (i, key, data) => {

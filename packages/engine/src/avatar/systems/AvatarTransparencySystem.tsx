@@ -21,12 +21,12 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { MaterialStateComponent } from '@ir-engine/spatial/src/renderer/materials/MaterialComponent'
-import React, { useEffect } from 'react'
 import {
   DitherCalculationType,
   TransparencyDitheringPluginComponent,
   TransparencyDitheringRootComponent
-} from '../../material/plugins/TransparencyDitheringComponent'
+} from '@ir-engine/spatial/src/renderer/materials/plugins/TransparencyDitheringComponent'
+import React, { useEffect } from 'react'
 import { AvatarComponent } from '../components/AvatarComponent'
 
 const headDithering = 0
@@ -37,7 +37,7 @@ const execute = () => {
   const selfEntity = AvatarComponent.getSelfAvatarEntity()
   if (!selfEntity) return
 
-  const cameraAttached = XRState.isCameraAttachedToAvatar
+  const cameraAttached = XRState.shouldViewerFollowController
 
   for (const avatarEntity of avatarQuery()) {
     const transparencyDitheringRoot = getOptionalComponent(avatarEntity, TransparencyDitheringRootComponent)

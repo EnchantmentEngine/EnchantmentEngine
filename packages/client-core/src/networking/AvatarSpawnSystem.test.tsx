@@ -8,7 +8,6 @@ import { Cache } from 'three'
 import { API } from '@ir-engine/common'
 import { avatarPath, staticResourcePath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import {
-  Engine,
   EngineState,
   Entity,
   EntityID,
@@ -27,6 +26,7 @@ import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/S
 import { startEngineReactor } from '@ir-engine/engine/tests/startEngineReactor'
 import {
   EventDispatcher,
+  HyperFlux,
   NetworkActions,
   NetworkState,
   NetworkTopics,
@@ -43,7 +43,6 @@ import { initializeSpatialEngine } from '@ir-engine/spatial/src/initializeEngine
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { act, render } from '@testing-library/react'
 import { v4 } from 'uuid'
-import { SearchParamState } from '../common/services/RouterService'
 import { LocationState } from '../social/services/LocationService'
 import { AvatarSpawnSystem } from './AvatarSpawnSystem'
 
@@ -149,7 +148,7 @@ describe('AvatarSpawnSystem', async () => {
 
     createMockNetwork(NetworkTopics.world)
 
-    const peerID = Engine.instance.store.peerID
+    const peerID = HyperFlux.store.peerID
     getMutableState(EngineState).userID.set(userID)
 
     const network = NetworkState.worldNetwork
@@ -176,9 +175,6 @@ describe('AvatarSpawnSystem', async () => {
   })
 
   it('should spawn an avatar when there is no spectate data', async () => {
-    // ensure no spectate data
-    getMutableState(SearchParamState).set({})
-
     startReactor(system.reactor!)
 
     await act(async () => render(null))
@@ -186,11 +182,11 @@ describe('AvatarSpawnSystem', async () => {
     applyIncomingActions()
 
     // should have spawn action
-    const spawnAction = Engine.instance.store.actions.history.findLast((action) =>
-      AvatarNetworkAction.spawn.matches.test(action)
-    ) as typeof AvatarNetworkAction.spawn.matches._TYPE
+    const spawnAction = HyperFlux.store.actions.history.findLast((action) =>
+      AvatarNetworkAction.spawn.test(action)
+    ) as typeof AvatarNetworkAction.spawn._TYPE
     assert.ok(spawnAction)
-    assert.deepEqual(spawnAction.type as string, AvatarNetworkAction.spawn.type)
+    assert.deepEqual(spawnAction.type, AvatarNetworkAction.spawn.type)
     assert.ok(spawnAction.position)
     assert.ok(spawnAction.rotation)
     assert.ok(spawnAction.parentUUID)
@@ -198,19 +194,16 @@ describe('AvatarSpawnSystem', async () => {
     assert.equal(spawnAction.entityID, 'avatar')
     assert.equal(spawnAction.entitySourceID, userID as string)
 
-    const avatarURLAction = Engine.instance.store.actions.history.findLast((action) =>
-      AvatarNetworkAction.setAvatarURL.matches.test(action)
-    ) as typeof AvatarNetworkAction.setAvatarURL.matches._TYPE
+    const avatarURLAction = HyperFlux.store.actions.history.findLast((action) =>
+      AvatarNetworkAction.setAvatarURL.test(action)
+    ) as typeof AvatarNetworkAction.setAvatarURL._TYPE
     assert.ok(avatarURLAction)
-    assert.deepEqual(avatarURLAction.type as string, AvatarNetworkAction.setAvatarURL.type)
+    assert.deepEqual(avatarURLAction.type, AvatarNetworkAction.setAvatarURL.type)
     assert.equal(avatarURLAction.avatarURL, '/avatar.gltf')
     assert.equal(avatarURLAction.entityUUID, userID + 'avatar')
   })
 
   it('should enter spectate mode with freecam when empty spectate is in search state', async () => {
-    // ensure spectate data
-    getMutableState(SearchParamState).set({ spectate: '' })
-
     // add spectate to search
     const url = new URL(location.href)
     url.searchParams.set('spectate', '')
@@ -223,19 +216,16 @@ describe('AvatarSpawnSystem', async () => {
     applyIncomingActions()
 
     // should have spectate action
-    const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
-      SpectateActions.spectateEntity.matches.test(action)
-    ) as typeof SpectateActions.spectateEntity.matches._TYPE
+    const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
+      SpectateActions.spectateEntity.test(action)
+    ) as typeof SpectateActions.spectateEntity._TYPE
     assert.ok(spectateAction)
-    assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+    assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
     assert.equal(spectateAction.spectatingEntity, '')
   })
 
   it('should enter spectate mode when spectate specified user is in search state', async () => {
     const otherUserID = 'other user id' as EntityID
-
-    // ensure spectate data
-    getMutableState(SearchParamState).set({ spectate: otherUserID })
 
     // add spectate to search
     const url = new URL(location.href)
@@ -248,11 +238,11 @@ describe('AvatarSpawnSystem', async () => {
       applyIncomingActions()
 
       // should have spectate action
-      const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
-        SpectateActions.spectateEntity.matches.test(action)
-      ) as typeof SpectateActions.spectateEntity.matches._TYPE
+      const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
+        SpectateActions.spectateEntity.test(action)
+      ) as typeof SpectateActions.spectateEntity._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, otherUserID)
     })
   })
@@ -271,11 +261,11 @@ describe('AvatarSpawnSystem', async () => {
       applyIncomingActions()
 
       // should have spectate action
-      const spectateAction = Engine.instance.store.actions.history.findLast((action) =>
-        SpectateActions.spectateEntity.matches.test(action)
-      ) as typeof SpectateActions.spectateEntity.matches._TYPE
+      const spectateAction = HyperFlux.store.actions.history.findLast((action) =>
+        SpectateActions.spectateEntity.test(action)
+      ) as typeof SpectateActions.spectateEntity._TYPE
       assert.ok(spectateAction)
-      assert.equal(spectateAction.spectatorUserID, Engine.instance.userID)
+      assert.equal(spectateAction.spectatorUserID, getState(EngineState).userID)
       assert.equal(spectateAction.spectatingEntity, spectateUUID)
     })
   })

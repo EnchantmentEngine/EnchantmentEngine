@@ -1,5 +1,4 @@
 import {
-  Engine,
   Entity,
   EntityID,
   SourceID,
@@ -29,7 +28,7 @@ describe('MaterialStateComponent', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
-      if (!Engine.instance) createEngine()
+      createEngine()
       testEntity = createEntity()
       setComponent(testEntity, UUIDComponent, {
         entitySourceID: 'source' as SourceID,
@@ -58,7 +57,7 @@ describe('MaterialStateComponent', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
-      if (!Engine.instance) createEngine()
+      createEngine()
       testEntity = createEntity()
       setComponent(testEntity, UUIDComponent, {
         entitySourceID: 'source' as SourceID,
@@ -102,7 +101,7 @@ describe('MaterialStateComponent', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
-      if (!Engine.instance) createEngine()
+      createEngine()
       testEntity = createEntity()
       setComponent(testEntity, MaterialStateComponent)
     })
@@ -146,7 +145,7 @@ describe('MaterialInstanceComponent', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
-      if (!Engine.instance) createEngine()
+      createEngine()
       testEntity = createEntity()
       setComponent(testEntity, MaterialInstanceComponent)
     })
@@ -165,7 +164,7 @@ describe('MaterialInstanceComponent', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
-      if (!Engine.instance) createEngine()
+      createEngine()
       testEntity = createEntity()
       setComponent(testEntity, UUIDComponent, {
         entitySourceID: 'source' as SourceID,
@@ -211,7 +210,7 @@ describe('MaterialInstanceComponent', () => {
     let testEntity = UndefinedEntity
 
     beforeEach(async () => {
-      if (!Engine.instance) createEngine()
+      createEngine()
       testEntity = createEntity()
     })
 

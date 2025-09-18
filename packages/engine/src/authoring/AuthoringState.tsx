@@ -4,6 +4,7 @@ import {
   EngineState,
   Entity,
   EntityID,
+  EntitySchema,
   EntityTreeComponent,
   EntityUUID,
   getAllComponents,
@@ -34,12 +35,11 @@ import {
   ErrorBoundary,
   getMutableState,
   getState,
-  matches,
   NO_PROXY,
   none,
+  Schema,
   useMutableState,
-  UserID,
-  Validator
+  UserID
 } from '@ir-engine/hyperflux'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import {
@@ -72,41 +72,69 @@ export const AuthoringActions = {
   /**
    * Use to initialize the history state for a source
    */
-  initialize: defineAction({
-    type: 'ir.engine.authoring.INITIALIZE',
-    sourceID: matches.string as Validator<unknown, SourceID>,
-    partialState: matches.object as Validator<unknown, SourceData>
-  }),
+  initialize: defineAction(
+    Schema.Object(
+      {
+        sourceID: EntitySchema.SourceID(),
+        partialState: Schema.Record(EntitySchema.EntityID(), Schema.Object({}))
+      },
+      { $id: 'ir.engine.authoring.INITIALIZE' }
+    )
+  ),
 
   /**
    * Use to uninitialize the history state for a source
    */
-  uninitialize: defineAction({
-    type: 'ir.engine.authoring.UNINITIALIZE',
-    sourceID: matches.string as Validator<unknown, SourceID>
-  }),
-
+  uninitialize: defineAction(
+    Schema.Object(
+      {
+        sourceID: EntitySchema.SourceID()
+      },
+      { $id: 'ir.engine.authoring.UNINITIALIZE' }
+    )
+  ),
   /**
    * Use to undo the last done command
    */
-  undo: defineAction({
-    type: 'ir.engine.authoring.UNDO'
-  }),
+  undo: defineAction(
+    Schema.Object(
+      {
+        $user: Schema.String({ default: () => getState(EngineState).userID })
+      },
+      {
+        $id: 'ir.engine.authoring.UNDO'
+      }
+    )
+  ),
 
   /**
    * Use to redo the last undone command
    */
-  redo: defineAction({
-    type: 'ir.engine.authoring.REDO'
-  }),
+  redo: defineAction(
+    Schema.Object(
+      {
+        $user: Schema.String({ default: () => getState(EngineState).userID })
+      },
+      {
+        $id: 'ir.engine.authoring.REDO'
+      }
+    )
+  ),
 
   /**
    * Use to add JSON patch operations to the history
    */
-  ops: defineAction({
-    type: 'ir.engine.authoring.OPS',
-    ops: matches.object as Validator<unknown, Record<SourceID, Operation[]>>
-  })
+  ops: defineAction(
+    Schema.Object(
+      {
+        $user: Schema.String({ default: () => getState(EngineState).userID }),
+        ops: Schema.Record(EntitySchema.SourceID(), Schema.Array(Schema.Any()))
+      },
+      {
+        $id: 'ir.engine.authoring.OPS'
+      }
+    )
+  )
 }
 
 export const AuthoringState = defineState({

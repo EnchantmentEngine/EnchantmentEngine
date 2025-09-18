@@ -16,10 +16,10 @@
   "npmClient": "npm",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ir-engine/ir-engine.git"
+    "url": "git+https://github.com/enchantmentengine/enchantmentengine.git"
   },
   "scripts": {
-    "check-errors": "tsc --noemit && npx cycle-import-check src || true",
+    "check-errors": "tsc --noemit",
     "cross-env": "7.0.3",
     "test": "exit 0",
     "validate": "npm run test",

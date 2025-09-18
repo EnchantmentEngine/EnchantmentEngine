@@ -1,3 +1,4 @@
+import { useHookstate } from '@hookstate/core'
 import {
   defineSystem,
   Entity,
@@ -14,22 +15,17 @@ import {
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import {
   OrientedBoundingBoxComponent,
-  updateBoundingBox
+  updateOrientedBoundingBox
 } from '@ir-engine/engine/src/scene/components/OrientedBoundingBoxComponent'
-import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
-import React, { useEffect } from 'react'
-import { Box3, BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments } from 'three'
-// Alternative for thicker lines (uncomment if needed):
-// import { Line2 } from 'three/examples/jsm/lines/Line2.js'
-// import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
-// import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
-import { useHookstate } from '@hookstate/core'
 import { SelectTagComponent } from '@ir-engine/engine/src/scene/components/SelectTagComponent'
 import { createSceneEntity } from '@ir-engine/engine/src/scene/functions/createSceneEntity'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { ObjectLayerMaskComponent } from '@ir-engine/spatial/src/renderer/components/ObjectLayerComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { ObjectLayers } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
+import React, { useEffect } from 'react'
+import { Box3, BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments } from 'three'
 
 // Create a wireframe box geometry that matches the given Box3
 function createWireframeBoxGeometry(box: Box3): BufferGeometry {
@@ -86,7 +82,7 @@ function createWireframeBoxGeometry(box: Box3): BufferGeometry {
 }
 
 export const OrientedBoundingBoxSystem = defineSystem({
-  uuid: 'napster.engine.OrientedBoundingBoxSystem',
+  uuid: 'ee.engine.OrientedBoundingBoxSystem',
   insert: { after: TransformSystem },
   reactor: () => {
     return (
@@ -110,7 +106,7 @@ const OrientedBoundingBoxReactor = (props: { entity: Entity }) => {
     if (!loaded) return
     if (gltf.src) {
       setComponent(entity, OrientedBoundingBoxComponent)
-      updateBoundingBox(entity)
+      updateOrientedBoundingBox(entity)
       const helperEntity = createSceneEntity('OrientedBoundingBoxHelper', entity)
       const orientedBoundingBox = getComponent(entity, OrientedBoundingBoxComponent)
 
