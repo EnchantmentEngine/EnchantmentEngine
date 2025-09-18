@@ -80,13 +80,13 @@ export const LinkNodeEditor: EditorComponentType = (props) => {
           ))
         : null}
       {/* <InputGroup name="Navigate Path" label={t('editor:properties.linkComp.lbl-navigateScene')}>
-        <BooleanInput value={linkComponent.sceneNav.value} onChange={commitProperty(LinkComponent, 'sceneNav')} />
+        <BooleanInput value={linkComponent.sceneNav} onChange={commitProperty(LinkComponent, 'sceneNav')} />
       </InputGroup>
 
-      {linkComponent.sceneNav.value ? (
+      {linkComponent.sceneNav ? (
         <InputGroup name="Location" label={t('editor:properties.linkComp.lbl-locaiton')}>
           <ControlledStringInput
-            value={linkComponent.location.value}
+            value={linkComponent.location}
             onChange={updateProperty(LinkComponent, 'location')}
             onRelease={commitProperty(LinkComponent, 'location')}
           />
@@ -94,7 +94,7 @@ export const LinkNodeEditor: EditorComponentType = (props) => {
       ) : (
         <InputGroup name="LinkUrl" label={t('editor:properties.linkComp.lbl-url')}>
           <ControlledStringInput
-            value={linkComponent.url.value}
+            value={linkComponent.url}
             onChange={updateProperty(LinkComponent, 'url')}
             onRelease={commitProperty(LinkComponent, 'url')}
           />

@@ -3,6 +3,7 @@ import {
   defineSystem,
   Entity,
   getComponent,
+  getSimulationCounterpart,
   Layers,
   Not,
   QueryReactor,
@@ -105,10 +106,11 @@ const OrientedBoundingBoxReactor = (props: { entity: Entity }) => {
   useEffect(() => {
     if (!loaded) return
     if (gltf.src) {
-      setComponent(entity, OrientedBoundingBoxComponent)
-      updateOrientedBoundingBox(entity)
-      const helperEntity = createSceneEntity('OrientedBoundingBoxHelper', entity)
-      const orientedBoundingBox = getComponent(entity, OrientedBoundingBoxComponent)
+      const simulationEntity = getSimulationCounterpart(entity)
+      setComponent(simulationEntity, OrientedBoundingBoxComponent)
+      updateOrientedBoundingBox(simulationEntity)
+      const helperEntity = createSceneEntity('OrientedBoundingBoxHelper', simulationEntity)
+      const orientedBoundingBox = getComponent(simulationEntity, OrientedBoundingBoxComponent)
 
       // Create custom wireframe geometry that matches the bounding box
       const wireframeGeometry = createWireframeBoxGeometry(orientedBoundingBox.box)

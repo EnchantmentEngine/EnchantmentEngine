@@ -1,18 +1,18 @@
 import { useTranslation } from 'react-i18next'
 
 import { getComponent, iterateEntityNode, useQuery } from '@ir-engine/ecs'
-import {
-  Component,
-  getOptionalComponent,
-  useComponent,
-  useOptionalComponent
-} from '@ir-engine/ecs/src/ComponentFunctions'
+import { getOptionalComponent, useComponent, useOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { EditorComponentType, commitProperty, updateProperty } from '@ir-engine/editor/src/components/properties/Util'
 import { EditorState } from '@ir-engine/editor/src/services/EditorServices'
 import { RenderSettingsComponent } from '@ir-engine/engine/src/scene/components/RenderSettingsComponent'
 import { getState } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
+import {
+  DirectionalLightComponent,
+  PointLightComponent,
+  ReferenceSpaceState,
+  SpotLightComponent
+} from '@ir-engine/spatial'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
@@ -25,7 +25,7 @@ import NumericInput from '../../../input/Numeric'
 /**creating properties for LightShadowProperties component */
 type LightShadowPropertiesProps = {
   entity: Entity
-  component: Component<any, any>
+  component: typeof DirectionalLightComponent | typeof SpotLightComponent | typeof PointLightComponent
 }
 
 /**
@@ -40,7 +40,7 @@ export const LightShadowProperties: EditorComponentType = (props: LightShadowPro
   const shadowMapType = useOptionalComponent(rendererEntity, RenderSettingsComponent)?.shadowMapType
   const cameraEntity = getState(ReferenceSpaceState).viewerEntity
   const camera = getComponent(cameraEntity, CameraComponent)
-  const lightComponent = useComponent(props.entity, props.component) as any
+  const lightComponent = useComponent(props.entity, props.component)
   const { rootEntity } = getState(EditorState)
 
   const calculateShadowBias = () => {
@@ -68,7 +68,7 @@ export const LightShadowProperties: EditorComponentType = (props: LightShadowPro
   return (
     <>
       <InputGroup name="Cast Shadows" label={t('editor:properties.directionalLight.lbl-castShadows')}>
-        <Checkbox checked={lightComponent.castShadow.value} onChange={commitProperty(props.component, 'castShadow')} />
+        <Checkbox checked={lightComponent.castShadow} onChange={commitProperty(props.component, 'castShadow')} />
       </InputGroup>
       <InputGroup name="Shadow Bias" label={t('editor:properties.directionalLight.lbl-shadowBias')}>
         <NumericInput
@@ -78,7 +78,7 @@ export const LightShadowProperties: EditorComponentType = (props: LightShadowPro
           smallStep={0.000001}
           largeStep={0.0001}
           displayPrecision={0.000001}
-          value={lightComponent.shadowBias.value}
+          value={lightComponent.shadowBias}
           onChange={updateProperty(props.component, 'shadowBias')}
           onRelease={commitProperty(props.component, 'shadowBias')}
         />
@@ -93,7 +93,7 @@ export const LightShadowProperties: EditorComponentType = (props: LightShadowPro
           smallStep={0.000001}
           largeStep={0.0001}
           displayPrecision={0.000001}
-          value={lightComponent.shadowRadius.value}
+          value={lightComponent.shadowRadius}
           onChange={updateProperty(props.component, 'shadowRadius')}
           onRelease={commitProperty(props.component, 'shadowRadius')}
         />
@@ -105,7 +105,7 @@ export const LightShadowProperties: EditorComponentType = (props: LightShadowPro
             smallStep={0.1}
             largeStep={1}
             displayPrecision={0.0001}
-            value={lightComponent.shadowRadius.value}
+            value={lightComponent.shadowRadius}
             onChange={updateProperty(props.component, 'shadowRadius')}
             onRelease={commitProperty(props.component, 'shadowRadius')}
           />

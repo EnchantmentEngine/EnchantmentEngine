@@ -14,7 +14,7 @@ import LoadingView from '@ir-engine/ui/src/primitives/tailwind/LoadingView'
 import { MultiplayerState } from '@ir-engine/client-core/src/common/services/MultiplayerState'
 import { NotificationSnackbar } from '@ir-engine/client-core/src/common/services/NotificationService'
 import { useThemeProvider } from '@ir-engine/client-core/src/common/services/ThemeService'
-import { LoadWebappInjection, useLoadWebappInjection } from '@ir-engine/client-core/src/components/LoadWebappInjection'
+import { LoadWebappInjection } from '@ir-engine/client-core/src/components/LoadWebappInjection'
 import { EngineInjection } from '@ir-engine/client-core/src/components/World/EngineHooks'
 import { LoadingUISystemState } from '@ir-engine/client-core/src/systems/LoadingUISystem'
 import { useAuthenticated } from '@ir-engine/client-core/src/user/services/Authenticate'
@@ -28,8 +28,6 @@ const LocationRoutes = () => {
   useThemeProvider()
 
   useAuthenticated()
-
-  useLoadWebappInjection()
 
   useSpatialEngine()
   useEngineCanvas(ref)
