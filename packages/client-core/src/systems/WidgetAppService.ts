@@ -1,45 +1,67 @@
-import {
-  defineAction,
-  defineState,
-  dispatchAction,
-  getMutableState,
-  matches,
-  none,
-  Validator
-} from '@ir-engine/hyperflux'
+import { defineAction, defineState, dispatchAction, getMutableState, none, Schema } from '@ir-engine/hyperflux'
 
 import { Widget } from './Widgets'
 
 export class WidgetAppActions {
-  static showWidgetMenu = defineAction({
-    type: 'xre.xrui.WidgetAppActions.SHOW_WIDGET_MENU' as const,
-    shown: matches.boolean,
-    handedness: matches.string.optional() as Validator<unknown, 'left' | 'right' | undefined>
-  })
+  static showWidgetMenu = defineAction(
+    Schema.Object(
+      {
+        shown: Schema.Bool(),
+        handedness: Schema.LiteralUnion(['left', 'right'] as const)
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.SHOW_WIDGET_MENU'
+      }
+    )
+  )
 
-  static registerWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.REGISTER_WIDGET' as const,
-    id: matches.string
-  })
+  static registerWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true })
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.REGISTER_WIDGET'
+      }
+    )
+  )
 
-  static unregisterWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.UNREGISTER_WIDGET' as const,
-    id: matches.string
-  })
+  static unregisterWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true })
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.UNREGISTER_WIDGET'
+      }
+    )
+  )
 
-  static enableWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.ENABLE_WIDGET' as const,
-    id: matches.string,
-    enabled: matches.boolean
-  })
+  static enableWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true }),
+        enabled: Schema.Bool()
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.ENABLE_WIDGET'
+      }
+    )
+  )
 
-  static showWidget = defineAction({
-    type: 'xre.xrui.WidgetAppActions.SHOW_WIDGET' as const,
-    id: matches.string,
-    shown: matches.boolean,
-    openWidgetMenu: matches.boolean.optional(),
-    handedness: matches.string.optional() as Validator<unknown, 'left' | 'right' | undefined>
-  })
+  static showWidget = defineAction(
+    Schema.Object(
+      {
+        id: Schema.String({ required: true }),
+        shown: Schema.Bool({ required: true }),
+        openWidgetMenu: Schema.Optional(Schema.Bool()),
+        handedness: Schema.Optional(Schema.LiteralUnion(['left', 'right'] as const))
+      },
+      {
+        $id: 'xre.xrui.WidgetAppActions.SHOW_WIDGET'
+      }
+    )
+  )
 }
 
 type WidgetMutableState = Record<string, { enabled: boolean; visible: boolean }>

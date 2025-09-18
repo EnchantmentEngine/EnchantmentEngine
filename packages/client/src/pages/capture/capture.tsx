@@ -23,7 +23,7 @@ import Debug from '@ir-engine/client-core/src/components/Debug'
 import { AvatarControllerComponent } from '@ir-engine/engine/src/avatar/components/AvatarControllerComponent'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 
-const ecsRecordingErrorActionQueue = defineActionQueue(ECSRecordingActions.error.matches)
+const ecsRecordingErrorActionQueue = defineActionQueue(ECSRecordingActions.error)
 
 const NotifyRecordingErrorSystem = defineSystem({
   uuid: 'notifyRecordingErrorSystem',

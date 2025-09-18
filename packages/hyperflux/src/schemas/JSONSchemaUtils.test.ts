@@ -2612,7 +2612,7 @@ describe('GenerateJSONSchema', () => {
   })
 
   it('should include $id when provided in options', () => {
-    const schema = Schema.String({ id: 'test-id', default: 'test' })
+    const schema = Schema.String({ $id: 'test-id', default: 'test' })
     const jsonSchema = GenerateJSONSchema(schema)
     expect(jsonSchema).toEqual({
       type: 'string',

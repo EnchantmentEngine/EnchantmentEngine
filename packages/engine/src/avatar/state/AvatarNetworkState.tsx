@@ -6,7 +6,6 @@ import {
   getOptionalComponent,
   removeComponent,
   setComponent,
-  useOptionalComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
@@ -15,7 +14,6 @@ import { spawnAvatarReceptor } from '@ir-engine/engine/src/avatar/functions/spaw
 import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { defineState, getMutableState, none, useHookstate, useMutableState } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
-import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 
 export const AvatarState = defineState({
@@ -31,8 +29,7 @@ export const AvatarState = defineState({
 
   receptors: {
     onSpawn: AvatarNetworkAction.spawn.receive((action) => {
-      const avatarUUID = UUIDComponent.join({ entitySourceID: action.entitySourceID!, entityID: action.entityID })
-
+      const avatarUUID = UUIDComponent.join({ entitySourceID: action.entitySourceID, entityID: action.entityID })
       getMutableState(AvatarState)[avatarUUID].merge({
         avatarURL: action.avatarURL,
         name: action.name
@@ -65,7 +62,6 @@ export const AvatarState = defineState({
 const AvatarReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
   const { avatarURL, name } = useHookstate(getMutableState(AvatarState)[entityUUID])
   const entity = UUIDComponent.useEntityByUUID(entityUUID)
-  const hasTransformComponent = useOptionalComponent(entity, TransformComponent)
 
   useLayoutEffect(() => {
     if (!entity) return

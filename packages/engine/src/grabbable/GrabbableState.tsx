@@ -2,13 +2,14 @@ import React, { useEffect } from 'react'
 
 import {
   entityExists,
-  EntityNetworkState,
   EntityUUID,
   getComponent,
   hasComponent,
+  NetworkObjectComponent,
   removeComponent,
   setComponent,
   UndefinedEntity,
+  useComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
@@ -79,11 +80,12 @@ const GrabbableReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
 
   const attachmentPoint = state.attachmentPoint.value
 
-  const entityNetworkState = useMutableState(EntityNetworkState).value
+  const networkComponent = useComponent(entity, NetworkObjectComponent)
+  const grabberNetworkComponent = useComponent(grabberEntity, NetworkObjectComponent)
 
-  const ownedByScene = entityNetworkState[entityUUID]?.ownerId === SceneUser
-  const grabbableAuthorityPeer = entityNetworkState[entityUUID]?.authorityPeerId
-  const grabberAuthorityPeer = entityNetworkState[state.grabberEntityUUID.value]?.authorityPeerId
+  const ownedByScene = networkComponent.ownerId === SceneUser
+  const grabbableAuthorityPeer = networkComponent.authorityPeerID
+  const grabberAuthorityPeer = grabberNetworkComponent.authorityPeerID
 
   const hasAuthority = grabbableAuthorityPeer === grabberAuthorityPeer
 

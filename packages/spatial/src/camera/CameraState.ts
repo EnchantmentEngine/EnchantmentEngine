@@ -1,6 +1,4 @@
-import matches from 'ts-matches'
-
-import { defineAction, defineState } from '@ir-engine/hyperflux'
+import { defineAction, defineState, Schema } from '@ir-engine/hyperflux'
 
 export const CameraSettings = defineState({
   name: 'xre.engine.CameraSettings',
@@ -10,8 +8,14 @@ export const CameraSettings = defineState({
 })
 
 export class CameraActions {
-  static fadeToBlack = defineAction({
-    type: 'xre.engine.CameraActions.FadeToBlack' as const,
-    in: matches.boolean
-  })
+  static fadeToBlack = defineAction(
+    Schema.Object(
+      {
+        in: Schema.Bool({ default: true })
+      },
+      {
+        $id: 'xre.engine.CameraActions.FadeToBlack'
+      }
+    )
+  )
 }

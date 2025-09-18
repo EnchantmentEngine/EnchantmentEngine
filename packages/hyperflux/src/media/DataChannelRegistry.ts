@@ -1,6 +1,8 @@
-import { defineState, getMutableState, getState, none, OpaqueType, PeerID } from '@ir-engine/hyperflux'
-
+import { none } from '@hookstate/core'
+import { defineState, getMutableState, getState } from '../functions/StateFunctions'
 import { Network } from '../network/NetworkState'
+import { OpaqueType } from '../types/OpaqueType'
+import { PeerID } from '../types/Types'
 
 export type DataChannelType = OpaqueType<'DataChannelType'> & string
 

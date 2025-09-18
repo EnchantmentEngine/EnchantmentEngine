@@ -8,9 +8,9 @@ import { PersistentAnchorActions, PersistentAnchorComponent } from './XRAnchorCo
 import { XRPersistentAnchorSystem } from './XRPersistentAnchorSystem'
 
 const vpsAnchorQuery = defineQuery([PersistentAnchorComponent])
-const vpsAnchorFoundQueue = defineActionQueue(PersistentAnchorActions.anchorFound.matches)
-const vpsAnchorUpdatedQueue = defineActionQueue(PersistentAnchorActions.anchorUpdated.matches)
-const vpsAnchorLostQueue = defineActionQueue(PersistentAnchorActions.anchorLost.matches)
+const vpsAnchorFoundQueue = defineActionQueue(PersistentAnchorActions.anchorFound)
+const vpsAnchorUpdatedQueue = defineActionQueue(PersistentAnchorActions.anchorUpdated)
+const vpsAnchorLostQueue = defineActionQueue(PersistentAnchorActions.anchorLost)
 
 const execute = () => {
   const anchors = vpsAnchorQuery()

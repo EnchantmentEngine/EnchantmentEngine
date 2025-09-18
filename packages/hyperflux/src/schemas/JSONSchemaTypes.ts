@@ -28,12 +28,17 @@ export interface SchemaDefinition {
   options?: Options<any>
 }
 
+export type MergeObjectSchemas<A extends SchemaDefinition, B extends SchemaDefinition> = TObjectSchema<
+  (A extends TObjectSchema<infer BaseProps> ? BaseProps : never) &
+    (B extends TObjectSchema<infer ExtendProps> ? ExtendProps : never)
+>
+
 export type Static<T extends SchemaDefinition> = T['static']
 
 type ValueOrInitializer<T> = T | (() => T)
 
 export interface Options<V = unknown> {
-  id?: string
+  $id?: string
   default?: ValueOrInitializer<V>
   serialized?: boolean
   serialize?: (value: V) => unknown

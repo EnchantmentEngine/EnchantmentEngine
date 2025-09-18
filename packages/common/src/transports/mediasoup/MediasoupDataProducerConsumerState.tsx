@@ -6,16 +6,14 @@ import {
   defineState,
   getMutableState,
   getState,
-  matches,
-  matchesPeerID,
   NetworkActions,
   NetworkID,
   NetworkState,
   NO_PROXY_STEALTH,
   none,
+  Schema,
   useHookstate,
-  useMutableState,
-  Validator
+  useMutableState
 } from '@ir-engine/hyperflux'
 
 import {
@@ -25,61 +23,103 @@ import {
 } from './MediasoupTransportState'
 
 export class MediasoupDataProducerActions {
-  static requestProducer = defineAction({
-    type: 'ee.engine.network.mediasoup.DATA_REQUEST_PRODUCER',
-    requestID: matches.string,
-    transportID: matches.string,
-    protocol: matches.string,
-    sctpStreamParameters: matches.object as Validator<unknown, any>,
-    dataChannel: matches.string as Validator<unknown, DataChannelType>,
-    appData: matches.object as Validator<unknown, any>
-  })
+  static requestProducer = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        transportID: Schema.String(),
+        protocol: Schema.String(),
+        sctpStreamParameters: Schema.Any(),
+        dataChannel: Schema.TypedString<DataChannelType>(),
+        appData: Schema.Any()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.DATA_REQUEST_PRODUCER'
+      }
+    )
+  )
 
-  static requestProducerError = defineAction({
-    type: 'ee.engine.network.mediasoup.DATA_REQUEST_PRODUCER_ERROR',
-    requestID: matches.string,
-    error: matches.string
-  })
+  static requestProducerError = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        error: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.DATA_REQUEST_PRODUCER_ERROR'
+      }
+    )
+  )
 
-  static producerCreated = defineAction({
-    type: 'ee.engine.network.mediasoup.DATA_PRODUCER_CREATED',
-    requestID: matches.string,
-    producerID: matches.string,
-    transportID: matches.string,
-    protocol: matches.string,
-    sctpStreamParameters: matches.object as Validator<unknown, any>,
-    dataChannel: matches.string as Validator<unknown, DataChannelType>,
-    appData: matches.object as Validator<unknown, any>
-  })
+  static producerCreated = defineAction(
+    Schema.Object(
+      {
+        requestID: Schema.String(),
+        producerID: Schema.String(),
+        transportID: Schema.String(),
+        protocol: Schema.String(),
+        sctpStreamParameters: Schema.Any(),
+        dataChannel: Schema.TypedString<DataChannelType>(),
+        appData: Schema.Any()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.DATA_PRODUCER_CREATED'
+      }
+    )
+  )
 
-  static producerClosed = defineAction({
-    type: 'ee.engine.network.mediasoup.DATA_CLOSED_PRODUCER',
-    producerID: matches.string
-  })
+  static producerClosed = defineAction(
+    Schema.Object(
+      {
+        producerID: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.DATA_CLOSED_PRODUCER'
+      }
+    )
+  )
 }
 
 export class MediasoupDataConsumerActions {
-  static requestConsumer = defineAction({
-    type: 'ee.engine.network.mediasoup.DATA_REQUEST_CONSUMER',
-    dataChannel: matches.string as Validator<unknown, DataChannelType>
-  })
+  static requestConsumer = defineAction(
+    Schema.Object(
+      {
+        dataChannel: Schema.TypedString<DataChannelType>()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.DATA_REQUEST_CONSUMER'
+      }
+    )
+  )
 
-  static consumerCreated = defineAction({
-    type: 'ee.engine.network.mediasoup.DATA_CREATED_CONSUMER',
-    consumerID: matches.string,
-    peerID: matchesPeerID,
-    producerID: matches.string,
-    transportID: matches.string,
-    dataChannel: matches.string as Validator<unknown, DataChannelType>,
-    sctpStreamParameters: matches.object,
-    appData: matches.object as Validator<unknown, any>,
-    protocol: matches.string
-  })
+  static consumerCreated = defineAction(
+    Schema.Object(
+      {
+        consumerID: Schema.String(),
+        peerID: Schema.String(),
+        producerID: Schema.String(),
+        transportID: Schema.String(),
+        dataChannel: Schema.TypedString<DataChannelType>(),
+        sctpStreamParameters: Schema.Any(),
+        appData: Schema.Any(),
+        protocol: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.DATA_CREATED_CONSUMER'
+      }
+    )
+  )
 
-  static consumerClosed = defineAction({
-    type: 'ee.engine.network.mediasoup.DATA_CLOSED_CONSUMER',
-    consumerID: matches.string
-  })
+  static consumerClosed = defineAction(
+    Schema.Object(
+      {
+        consumerID: Schema.String()
+      },
+      {
+        $id: 'ee.engine.network.mediasoup.DATA_CLOSED_CONSUMER'
+      }
+    )
+  )
 }
 
 export const MediasoupDataProducersConsumersObjectsState = defineState({

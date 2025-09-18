@@ -689,8 +689,8 @@ export const GenerateJSONSchema = <T extends SchemaDefinition>(schema: T): JSONS
   }
 
   // Add any additional options that might be relevant for JSON Schema
-  if (schema.options?.id) {
-    jsonSchema.$id = schema.options.id
+  if (schema.options?.$id) {
+    jsonSchema.$id = schema.options.$id
   }
 
   // Add $comment if provided in options

@@ -281,7 +281,7 @@ describe('LayerFunctions', () => {
       const layer: LayerID = Layers.Simulation
       const linkedLayer: LayerID = Layers.Authoring
       const Expected = CreatePropagationArgs.Inner(
-        component.schema as any,
+        component.schema,
         key,
         data,
         layer,
@@ -323,15 +323,7 @@ describe('CreatePropagationArgs', () => {
       const layer: LayerID = Layers.Simulation
       const linkedLayer: LayerID = Layers.Authoring
 
-      const result = CreatePropagationArgs.Inner(
-        component.schema as any,
-        key,
-        data,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Inner(component.schema, key, data, layer, linkedLayer, testEntity, component)
 
       expect(result).toEqual(Expected)
     })
@@ -346,15 +338,7 @@ describe('CreatePropagationArgs', () => {
       const layer: LayerID = Layers.Simulation
       const linkedLayer: LayerID = Layers.Authoring
 
-      const result = CreatePropagationArgs.Inner(
-        component.schema as any,
-        key,
-        data,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Inner(component.schema, key, data, layer, linkedLayer, testEntity, component)
 
       expect(result).toEqual(Expected)
     })
@@ -374,7 +358,7 @@ describe('CreatePropagationArgs', () => {
         const linkedLayer: LayerID = Layers.Authoring
 
         const result = CreatePropagationArgs.Inner(
-          component.schema as any,
+          component.schema,
           key,
           data,
           layer,
@@ -399,7 +383,7 @@ describe('CreatePropagationArgs', () => {
         const linkedLayer: LayerID = Layers.Authoring
 
         const result = CreatePropagationArgs.Inner(
-          component.schema as any,
+          component.schema,
           key,
           data,
           layer,
@@ -438,7 +422,7 @@ describe('CreatePropagationArgs', () => {
       const linkedLayer = Layers.Authoring
       const resultSpy = vi.spyOn(CreatePropagationArgs, fn as any)
 
-      CreatePropagationArgs.Inner(component.schema as any, key, data, layer, linkedLayer, testEntity, component)
+      CreatePropagationArgs.Inner(component.schema, key, data, layer, linkedLayer, testEntity, component)
 
       expect(resultSpy).toHaveBeenCalled()
     })
@@ -461,7 +445,7 @@ describe('CreatePropagationArgs', () => {
         const linkedLayer = Layers.Authoring
         const resultSpy = vi.spyOn(CreatePropagationArgs, fn as any)
 
-        CreatePropagationArgs.Inner(component.schema as any, key, data, layer, linkedLayer, testEntity, component)
+        CreatePropagationArgs.Inner(component.schema, key, data, layer, linkedLayer, testEntity, component)
 
         expect(resultSpy).toHaveBeenCalled()
       }
@@ -487,7 +471,7 @@ describe('CreatePropagationArgs', () => {
       const linkedLayer = Layers.Authoring
       const resultSpy = vi.spyOn(CreatePropagationArgs, fn as any)
 
-      CreatePropagationArgs.Inner(component.schema as any, key, data, layer, linkedLayer, testEntity, component)
+      CreatePropagationArgs.Inner(component.schema, key, data, layer, linkedLayer, testEntity, component)
 
       expect(resultSpy).toHaveBeenCalled()
     })
@@ -505,27 +489,19 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Number(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Number(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
 
-    describe("when `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is 'Entity' ..", () => {
+    describe("when `@param schema`[`@param key`] is 'Number' and schema.options.$id is 'Entity' ..", () => {
       const id = 'Entity'
       const key = 'Number'
 
       it('should return `@param obj` if LayerComponent.get(obj) is `@param linkedLayer`', () => {
         const Expected = testEntity
 
-        const schema = Schema.Number({ id: id })
+        const schema = Schema.Number({ $id: id })
         const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
         setComponent(testEntity, component)
         const obj = Expected
@@ -533,7 +509,7 @@ describe('CreatePropagationArgs', () => {
         const linkedLayer = Layers.Simulation
 
         const result = CreatePropagationArgs.Number(
-          component.schema as any,
+          component.schema,
           key,
           obj,
           layer,
@@ -546,7 +522,7 @@ describe('CreatePropagationArgs', () => {
       })
 
       it('should return the result of getComponent(`@param obj`, LayerComponents[`@param layer`].relations[`@param linkedLayer`]', () => {
-        const schema = Schema.Number({ id: id })
+        const schema = Schema.Number({ $id: id })
         const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
         setComponent(testEntity, component)
         const obj = testEntity
@@ -556,7 +532,7 @@ describe('CreatePropagationArgs', () => {
         const Expected = getComponent(obj, LayerComponents[layer]).relations[linkedLayer]
 
         const result = CreatePropagationArgs.Number(
-          component.schema as any,
+          component.schema,
           key,
           obj,
           layer,
@@ -569,10 +545,10 @@ describe('CreatePropagationArgs', () => {
       })
     }) //:: Number:Entity
 
-    it("should return `@param obj` if `@param schema`[`@param key`] is 'Number' and schema.options.['id'] is not 'Entity'", () => {
+    it("should return `@param obj` if `@param schema`[`@param key`] is 'Number' and schema.options.$id is not 'Entity'", () => {
       const Expected = 12345 as Entity
 
-      const schema = Schema.Number({ default: 42, id: 'NotEntity' })
+      const schema = Schema.Number({ default: 42, $id: 'NotEntity' })
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = 'Number'
@@ -580,23 +556,15 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Number(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Number(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
 
-    it("should return `@param obj` if `@param schema`[`@param key`] is not 'Number' and schema.options.['id'] is 'Entity'", () => {
+    it("should return `@param obj` if `@param schema`[`@param key`] is not 'Number' and schema.options.$id is 'Entity'", () => {
       const Expected = 12345 as Entity
 
-      const schema = { [Kind]: 'String', options: { default: 42, id: 'Entity', serialized: true } } as SchemaDefinition
+      const schema = { [Kind]: 'String', options: { default: 42, $id: 'Entity', serialized: true } } as SchemaDefinition
       const component = defineComponent({ name: 'TestComponent', schema: schema, onSet: () => {} })
       setComponent(testEntity, component)
       const key = 'OtherKey'
@@ -604,15 +572,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Number(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Number(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -630,15 +590,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Any(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Any(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -654,15 +606,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Any(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Any(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -678,15 +622,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Any(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Any(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).not.toBe(Expected)
       expect(result).toEqual(Expected)
@@ -703,15 +639,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Any(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Any(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).not.toBe(Expected)
       expect(result).toEqual(Expected)
@@ -730,15 +658,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Class(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Class(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -754,15 +674,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Class(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Class(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -778,15 +690,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Class(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Class(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).not.toBe(Expected)
       expect(result).toEqual(Expected)
@@ -803,15 +707,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Class(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Class(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
       expect(result).toEqual(Expected)
@@ -830,15 +726,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Object(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Object(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -859,15 +747,7 @@ describe('CreatePropagationArgs', () => {
       const linkedLayer = Layers.Authoring
       const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
 
-      const result = CreatePropagationArgs.Object(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Object(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).not.toBe(Expected)
       expect(result).toEqual(Expected)
@@ -887,15 +767,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Record(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Record(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -918,15 +790,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Array(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Array(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -943,15 +807,7 @@ describe('CreatePropagationArgs', () => {
       const linkedLayer = Layers.Authoring
       const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
 
-      const result = CreatePropagationArgs.Array(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Array(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).not.toBe(Expected)
       expect(result).toEqual(Expected)
@@ -971,15 +827,7 @@ describe('CreatePropagationArgs', () => {
       const layer = Layers.Simulation
       const linkedLayer = Layers.Authoring
 
-      const result = CreatePropagationArgs.Tuple(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Tuple(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toBe(Expected)
     })
@@ -997,15 +845,7 @@ describe('CreatePropagationArgs', () => {
       const linkedLayer = Layers.Authoring
       const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
 
-      const result = CreatePropagationArgs.Tuple(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Tuple(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).not.toBe(Expected)
       expect(result).toEqual(Expected)
@@ -1031,15 +871,7 @@ describe('CreatePropagationArgs', () => {
       const linkedLayer = Layers.Authoring
       const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
 
-      const result = CreatePropagationArgs.Union(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Union(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toEqual(Expected)
       expect(resultSpy).toHaveBeenCalledTimes(Object.keys(obj).length)
@@ -1058,15 +890,7 @@ describe('CreatePropagationArgs', () => {
       const linkedLayer = Layers.Authoring
       const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
 
-      const result = CreatePropagationArgs.Union(
-        component.schema as any,
-        key,
-        obj,
-        layer,
-        linkedLayer,
-        testEntity,
-        component
-      )
+      const result = CreatePropagationArgs.Union(component.schema, key, obj, layer, linkedLayer, testEntity, component)
 
       expect(result).toEqual(Expected)
       expect(resultSpy).not.toHaveBeenCalled()
@@ -1087,7 +911,7 @@ describe('CreatePropagationArgs', () => {
       const resultSpy = vi.spyOn(CreatePropagationArgs, 'Inner')
 
       const result = CreatePropagationArgs.Default(
-        component.schema as any,
+        component.schema,
         key,
         obj,
         layer,

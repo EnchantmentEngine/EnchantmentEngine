@@ -1,7 +1,9 @@
 import React, { useLayoutEffect } from 'react'
 
 import {
+  ComponentJSONIDMap,
   createEntity,
+  deserializeComponent,
   EntityID,
   EntityTreeComponent,
   EntityUUID,
@@ -9,6 +11,7 @@ import {
   getOptionalComponent,
   removeComponent,
   removeEntity,
+  SerializedComponentType,
   setComponent,
   SourceID,
   UUIDComponent
@@ -50,6 +53,7 @@ export const EntityNetworkState = defineState({
       ownerPeer: PeerID
       authorityPeerId?: PeerID
       requestingPeerId?: PeerID
+      components: Record<string, SerializedComponentType<any>>
     }
   >,
 
@@ -63,7 +67,8 @@ export const EntityNetworkState = defineState({
           authorityPeerId: action.authorityPeerId ?? action.$peer,
           ownerPeer: action.$peer,
           entityID: action.entityID,
-          entitySourceID: action.entitySourceID
+          entitySourceID: action.entitySourceID,
+          components: action.components
         })
       })
       .validate((action) => {
@@ -165,6 +170,29 @@ const EntityNetworkReactor = (props: { uuid: EntityUUID }) => {
       networkId: networkID
     })
   }, [!!worldNetwork, userConnected, state.ownerId.value, state.authorityPeerId.value, networkID])
+
+  useLayoutEffect(() => {
+    const entity = UUIDComponent.getEntityByUUID(props.uuid)
+    if (!entity) return
+
+    const components = getState(EntityNetworkState)[props.uuid].components
+    const componentJSONIds = Object.keys(components)
+    for (const jsonID of componentJSONIds) {
+      const Component = ComponentJSONIDMap.get(jsonID)
+      if (!Component) continue
+      deserializeComponent(entity, Component, components[jsonID])
+    }
+    return () => {
+      // Remove all components that are no longer present in the network state
+      for (const jsonID of componentJSONIds) {
+        const components = getState(EntityNetworkState)[props.uuid].components
+        if (!(jsonID in components)) continue
+        const Component = ComponentJSONIDMap.get(jsonID)
+        if (!Component) continue
+        removeComponent(entity, Component)
+      }
+    }
+  }, [state.components.value])
 
   useLayoutEffect(() => {
     if (!userConnected || !state.requestingPeerId.value) return
