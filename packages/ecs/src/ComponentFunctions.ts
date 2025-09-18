@@ -321,7 +321,8 @@ export const defineComponent = <
   Component.onRemove = () => {}
   Component.toJSON = (component: ComponentType) => {
     if (!def.schema) return (component || {}) as JSON
-    return SerializeSchema(def.schema, component) as any as JSON
+    const serialized = SerializeSchema(def.schema, component)
+    return (typeof serialized === 'object' ? serialized : { value: serialized }) as any as JSON
   }
 
   Component.errors = []
@@ -650,7 +651,9 @@ export const deserializeComponent = <C extends Component>(
 
   const component = getComponent(entity, Component)
 
-  const args = Component.schema ? DeserializeSchemaValue(Component.schema, component, json) : json
+  const args = Component.schema
+    ? DeserializeSchemaValue(Component.schema, component, IsSingleValueSchema(Component.schema) ? json.value : json)
+    : json
 
   if (Component.schema) {
     const [valid, key] = HasValidSchemaValues(Component.schema, args, component)
