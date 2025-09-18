@@ -17,7 +17,12 @@ import { setAvatarColliderTransform } from '../functions/spawnAvatarReceptor'
 
 export const AvatarComponent = defineComponent({
   name: 'AvatarComponent',
-  schema: Schema.Object({}),
+
+  jsonID: 'EE_avatar',
+
+  schema: Schema.Object({
+    avatarURL: Schema.String()
+  }),
 
   /**
    * A unique entityID for avatars

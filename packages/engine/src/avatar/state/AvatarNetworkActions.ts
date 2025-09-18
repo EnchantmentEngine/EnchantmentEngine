@@ -4,10 +4,10 @@ import { defineAction, NetworkTopics } from '@ir-engine/hyperflux'
 import { Schema } from '@ir-engine/hyperflux'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { spawnObject, SpawnObjectActions, SpawnObjectProps } from '@ir-engine/spatial/src/transform/SpawnObjectActions'
-import { GLTFComponent } from '../../gltf/GLTFComponent'
 
 import { EntitySchema } from '@ir-engine/ecs'
 import { ikTargets } from '../animation/Util'
+import { AvatarComponent } from '../components/AvatarComponent'
 
 export class AvatarNetworkAction {
   static spawn = defineAction(
@@ -84,11 +84,11 @@ export class AvatarNetworkAction {
 }
 
 export type SpawnAvatarProps = SpawnObjectProps & {
-  [GLTFComponent.jsonID]: {
+  [AvatarComponent.jsonID]: {
     avatarURL: string
   }
   [NameComponent.jsonID]: {
-    name: string
+    value: string
   }
 }
 
