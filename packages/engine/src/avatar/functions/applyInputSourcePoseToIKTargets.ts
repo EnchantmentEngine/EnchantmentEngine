@@ -19,7 +19,7 @@ import { ReferenceSpace, XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarIKTargetComponent } from '../components/AvatarIKComponents'
 
 const matrixWorld = new Matrix4()
@@ -131,7 +131,7 @@ export const applyInputSourcePoseToIKTargets = () => {
     ikTransform.rotation.copy(cameraTransform.rotation).multiply(Q_Y_180)
     AvatarIKTargetComponent.blendWeight[ikTargetHead] = 1
     const rigComponent = getComponent(selfAvatarEntity, AvatarRigComponent)
-    const avatar = getComponent(selfAvatarEntity, AvatarComponent)
+    const avatar = getComponent(selfAvatarEntity, AvatarProportionsComponent)
     if (rigComponent) {
       const avatarTransform = getComponent(selfAvatarEntity, TransformComponent)
       if (cameraTransform.position.y - avatarTransform.position.y < avatar.avatarHeight) {

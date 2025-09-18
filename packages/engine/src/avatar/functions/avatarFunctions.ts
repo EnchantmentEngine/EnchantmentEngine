@@ -10,7 +10,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { AnimationState } from '../AnimationManager'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarProportionsComponent } from '../components/AvatarComponent'
 
 const hipsPos = new Vector3(),
   headPos = new Vector3(),
@@ -50,7 +50,7 @@ export const setupAvatarProportions = (entity: Entity) => {
   TransformComponent.getWorldPosition(rig.leftUpperLeg, leftUpperLegPos)
   rig.leftEye ? TransformComponent.getWorldPosition(rig.leftEye, eyePos) : eyePos.copy(headPos).setY(headPos.y + 0.1) // fallback to rough estimation if no eye bone is present
 
-  setComponent(entity, AvatarComponent, {
+  setComponent(entity, AvatarProportionsComponent, {
     avatarHeight: Math.abs(headPos.y - worldHeight + 0.25),
     torsoLength: Math.abs(headPos.y - hipsPos.y),
     upperLegLength: Math.abs(hipsPos.y - leftLowerLegPos.y),

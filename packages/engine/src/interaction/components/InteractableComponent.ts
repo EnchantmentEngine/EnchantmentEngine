@@ -44,7 +44,7 @@ import {
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 import { useXRUIState } from '@ir-engine/spatial/src/xrui/useXRUIState'
 import { useEffect } from 'react'
-import { AvatarComponent } from '../../avatar/components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../../avatar/components/AvatarComponent'
 import { createUI } from '../functions/createUI'
 import { InteractableState, InteractableTransitions } from '../functions/interactableFunctions'
 import { InteractiveModalState } from '../ui/InteractiveModalView'
@@ -73,8 +73,8 @@ const xrDistVec3 = new Vector3()
 const updateXrDistVec3 = (targetEntity: Entity) => {
   const transformComponent = getComponent(targetEntity, TransformComponent)
   xrDistVec3.copy(transformComponent.position)
-  if (hasComponent(targetEntity, AvatarComponent)) {
-    const avatar = getComponent(targetEntity, AvatarComponent)
+  if (hasComponent(targetEntity, AvatarProportionsComponent)) {
+    const avatar = getComponent(targetEntity, AvatarProportionsComponent)
     xrDistVec3.y += avatar.avatarHeight
   }
 }

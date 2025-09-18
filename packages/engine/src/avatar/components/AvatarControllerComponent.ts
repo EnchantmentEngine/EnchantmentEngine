@@ -26,7 +26,7 @@ import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { CameraComponent } from '../../../../spatial/src/camera/components/CameraComponent'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { AvatarComponent } from './AvatarComponent'
+import { AvatarProportionsComponent } from './AvatarComponent'
 
 export const eyeOffset = 0.25
 
@@ -64,7 +64,7 @@ export const AvatarControllerComponent = defineComponent({
 
   reactor: () => {
     const entity = useEntityContext()
-    const avatarComponent = useOptionalComponent(entity, AvatarComponent)
+    const avatarComponent = useOptionalComponent(entity, AvatarProportionsComponent)
     const avatarControllerComponent = useComponent(entity, AvatarControllerComponent)
     const shouldCameraAttachToController = XRState.useShouldViewerFollowController()
     const hasSession = !!useMutableState(XRState).session.value

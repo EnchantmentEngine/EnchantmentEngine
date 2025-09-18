@@ -22,7 +22,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { SpawnPoseState } from '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { preloadedAnimations } from '../animation/Util'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarColliderComponent, AvatarControllerComponent } from '../components/AvatarControllerComponent'
 import { AvatarHeadDecapComponent } from '../components/AvatarIKComponents'
 import { AvatarMovementSettingsState } from '../state/AvatarMovementSettingsState'
@@ -65,7 +65,7 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
   const xrState = getState(XRState)
   const rigidbody = getComponent(entity, RigidBodyComponent)
   const controller = getComponent(entity, AvatarControllerComponent)
-  const eyeHeight = getComponent(entity, AvatarComponent).eyeHeight
+  const eyeHeight = getComponent(entity, AvatarProportionsComponent).eyeHeight
   const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   desiredMovement.copy(Vector3_Zero)
 

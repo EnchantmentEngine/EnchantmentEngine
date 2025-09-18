@@ -16,7 +16,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
 import { AnimationState } from '../AnimationManager'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarDissolveComponent } from '../components/AvatarDissolveComponent'
 import { SpawnEffectComponent } from '../components/SpawnEffectComponent'
 import { AvatarAnimationSystem } from './AvatarAnimationSystem'
@@ -76,7 +76,7 @@ const AvatarPendingReactor = () => {
 
     if (!isClient || !loadingEffect) return
 
-    const avatarHeight = getComponent(entity, AvatarComponent).avatarHeight
+    const avatarHeight = getComponent(entity, AvatarProportionsComponent).avatarHeight
     setComponent(entity, AvatarDissolveComponent, { height: avatarHeight })
 
     const effectEntity = createEntity()

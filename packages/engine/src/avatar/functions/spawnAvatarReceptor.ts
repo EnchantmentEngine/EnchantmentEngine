@@ -36,7 +36,7 @@ import { ShadowComponent } from '../../scene/components/ShadowComponent'
 import { EnvMapSourceType } from '../../scene/constants/EnvMapEnum'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarColliderComponent, AvatarControllerComponent, eyeOffset } from '../components/AvatarControllerComponent'
 import { AvatarIKComponent } from '../components/AvatarIKComponents'
 
@@ -65,6 +65,7 @@ export const spawnAvatarReceptor = (entityUUID: EntityUUID) => {
   })
 
   setComponent(entity, AvatarComponent)
+  setComponent(entity, AvatarProportionsComponent)
   ObjectLayerMaskComponent.setLayer(entity, ObjectLayers.Avatar)
 
   createAvatarCollider(entity)
@@ -116,7 +117,7 @@ export const setAvatarColliderTransform = (entity: Entity) => {
     ? getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent).near
     : 0.1
   const avatarRadius = eyeOffset + cameraNear
-  const avatarComponent = getComponent(entity, AvatarComponent)
+  const avatarComponent = getComponent(entity, AvatarProportionsComponent)
   const halfHeight = avatarComponent.avatarHeight * 0.5
 
   setComponent(colliderEntity, TransformComponent, {

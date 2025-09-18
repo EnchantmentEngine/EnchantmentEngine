@@ -44,7 +44,7 @@ import {
   createVRM,
   createVRMFromGLTF
 } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { getAllLoadedAnimations, setupAvatarProportions } from '../functions/avatarFunctions'
 import { normalizeAnimationClips, retargetAnimationClips } from '../functions/retargetingFunctions'
 import { updateVRMRetargeting } from '../functions/updateVRMRetargeting'
@@ -134,7 +134,7 @@ const Reactor = () => {
       XRState.setTrackingSpace()
       return
     }
-    const eyeHeight = getComponent(selfAvatarEntity, AvatarComponent).eyeHeight
+    const eyeHeight = getComponent(selfAvatarEntity, AvatarProportionsComponent).eyeHeight
     getMutableState(XRState).userEyeHeight.set(eyeHeight)
     XRState.setTrackingSpace()
   }, [selfAvatarLoaded])

@@ -6,7 +6,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 
 import { EntityTreeComponent } from '@ir-engine/ecs'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { VRMHumanBoneName } from '../maps/VRMHumanBoneName'
 
 const emptyQuaternion = new Quaternion()
@@ -48,7 +48,7 @@ export const updateVRMRetargeting = (avatarEntity: Entity) => {
       _boneWorldPos.applyQuaternion(parentInverseWorldRotation)
 
       if (hasComponent(avatarEntity, AvatarComponent)) {
-        _boneWorldPos.multiplyScalar(getComponent(avatarEntity, AvatarComponent).hipsHeight)
+        _boneWorldPos.multiplyScalar(getComponent(avatarEntity, AvatarProportionsComponent).hipsHeight)
       }
       bone.position.copy(_boneWorldPos)
     }
