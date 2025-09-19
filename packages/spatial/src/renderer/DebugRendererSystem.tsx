@@ -67,6 +67,7 @@ const PhysicsReactor = () => {
     setComponent(lineSegmentsEntity, LineSegmentComponent, {
       layerMask: ObjectLayerMasks.PhysicsHelper,
       name: 'Physics Debug Renderer',
+      geometry: new BufferGeometry(),
       material: new LineBasicMaterial({ vertexColors: true, toneMapped: false, depthTest: false, transparent: true })
     })
 

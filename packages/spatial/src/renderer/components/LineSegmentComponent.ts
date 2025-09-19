@@ -18,7 +18,7 @@ export const LineSegmentComponent = defineComponent({
 
   schema: Schema.Object({
     name: Schema.String({ default: 'line-segment' }),
-    geometry: Schema.Class(() => new BufferGeometry() as BufferGeometry<NormalBufferAttributes>),
+    geometry: Schema.Type<BufferGeometry>({ required: true }),
     material: Schema.Class(() => new LineBasicMaterial() as Material),
     color: Schema.Optional(T.Color()),
     opacity: Schema.Optional(Schema.Number({ default: 1 })),
