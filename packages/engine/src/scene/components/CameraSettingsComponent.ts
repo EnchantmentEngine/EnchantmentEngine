@@ -56,7 +56,7 @@ export const CameraSettingsComponent = defineComponent({
     canCameraThirdPerson: Schema.Bool({ default: true }),
     canCameraTopDown: Schema.Bool({ default: true }),
 
-    isFistPersonFreeCamera: Schema.Bool({ default: true }),
+    isFirstPersonFreeCamera: Schema.Bool({ default: true }),
     isThirdPersonFreeCamera: Schema.Bool({ default: true }),
     isTopDownFreeCamera: Schema.Bool({ default: false }),
 

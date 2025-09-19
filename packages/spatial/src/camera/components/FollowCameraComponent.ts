@@ -127,7 +127,7 @@ export const FollowCameraComponent = defineComponent({
       const cameraSettings = cameraSettingsState.value
       const minTheta = -cameraSettings.firstPersonCameraLimits / 2
       const maxTheta = cameraSettings.firstPersonCameraLimits / 2
-      const isFreeCamera = cameraSettings.isFistPersonFreeCamera
+      const isFreeCamera = cameraSettings.isFirstPersonFreeCamera
       const isResetCamera = cameraSettings.isFirstPersonCameraReset
       const defaultPhi = 0
       const defaultTheta = 0
@@ -485,7 +485,7 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
     follow.targetDistance = newZoomDistance = follow.defaultDistance
     follow.maxTheta = cameraSettings.firstPersonCameraLimits.value / 2
     follow.minTheta = -cameraSettings.firstPersonCameraLimits.value / 2
-    follow.isFreeCamera = cameraSettings.isFistPersonFreeCamera.value
+    follow.isFreeCamera = cameraSettings.isFirstPersonFreeCamera.value
     follow.isResetCamera = cameraSettings.isFirstPersonCameraReset.value
     follow.defaultPhi = 0
     follow.defaultTheta = 0
@@ -553,7 +553,7 @@ const computeCameraFollow = (cameraEntity: Entity, referenceEntity: Entity) => {
 
   const timeInSeconds = Math.floor(Date.now() / 1000)
   const resetThreshold = 3 //in seconds
-  if (follow.isResetCamera) {
+  if (follow.isResetCamera && resetMode[follow.mode]) {
     if (follow.lastCameraAdjustmentTime !== -1 && follow.lastCameraAdjustmentTime + resetThreshold <= timeInSeconds) {
       resetMode[follow.mode]()
       follow.lastCameraAdjustmentTime = -1

@@ -40,7 +40,7 @@ export const CameraSettingsState = defineState({
     canCameraThirdPerson: true,
     canCameraTopDown: true,
 
-    isFistPersonFreeCamera: true,
+    isFirstPersonFreeCamera: true,
     isThirdPersonFreeCamera: true,
     isTopDownFreeCamera: false,
 

@@ -54,7 +54,7 @@
           "canCameraFirstPerson": true,
           "canCameraThirdPerson": true,
           "canCameraTopDown": true,
-          "isFistPersonFreeCamera": true,
+          "isFirstPersonFreeCamera": true,
           "isThirdPersonFreeCamera": true,
           "isTopDownFreeCamera": false,
           "firstPersonCameraLimits": 360,
