@@ -74,7 +74,7 @@
     "@types/node": "^22.12.0",
     "@types/react": "18.2.0",
     "@types/react-dom": "18.2.0",
-    "@vitejs/plugin-basic-ssl": "2.1.0",
+    "@vitejs/plugin-basic-ssl": "^2.1.0",
     "autoprefixer": "^10.4.14",
     "cli": "1.0.1",
     "config": "3.3.9",
