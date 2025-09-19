@@ -1,6 +1,6 @@
-import { OpaqueType, PeerID, Schema, TTypedSchema, UserID } from '@ir-engine/hyperflux'
+import { OpaqueType, PeerID, Schema, TTypedSchema } from '@ir-engine/hyperflux'
 import { createResizableTypeArray } from '../bitecsLegacy'
-import { Component, defineComponent, getComponent, hasComponent } from '../ComponentFunctions'
+import { defineComponent, getComponent } from '../ComponentFunctions'
 import { Entity, UndefinedEntity } from '../Entity'
 import { proxySoAStore } from '../proxySoAStore'
 import { defineQuery } from '../QueryFunctions'
@@ -19,8 +19,9 @@ export const NetworkObjectComponent = defineComponent({
   name: 'NetworkObjectComponent',
 
   schema: Schema.Object({
-    /** The user who is authority over this object. */
+    /** The user who owns this object. */
     ownerId: Schema.UserID(),
+    /** The user's peer who spawned and owns this object. */
     ownerPeer: Schema.PeerID(),
     /** The peer who is authority over this object. */
     authorityPeerID: Schema.PeerID(),
@@ -38,14 +39,6 @@ export const NetworkObjectComponent = defineComponent({
   },
 
   /**
-   * Get the network objects owned by a given user
-   * @param ownerId
-   */
-  getOwnedNetworkObjects(ownerId: UserID) {
-    return networkObjectQuery().filter((eid) => getComponent(eid, NetworkObjectComponent).ownerId === ownerId)
-  },
-
-  /**
    * Get a network object by ownerPeer and NetworkId
    * @returns
    */
@@ -56,32 +49,6 @@ export const NetworkObjectComponent = defineComponent({
         return networkObject.networkId === networkId && networkObject.ownerPeer === ownerPeer
       }) || UndefinedEntity
     )
-  },
-
-  /**
-   * Get the user entity that has a specific component
-   * @param userId
-   * @param component
-   * @returns
-   */
-  getOwnedNetworkObjectWithComponent(userId: UserID, component: Component) {
-    return (
-      NetworkObjectComponent.getOwnedNetworkObjects(userId).find((eid) => {
-        return hasComponent(eid, component)
-      }) || UndefinedEntity
-    )
-  },
-
-  /**
-   * Get the user entity that has a specific component
-   * @param userId
-   * @param component
-   * @returns
-   */
-  getOwnedNetworkObjectsWithComponent(userId: UserID, component: Component) {
-    return NetworkObjectComponent.getOwnedNetworkObjects(userId).filter((eid) => {
-      return hasComponent(eid, component)
-    })
   }
 })
 
