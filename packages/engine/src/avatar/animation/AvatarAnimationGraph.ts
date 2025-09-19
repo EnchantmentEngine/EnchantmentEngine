@@ -38,7 +38,7 @@ export const setAnimation = (
   const animationState = getState(AnimationState)
   const animationAsset = animationState.loadedAnimations[newAnimation.animationName]
   if (!animationAsset) {
-    console.warn('[updateAnimationGraph]: Animation asset not loaded', animationAsset, targetEntity)
+    // console.warn('[updateAnimationGraph]: Animation asset not loaded', animationAsset, targetEntity)
     return
   }
   const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
