@@ -88,7 +88,7 @@ const unmountEntity = (entity: Entity) => {
     AvatarNetworkAction.setAnimationState({
       animationAsset: preloadedAnimations.emotes,
       clipName: emoteAnimations.seated,
-      needsSkip: true,
+      once: true,
       entityUUID: UUIDComponent.get(entity)
     })
   )

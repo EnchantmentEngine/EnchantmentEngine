@@ -26,7 +26,7 @@ export class AvatarNetworkAction {
         clipName: Schema.String({ required: false }),
         animationAsset: Schema.String({ required: true }),
         loop: Schema.Bool({ required: false, default: true }),
-        needsSkip: Schema.Bool({ required: false, default: false }),
+        once: Schema.Bool({ required: false, default: false }),
         layer: Schema.Number({ required: false, default: 0 })
       },
       {
