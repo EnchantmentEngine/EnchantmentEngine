@@ -24,7 +24,7 @@ export const GrabbableComponent = defineComponent({
   name: 'GrabbableComponent',
   jsonID: 'EE_grabbable',
 
-  toJSON: () => true,
+  toJSON: () => ({}),
 
   grabbableCallbackName: 'grabCallback',
 

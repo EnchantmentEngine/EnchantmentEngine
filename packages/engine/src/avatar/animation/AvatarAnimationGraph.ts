@@ -31,7 +31,7 @@ export const setAnimation = (
     animationName: string
     loop: boolean
     clipName: string
-    needsSkip: boolean | null
+    once: boolean | null
     layer: number | null
   }
 ) => {
@@ -42,7 +42,7 @@ export const setAnimation = (
     return
   }
   const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
-  graph.fadingOut = newAnimation.needsSkip ?? false
+  graph.fadingOut = newAnimation.once ?? false
   graph.layer = newAnimation.layer ?? 0
   playAvatarAnimationFromMixamo(targetEntity, animationAsset, !!newAnimation.loop, newAnimation.clipName)
 }

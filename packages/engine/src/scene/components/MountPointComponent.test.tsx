@@ -399,9 +399,9 @@ describe('MountPointComponent.ts', async () => {
       const dispatchedAction = HyperFlux.store.actions.incoming[0] as ReturnType<
         typeof AvatarNetworkAction.setAnimationState
       >
-      const needsSkip = dispatchedAction.needsSkip
+      const once = dispatchedAction.once
       // Check if dispatched action set values correctly
-      assert.equal(needsSkip, true)
+      assert.equal(once, true)
     })
 
     it('Should release avatarEntity movement', () => {
