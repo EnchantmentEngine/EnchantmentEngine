@@ -1,6 +1,6 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { NetworkObjectAuthorityTag, UUIDComponent } from '@ir-engine/ecs'
+import { getAncestorWithComponents, NetworkObjectAuthorityTag, UUIDComponent } from '@ir-engine/ecs'
 import { ComponentType, getComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -21,6 +21,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { SpawnPoseState } from '@ir-engine/spatial/src/transform/SpawnPoseState'
+import { GrabbedComponent } from '../../grabbable/GrabbableComponent'
 import { preloadedAnimations } from '../animation/Util'
 import { AvatarComponent } from '../components/AvatarComponent'
 import { AvatarColliderComponent, AvatarControllerComponent } from '../components/AvatarControllerComponent'
@@ -110,7 +111,13 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
     bodyCollider.collisionMask & ~CollisionGroups.Trigger
   )
 
-  Physics.computeColliderMovement(world, entity, colliderEntity, desiredMovement, avatarCollisionGroups)
+  Physics.computeColliderMovement(world, entity, colliderEntity, desiredMovement, avatarCollisionGroups, (collider) => {
+    const grabbedParent = getAncestorWithComponents(collider.entity, [RigidBodyComponent, GrabbedComponent])
+    if (grabbedParent) {
+      return getComponent(grabbedParent, GrabbedComponent).grabberEntity !== entity
+    }
+    return true
+  })
   Physics.getComputedMovement(world, entity, computedMovement)
 
   if (desiredMovement.y === 0) computedMovement.y = 0

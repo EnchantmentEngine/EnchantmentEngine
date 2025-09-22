@@ -277,8 +277,7 @@ export const InputComponent = defineComponent({
 
   getButtons<BindingsType extends InputButtonBindings = typeof DefaultButtonBindings>(
     entityContext: Entity,
-    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType,
-    autoCapture = true
+    inputBindings: BindingsType = DefaultButtonBindings as unknown as BindingsType
   ) {
     const inputEntity = InputComponent.getInputEntity(entityContext)
     if (inputEntity === UndefinedEntity) return {} as ButtonStateMap<BindingsType>
@@ -288,7 +287,6 @@ export const InputComponent = defineComponent({
         if (!input.buttonBindings[binding]) input.buttonBindings[binding] = inputBindings[binding] as any
       }
     }
-    input.autoCapture = autoCapture
     return input.buttons as ButtonStateMap<BindingsType & typeof DefaultButtonBindings>
   },
 
