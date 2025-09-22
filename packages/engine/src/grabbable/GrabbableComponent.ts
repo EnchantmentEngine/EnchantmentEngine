@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { UUIDComponent, getComponent, hasComponent, useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, setComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, setComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineAction, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
@@ -31,7 +31,8 @@ export const GrabbableComponent = defineComponent({
   reactor: function () {
     const entity = useEntityContext()
     const isGrabbed = useHasComponent(entity, GrabbedComponent)
-    const interactableComponent = useComponent(entity, InteractableComponent)
+
+    // useHelperEntity(entity, () => new AxesHelper(0.5), true)
 
     useEffect(() => {
       if (isClient) {

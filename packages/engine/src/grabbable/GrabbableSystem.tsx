@@ -49,7 +49,7 @@ const execute = () => {
 
 const executeInput = () => {
   const buttons = InputComponent.getButtons(getState(ReferenceSpaceState).viewerEntity)
-  if (buttons.KeyU?.down) {
+  if (buttons.KeyU?.pressed) {
     const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
     if (!selfAvatarEntity) return
     const grabbedComponent = getOptionalComponent(selfAvatarEntity, GrabbedComponent)
