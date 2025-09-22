@@ -81,6 +81,7 @@ const updateXrDistVec3 = (targetEntity: Entity) => {
 
 const _center = new Vector3()
 const _size = new Vector3()
+const _pos = new Vector3()
 
 export const updateInteractableUI = (entity: Entity) => {
   const targetEntity = AvatarComponent.getSelfAvatarEntity() ?? getState(ReferenceSpaceState).viewerEntity
@@ -100,7 +101,8 @@ export const updateInteractableUI = (entity: Entity) => {
   if (hasVisibleComponent) {
     if (boundingBox) updateBoundingBox(entity)
     if (boundingBox && boundingBox.box && !boundingBox.box.isEmpty()) {
-      const center = boundingBox.box.getCenter(_center)
+      const pos = TransformComponent.getWorldPosition(entity, _pos)
+      const center = boundingBox.box.getCenter(_center).add(pos)
       const size = boundingBox.box.getSize(_size)
       if (!size.y) size.y = 1
       const alpha = smootheLerpAlpha(0.01, getState(ECSState).deltaSeconds)
@@ -154,7 +156,7 @@ export const updateInteractableUI = (entity: Entity) => {
     } else {
       activateUI = interactable.uiVisibilityOverride !== XRUIVisibilityOverride.off //could be more explicit, needs to be if we add more enum options
     }
-    setComponent(entity, InteractableComponent, { canInteract: activateUI })
+    getComponent(entity, InteractableComponent).canInteract = activateUI
   }
 
   //highlight if hovering OR if closest, otherwise turn off highlight
@@ -192,12 +194,10 @@ const addInteractableUI = (entity: Entity) => {
 
   const uiTransform = getComponent(uiEntity, TransformComponent)
   const boundingBox = getOptionalComponent(entity, BoundingBoxComponent)
+  TransformComponent.getWorldPosition(entity, uiTransform.position)
   if (boundingBox && boundingBox.box && !boundingBox.box.isEmpty()) {
     updateBoundingBox(entity)
-    boundingBox.box.getCenter(uiTransform.position)
-  } else {
-    TransformComponent.getWorldPosition(entity, _center)
-    uiTransform.position.copy(_center)
+    uiTransform.position.add(boundingBox.box.getCenter(_center))
   }
   setComponent(entity, InteractableComponent, { uiEntity })
   setComponent(uiEntity, EntityTreeComponent, { parentEntity: getState(ReferenceSpaceState).originEntity })

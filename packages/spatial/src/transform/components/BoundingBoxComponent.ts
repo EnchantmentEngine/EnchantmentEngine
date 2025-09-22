@@ -13,6 +13,11 @@ export const BOUNDING_BOX_COLORS = {
   HOVERED: '#F3A2FF'
 } as const
 
+/**
+ * BoundingBoxComponent
+ * - Stores an axis-aligned bounding box for an entity
+ * - The box is in world space, relative to the entity's position
+ */
 export const BoundingBoxComponent = defineComponent({
   name: 'BoundingBoxComponent',
 
