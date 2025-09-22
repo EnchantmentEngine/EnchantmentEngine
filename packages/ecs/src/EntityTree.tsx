@@ -1,6 +1,6 @@
 import { NO_PROXY, Schema, startReactor, useForceUpdate, useHookstate, useImmediateEffect } from '@ir-engine/hyperflux'
 import * as bitECS from 'bitecs'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import {
   Component,
   ComponentType,
@@ -428,7 +428,10 @@ export function useQueryBySource(
   layer = Layers.Simulation
 ): Entity[] {
   const query = useQuery([...queryTerms], layer)
-  return query.filter((e) => hasComponent(e, UUIDComponent) && UUIDComponent.getSourceEntity(e) === sourceEntity)
+  const filtered = query.filter(
+    (e) => hasComponent(e, UUIDComponent) && UUIDComponent.getSourceEntity(e) === sourceEntity
+  )
+  return useMemo(() => [...filtered], [JSON.stringify(filtered)])
 }
 
 /**
