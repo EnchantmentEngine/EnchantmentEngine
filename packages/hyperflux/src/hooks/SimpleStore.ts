@@ -21,6 +21,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T> | typeof None,
   let value: T | typeof None = None
   let promise: Promise<T> | undefined
   let promiseError: unknown = undefined
+  let currentPromiseId = 0
   const listeners: Set<Listener> = new Set()
   let resolve: undefined | ((value: T) => void)
 
@@ -29,9 +30,12 @@ export function createSimpleStore<T>(initialValue: T | Promise<T> | typeof None,
     promiseError = undefined
     resolve = undefined
 
+    // Use a unique ID to track if this is still the active promise
+    const thisPromiseId = ++currentPromiseId
+
     promise = newPromise
       .then((resolvedValue: T) => {
-        if (promise === newPromise) {
+        if (currentPromiseId === thisPromiseId) {
           promise = undefined
           promiseError = undefined
           value = resolvedValue
@@ -40,7 +44,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T> | typeof None,
         return resolvedValue
       })
       .catch((error: unknown) => {
-        if (promise === newPromise) {
+        if (currentPromiseId === thisPromiseId) {
           promise = undefined
           promiseError = error
           listeners.forEach(_callListener)
@@ -116,7 +120,7 @@ export function createSimpleStore<T>(initialValue: T | Promise<T> | typeof None,
       }
     },
 
-    _subscribe(listener: Listener) {
+    subscribe(listener: Listener) {
       listeners.add(listener)
       return () => {
         listeners.delete(listener)
@@ -154,7 +158,7 @@ export function useSimpleStore<T>(
 
   useEffect(() => {
     const s = store
-    s._subscribe(() => forceRerender({}))
+    s.subscribe(() => forceRerender({}))
   }, [store])
 
   if (store.promise) {
@@ -171,5 +175,5 @@ export function useSimpleStore<T>(
  */
 export function hookSimpleStore<T>(store: SimpleStore<T>): void {
   const [, forceRerender] = useState({})
-  useEffect(() => store._subscribe(() => forceRerender({})), [store])
+  useEffect(() => store.subscribe(() => forceRerender({})), [store])
 }

@@ -32,7 +32,7 @@ export const AvatarIKTargetComponent = defineComponent({
     const entity = useEntityContext()
     const debugEnabled = useHookstate(getMutableState(RendererState).avatarDebug)
 
-    useHelperEntity(entity, () => new AxesHelper(0.125), debugEnabled.value, ObjectLayerMasks.AvatarHelper)
+    useHelperEntity(entity, () => new AxesHelper(0.5), debugEnabled.value, ObjectLayerMasks.AvatarHelper)
 
     return null
   },
@@ -70,20 +70,20 @@ export const getHandTarget = (entity: Entity, hand: XRHandedness): HandTargetRet
   switch (hand) {
     case 'left': {
       return {
-        position: TransformComponent.getWorldPosition(rig.leftHand, vec3),
-        rotation: TransformComponent.getWorldRotation(rig.leftHand, quat)
+        position: TransformComponent.getScenePosition(rig.leftHand, vec3),
+        rotation: TransformComponent.getSceneRotation(rig.leftHand, quat)
       }
     }
     case 'right':
       return {
-        position: TransformComponent.getWorldPosition(rig.rightHand, vec3),
-        rotation: TransformComponent.getWorldRotation(rig.rightHand, quat)
+        position: TransformComponent.getScenePosition(rig.rightHand, vec3),
+        rotation: TransformComponent.getSceneRotation(rig.rightHand, quat)
       }
     default:
     case 'none':
       return {
-        position: TransformComponent.getWorldPosition(rig.head, vec3),
-        rotation: TransformComponent.getWorldRotation(rig.head, quat)
+        position: TransformComponent.getScenePosition(rig.head, vec3),
+        rotation: TransformComponent.getSceneRotation(rig.head, quat)
       }
   }
 }

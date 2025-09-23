@@ -1,11 +1,10 @@
 import { useEffect } from 'react'
 
 import { UUIDComponent, getComponent, hasComponent, useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, setComponent, useComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { defineComponent, setComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity } from '@ir-engine/ecs/src/Entity'
 import { defineAction, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
-import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 
 import { EntitySchema } from '@ir-engine/ecs'
@@ -24,14 +23,15 @@ export const GrabbableComponent = defineComponent({
   name: 'GrabbableComponent',
   jsonID: 'EE_grabbable',
 
-  toJSON: () => true,
+  toJSON: () => ({}),
 
   grabbableCallbackName: 'grabCallback',
 
   reactor: function () {
     const entity = useEntityContext()
     const isGrabbed = useHasComponent(entity, GrabbedComponent)
-    const interactableComponent = useComponent(entity, InteractableComponent)
+
+    // useHelperEntity(entity, () => new AxesHelper(0.5), true)
 
     useEffect(() => {
       if (isClient) {
@@ -60,7 +60,7 @@ export const GrabbableComponent = defineComponent({
 
     const grabber = getComponent(grabberEntity, GrabberComponent)
     const grabbedEntity = grabber[handedness]!
-    if (grabbedEntity) return
+    if (grabbedEntity) GrabbableComponent.drop(grabberEntity, grabbedEntity)
     dispatchAction(
       GrabbableNetworkAction.setGrabbedObject({
         entityUUID: UUIDComponent.get(grabbableEntity),
@@ -90,20 +90,13 @@ export const GrabbableComponent = defineComponent({
 })
 
 const grabCallback = (grabbableEntity: Entity) => {
-  const nonCapturedInputSources = InputSourceComponent.nonCapturedInputSources()
   const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
-  for (const entity of nonCapturedInputSources) {
-    const inputSource = getComponent(entity, InputSourceComponent)
-    if (hasComponent(grabbableEntity, GrabbedComponent)) {
-      GrabbableComponent.drop(selfAvatarEntity, grabbableEntity)
-    } else {
-      GrabbableComponent.grab(
-        selfAvatarEntity,
-        grabbableEntity,
-        inputSource.source.handedness === 'left' ? 'left' : 'right'
-      )
-    }
-  }
+  GrabbableComponent.grab(
+    selfAvatarEntity,
+    grabbableEntity,
+    'right' /** @todo implement proper XR grabbing by passing interaction source down through callbacks */
+    // inputSource.source.handedness === 'left' ? 'left' : 'right'
+  )
 }
 
 /**

@@ -53,7 +53,6 @@ import { KeyboardButton } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { RendererComponent } from '@ir-engine/spatial/src/renderer/components/RendererComponent'
 import { computeWorldBounds } from '@ir-engine/spatial/src/transform/functions/BoundingBoxFunctions'
 import { TransformGizmoControlComponent } from '../classes/gizmo/transform/TransformGizmoControlComponent'
-import { isEntityGlb } from '../functions/utils'
 import { SelectionBoxState } from '../panels/viewport/tools/SelectionBoxTool'
 import { EditorState } from '../services/EditorServices'
 import { SelectionState } from '../services/SelectionServices'
@@ -355,10 +354,9 @@ const execute = () => {
       const selectedEntity =
         selectedParentEntity === clickStartEntity ? closestIntersection.entity : selectedParentEntity
 
-      // If hiding children of GLB, don't allow those children to be selected (clicking in scene view)
+      /**@todo */
       if (selectedParentEntity) {
-        const forceSelectGlbParent = isEntityGlb(selectedParentEntity) // && hasComponent(selectedParentEntity, SceneComponent)
-        clickStartEntity = forceSelectGlbParent ? selectedParentEntity : selectedEntity //selectedEntity vs clickStartEntity so that we allow closest intersection drill down above to work
+        clickStartEntity = selectedEntity //selectedEntity vs clickStartEntity so that we allow closest intersection drill down above to work
       } else {
         clickStartEntity = selectedEntity
       }

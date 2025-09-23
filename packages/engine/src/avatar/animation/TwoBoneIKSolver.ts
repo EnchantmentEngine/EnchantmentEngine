@@ -201,11 +201,15 @@ const targetPos = new Vector3(),
   rootWorldRotation = new Quaternion()
 
 const nodeQuaternion = new Quaternion()
-export const blendIKChain = (bones: Entity[], weight) => {
+export const blendIKChain = (bones: Entity[], weight: number) => {
   for (const bone of bones) {
     const node = getComponent(bone, BoneComponent)
     const ikMatrix = getComponent(bone, IKMatrixComponent).local
     nodeQuaternion.setFromRotationMatrix(ikMatrix)
+    if (weight >= 1) {
+      node.quaternion.copy(nodeQuaternion)
+      continue
+    }
     node.quaternion.fastSlerp(nodeQuaternion, weight)
   }
 }

@@ -26,11 +26,10 @@ import {
 } from '@ir-engine/ecs'
 import { getMutableState, getState, useMutableState } from '@ir-engine/hyperflux'
 
-import { NameComponent } from '../common/NameComponent'
 import { RapierWorldState } from '../physics/classes/Physics'
 import { ReferenceSpaceState } from '../ReferenceSpaceState'
-import { addObjectToGroup, ObjectComponent } from '../renderer/components/ObjectComponent'
-import { setObjectLayers } from '../renderer/components/ObjectLayerComponent'
+import { ObjectComponent } from '../renderer/components/ObjectComponent'
+import { ObjectLayerMaskComponent } from '../renderer/components/ObjectLayerComponent'
 import { setVisibleComponent } from '../renderer/components/VisibleComponent'
 import { ObjectLayerMasks, ObjectLayers } from '../renderer/constants/ObjectLayers'
 import { RendererState } from '../renderer/RendererState'
@@ -49,7 +48,8 @@ const execute = () => {
   for (const [id, physicsDebugEntity] of Array.from(PhysicsDebugEntities)) {
     const world = getState(RapierWorldState)[id]
     if (!world) continue
-    const lineSegments = getComponent(physicsDebugEntity, ObjectComponent) as any as LineSegments
+    const lineSegments = getOptionalComponent(physicsDebugEntity, ObjectComponent) as any as LineSegments
+    if (!lineSegments) continue
     const debugRenderBuffer = world.debugRender()
     lineSegments.geometry.setAttribute('position', new BufferAttribute(debugRenderBuffer.vertices, 3))
     lineSegments.geometry.setAttribute('color', new BufferAttribute(debugRenderBuffer.colors, 4))
@@ -58,31 +58,29 @@ const execute = () => {
 
 const PhysicsReactor = () => {
   const entity = useEntityContext()
-  const engineRendererSettings = useMutableState(RendererState)
 
   useEffect(() => {
     /** @todo move physics debug to physics module */
-    if (!engineRendererSettings.physicsDebug.value) return
-
-    const lineMaterial = new LineBasicMaterial({ vertexColors: true })
-    const lineSegments = new LineSegments(new BufferGeometry(), lineMaterial)
-    lineSegments.frustumCulled = false
 
     const lineSegmentsEntity = createEntity()
-    setComponent(lineSegmentsEntity, NameComponent, 'Physics Debug')
     setVisibleComponent(lineSegmentsEntity, true)
-    addObjectToGroup(lineSegmentsEntity, lineSegments)
+    setComponent(lineSegmentsEntity, LineSegmentComponent, {
+      layerMask: ObjectLayerMasks.PhysicsHelper,
+      name: 'Physics Debug Renderer',
+      geometry: new BufferGeometry(),
+      material: new LineBasicMaterial({ vertexColors: true, toneMapped: false, depthTest: false, transparent: true })
+    })
 
     setComponent(lineSegmentsEntity, EntityTreeComponent, { parentEntity: entity })
 
-    setObjectLayers(lineSegments, ObjectLayers.PhysicsHelper)
+    setComponent(lineSegmentsEntity, ObjectLayerMaskComponent, ObjectLayers.PhysicsHelper)
     PhysicsDebugEntities.set(entity, lineSegmentsEntity)
 
     return () => {
       removeEntity(lineSegmentsEntity)
       PhysicsDebugEntities.delete(entity)
     }
-  }, [engineRendererSettings.physicsDebug])
+  }, [])
 
   return null
 }
@@ -203,7 +201,9 @@ const reactor = () => {
 
   return (
     <>
-      <QueryReactor Components={[SceneComponent]} ChildEntityReactor={PhysicsReactor} />
+      {rendererSettings.physicsDebug.value && (
+        <QueryReactor Components={[SceneComponent]} ChildEntityReactor={PhysicsReactor} />
+      )}
       {rendererSettings.avatarDebug.value && (
         <QueryReactor Components={[SkinnedMeshComponent]} ChildEntityReactor={SkinnedMeshReactor} />
       )}

@@ -110,6 +110,15 @@ const execute = () => {
     const head = AvatarIKTargetComponent.getTargetEntity(ownerID, ikTargets.head)
     const headTargetBlendWeight = AvatarIKTargetComponent.blendWeight[head]
 
+    const hasATarget = !!(
+      leftFootTargetBlendWeight ||
+      rightFootTargetBlendWeight ||
+      leftHandTargetBlendWeight ||
+      rightHandTargetBlendWeight ||
+      headTargetBlendWeight
+    )
+    if (!hasATarget) continue
+
     const rotation = TransformComponent.getSceneRotation(entity, _worldRot)
 
     if (headTargetBlendWeight) {
@@ -132,17 +141,18 @@ const execute = () => {
         getComponent(rig.spine, BoneComponent).getWorldQuaternion(_quat).invert(),
         _quat2
       )
-
-      iterateEntityNode(
-        rig.hips,
-        (e) => {
-          getComponent(e, BoneComponent).matrixWorld.multiply(
-            _mat4.makeRotationFromQuaternion(rigComponent.parentWorldRotationInverses.hips)
-          )
-        },
-        (e) => hasComponent(e, BoneComponent)
-      )
     }
+
+    // update world matrices with new hip position
+    iterateEntityNode(
+      rig.hips,
+      (e) => {
+        getComponent(e, BoneComponent).matrixWorld.multiply(
+          _mat4.makeRotationFromQuaternion(rigComponent.parentWorldRotationInverses.hips)
+        )
+      },
+      (e) => hasComponent(e, BoneComponent)
+    )
 
     if (rightHandTargetBlendWeight && rightHandTransform) {
       getArmIKHint(

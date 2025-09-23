@@ -16,7 +16,7 @@ export const AnimationNetworkState = defineState({
       clipName: string | null
       animationName: string
       loop: boolean | null
-      needsSkip: boolean | null
+      once: boolean | null
       layer: number | null
     }
   >,
@@ -28,7 +28,7 @@ export const AnimationNetworkState = defineState({
         clipName: action.clipName,
         animationName: action.animationAsset,
         loop: action.loop,
-        needsSkip: action.needsSkip,
+        once: action.once,
         layer: action.layer
       })
     })
@@ -48,7 +48,7 @@ export const AnimationNetworkState = defineState({
 })
 
 const AvatarReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
-  const { clipName, animationName, loop, needsSkip, layer } = useHookstate(
+  const { clipName, animationName, loop, once, layer } = useHookstate(
     getMutableState(AnimationNetworkState)[entityUUID]
   )
   const entity = UUIDComponent.useEntityByUUID(entityUUID)
@@ -60,10 +60,10 @@ const AvatarReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
       animationName: animationName.value,
       loop: !!loop.value,
       clipName: clipName.value,
-      needsSkip: needsSkip.value,
+      once: once.value,
       layer: layer.value
     })
-  }, [entity, clipName, animationName, loop, needsSkip, layer, hasAnimation])
+  }, [entity, clipName, animationName, loop, once, layer, hasAnimation])
 
   return null
 }

@@ -61,7 +61,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
         info={t('editor:properties.sceneSettings.info-spectate')}
       >
         <Checkbox
-          checked={useSpectatingEntity.value}
+          checked={useSpectatingEntity}
           onChange={(value) => {
             useSpectatingEntity.set(value)
           }}
@@ -74,7 +74,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
           info={t('editor:properties.sceneSettings.info-uuid')}
         >
           <NodeInput
-            value={sceneSettingsComponent.spectateEntity.value}
+            value={sceneSettingsComponent.spectateEntity}
             onRelease={commitProperty(SceneSettingsComponent, `spectateEntity`)}
             onChange={commitProperty(SceneSettingsComponent, `spectateEntity`)}
           />
@@ -90,7 +90,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
       {/*  className="w-auto"*/}
       {/*>*/}
       {/*  <div>*/}
-      {/*    <ImageLink src={sceneThumbnailState.thumbnailURL.value ?? sceneSettingsComponent.thumbnailURL.value} />*/}
+      {/*    <ImageLink src={sceneThumbnailState.thumbnailURL.value ?? sceneSettingsComponent.thumbnailURL} />*/}
 
       {/*    <Button onClick={SceneThumbnailState.createThumbnail} className="mt-2 w-full">*/}
       {/*      {t('editor:properties.sceneSettings.generate')}*/}
@@ -102,7 +102,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
       {/*        onClick={() => {*/}
       {/*          SceneThumbnailState.uploadThumbnail(props.entity)*/}
       {/*        }}*/}
-      {/*        disabled={!sceneThumbnailState.thumbnail.value}*/}
+      {/*        disabled={!sceneThumbnailState.thumbnail}*/}
       {/*        className="mt-2 w-full"*/}
       {/*      >*/}
       {/*        {t('editor:properties.sceneSettings.save')}*/}
@@ -128,7 +128,7 @@ export const SceneSettingsEditor: EditorComponentType = (props) => {
               onClick={() => {
                 SceneThumbnailState.uploadLoadingScreen(props.entity)
               }}
-              disabled={!sceneThumbnailState.loadingScreenImageData.value}
+              disabled={!sceneThumbnailState.loadingScreenImageData}
               className="mt-2 w-full"
             >
               {t('editor:properties.sceneSettings.save')}

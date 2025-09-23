@@ -23,7 +23,7 @@ import {
   userPath,
   UserType
 } from '@ir-engine/common/src/schema.type.module'
-import { EntityID, SourceID, UUIDComponent } from '@ir-engine/ecs'
+import { EntityID, getComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import {
@@ -32,6 +32,7 @@ import {
   getState,
   HyperFlux,
   Identifiable,
+  isDev,
   NetworkActions,
   NetworkState,
   NetworkTopics,
@@ -221,6 +222,10 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
           if (GLTFComponent.isSceneLoaded(entity)) {
             clearInterval(interval)
             resolve()
+          } else {
+            if (isDev) {
+              logger.info('Waiting for scene to load... %o', getComponent(entity, GLTFComponent).dependencies)
+            }
           }
         }, 100)
       })

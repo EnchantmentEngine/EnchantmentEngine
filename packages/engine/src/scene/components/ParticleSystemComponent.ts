@@ -267,7 +267,7 @@ export const ParticleSystemComponent = defineComponent({
         systemParameters.material = materialKey
       }
 
-      const system = ParticleSystem.fromJSON(systemParameters, metadata.value as ParticleSystemMetadata, {})
+      const system = ParticleSystem.fromJSON(systemParameters, metadata.get(NO_PROXY) as ParticleSystemMetadata, {})
       renderer.addSystem(system)
       const behaviors = component.behaviorParameters.map((behaviorJSON) => {
         const behavior = BehaviorFromJSON(behaviorJSON, system)!

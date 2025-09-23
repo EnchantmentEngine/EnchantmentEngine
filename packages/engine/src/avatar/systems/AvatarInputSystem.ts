@@ -13,10 +13,10 @@ import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { getState } from '@ir-engine/hyperflux'
 import { Vector3_Up, Vector3_Zero } from '@ir-engine/spatial/src/common/constants/MathConstants'
-import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
+import { InputButtonBindings, InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { InputPointerComponent } from '@ir-engine/spatial/src/input/components/InputPointerComponent'
 import { InputSourceComponent } from '@ir-engine/spatial/src/input/components/InputSourceComponent'
-import { StandardGamepadButton } from '@ir-engine/spatial/src/input/state/ButtonState'
+import { KeyboardButton, StandardGamepadButton } from '@ir-engine/spatial/src/input/state/ButtonState'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 import { ClientInputSystem } from '@ir-engine/spatial/src/input/systems/ClientInputSystem'
 import { RigidBodyFixedTagComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -35,6 +35,17 @@ import { EngineState, Entity } from '@ir-engine/ecs'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { isMobile } from '@ir-engine/spatial/src/common/functions/isMobile'
 import { getThumbstickOrThumbpadAxes } from '@ir-engine/spatial/src/input/functions/getThumbstickOrThumbpadAxes'
+
+export const AvatarButtonBindings = {
+  Left: [KeyboardButton.KeyA, KeyboardButton.ArrowLeft, StandardGamepadButton.StandardGamepadDPadLeft],
+  Right: [KeyboardButton.KeyD, KeyboardButton.ArrowRight, StandardGamepadButton.StandardGamepadDPadRight],
+  Forward: [KeyboardButton.KeyW, KeyboardButton.ArrowUp, StandardGamepadButton.StandardGamepadDPadUp],
+  Backward: [KeyboardButton.KeyS, KeyboardButton.ArrowDown, StandardGamepadButton.StandardGamepadDPadDown],
+  Jump: [KeyboardButton.Space, StandardGamepadButton.StandardGamepadButtonA],
+  Interact: [KeyboardButton.KeyE, StandardGamepadButton.StandardGamepadButtonX],
+  ToggleRun: [KeyboardButton.ShiftLeft],
+  ShiftRight: [KeyboardButton.ShiftRight]
+} satisfies InputButtonBindings
 
 const _quat = new Quaternion()
 
@@ -90,7 +101,7 @@ export const AvatarAxesControlSchemeBehavior = {
 //   groups: interactionGroups
 // } as RaycastArgs
 
-const onShiftLeft = () => {
+const onToggleRun = () => {
   const entity = AvatarComponent.getSelfAvatarEntity()
   if (!entity) return
   setComponent(entity, AvatarControllerComponent, {
@@ -215,33 +226,21 @@ const execute = () => {
 
   if (!isMobile && !inputPointerEntity && !xrState.session) return
 
-  const buttons = InputComponent.getButtons(viewerEntity)
+  const buttons = InputComponent.getButtons(viewerEntity, AvatarButtonBindings)
 
-  if (buttons.ShiftLeft?.down) onShiftLeft()
+  if (buttons.ToggleRun?.down) onToggleRun()
 
   const gamepadJump = buttons[StandardGamepadButton.StandardGamepadButtonA]?.down
 
   //** touch input (only for avatar jump)*/
   const doubleClicked = shouldViewerFollowController ? false : getAvatarDoubleClick(buttons)
   /** keyboard input */
-  const keyDeltaX =
-    (buttons.KeyA?.pressed ? -1 : 0) +
-    (buttons.KeyD?.pressed ? 1 : 0) +
-    (buttons.ArrowLeft?.pressed ? -1 : 0) +
-    (buttons.ArrowRight?.pressed ? 1 : 0) +
-    (buttons[StandardGamepadButton.StandardGamepadDPadLeft]?.pressed ? -1 : 0) +
-    (buttons[StandardGamepadButton.StandardGamepadDPadRight]?.pressed ? 1 : 0)
-  const keyDeltaZ =
-    (buttons.KeyW?.pressed ? -1 : 0) +
-    (buttons.KeyS?.pressed ? 1 : 0) +
-    (buttons.ArrowUp?.pressed ? -1 : 0) +
-    (buttons.ArrowDown?.pressed ? 1 : 0) +
-    (buttons[StandardGamepadButton.StandardGamepadDPadUp]?.pressed ? -1 : 0) +
-    (buttons[StandardGamepadButton.StandardGamepadDPadDown]?.pressed ? -1 : 0)
+  const keyDeltaX = (buttons.Left?.pressed ? -1 : 0) + (buttons.Right?.pressed ? 1 : 0)
+  const keyDeltaZ = (buttons.Forward?.pressed ? -1 : 0) + (buttons.Backward?.pressed ? 1 : 0)
 
   controller.gamepadLocalInput.set(keyDeltaX, 0, keyDeltaZ).normalize()
 
-  controller.gamepadJumpActive = !!buttons.Space?.pressed || gamepadJump || doubleClicked
+  controller.gamepadJumpActive = !!buttons.Jump?.pressed || gamepadJump || doubleClicked
 
   // TODO: refactor AvatarControlSchemes to allow multiple input sources to be passed
   for (const eid of InputSourceComponent.nonCapturedInputSources()) {

@@ -61,7 +61,8 @@ import { GLTFComponent } from '../../gltf/GLTFComponent'
  *   schema: Schema.Object({
  *     name: Schema.String()
  *   }),
- *   reactor: ({ entity, prefab }) => {
+ *   reactor: ({ entity }) => {
+ *     const prefab = useComponent(entity, MyPrefabComponent)
  *     useEffect(() => {
  *       setComponent(entity, NameComponent, name)
  *     }, [prefab.name])
@@ -83,7 +84,7 @@ export const definePrefab = <P extends TProperties, S extends TObjectSchema<P>>(
   name: string
   jsonID: string
   schema: S
-  reactor?: (props: { entity: Entity; prefab: Static<S> }) => null | JSX.Element
+  reactor?: (props: { entity: Entity }) => null | JSX.Element
 }) => {
   const $Actions = {
     spawn: defineAction(
@@ -137,8 +138,7 @@ export const definePrefab = <P extends TProperties, S extends TObjectSchema<P>>(
     useImmediateEffect(() => {
       deserializeComponent(entity, $Component, prefab)
     }, [])
-    if (!definition.reactor) return null
-    return <definition.reactor entity={entity} prefab={prefab} />
+    return null
   }
 
   /**
@@ -212,7 +212,8 @@ export const definePrefab = <P extends TProperties, S extends TObjectSchema<P>>(
         }
       }, [isFromScene])
 
-      return null
+      if (!definition.reactor) return null
+      return <definition.reactor entity={entity} />
     }
   })
 

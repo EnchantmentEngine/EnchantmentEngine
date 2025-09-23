@@ -229,10 +229,10 @@ const cameraReactor = () => {
   const camera = useComponent(entity, CameraComponent)
   const engineRendererSettings = useMutableState(RendererState)
 
-  // useEffect(() => {
-  //   if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
-  //   else camera.layers.disable(ObjectLayers.PhysicsHelper)
-  // }, [engineRendererSettings.physicsDebug])
+  useEffect(() => {
+    if (engineRendererSettings.physicsDebug.value) camera.layers.enable(ObjectLayers.PhysicsHelper)
+    else camera.layers.disable(ObjectLayers.PhysicsHelper)
+  }, [engineRendererSettings.physicsDebug])
 
   useEffect(() => {
     if (engineRendererSettings.avatarDebug.value) camera.layers.enable(ObjectLayers.AvatarHelper)
@@ -254,11 +254,6 @@ const cameraReactor = () => {
     if (engineRendererSettings.nodeIconVisibility.value) camera.layers.enable(ObjectLayers.NodeIcon)
     else camera.layers.disable(ObjectLayers.NodeIcon)
   }, [engineRendererSettings.nodeIconVisibility])
-
-  /*useEffect(() => {
-    if (engineRendererSettings.nodeHelperVisibility.value) camera.layers.enable(ObjectLayers.NodeHelper)
-    else camera.layers.disable(ObjectLayers.NodeHelper)
-  }, [engineRendererSettings.nodeHelperVisibility])*/
 
   return null
 }

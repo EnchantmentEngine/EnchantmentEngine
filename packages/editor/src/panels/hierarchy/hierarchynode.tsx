@@ -44,7 +44,6 @@ import { ListChildComponentProps } from 'react-window'
 import { twMerge } from 'tailwind-merge'
 import { IconComponent } from '../../components/panels/IconComponent'
 import { exportRelativeGLTF } from '../../functions/exportGLTF'
-import { isEntityGlb } from '../../functions/utils'
 import { EditorHelperState, PlacementMode } from '../../services/EditorHelperState'
 import { EditorState } from '../../services/EditorServices'
 import { HierarchyTreeState } from '../../services/HierarchyNodeState'
@@ -165,9 +164,8 @@ export default React.memo(function HierarchyTreeNode(props: ListChildComponentPr
     rigidbodyParentingWarning
   } = useHierarchyTreeDrop(node, 'On')
   const isOverAndCanDrop = isOverOn && canDropOn
-  const showGlbRedState = isOverAndCanDrop && isEntityGlb(entity)
   const showRigidbodyRedState = isOverAndCanDrop && rigidbodyParentingWarning
-  const showRedState = showGlbRedState || showRigidbodyRedState
+  const showRedState = isOverAndCanDrop || showRigidbodyRedState
 
   useEffect(() => {
     preview(getEmptyImage(), { captureDraggingState: true })

@@ -236,10 +236,10 @@ export const CameraPropertiesNodeEditor: EditorComponentType = (props) => {
                 <Checkbox
                   label={t('editor:properties.cameraSettings.lbl-freeCamera')}
                   variantTextPlacement={'right'}
-                  checked={cameraSettings.isFistPersonFreeCamera}
-                  onChange={commitProperty(CameraSettingsComponent, 'isFistPersonFreeCamera')}
+                  checked={cameraSettings.isFirstPersonFreeCamera}
+                  onChange={commitProperty(CameraSettingsComponent, 'isFirstPersonFreeCamera')}
                 />
-                {cameraSettings.isFistPersonFreeCamera && (
+                {cameraSettings.isFirstPersonFreeCamera && (
                   <InputGroup
                     name="defaultDistance"
                     label={t('editor:properties.cameraSettings.lbl-cameraLimits')}

@@ -31,18 +31,18 @@ export const setAnimation = (
     animationName: string
     loop: boolean
     clipName: string
-    needsSkip: boolean | null
+    once: boolean | null
     layer: number | null
   }
 ) => {
   const animationState = getState(AnimationState)
   const animationAsset = animationState.loadedAnimations[newAnimation.animationName]
   if (!animationAsset) {
-    console.warn('[updateAnimationGraph]: Animation asset not loaded', animationAsset, targetEntity)
+    // console.warn('[updateAnimationGraph]: Animation asset not loaded', animationAsset, targetEntity)
     return
   }
   const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
-  graph.fadingOut = newAnimation.needsSkip ?? false
+  graph.fadingOut = newAnimation.once ?? false
   graph.layer = newAnimation.layer ?? 0
   playAvatarAnimationFromMixamo(targetEntity, animationAsset, !!newAnimation.loop, newAnimation.clipName)
 }

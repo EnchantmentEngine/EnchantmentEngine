@@ -22,7 +22,7 @@ import {
   LayerComponents,
   LayerID,
   Layers,
-  useOptionalComponent
+  useHasComponent
 } from './ComponentFunctions'
 import { Entity } from './Entity'
 
@@ -199,8 +199,10 @@ const QuerySubReactor = memo(
     }
 
     const ids = [] as string[]
+    let ensureComponentsExist = true
     for (const c of components) {
-      useOptionalComponent(props.entity, c)
+      // useHasComponent is needed here to trigger re-render if component is removed
+      if (!useHasComponent(props.entity, c)) ensureComponentsExist = false
       const id = c.counterMap[props.entity]?.identifier
       if (id) ids.push(id)
     }
@@ -210,9 +212,11 @@ const QuerySubReactor = memo(
       <>
         <QueryReactorErrorBoundary>
           <Suspense fallback={<Suspended {...props} />}>
-            <EntityContext.Provider value={props.entity}>
-              <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
-            </EntityContext.Provider>
+            {ensureComponentsExist ? (
+              <EntityContext.Provider value={props.entity}>
+                <props.ChildEntityReactor key={id} {...props.props} entity={props.entity} />
+              </EntityContext.Provider>
+            ) : null}
           </Suspense>
         </QueryReactorErrorBoundary>
       </>

@@ -1,6 +1,6 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { NetworkObjectAuthorityTag, UUIDComponent } from '@ir-engine/ecs'
+import { getAncestorWithComponents, NetworkObjectAuthorityTag, UUIDComponent } from '@ir-engine/ecs'
 import { ComponentType, getComponent, getOptionalComponent, hasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { Entity } from '@ir-engine/ecs/src/Entity'
@@ -21,6 +21,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { SpawnPoseState } from '@ir-engine/spatial/src/transform/SpawnPoseState'
+import { GrabbedComponent } from '../../grabbable/GrabbableComponent'
 import { preloadedAnimations } from '../animation/Util'
 import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarColliderComponent, AvatarControllerComponent } from '../components/AvatarControllerComponent'
@@ -31,7 +32,6 @@ import { AutopilotMarker, clearWalkPoint, scaleFluctuate } from './autopilotFunc
 
 const avatarGroundRaycastDistanceIncrease = 0.5
 const avatarGroundRaycastDistanceOffset = 1
-const avatarGroundRaycastAcceptableDistance = 1.05
 
 /**
  * raycast internals
@@ -52,7 +52,7 @@ const viewerMovement = new Vector3()
 const finalAvatarMovement = new Vector3()
 const avatarHeadPosition = new Vector3()
 const computedMovement = new Vector3()
-let beganFalling = false
+const normal = new Vector3()
 
 export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
   const xrFrame = getState(XRState).xrFrame
@@ -111,7 +111,13 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
     bodyCollider.collisionMask & ~CollisionGroups.Trigger
   )
 
-  Physics.computeColliderMovement(world, entity, colliderEntity, desiredMovement, avatarCollisionGroups)
+  Physics.computeColliderMovement(world, entity, colliderEntity, desiredMovement, avatarCollisionGroups, (collider) => {
+    const grabbedParent = getAncestorWithComponents(collider.entity, [RigidBodyComponent, GrabbedComponent])
+    if (grabbedParent) {
+      return getComponent(grabbedParent, GrabbedComponent).grabberEntity !== entity
+    }
+    return true
+  })
   Physics.getComputedMovement(world, entity, computedMovement)
 
   if (desiredMovement.y === 0) computedMovement.y = 0
@@ -124,15 +130,34 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
   avatarGroundRaycast.groups = avatarCollisionGroups
   avatarGroundRaycast.origin.y += avatarGroundRaycastDistanceOffset
   const groundHits = Physics.castRay(world, avatarGroundRaycast)
-  controller.isInAir = true
 
   if (groundHits.length) {
     const hit = groundHits[0]
     const controllerOffset = Physics.getControllerOffset(world, entity)
-    controller.isInAir = hit.distance > avatarGroundRaycastDistanceOffset + controllerOffset * 10 // todo - 10 is way too big, should be 1, but this makes you fall down stairs
+    const wasInAir = controller.isInAir
+    const normalAngle = Math.abs(normal.copy(hit.normal).angleTo(ObjectDirection.Up)) // in radians
 
-    if (!controller.isInAir) rigidbody.targetKinematicPosition.y = hit.position.y + controllerOffset
-    if (controller.isInAir && !beganFalling) {
+    const simulationStep = getState(ECSState).simulationTimestep / 1000
+
+    const normalComponent = Math.cos(normalAngle) - 1
+
+    const isInAir =
+      hit.distance > avatarGroundRaycastDistanceOffset + controllerOffset || controller.verticalVelocity > 0
+    controller.isInAir = isInAir
+
+    const nextFrameOnGround =
+      hit.distance + normalComponent <
+      avatarGroundRaycastDistanceOffset + controllerOffset + Math.abs(controller.verticalVelocity) * simulationStep
+    const shouldLandNextFrame = nextFrameOnGround && isInAir && controller.verticalVelocity < 0
+
+    const isOnGround = !isInAir && !wasInAir && controller.verticalVelocity < 0
+
+    // snap to the ground if we are close enough
+    // add the adjacent normal angle check to prevent bouncing off a slope
+    if (shouldLandNextFrame || isOnGround) rigidbody.targetKinematicPosition.y = hit.position.y + normalComponent
+
+    // if we have just started falling, play the fall animation
+    if (controller.isInAir && !wasInAir) {
       dispatchAction(
         AvatarNetworkAction.setAnimationState({
           animationAsset: preloadedAnimations.locomotion,
@@ -142,22 +167,20 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
           entityUUID: UUIDComponent.get(entity)
         })
       )
-      beganFalling = true
     }
-    if (hit.distance <= avatarGroundRaycastAcceptableDistance) {
-      if (beganFalling) {
-        dispatchAction(
-          AvatarNetworkAction.setAnimationState({
-            animationAsset: preloadedAnimations.locomotion,
-            clipName: 'Fall',
-            loop: true,
-            layer: 1,
-            needsSkip: true,
-            entityUUID: UUIDComponent.get(entity)
-          })
-        )
-      }
-      beganFalling = false
+
+    // if we have just landed, play the land animation (which is the fall animation not looping)
+    if (!controller.isInAir && wasInAir) {
+      dispatchAction(
+        AvatarNetworkAction.setAnimationState({
+          animationAsset: preloadedAnimations.locomotion,
+          clipName: 'Fall',
+          loop: true,
+          layer: 1,
+          once: true,
+          entityUUID: UUIDComponent.get(entity)
+        })
+      )
       if (shouldViewerFollowController) originTransform.position.y = hit.position.y
       /** @todo after a physical jump, only apply viewer vertical movement once the user is back on the virtual ground */
     }
