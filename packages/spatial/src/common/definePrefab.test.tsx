@@ -20,7 +20,6 @@ import { applyIncomingActions, getMutableState, HyperFlux, Schema, UserID } from
 import { NetworkTopics } from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import { definePrefab } from './definePrefab'
-import './EntityNetworkState'
 
 import { act, render } from '@testing-library/react'
 

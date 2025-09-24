@@ -3,13 +3,20 @@ import React, { useEffect } from 'react'
 import {
   ComponentType,
   defineComponent,
+  defineSystem,
   deserializeComponent,
   Entity,
+  EntityArrayBoundary,
   entityExists,
   EntityID,
+  EntityTreeComponent,
   EntityUUID,
   getComponent,
+  PresentationSystemGroup,
+  QueryReactor,
+  serializeComponent,
   SourceID,
+  useQueryBySource,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
@@ -24,10 +31,15 @@ import {
   NO_PROXY,
   none,
   PeerID,
+  ScenePeer,
+  SceneUser,
   Schema,
   useMutableState,
   UserID
 } from '@ir-engine/hyperflux'
+import { SceneComponent } from '../renderer/components/SceneComponents'
+
+export const PrefabRegistry = {} as Record<string, ReturnType<typeof definePrefab>>
 
 /**
  * Define a prefab, which is a reusable collection of components that can be spawned as an entity.
@@ -63,6 +75,13 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
   reactor?: (props: { entity: Entity }) => JSX.Element | null
 }) => {
   const filteredComponents = definition.components.filter((c) => c.jsonID) as ComponentType<any>[]
+
+  const uniqueKey = filteredComponents
+    .map((c) => c.jsonID)
+    .sort()
+    .join('|')
+  if (PrefabRegistry[uniqueKey]) throw new Error(`Prefab with components [${uniqueKey}] already defined`)
+
   const $Actions = {
     spawn: defineAction(
       WorldNetworkAction.spawnEntity.extend(
@@ -216,7 +235,69 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
     )
   }
 
-  return { spawn, set, remove, $State, $Actions }
+  /** Use a system reactor to detect prefabs from the scene that need to be networked based on queries matching the components */
+  defineSystem({
+    uuid: 'ee.engine.prefab_' + definition.name + '_system',
+    insert: { after: PresentationSystemGroup },
+    reactor: () => <QueryReactor Components={[SceneComponent]} ChildEntityReactor={SceneReactor} />
+  })
+
+  const SceneReactor = (props: { entity: Entity }) => {
+    const { entity } = props
+
+    const sourcedEntities = useQueryBySource(entity, definition.components)
+    console.log('SceneReactor', entity, sourcedEntities)
+
+    return <EntityArrayBoundary entities={sourcedEntities} ChildEntityReactor={SpawnFromSceneReactor} />
+  }
+
+  const SpawnFromSceneReactor = (props: { entity: Entity }) => {
+    const { entity } = props
+
+    useEffect(() => {
+      const state = getState($State)
+      const entityUUIDPair = getComponent(entity, UUIDComponent)
+      const entityUUID = UUIDComponent.join(entityUUIDPair)
+      if (state[entityUUID]) return // already spawned
+      const componentsData: Partial<Record<(typeof filteredComponents)[number]['jsonID'], any>> = {}
+      for (const comp of filteredComponents) {
+        const compData = serializeComponent(entity, comp)
+        componentsData[comp.jsonID!] = compData ?? true
+      }
+      const parentEntity = getComponent(entity, EntityTreeComponent).parentEntity
+      console.log('Spawning prefab entity from scene:', entity, ' parent:', parentEntity)
+      const parentUUID = UUIDComponent.get(parentEntity)
+
+      spawn({
+        entityID: entityUUIDPair.entityID,
+        entitySourceID: entityUUIDPair.entitySourceID,
+        parentUUID,
+        components: componentsData,
+        $network: undefined,
+        $topic: undefined,
+        $user: SceneUser,
+        $peer: ScenePeer
+      })
+
+      return () => {
+        if (getState($State)[entityUUID]) {
+          dispatchAction(
+            WorldNetworkAction.destroyEntity({
+              entityUUID
+            })
+          )
+        }
+      }
+    }, [])
+
+    return null
+  }
+
+  const API = { spawn, set, remove, $State, $Actions }
+
+  PrefabRegistry[uniqueKey] = API
+
+  return API
 }
 
 /*

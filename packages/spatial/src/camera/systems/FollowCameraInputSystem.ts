@@ -96,9 +96,6 @@ const execute = () => {
   const deltaSeconds = getState(ECSState).deltaSeconds
   const cameraSettings = getState(CameraSettings)
 
-  // Get the viewer entity
-  const viewerEntity = getState(ReferenceSpaceState).viewerEntity
-
   for (const cameraEntity of followCameraQuery()) {
     const buttons = InputComponent.getButtons(cameraEntity)
     const axes = InputComponent.getAxes(cameraEntity)
@@ -134,11 +131,12 @@ const execute = () => {
         theta -= pointerPositionDelta.x * cameraSettings.cameraRotationSpeed
         time = 0.1
       }
+
+      if (pointerDragging || hasPointerLock) {
+        setComponent(cameraEntity, TargetCameraRotationComponent, { phi, theta, time })
+      }
     }
 
-    if (hasPointerLock) {
-      setComponent(cameraEntity, TargetCameraRotationComponent, { phi, theta, time })
-    }
     handleFollowCameraScroll(cameraEntity, axes, deltaSeconds)
   }
 }
