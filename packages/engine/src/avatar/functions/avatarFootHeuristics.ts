@@ -9,7 +9,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 
 import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarIKTargetComponent } from '../components/AvatarIKComponents'
 
 const walkDirection = new Vector3()
@@ -44,7 +44,7 @@ export const setIkFootTarget = (delta: number) => {
 
   /** quick fix - set feet to under the avtar and slide around */
   const avatarTransform = getComponent(selfAvatarEntity, TransformComponent)
-  const avatar = getComponent(selfAvatarEntity, AvatarComponent)
+  const avatar = getComponent(selfAvatarEntity, AvatarProportionsComponent)
   const hipsPos = getComponent(
     getComponent(selfAvatarEntity, AvatarRigComponent).bonesToEntities.hips,
     TransformComponent

@@ -32,7 +32,7 @@ import { getArmIKHint } from '../animation/getArmIKHint'
 import { blendIKChain, solveTwoBoneIK } from '../animation/TwoBoneIKSolver'
 import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent, shoulderAngle } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarIKComponent, AvatarIKTargetComponent, IKMatrixComponent } from '../components/AvatarIKComponents'
 import { IKSerialization } from '../IKSerialization'
 import { VRMHumanBoneList } from '../maps/VRMHumanBoneList'
@@ -46,7 +46,7 @@ const mat4 = new Matrix4()
 const hipsForward = new Vector3(0, 0, 1)
 const _worldRot = new Quaternion()
 
-const avatarIkQuery = defineQuery([AvatarIKComponent, AvatarRigComponent])
+const avatarIkQuery = defineQuery([AvatarComponent, AvatarIKComponent, AvatarProportionsComponent, AvatarRigComponent])
 
 export const AvatarIkPriorityQueueState = defineState({
   name: 'AvatarIkPriorityQueueState',
@@ -83,7 +83,7 @@ const execute = () => {
   }
   for (const entity of ikAvatars) {
     const rigComponent = getComponent(entity, AvatarRigComponent)
-    const avatarComponent = getComponent(entity, AvatarComponent)
+    const avatarComponent = getComponent(entity, AvatarProportionsComponent)
 
     const rig = rigComponent.bonesToEntities
 

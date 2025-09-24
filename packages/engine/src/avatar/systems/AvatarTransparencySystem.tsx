@@ -27,7 +27,7 @@ import {
   TransparencyDitheringRootComponent
 } from '@ir-engine/spatial/src/renderer/materials/plugins/TransparencyDitheringComponent'
 import React, { useEffect } from 'react'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 
 const headDithering = 0
 const cameraDithering = 1
@@ -44,7 +44,7 @@ const execute = () => {
     const materials = transparencyDitheringRoot?.materials
     if (!materials) setComponent(avatarEntity, TransparencyDitheringRootComponent, { materials: [] })
 
-    const avatarComponent = getComponent(avatarEntity, AvatarComponent)
+    const avatarComponent = getComponent(avatarEntity, AvatarProportionsComponent)
     const cameraComponent = getOptionalComponent(getState(ReferenceSpaceState).viewerEntity, FollowCameraComponent)
 
     if (!materials?.length) continue
