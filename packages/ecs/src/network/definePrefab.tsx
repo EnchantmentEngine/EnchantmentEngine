@@ -16,6 +16,7 @@ import {
   WorldNetworkAction
 } from '@ir-engine/ecs'
 import {
+  ActionOptions,
   deepEqual,
   defineAction,
   defineState,
@@ -172,22 +173,26 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
     return definition.reactor ? <definition.reactor entity={entity} /> : null
   }
 
-  const spawn = (args: {
-    entityID: EntityID
-    entitySourceID: SourceID
-    parentUUID: EntityUUID
-    ownerID?: UserID
-    authorityPeerID?: PeerID
-    components: Partial<Record<(typeof filteredComponents)[number]['jsonID'], any>>
-  }) => {
+  const spawn = (
+    args: {
+      entityID: EntityID
+      entitySourceID: SourceID
+      parentUUID: EntityUUID
+      ownerID?: UserID
+      authorityPeerID?: PeerID
+      components: Partial<Record<(typeof filteredComponents)[number]['jsonID'], any>>
+    } & ActionOptions
+  ) => {
+    const { entityID, entitySourceID, parentUUID, ownerID, authorityPeerID, components, ...other } = args
     dispatchAction(
       $Actions.spawn({
-        components: args.components,
-        ownerID: args.ownerID,
-        authorityPeerId: args.authorityPeerID,
-        entityID: args.entityID,
-        entitySourceID: args.entitySourceID,
-        parentUUID: args.parentUUID,
+        ...other,
+        components,
+        ownerID,
+        authorityPeerId: authorityPeerID,
+        entityID,
+        entitySourceID,
+        parentUUID,
         $topic: NetworkTopics.world
       })
     )
