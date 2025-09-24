@@ -150,7 +150,7 @@ export function defineAction<
 
   const creator = ((partial: P & ActionOptions) => {
     const payload = CreateSchemaValue(definition)
-    if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
+    if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$') && v !== undefined) payload[k] = v
 
     if (!CheckSchemaValue(definition, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
 

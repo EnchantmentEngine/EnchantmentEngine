@@ -155,9 +155,7 @@ export const AvatarService = {
 
     const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
     AvatarPrefab.set(selfAvatarEntity, {
-      [NameComponent.jsonID]: {
-        value: updatedName
-      }
+      [NameComponent.jsonID]: updatedName
     })
   }
 }

@@ -52,9 +52,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
       [AvatarComponent.jsonID]: {
         avatarURL: avatarURL
       },
-      [NameComponent.jsonID]: {
-        value: props.name
-      },
+      [NameComponent.jsonID]: props.name,
       [TransformComponent.jsonID]: {
         ...avatarSpawnPose
       }
@@ -65,7 +63,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
     entityID: CameraComponent.entityID,
     entitySourceID,
     components: {
-      [NameComponent.jsonID]: { value: `${entitySourceID}'s Camera` }
+      [NameComponent.jsonID]: `${entitySourceID}'s Camera`
     }
   })
   for (const targetName of Object.values(ikTargets)) {
@@ -74,9 +72,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
       entitySourceID,
       parentUUID,
       components: {
-        [NameComponent.jsonID]: {
-          value: `${entitySourceID}'s ${targetName}`
-        }
+        [NameComponent.jsonID]: `${entitySourceID}'s ${targetName}`
       }
     })
   }

@@ -22,6 +22,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  NetworkTopics,
   NO_PROXY,
   none,
   PeerID,
@@ -31,6 +32,14 @@ import {
 } from '@ir-engine/hyperflux'
 
 /**
+ * Define a prefab, which is a reusable collection of components that can be spawned as an entity.
+ * Prefabs can be spawned via the `spawn` method, and their components can be updated via the `set` method.
+ * They can be removed via the `remove` method.
+ *
+ * @param definition The prefab definition, including its name, components, and optional reactor.
+ * @returns An object with `spawn`, `set`, and `remove` methods to manage prefab instances.
+ *
+ * @example
  * const MyPrefab = definePrefab({
  *   name: 'MyPrefab',
  *   components: [TransformComponent, NameComponent],
@@ -47,9 +56,7 @@ import {
  *   entityID: 'entity-id',
  *   entitySourceID: 'source-id',
  *   parentUUID: 'parent-id',
- *   [NameComponent.jsonID]: {
- *     value: "Prefab Instance 123"
- *   }
+ *   [NameComponent.jsonID]: "Prefab Instance 123"
  * })
  */
 export const definePrefab = <T extends ReturnType<typeof defineComponent>>(definition: {
@@ -64,7 +71,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
         Schema.Object(
           {
             components: Object.fromEntries(
-              filteredComponents.map((c) => [c.jsonID, Schema.Any() /** @todo proper guard */])
+              filteredComponents.map((c) => [c.jsonID, Schema.Optional(Schema.Any()) /** @todo proper guard */])
             )
           },
           {
@@ -78,7 +85,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
         {
           entityUUID: Schema.String(),
           components: Object.fromEntries(
-            filteredComponents.map((c) => [c.jsonID, Schema.Any() /** @todo proper guard */])
+            filteredComponents.map((c) => [c.jsonID, Schema.Optional(Schema.Any()) /** @todo proper guard */])
           )
         },
         { $id: 'ee.engine.prefab_' + definition.name + '_SET' }
@@ -94,21 +101,19 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
     receptors: {
       onSpawn: $Actions.spawn.receive((action) => {
         const entityUUID = UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
+        if (!getState($State)[entityUUID]) getMutableState($State)[entityUUID].set({})
         const state = getMutableState($State)[entityUUID]
         for (const comp of filteredComponents) {
           if (!(comp.jsonID! in action.components)) continue
-          state[comp.jsonID!].merge(
-            Object.fromEntries(filteredComponents.map((c) => [c.jsonID, action.components[c.jsonID!]]))
-          )
+          if (!state[comp.jsonID!]) state[comp.jsonID!].set({})
+          state[comp.jsonID!].merge(action.components[comp.jsonID!])
         }
       }),
       onSet: $Actions.set.receive((action) => {
         const state = getMutableState($State)[action.entityUUID]
         for (const comp of filteredComponents) {
           if (!(comp.jsonID! in action.components)) continue
-          state[comp.jsonID!].merge(
-            Object.fromEntries(filteredComponents.map((c) => [c.jsonID, action.components[c.jsonID!]]))
-          )
+          state[comp.jsonID!].merge(action.components[comp.jsonID!])
         }
       }),
       onRemove: WorldNetworkAction.destroyEntity.receive((action) => {
@@ -177,12 +182,13 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
   }) => {
     dispatchAction(
       $Actions.spawn({
-        ...args.components,
+        components: args.components,
         ownerID: args.ownerID,
         authorityPeerId: args.authorityPeerID,
         entityID: args.entityID,
         entitySourceID: args.entitySourceID,
-        parentUUID: args.parentUUID
+        parentUUID: args.parentUUID,
+        $topic: NetworkTopics.world
       })
     )
   }
@@ -228,9 +234,7 @@ MyPrefab.spawn({
   entitySourceID: 'source-id' as SourceID,
   parentUUID: 'parent-id' as EntityUUID,
   components: {
-    [NameComponent.jsonID]: {
-      value: 'Prefab Instance 123'
-    }
+    [NameComponent.jsonID]: 'Prefab Instance 123'
   }
 })
 
@@ -239,9 +243,7 @@ MyPrefab.set(
     UUIDComponent.join({ entityID: 'entity-id' as EntityID, entitySourceID: 'source-id' as SourceID })
   )!,
   {
-    [NameComponent.jsonID]: {
-      value: 'New Name'
-    }
+    [NameComponent.jsonID]: 'New Name'
   }
 )
 

@@ -1,58 +1,65 @@
-import { Quaternion, Vector3 } from 'three'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   createEngine,
   createEntity,
+  defineComponent,
   destroyEngine,
+  EngineState,
   Entity,
   EntityID,
-  EntityTreeComponent,
-  EntityUUIDPair,
   getComponent,
-  Layers,
-  NetworkObjectComponent,
+  getOptionalComponent,
   setComponent,
   SourceID,
+  UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { HyperFlux, Schema } from '@ir-engine/hyperflux'
-import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
-import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
+import { applyIncomingActions, getMutableState, HyperFlux, Schema, UserID } from '@ir-engine/hyperflux'
 
-import { GLTF } from '@gltf-transform/core'
-import { applyIncomingActions, NetworkTopics } from '@ir-engine/hyperflux'
+import { NetworkTopics } from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
-import { TransformComponent } from '@ir-engine/spatial'
-import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
-import { Cache } from 'three'
-import { startEngineReactor } from '../../../tests/startEngineReactor'
-import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { AssetState } from '../../gltf/GLTFState'
 import { definePrefab } from './definePrefab'
+import './EntityNetworkState'
 
-const waitForScene = (entity: Entity) => vi.waitUntil(() => GLTFComponent.isSceneLoaded(entity), { timeout: 5000 })
+import { act, render } from '@testing-library/react'
+
+const TestComponent = defineComponent({
+  name: 'TestComponent',
+  jsonID: 'TEST_component',
+  schema: Schema.Object({
+    num: Schema.Number({ default: 0 })
+  })
+})
+
+const MyPrefab = definePrefab({
+  name: 'MyPrefab',
+  components: [TestComponent]
+})
 
 /**
  * Specification:
- * 1. definePrefab should create a component with the specified name, jsonID, and schema
- * 2. definePrefab should create a component with a reactor function
- * 3. definePrefab should return a Component with a functional spawn method
+ * 1. should spawn an entity with the defined components and default values
+ * 2. should update component values when set is called
+ * 3. should remove the entity and its components when remove is called
  */
 
 describe('definePrefab', () => {
-  let sceneEntity: Entity
+  let rootEntity: Entity
 
   beforeEach(async () => {
     createEngine()
-    initializeSpatialEngine()
-    initializeSpatialViewer()
-    sceneEntity = loadEmptyScene()
-    setComponent(sceneEntity, SceneComponent)
 
-    // Create a mock network for testing
-    createMockNetwork(NetworkTopics.world)
+    const hostUserId = 'host user' as UserID
+    const hostPeerID = HyperFlux.store.peerID
+    createMockNetwork(NetworkTopics.world, hostPeerID, hostUserId)
+    getMutableState(EngineState).userID.set(hostUserId)
+
+    rootEntity = createEntity()
+    setComponent(rootEntity, UUIDComponent, {
+      entityID: UUIDComponent.generate(),
+      entitySourceID: 'root' as SourceID
+    })
   })
 
   afterEach(() => {
@@ -62,166 +69,103 @@ describe('definePrefab', () => {
   /**
    * Specification 1: definePrefab should create a component with the specified name, jsonID, and schema
    */
-  it('should create a component with the specified name, jsonID, and schema', () => {
-    const TestPrefabComponent = definePrefab({
-      name: 'TestPrefab',
-      jsonID: 'test-prefab',
-      schema: Schema.Object({
-        health: Schema.Number({ default: 100 }),
-        name: Schema.String({ default: 'Default' }),
-        isActive: Schema.Bool({ default: true })
-      }),
-      reactor: () => null
-    })
+  it('should spawn an entity with the defined components and default values', async () => {
+    const parentUUID = UUIDComponent.get(rootEntity)
 
-    expect(TestPrefabComponent.name).toBe('TestPrefab')
-    expect(TestPrefabComponent.jsonID).toBe('test-prefab')
-    expect(TestPrefabComponent.schema).toBeDefined()
-
-    const entity = createEntity()
-    setComponent(entity, TestPrefabComponent)
-    const defaultData = getComponent(entity, TestPrefabComponent)
-    expect(defaultData.health).toBe(100)
-    expect(defaultData.name).toBe('Default')
-    expect(defaultData.isActive).toBe(true)
-
-    const customEntity = createEntity()
-    setComponent(customEntity, TestPrefabComponent, { health: 200, name: 'Custom Entity', isActive: false })
-    const customData = getComponent(customEntity, TestPrefabComponent)
-    expect(customData.health).toBe(200)
-    expect(customData.name).toBe('Custom Entity')
-    expect(customData.isActive).toBe(false)
-  })
-
-  /**
-   * Specification 2: definePrefab should create a component with a reactor function
-   */
-  it('should create a component with a reactor function', () => {
-    const TestPrefabComponent = definePrefab({
-      name: 'TestPrefabReactor',
-      jsonID: 'test-prefab-reactor',
-      schema: Schema.Object({
-        health: Schema.Number({ default: 100 }),
-        name: Schema.String({ default: 'Default' })
-      }),
-      reactor: () => null
-    })
-
-    expect(TestPrefabComponent.reactor).toBeDefined()
-    expect(typeof TestPrefabComponent.reactor).toBe('function')
-  })
-
-  /**
-   * Specification 3: definePrefab should return a Component with a functional spawn method
-   */
-  it('should return a Component with a functional spawn method', async () => {
-    const TestPrefabComponent = definePrefab({
-      name: 'TestPrefabSpawn',
-      jsonID: 'test-prefab-spawn',
-      schema: Schema.Object({
-        health: Schema.Number({ default: 100 }),
-        name: Schema.String({ default: 'Default' })
-      }),
-      reactor: () => null
-    })
-
-    expect(TestPrefabComponent.spawn).toBeDefined()
-    expect(typeof TestPrefabComponent.spawn).toBe('function')
-
-    const entityUUIDPair = {
-      entitySourceID: 'spawned-source' as SourceID,
-      entityID: 'spawned-entity' as EntityID
-    } as EntityUUIDPair
-    const entityUUID = UUIDComponent.join(entityUUIDPair)
-    const parentUUID = UUIDComponent.get(sceneEntity)
-
-    expect(() => {
-      TestPrefabComponent.spawn({
-        entityID: entityUUIDPair.entityID,
-        entitySourceID: entityUUIDPair.entitySourceID,
-        parentUUID,
-        position: new Vector3(1, 2, 3),
-        rotation: new Quaternion(0, 0, 0, 1),
-        health: 150,
-        name: 'Spawned Entity'
-      })
-    }).not.toThrow()
-
-    applyIncomingActions()
-
-    const actions = HyperFlux.store.actions.history
-    expect(actions.length).toBe(1)
-    expect(actions[0].type).toStrictEqual([
-      'ee.engine.prefab_TestPrefabSpawn',
-      'ee.engine.world.SPAWN_OBJECT',
-      'ee.network.SPAWN_ENTITY'
-    ])
-
-    await vi.waitFor(() => {
-      const entity = UUIDComponent.getEntityByUUID(entityUUID)
-      expect(entity).toBeDefined()
-      expect(getComponent(entity, NetworkObjectComponent)).toBeDefined()
-      expect(getComponent(entity, TestPrefabComponent)).toBeDefined()
-      expect(getComponent(entity, TransformComponent)).toBeDefined()
-    })
-  })
-
-  it('should not dispatch a spawn action if loaded as part of a scene', async () => {
-    startEngineReactor()
-
-    const TestPrefabComponent = definePrefab({
-      name: 'TestPrefabSpawn2',
-      jsonID: 'test-prefab-spawn-2',
-      schema: Schema.Object({
-        health: Schema.Number({ default: 100 }),
-        name: Schema.String({ default: 'Default' })
-      }),
-      reactor: () => null
-    })
-
-    const gltf: GLTF.IGLTF = {
-      asset: {
-        version: '2.0'
-      },
-      scenes: [{ nodes: [0] }],
-      scene: 0,
-      nodes: [
-        {
-          name: 'node',
-          extensions: {
-            [TestPrefabComponent.jsonID]: {
-              health: 5,
-              name: 'Not Default'
-            }
-          }
+    MyPrefab.spawn({
+      entityID: 'entity-id-1' as EntityID,
+      entitySourceID: 'source-id-1' as SourceID,
+      parentUUID,
+      components: {
+        [TestComponent.jsonID]: {
+          num: 0.5
         }
-      ]
-    }
-
-    await Physics.load()
-    const physicsWorldEntity = createEntity()
-
-    setComponent(physicsWorldEntity, UUIDComponent, {
-      entityID: 'physicsWorld' as EntityID,
-      entitySourceID: 'source' as SourceID
+      }
     })
-    setComponent(physicsWorldEntity, SceneComponent)
-    setComponent(physicsWorldEntity, TransformComponent)
-    setComponent(physicsWorldEntity, EntityTreeComponent)
-    const physicsWorld = Physics.createWorld(physicsWorldEntity)
-    physicsWorld.timestep = 1 / 60
-    Cache.add('/test.gltf', gltf)
-
-    const rootEntity = AssetState.load('/test.gltf', undefined, physicsWorldEntity, Layers.Authoring)
-
-    await waitForScene(rootEntity)
-
-    const entity = createEntity()
-    setComponent(entity, TestPrefabComponent, { health: 150, name: 'Spawned Entity' })
 
     applyIncomingActions()
 
-    const actions = HyperFlux.store.actions.history
-    expect(actions.length).toBe(0)
+    await act(() => render(null))
+
+    const entity = UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entityID: 'entity-id-1' as EntityID, entitySourceID: 'source-id-1' as SourceID })
+    )
+
+    // Check that the TestComponent was added to the entity with default value
+    const testComponent = getComponent(entity, TestComponent)
+    expect(testComponent.num).toBe(0.5)
+  })
+
+  /**
+   * Specification 2: definePrefab should update component values when set is called
+   */
+  it('should update component values when set is called', () => {
+    const parentUUID = UUIDComponent.get(rootEntity)
+
+    MyPrefab.spawn({
+      entityID: 'entity-id-2' as EntityID,
+      entitySourceID: 'source-id-2' as SourceID,
+      parentUUID,
+      components: {}
+    })
+
+    applyIncomingActions()
+
+    const entity = UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entityID: 'entity-id-2' as EntityID, entitySourceID: 'source-id-2' as SourceID })
+    )
+
+    // Check that the TestComponent was added to the entity with default value
+    let testComponent = getComponent(entity, TestComponent)
+    expect(testComponent.num).toBe(0)
+
+    // Update the TestComponent value using the set method
+    MyPrefab.set(entity, {
+      [TestComponent.jsonID]: {
+        num: 42
+      }
+    })
+
+    applyIncomingActions()
+
+    // Check that the TestComponent value was updated
+    testComponent = getComponent(entity, TestComponent)
+    expect(testComponent.num).toBe(42)
+  })
+
+  /**
+   * Specification 3: definePrefab should remove the entity and its components when remove is called
+   */
+  it('should remove the entity and its components when remove is called', () => {
+    const parentUUID = UUIDComponent.get(rootEntity)
+
+    MyPrefab.spawn({
+      entityID: 'entity-id-3' as EntityID,
+      entitySourceID: 'source-id-3' as SourceID,
+      parentUUID,
+      components: {}
+    })
+
+    applyIncomingActions()
+
+    const entity = UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entityID: 'entity-id-3' as EntityID, entitySourceID: 'source-id-3' as SourceID })
+    )
+
+    // Check that the TestComponent was added to the entity
+    const testComponent = getComponent(entity, TestComponent)
+    expect(testComponent).toBeDefined()
+
+    // Remove the entity using the remove method
+    MyPrefab.remove(entity)
+
+    applyIncomingActions()
+
+    // Check that the entity and its components were removed
+    const removedEntity = UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entityID: 'entity-id-3' as EntityID, entitySourceID: 'source-id-3' as SourceID })
+    )
+    expect(removedEntity).toEqual(UndefinedEntity)
+    expect(getOptionalComponent(entity, TestComponent)).toBeUndefined()
   })
 })

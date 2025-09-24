@@ -82,13 +82,17 @@ export const UUIDComponent = defineComponent({
 
   schema: Schema.Object(
     {
-      entitySourceID: Schema.String({ serialized: false }),
+      entitySourceID: Schema.String(),
       entityID: EntitySchema.EntityID()
     },
     {
       required: true
     }
   ) as unknown as TTypedSchema<EntityUUIDPair>,
+
+  toJSON(component) {
+    return { entityID: component.entityID }
+  },
 
   onSet(entity, component, idPair: EntityUUIDPair) {
     if (!idPair.entitySourceID) throw new Error('UUID context cannot be empty')

@@ -1,16 +1,6 @@
-import { EntitySchema } from '@ir-engine/ecs'
-import {
-  ActionOptions,
-  defineAction,
-  dispatchAction,
-  getState,
-  NetworkTopics,
-  PeerID,
-  Schema,
-  UserID
-} from '@ir-engine/hyperflux'
+import { defineAction, getState, NetworkTopics, Schema } from '@ir-engine/hyperflux'
 import { EngineState } from '../EngineState'
-import { EntityID, EntityUUID, SourceID } from '../Entity'
+import { EntitySchema } from '../Schemas'
 
 export class WorldNetworkAction {
   static spawnEntity = defineAction(
@@ -75,17 +65,4 @@ export class WorldNetworkAction {
       }
     )
   )
-}
-
-export type SpawnEntityProps<T extends Record<string, object>> = {
-  entityID: EntityID
-  entitySourceID: SourceID
-  parentUUID: EntityUUID
-  ownerID?: UserID
-  authorityPeerId?: PeerID
-  components: T[keyof T][]
-} & ActionOptions
-
-export const spawnEntity = <T extends Record<string, object>>(props: SpawnEntityProps<T>) => {
-  dispatchAction(WorldNetworkAction.spawnEntity(props))
 }
