@@ -1,34 +1,22 @@
 import { strictEqual } from 'assert'
-import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, it } from 'vitest'
-
-import '@ir-engine/spatial/src/transform/SpawnPoseState'
-import '../state/AvatarNetworkState'
 
 import { Entity, UUIDComponent } from '@ir-engine/ecs'
 import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { ECSState } from '@ir-engine/ecs/src/ECSState'
 import { createEngine, destroyEngine } from '@ir-engine/ecs/src/Engine'
-import {
-  HyperFlux,
-  NetworkTopics,
-  UserID,
-  applyIncomingActions,
-  dispatchAction,
-  getMutableState,
-  getState
-} from '@ir-engine/hyperflux'
+import { HyperFlux, NetworkTopics, UserID, applyIncomingActions, getMutableState, getState } from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
 import { Physics, PhysicsWorld } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
 
 import { EngineState } from '@ir-engine/ecs'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarPrefab } from '../components/AvatarComponent'
 import { AvatarControllerComponent } from '../components/AvatarControllerComponent'
-import { AvatarNetworkAction } from '../state/AvatarNetworkActions'
 import { applyGamepadInput } from './moveAvatar'
 
 describe('moveAvatar function tests', () => {
@@ -48,18 +36,17 @@ describe('moveAvatar function tests', () => {
 
     createMockNetwork(NetworkTopics.world, HyperFlux.store.peerID, getState(EngineState).userID)
 
-    dispatchAction(
-      AvatarNetworkAction.spawn({
-        $peer: HyperFlux.store.peerID,
-        parentUUID: UUIDComponent.get(sceneEntity),
-        position: new Vector3(),
-        rotation: new Quaternion(),
-        entityID: AvatarComponent.entityID,
-        entitySourceID: AvatarComponent.getSelfSourceID(),
-        avatarURL: avatarUrl,
-        name: 'TestAvatar'
-      })
-    )
+    AvatarPrefab.spawn({
+      entityID: AvatarComponent.entityID,
+      entitySourceID: AvatarComponent.getSelfSourceID(),
+      parentUUID: UUIDComponent.get(sceneEntity),
+      components: {
+        [AvatarComponent.jsonID]: {
+          avatarURL: avatarUrl
+        },
+        [NameComponent.jsonID]: 'TestAvatar'
+      }
+    })
     applyIncomingActions()
   })
 

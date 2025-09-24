@@ -1,7 +1,7 @@
 import { definePrefab } from '@ir-engine/ecs'
 import { defineAction, defineState, Schema } from '@ir-engine/hyperflux'
-import { TransformComponent } from '../SpatialModule'
 import { NameComponent } from '../common/NameComponent'
+import { TransformComponent } from '../transform/components/TransformComponent'
 import { CameraComponent } from './components/CameraComponent'
 
 export const CameraSettings = defineState({

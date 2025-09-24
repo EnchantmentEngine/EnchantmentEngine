@@ -18,14 +18,13 @@ import {
   NetworkTopics,
   UserID,
   applyIncomingActions,
-  dispatchAction,
   getMutableState,
   getState
 } from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { initializeSpatialViewer } from '../../initializeEngine'
-import { CameraActions } from '../CameraState'
+import { CameraPrefab } from '../CameraState'
 import { CameraComponent } from '../components/CameraComponent'
 import './CameraSystem'
 
@@ -55,16 +54,14 @@ describe('CameraSystem', () => {
 
       const network: Network = NetworkState.worldNetwork
 
-      dispatchAction(
-        CameraActions.spawnCamera({
-          parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).viewerEntity),
-          entityID: cameraUUID.entityID,
-          entitySourceID: cameraUUID.entitySourceID,
-          ownerID: network.hostUserID!,
-          $topic: NetworkTopics.world,
-          $peer: HyperFlux.store.peerID
-        })
-      )
+      CameraPrefab.spawn({
+        parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).viewerEntity),
+        entityID: cameraUUID.entityID,
+        entitySourceID: cameraUUID.entitySourceID,
+        ownerID: network.hostUserID!,
+        components: {}
+      })
+
       applyIncomingActions()
       await vi.waitFor(() => {
         const cameraEntity = UUIDComponent.getEntityByUUID(UUIDComponent.join(cameraUUID))

@@ -11,8 +11,9 @@ import {
   UndefinedEntity,
   UUIDComponent
 } from '@ir-engine/ecs'
-import { applyIncomingActions, dispatchAction, startReactor } from '@ir-engine/hyperflux'
+import { applyIncomingActions, startReactor } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import {
   TransformDirtyCleanupSystem,
@@ -24,10 +25,14 @@ import { Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockAnimatedAvatar } from '../../../tests/avatar/mockAnimatedAvatar'
 import { startEngineReactor } from '../../../tests/startEngineReactor'
+import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarIKComponent, AvatarIKTargetComponent, IKMatrixComponent } from '../components/AvatarIKComponents'
-import '../state/AvatarIKTargetState'
-import { AvatarNetworkAction } from '../state/AvatarNetworkActions'
+import {
+  AvatarIKComponent,
+  AvatarIKPrefab,
+  AvatarIKTargetComponent,
+  IKMatrixComponent
+} from '../components/AvatarIKComponents'
 import { AnimationSystem } from './AnimationSystem'
 import { AvatarAnimationSystem } from './AvatarAnimationSystem'
 import { AvatarIkReactor, AvatarIKSystem } from './AvatarIKSystem'
@@ -78,76 +83,39 @@ describe('AvatarIKSystem', () => {
       ).toBeTruthy()
     })
 
-    const rightHandId = 'rightHand' as EntityID
-    const leftHandId = 'leftHand' as EntityID
-    const leftFootId = 'leftFoot' as EntityID
-    const rightFootId = 'rightFoot' as EntityID
-    const headId = 'head' as EntityID
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
+    for (const targetName of Object.values(ikTargets)) {
+      AvatarIKPrefab.spawn({
+        entityID: targetName as EntityID,
         parentUUID: avatarUuid,
-        entityID: rightHandId,
         entitySourceID: avatarUuidPair.entitySourceID,
-        name: 'rightHand',
-        blendWeight: 1
+        components: {
+          [NameComponent.jsonID]: `${avatarUuidPair.entitySourceID}'s ${targetName}`
+        }
       })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID: avatarUuid,
-        entityID: leftHandId,
-        entitySourceID: avatarUuidPair.entitySourceID,
-        name: 'leftHand',
-        blendWeight: 1
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID: avatarUuid,
-        entityID: leftFootId,
-        entitySourceID: avatarUuidPair.entitySourceID,
-        name: 'leftFoot',
-        blendWeight: 1
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID: avatarUuid,
-        entityID: rightFootId,
-        entitySourceID: avatarUuidPair.entitySourceID,
-        name: 'rightFoot',
-        blendWeight: 1
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID: avatarUuid,
-        entityID: headId,
-        entitySourceID: avatarUuidPair.entitySourceID,
-        name: 'head',
-        blendWeight: 1
-      })
-    )
+    }
     applyIncomingActions()
 
     // Create the concatenated UUIDs
     const rightHandUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
-      entityID: rightHandId
+      entityID: ikTargets.rightHand as EntityID
     })
     const leftHandUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
-      entityID: leftHandId
+      entityID: ikTargets.leftHand as EntityID
     })
     const leftFootUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
-      entityID: leftFootId
+      entityID: ikTargets.leftFoot as EntityID
     })
     const rightFootUuid = UUIDComponent.join({
       entitySourceID: avatarUuidPair.entitySourceID,
-      entityID: rightFootId
+      entityID: ikTargets.rightFoot as EntityID
     })
-    const headUuid = UUIDComponent.join({ entitySourceID: avatarUuidPair.entitySourceID, entityID: headId })
+    const headUuid = UUIDComponent.join({
+      entitySourceID: avatarUuidPair.entitySourceID,
+      entityID: ikTargets.head as EntityID
+    })
 
     await vi.waitUntil(
       () =>

@@ -213,7 +213,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
     )
   }
 
-  return { spawn, set, remove }
+  return { spawn, set, remove, $State, $Actions }
 }
 
 /*

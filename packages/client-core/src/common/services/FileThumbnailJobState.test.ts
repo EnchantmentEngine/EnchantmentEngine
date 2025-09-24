@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import '@ir-engine/engine'
-import '@ir-engine/engine/src/avatar/state/AvatarNetworkState'
 import { generateThumbnailKey } from './FileThumbnailJobState'
 
 describe('FileThumbnailJobState', () => {

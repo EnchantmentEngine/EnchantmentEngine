@@ -12,7 +12,6 @@ import {
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
 import '@ir-engine/engine'
-import '@ir-engine/engine/src/avatar/state/AvatarNetworkState'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { LinkComponent } from '@ir-engine/engine/src/scene/components/LinkComponent'
 import { addError } from '@ir-engine/engine/src/scene/functions/ErrorFunctions'
