@@ -7,14 +7,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { createXRUI } from '@ir-engine/spatial/src/xrui/createXRUI'
 import { WidgetAppActions } from './WidgetAppService'
 
-import {
-  EngineState,
-  EntityNetworkState,
-  EntityTreeComponent,
-  EntityUUID,
-  UUIDComponent,
-  iterateEntityNode
-} from '@ir-engine/ecs'
+import { EntityTreeComponent, iterateEntityNode } from '@ir-engine/ecs'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { translateAndRotateAvatar, updateLocalAvatarPosition } from '@ir-engine/engine/src/avatar/functions/moveAvatar'
 import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAvatar'
@@ -37,10 +30,7 @@ export function createAvatarModeWidget() {
       const currentParent = getComponent(avatarEntity, EntityTreeComponent).parentEntity
       if (currentParent === getState(ReferenceSpaceState).localFloorEntity) {
         getMutableState(XRState).avatarCameraMode.set('auto')
-        const uuid = getState(EngineState).userID as any as EntityUUID
-        const parentUUID = getState(EntityNetworkState)[uuid].parentUUID
-        const parentEntity = UUIDComponent.getEntityByUUID(parentUUID)
-        setComponent(avatarEntity, EntityTreeComponent, { parentEntity })
+        setComponent(avatarEntity, EntityTreeComponent, { parentEntity: currentParent })
         respawnAvatar(avatarEntity)
         iterateEntityNode(avatarEntity, TransformComponent.computeTransformMatrix)
       } else {

@@ -22,6 +22,7 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { EntitySchema } from '@ir-engine/ecs'
 import { Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
 import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { CameraComponent } from '../../../../spatial/src/camera/components/CameraComponent'
@@ -150,6 +151,14 @@ export const AvatarColliderComponent = defineComponent({
   schema: Schema.Object({ colliderEntity: EntitySchema.Entity() }),
 
   reactor({ entity }) {
+    const name = useOptionalComponent(entity, NameComponent)
+    const colliderEntity = useComponent(entity, AvatarColliderComponent).colliderEntity
+
+    useEffect(() => {
+      if (!name || !colliderEntity) return
+      setComponent(colliderEntity, NameComponent, name + "'s collider")
+    }, [name, colliderEntity])
+
     useEffect(() => {
       const avatarColliderComponent = getOptionalComponent(entity, AvatarColliderComponent)
       return () => {

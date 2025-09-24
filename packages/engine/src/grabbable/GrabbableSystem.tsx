@@ -8,6 +8,7 @@ import {
   SimulationSystemGroup
 } from '@ir-engine/ecs'
 import { getState } from '@ir-engine/hyperflux'
+import { ReferenceSpaceState } from '@ir-engine/spatial'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ClientInputSystem } from '@ir-engine/spatial/src/input/systems/ClientInputSystem'
 import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
@@ -17,8 +18,6 @@ import { AvatarComponent } from '../avatar/components/AvatarComponent'
 import { getHandTarget } from '../avatar/components/AvatarIKComponents'
 import { GrabbableComponent, GrabbedComponent, GrabberComponent } from './GrabbableComponent'
 
-import { ReferenceSpaceState } from '@ir-engine/spatial'
-import '@ir-engine/spatial/src/transform/SpawnPoseState'
 import './GrabbableState'
 
 const ownedGrabbableQuery = defineQuery([GrabbableComponent, GrabbedComponent, NetworkObjectAuthorityTag])
@@ -37,8 +36,6 @@ const execute = () => {
     if (rigidbodyComponent) {
       rigidbodyComponent.targetKinematicPosition.copy(target.position)
       rigidbodyComponent.targetKinematicRotation.copy(target.rotation)
-      // const world = Physics.getWorld(entity)!
-      // Physics.setRigidbodyPose(world, entity, target.position, target.rotation, Vector3_Zero, Vector3_Zero)
     } else {
       const grabbableTransform = getComponent(entity, TransformComponent)
       grabbableTransform.position.copy(target.position)

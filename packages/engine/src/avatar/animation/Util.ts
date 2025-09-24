@@ -3,13 +3,7 @@ export const ikTargets = {
   leftHand: 'leftHand',
   rightFoot: 'rightFoot',
   leftFoot: 'leftFoot',
-  head: 'head',
-  hips: 'hips',
-
-  rightElbowHint: 'rightElbowHint',
-  leftElbowHint: 'leftElbowHint',
-  rightKneeHint: 'rightKneeHint',
-  leftKneeHint: 'leftKneeHint'
+  head: 'head'
 }
 
 /** list out all the emote animation file names */

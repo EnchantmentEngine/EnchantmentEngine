@@ -26,7 +26,6 @@ import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/Ri
 import { BodyTypes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
-import '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { GrabbableNetworkAction, GrabbedComponent, GrabberComponent } from './GrabbableComponent'
 
 export const GrabbableState = defineState({

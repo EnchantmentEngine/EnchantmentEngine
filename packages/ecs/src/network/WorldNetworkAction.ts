@@ -20,8 +20,7 @@ export class WorldNetworkAction {
         entitySourceID: EntitySchema.SourceID({ required: true }),
         parentUUID: EntitySchema.EntityUUID({ required: true }),
         ownerID: Schema.UserID({ required: true, default: () => getState(EngineState).userID }),
-        authorityPeerId: Schema.Optional(Schema.PeerID()),
-        components: Schema.Any() // Record<JsonID, SerializedSchema> of component type
+        authorityPeerId: Schema.Optional(Schema.PeerID())
       },
       {
         $id: 'ee.network.SPAWN_ENTITY',

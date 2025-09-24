@@ -5,8 +5,11 @@ import { EngineState, EntityID, EntityUUID, SourceID } from '@ir-engine/ecs'
 import { Action, PeerID, dispatchAction, getState } from '@ir-engine/hyperflux'
 import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
 
-import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { TransformComponent } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { ikTargets } from '../animation/Util'
+import { AvatarComponent, AvatarPrefab } from '../components/AvatarComponent'
+import { AvatarIKPrefab } from '../components/AvatarIKComponents'
 
 export const AuthError = {
   MISSING_ACCESS_TOKEN: 'MISSING_ACCESS_TOKEN',
@@ -40,60 +43,33 @@ export type SpawnInWorldProps = {
 export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
   const { avatarSpawnPose, avatarURL, parentUUID } = props
   const entitySourceID = getState(EngineState).userID as any as SourceID
-  dispatchAction(
-    AvatarNetworkAction.spawn({
-      ...avatarSpawnPose,
-      parentUUID,
-      avatarURL,
-      entityID: AvatarComponent.entityID,
-      entitySourceID,
-      name: props.name
-    })
-  )
+  AvatarPrefab.spawn({
+    entityID: AvatarComponent.entityID,
+    entitySourceID,
+    parentUUID,
+    components: {
+      [AvatarComponent.jsonID]: {
+        avatarURL: avatarURL
+      },
+      [NameComponent.jsonID]: {
+        value: props.name
+      },
+      [TransformComponent.jsonID]: {
+        ...avatarSpawnPose
+      }
+    }
+  })
   dispatchAction(CameraActions.spawnCamera({ parentUUID, entityID: 'camera' as EntityID, entitySourceID }))
-  dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({
-      parentUUID,
-      entityID: 'head' as EntityID,
+  for (const targetName of Object.values(ikTargets)) {
+    AvatarIKPrefab.spawn({
+      entityID: targetName as EntityID,
       entitySourceID,
-      name: 'head',
-      blendWeight: 0
-    })
-  )
-  dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({
       parentUUID,
-      entityID: 'leftHand' as EntityID,
-      entitySourceID,
-      name: 'leftHand',
-      blendWeight: 0
+      components: {
+        [NameComponent.jsonID]: {
+          value: targetName
+        }
+      }
     })
-  )
-  dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({
-      parentUUID,
-      entityID: 'rightHand' as EntityID,
-      entitySourceID,
-      name: 'rightHand',
-      blendWeight: 0
-    })
-  )
-  dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({
-      parentUUID,
-      entityID: 'leftFoot' as EntityID,
-      entitySourceID,
-      name: 'leftFoot',
-      blendWeight: 0
-    })
-  )
-  dispatchAction(
-    AvatarNetworkAction.spawnIKTarget({
-      parentUUID,
-      entityID: 'rightFoot' as EntityID,
-      entitySourceID,
-      name: 'rightFoot',
-      blendWeight: 0
-    })
-  )
+  }
 }

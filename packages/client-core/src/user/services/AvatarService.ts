@@ -14,9 +14,10 @@ import {
   userPath,
   UserType
 } from '@ir-engine/common/src/schema.type.module'
-import { EngineState, EntityUUID } from '@ir-engine/ecs'
-import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
-import { defineState, dispatchAction, getMutableState, getState } from '@ir-engine/hyperflux'
+import { EngineState } from '@ir-engine/ecs'
+import { AvatarComponent, AvatarPrefab } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { defineState, getMutableState, getState } from '@ir-engine/hyperflux'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import i18n from 'i18next'
 import { NotificationService } from '../../common/services/NotificationService'
 import { uploadToFeathersService } from '../../util/upload'
@@ -151,6 +152,12 @@ export const AvatarService = {
     const { name: updatedName } = (await API.instance.service(userPath).patch(userId, { name: name })) as UserType
     NotificationService.dispatchNotify(i18n.t('user:usermenu.profile.update-msg').toString(), { variant: 'success' })
     getMutableState(AuthState).user.merge({ name: updatedName })
-    dispatchAction(AvatarNetworkAction.setName({ entityUUID: (userId + '_avatar') as EntityUUID, name: updatedName }))
+
+    const selfAvatarEntity = AvatarComponent.getSelfAvatarEntity()
+    AvatarPrefab.set(selfAvatarEntity, {
+      [NameComponent.jsonID]: {
+        value: updatedName
+      }
+    })
   }
 }

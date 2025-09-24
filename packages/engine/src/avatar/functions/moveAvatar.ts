@@ -20,7 +20,6 @@ import { computeAndUpdateWorldOrigin, updateWorldOrigin } from '@ir-engine/spati
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { SpawnPoseState } from '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { GrabbedComponent } from '../../grabbable/GrabbableComponent'
 import { preloadedAnimations } from '../animation/Util'
 import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
@@ -495,7 +494,7 @@ const _slerpBodyTowardsVelocity = (entity: Entity, alpha: number) => {
 
   let prevVector = prevVectors.get(entity)!
   if (!prevVector) {
-    prevVector = new Vector3(0, 0, 1).applyQuaternion(getState(SpawnPoseState)[UUIDComponent.get(entity)].spawnRotation)
+    prevVector = new Vector3(0, 0, 1).applyQuaternion(getComponent(entity, TransformComponent).rotation)
     prevVectors.set(entity, prevVector)
   }
 

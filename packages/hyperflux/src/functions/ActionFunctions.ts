@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import type { Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
+import { Schema } from '../schemas/JSONSchemas'
+import type { MergeObjectSchemas, Static, TObjectSchema, TProperties } from '../schemas/JSONSchemaTypes'
 import { CheckSchemaValue, CreateSchemaValue } from '../schemas/JSONSchemaUtils'
 import { OpaqueType } from '../types/OpaqueType'
 import { NetworkID, PeerID, UserID } from '../types/Types'
@@ -17,7 +18,7 @@ export type Action = {
   /**
    * The type of action
    */
-  type: string
+  type: string | string[]
 } & ActionOptions
 
 export type ActionRecipients = PeerID | PeerID[] | 'all' | null | undefined
@@ -76,11 +77,25 @@ export type ActionOptions = {
   $ERROR?: { message: string; stack: string[] }
 }
 
+export function deepEqual(x: any, y: any): boolean {
+  if (x === y) return true
+  if (typeof x == 'object' && x != null && typeof y == 'object' && y != null) {
+    if (Object.keys(x).length != Object.keys(y).length) return false
+    for (const prop in x) {
+      if (typeof y[prop] !== 'undefined') {
+        if (!deepEqual(x[prop], y[prop])) return false
+      } else return false
+    }
+    return true
+  }
+  return false
+}
+
 export type ResolvedAction<
   TType extends string,
   Properties extends TProperties,
   Schema extends TObjectSchema<Properties>
-> = Required<Action> & Static<Schema> & { type: TType }
+> = Required<Action> & Static<Schema> & { type: TType | string[] }
 
 export interface ActionCreator<
   TType extends string,
@@ -88,10 +103,13 @@ export interface ActionCreator<
   Schema extends TObjectSchema<Properties>
 > {
   (partial?: Partial<Static<Schema>> & ActionOptions): ResolvedAction<TType, Properties, Schema>
-  type: TType
+  type: TType | string[]
   _TYPE: ResolvedAction<TType, Properties, Schema> // hack to get the type of the action at compile time
   schema: Schema
   validate: (payload: unknown) => payload is Static<Schema>
+  extend: <ExtendSchema extends TObjectSchema<any>>(
+    extensionDefinition: ExtendSchema
+  ) => MergeObjectSchemas<Schema, ExtendSchema>
   test: (a: Action) => a is ResolvedAction<TType, Properties, Schema>
   receive: (
     receptor: (action: ResolvedAction<TType, Properties, Schema>) => void
@@ -123,7 +141,8 @@ export function defineAction<
 >(definition: Schema): ActionCreator<TType, Properties, Schema> {
   type P = Static<Schema>
   if (!definition.options?.$id) throw new Error('Action schema must have an id in options.$id')
-  const id = definition.options.$id
+  const typeChain = Array.isArray(definition.options.$id) ? definition.options.$id : [definition.options.$id]
+  const primaryType = typeChain[0] as TType
 
   const validate = (payload: unknown): payload is P => {
     return CheckSchemaValue(definition, payload)
@@ -133,26 +152,42 @@ export function defineAction<
     const payload = CreateSchemaValue(definition)
     if (partial) for (const [k, v] of Object.entries(partial)) if (!k.startsWith('$')) payload[k] = v
 
-    if (!CheckSchemaValue(definition, payload)) throw new Error(`Schema validation failed for action ${id}`)
+    if (!CheckSchemaValue(definition, payload)) throw new Error(`Schema validation failed for action ${primaryType}`)
 
     const metadata = definition.options?.metadata ?? {}
     const action: Action = {
       ...metadata,
       ...payload,
-      type: id
+      type: primaryType
     }
 
     if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) action[k] = v
 
-    return action as Action & P & { type: TType }
+    return action as Action & P & { type: TType | string[] }
   }) as ActionCreator<TType, Properties, Schema>
 
-  creator.type = id as TType
+  creator.type = typeChain.length === 1 ? primaryType : typeChain
   creator.schema = definition
   creator.validate = validate
+  creator.extend = (extensionDefinition) => {
+    if (!extensionDefinition.options?.$id) throw new Error('Action schema must have an id in options.$id')
+    const combinedID = Array.isArray(extensionDefinition.options.$id)
+      ? [...extensionDefinition.options.$id, ...typeChain]
+      : [extensionDefinition.options.$id, ...typeChain]
+    const combinedProperties = {
+      ...(definition.properties || {}),
+      ...(extensionDefinition.properties || {})
+    } as TProperties
+    const metadata = {
+      ...definition.options?.metadata,
+      ...extensionDefinition.options?.metadata
+    }
+    return Schema.Object(combinedProperties, { $id: combinedID as any, metadata }) as any
+  }
   creator.test = (a: Required<Action>): a is ResolvedAction<TType, Properties, Schema> => {
     if (!a || !a.type) return false
-    if (a.type !== id) return false
+    const types = Array.isArray(a.type) ? a.type : [a.type]
+    if (!types.includes(primaryType)) return false
     const subset = {}
     for (const key of Object.keys(definition.properties || {})) subset[key] = a[key]
     return validate(subset)
@@ -167,7 +202,7 @@ export function defineAction<
     return hookable as ActionReceptor<Properties, Schema, TType>
   }
 
-  ActionDefinitions[id] = creator
+  ActionDefinitions[primaryType] = creator
   return creator
 }
 

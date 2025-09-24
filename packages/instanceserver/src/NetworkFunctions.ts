@@ -20,10 +20,8 @@ import {
   UserType
 } from '@ir-engine/common/src/schema.type.module'
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
-import { EntityUUID } from '@ir-engine/ecs'
-import { getComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import { getComponent, setComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
-import { respawnAvatar } from '@ir-engine/engine/src/avatar/functions/respawnAvatar'
 import { AuthTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import {
   Action,
@@ -41,7 +39,6 @@ import { config as mediaConfig } from '@ir-engine/server-core/src/config'
 import multiLogger from '@ir-engine/server-core/src/ServerLogger'
 import { ServerState } from '@ir-engine/server-core/src/ServerState'
 import getLocalServerIp from '@ir-engine/server-core/src/util/get-local-server-ip'
-import { SpawnPoseState } from '@ir-engine/spatial'
 import checkPositionIsValid from '@ir-engine/spatial/src/common/functions/checkPositionIsValid'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
@@ -346,11 +343,12 @@ const getUserSpawnFromInvite = async (
         const physicsWorld = Physics.getWorld(inviterUserAvatarEntity)!
         const validSpawnablePosition = checkPositionIsValid(physicsWorld, inviterUserObject3d.position, false)
 
+        /** @todo this logic is pointless since avatars spawn in via the client, so we need to pass this data to the avatar spawning in, or they need to process it */
         if (validSpawnablePosition) {
-          const spawnPose = getState(SpawnPoseState)[user.id as any as EntityUUID]
-          spawnPose.spawnPosition.copy(inviterUserObject3d.position)
-          spawnPose.spawnRotation.copy(inviterUserTransform.rotation)
-          respawnAvatar(selfAvatarEntity)
+          setComponent(selfAvatarEntity, TransformComponent, {
+            position: inviterUserObject3d.position,
+            rotation: inviterUserTransform.rotation
+          })
         }
       } else {
         logger.warn('The user who invited this user in no longer on this instance.')

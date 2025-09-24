@@ -1,19 +1,25 @@
 import { EngineState, EntityID, NetworkObjectComponent, SourceID, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
 import {
   defineComponent,
+  entityExists,
   getComponent,
+  removeComponent,
+  setComponent,
   useComponent,
   useHasComponent,
   useOptionalComponent
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { getState, Schema, useMutableState, UserID } from '@ir-engine/hyperflux'
-import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { useEffect } from 'react'
-import { setAvatarColliderTransform } from '../functions/spawnAvatarReceptor'
+import { GLTFComponent } from '../../gltf/GLTFComponent'
+import { definePrefab } from '../../scene/functions/definePrefab'
+import { setAvatarColliderTransform, spawnAvatarReceptor } from '../functions/spawnAvatarReceptor'
 
 export const AvatarComponent = defineComponent({
   name: 'AvatarComponent',
@@ -67,6 +73,32 @@ export const AvatarComponent = defineComponent({
    */
   useSelfAvatarEntity() {
     return UUIDComponent.useEntityByUUID(AvatarComponent.getSelfAvatarUUID())
+  },
+
+  reactor: ({ entity }) => {
+    const avatarURL = useComponent(entity, AvatarComponent).avatarURL
+
+    useEffect(() => {
+      if (!entity || !avatarURL) return
+
+      setComponent(entity, GLTFComponent, { src: avatarURL })
+
+      return () => {
+        if (!entityExists(entity)) return
+        removeComponent(entity, GLTFComponent)
+      }
+    }, [avatarURL, entity])
+  }
+})
+
+export const AvatarPrefab = definePrefab({
+  name: 'AvatarPrefab',
+  components: [AvatarComponent, TransformComponent, NameComponent],
+  reactor: ({ entity }) => {
+    useEffect(() => {
+      spawnAvatarReceptor(entity)
+    }, [])
+    return null
   }
 })
 
