@@ -25,6 +25,5 @@ export class CameraActions {
 }
 
 export const CameraPrefab = definePrefab({
-  name: 'CameraPrefab',
   components: [CameraComponent, TransformComponent, NameComponent]
 })

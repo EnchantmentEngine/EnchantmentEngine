@@ -91,7 +91,6 @@ export const AvatarComponent = defineComponent({
 })
 
 export const AvatarPrefab = definePrefab({
-  name: 'AvatarPrefab',
   components: [AvatarComponent, TransformComponent, NameComponent],
   reactor: ({ entity }) => {
     useEffect(() => {

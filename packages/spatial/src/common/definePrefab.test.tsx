@@ -32,7 +32,6 @@ const TestComponent = defineComponent({
 })
 
 const MyPrefab = definePrefab({
-  name: 'MyPrefab',
   components: [TestComponent]
 })
 

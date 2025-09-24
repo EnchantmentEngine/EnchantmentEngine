@@ -51,7 +51,6 @@ export const PrefabRegistry = {} as Record<string, ReturnType<typeof definePrefa
  *
  * @example
  * const MyPrefab = definePrefab({
- *   name: 'MyPrefab',
  *   components: [TransformComponent, NameComponent],
  *   reactor: ({ entity }) => {
  *     const name = useComponent(entity, NameComponent)
@@ -70,7 +69,6 @@ export const PrefabRegistry = {} as Record<string, ReturnType<typeof definePrefa
  * })
  */
 export const definePrefab = <T extends ReturnType<typeof defineComponent>>(definition: {
-  name: string
   components: T[]
   reactor?: (props: { entity: Entity }) => JSX.Element | null
 }) => {
@@ -92,7 +90,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
             )
           },
           {
-            $id: 'ee.engine.prefab_' + definition.name + '_SPAWN'
+            $id: 'ee.engine.prefab_' + uniqueKey + '_SPAWN'
           }
         )
       )
@@ -105,13 +103,13 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
             filteredComponents.map((c) => [c.jsonID, Schema.Optional(Schema.Any()) /** @todo proper guard */])
           )
         },
-        { $id: 'ee.engine.prefab_' + definition.name + '_SET' }
+        { $id: 'ee.engine.prefab_' + uniqueKey + '_SET' }
       )
     )
   }
 
   const $State = defineState({
-    name: 'ee.engine.prefab_' + definition.name,
+    name: 'ee.engine.prefab_' + uniqueKey,
 
     initial: {} as Record<EntityUUID, Partial<Record<string, any>>>,
 
@@ -237,7 +235,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
 
   /** Use a system reactor to detect prefabs from the scene that need to be networked based on queries matching the components */
   defineSystem({
-    uuid: 'ee.engine.prefab_' + definition.name + '_system',
+    uuid: 'ee.engine.prefab_' + uniqueKey + '_system',
     insert: { after: PresentationSystemGroup },
     reactor: () => <QueryReactor Components={[SceneComponent]} ChildEntityReactor={SceneReactor} />
   })
