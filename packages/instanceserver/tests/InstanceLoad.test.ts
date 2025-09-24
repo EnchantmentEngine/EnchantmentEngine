@@ -44,6 +44,8 @@ import { InstanceServerState } from '../src/InstanceServerState'
 import { setupSocketFunctions } from '../src/SocketFunctions'
 import { start } from '../src/start'
 
+import '@ir-engine/ecs/src/network/EntityNetworkState'
+
 const p2pEnabled = config['instance-server'].p2pEnabled
 
 describe('InstanceLoad', () => {
@@ -213,6 +215,7 @@ describe('InstanceLoad', () => {
         },
         [NameComponent.jsonID]: user.name
       },
+      ownerID: user.id,
       $peer: peerID,
       $user: user.id
     })
@@ -223,6 +226,7 @@ describe('InstanceLoad', () => {
       components: {
         [NameComponent.jsonID]: `${userID}'s Camera`
       },
+      ownerID: user.id,
       $peer: peerID,
       $user: user.id
     })
@@ -234,6 +238,7 @@ describe('InstanceLoad', () => {
         components: {
           [NameComponent.jsonID]: `${userID}'s ${targetName}`
         },
+        ownerID: user.id,
         $peer: peerID,
         $user: user.id
       })
