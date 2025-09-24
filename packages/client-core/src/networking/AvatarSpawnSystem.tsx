@@ -134,7 +134,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   }, [needsNewAvatar])
 
   useEffect(() => {
-    if (isSpectating || !userAvatar) return
+    if (isSpectating || !userAvatar || !selfAvatarEntity) return
     /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
     const avatarURL = iOS
       ? config.client.fileServer + '/projects/enchantmentengine/default-project/assets/avatars/irRobot.vrm'
@@ -144,7 +144,7 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
         avatarURL
       }
     })
-  }, [isSpectating, userAvatar])
+  }, [isSpectating, userAvatar, selfAvatarEntity])
 
   return null
 }

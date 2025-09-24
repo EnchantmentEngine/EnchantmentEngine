@@ -9,15 +9,12 @@ import {
   EntityID,
   EntityUUID,
   getComponent,
-  serializeComponent,
   SourceID,
-  useOptionalComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
 import {
   ActionOptions,
-  deepEqual,
   defineAction,
   defineState,
   dispatchAction,
@@ -161,14 +158,15 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
       useEffect(() => {
         deserializeComponent(entity, c, state[c.jsonID!])
       }, [entity, c, state[c.jsonID!]])
-      const component = useOptionalComponent(entity, c)
-      useEffect(() => {
-        if (!component) return
-        const data = serializeComponent(entity, c)
-        if (!deepEqual(state, data)) {
-          set(entity, { [c.jsonID!]: data })
-        }
-      }, [component])
+      /** @todo figure out how to include only non-default properties */
+      // const component = useOptionalComponent(entity, c)
+      // useEffect(() => {
+      //   if (!component) return
+      //   const data = serializeComponent(entity, c)
+      //   if (!deepEqual(state[c.jsonID!], data)) {
+      //     set(entity, { [c.jsonID!]: data })
+      //   }
+      // }, [component])
     })
     return definition.reactor ? <definition.reactor entity={entity} /> : null
   }
