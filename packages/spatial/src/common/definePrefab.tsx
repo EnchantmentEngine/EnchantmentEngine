@@ -246,7 +246,6 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
     const { entity } = props
 
     const sourcedEntities = useQueryBySource(entity, definition.components)
-    console.log('SceneReactor', entity, sourcedEntities)
 
     return <EntityArrayBoundary entities={sourcedEntities} ChildEntityReactor={SpawnFromSceneReactor} />
   }
@@ -265,7 +264,6 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
         componentsData[comp.jsonID!] = compData ?? true
       }
       const parentEntity = getComponent(entity, EntityTreeComponent).parentEntity
-      console.log('Spawning prefab entity from scene:', entity, ' parent:', parentEntity)
       const parentUUID = UUIDComponent.get(parentEntity)
 
       spawn({
