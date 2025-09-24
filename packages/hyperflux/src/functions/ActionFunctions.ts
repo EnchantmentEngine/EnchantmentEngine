@@ -158,7 +158,7 @@ export function defineAction<
     const action: Action = {
       ...metadata,
       ...payload,
-      type: primaryType
+      type: typeChain.length === 1 ? primaryType : typeChain
     }
 
     if (partial) for (const [k, v] of Object.entries(partial)) if (k.startsWith('$')) action[k] = v
