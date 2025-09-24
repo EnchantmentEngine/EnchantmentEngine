@@ -1,6 +1,6 @@
 import { ArrayCamera, PerspectiveCamera } from 'three'
 
-import { useEntityContext } from '@ir-engine/ecs'
+import { EntityID, useEntityContext } from '@ir-engine/ecs'
 import { defineComponent, removeComponent, setComponent, useComponent } from '@ir-engine/ecs/src/ComponentFunctions'
 import { Schema, useImmediateEffect } from '@ir-engine/hyperflux'
 import { ObjectComponent } from '../../renderer/components/ObjectComponent'
@@ -8,6 +8,8 @@ import { ObjectComponent } from '../../renderer/components/ObjectComponent'
 export const CameraComponent = defineComponent({
   name: 'CameraComponent',
   jsonID: 'EE_camera',
+
+  entityID: 'camera' as EntityID,
 
   schema: Schema.Object({
     fov: Schema.Number({ default: 60 }),

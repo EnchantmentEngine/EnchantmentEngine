@@ -2,10 +2,11 @@
 import { Quaternion, Vector3 } from 'three'
 
 import { EngineState, EntityID, EntityUUID, SourceID } from '@ir-engine/ecs'
-import { Action, PeerID, dispatchAction, getState } from '@ir-engine/hyperflux'
-import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
+import { Action, PeerID, getState } from '@ir-engine/hyperflux'
+import { CameraPrefab } from '@ir-engine/spatial/src/camera/CameraState'
 
 import { TransformComponent } from '@ir-engine/spatial'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { ikTargets } from '../animation/Util'
 import { AvatarComponent, AvatarPrefab } from '../components/AvatarComponent'
@@ -59,7 +60,14 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
       }
     }
   })
-  dispatchAction(CameraActions.spawnCamera({ parentUUID, entityID: 'camera' as EntityID, entitySourceID }))
+  CameraPrefab.spawn({
+    parentUUID,
+    entityID: CameraComponent.entityID,
+    entitySourceID,
+    components: {
+      [NameComponent.jsonID]: { value: `${entitySourceID}'s Camera` }
+    }
+  })
   for (const targetName of Object.values(ikTargets)) {
     AvatarIKPrefab.spawn({
       entityID: targetName as EntityID,
@@ -67,7 +75,7 @@ export const spawnLocalAvatarInWorld = (props: SpawnInWorldProps) => {
       parentUUID,
       components: {
         [NameComponent.jsonID]: {
-          value: targetName
+          value: `${entitySourceID}'s ${targetName}`
         }
       }
     })

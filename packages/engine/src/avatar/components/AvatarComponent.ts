@@ -1,4 +1,12 @@
-import { EngineState, EntityID, NetworkObjectComponent, SourceID, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
+import {
+  definePrefab,
+  EngineState,
+  EntityID,
+  NetworkObjectComponent,
+  SourceID,
+  UndefinedEntity,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import {
   defineComponent,
   entityExists,
@@ -18,7 +26,6 @@ import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { setVisibleComponent, VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { useEffect } from 'react'
 import { GLTFComponent } from '../../gltf/GLTFComponent'
-import { definePrefab } from '../../scene/functions/definePrefab'
 import { setAvatarColliderTransform, spawnAvatarReceptor } from '../functions/spawnAvatarReceptor'
 
 export const AvatarComponent = defineComponent({

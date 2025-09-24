@@ -1,4 +1,8 @@
+import { definePrefab } from '@ir-engine/ecs'
 import { defineAction, defineState, Schema } from '@ir-engine/hyperflux'
+import { TransformComponent } from '../SpatialModule'
+import { NameComponent } from '../common/NameComponent'
+import { CameraComponent } from './components/CameraComponent'
 
 export const CameraSettings = defineState({
   name: 'xre.engine.CameraSettings',
@@ -19,3 +23,8 @@ export class CameraActions {
     )
   )
 }
+
+export const CameraPrefab = definePrefab({
+  name: 'CameraPrefab',
+  components: [CameraComponent, TransformComponent, NameComponent]
+})
