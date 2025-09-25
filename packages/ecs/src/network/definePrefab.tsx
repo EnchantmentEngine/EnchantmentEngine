@@ -112,6 +112,14 @@ export function definePrefab<T extends readonly Component[]>(definition: {
         },
         { $id: 'ee.engine.prefab_' + uniqueKey + '_SET' }
       )
+    ),
+    remove: defineAction(
+      Schema.Object(
+        {
+          entityUUID: Schema.String()
+        },
+        { $id: 'ee.engine.prefab_' + uniqueKey + '_REMOVE' }
+      )
     )
   }
 
@@ -131,7 +139,10 @@ export function definePrefab<T extends readonly Component[]>(definition: {
           state[comp.jsonID!].merge(action.components[comp.jsonID!])
         }
       }),
-      onRemove: WorldNetworkAction.destroyEntity.receive((action) => {
+      onRemove: $Actions.remove.receive((action) => {
+        getMutableState($State)[action.entityUUID].set(none)
+      }),
+      onDestroy: WorldNetworkAction.destroyEntity.receive((action) => {
         getMutableState($State)[action.entityUUID].set(none)
       })
     },
@@ -277,6 +288,14 @@ export function definePrefab<T extends readonly Component[]>(definition: {
           $peer: ScenePeer
         })
       )
+      return () => {
+        if (!entityExists(entity)) return
+        dispatchAction(
+          $Actions.remove({
+            entityUUID
+          })
+        )
+      }
     }, [])
 
     return null

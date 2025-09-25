@@ -1,14 +1,31 @@
 import { useEffect } from 'react'
 
-import { UUIDComponent, getComponent, hasComponent, useEntityContext } from '@ir-engine/ecs'
-import { defineComponent, setComponent, useHasComponent } from '@ir-engine/ecs/src/ComponentFunctions'
-import { Entity } from '@ir-engine/ecs/src/Entity'
-import { defineAction, dispatchAction, getState, isClient } from '@ir-engine/hyperflux'
+import {
+  definePrefab,
+  getComponent,
+  hasComponent,
+  NetworkObjectComponent,
+  useEntityContext,
+  UUIDComponent,
+  WorldNetworkAction
+} from '@ir-engine/ecs'
+import {
+  defineComponent,
+  entityExists,
+  setComponent,
+  useComponent,
+  useHasComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
+import { Entity, UndefinedEntity } from '@ir-engine/ecs/src/Entity'
+import { dispatchAction, getState, HyperFlux, isClient, SceneUser } from '@ir-engine/hyperflux'
 import { setCallback } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { InputState } from '@ir-engine/spatial/src/input/state/InputState'
 
 import { EntitySchema } from '@ir-engine/ecs'
-import { NetworkTopics, Schema } from '@ir-engine/hyperflux'
+import { Schema } from '@ir-engine/hyperflux'
+import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
+import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/RigidBodyComponent'
+import { BodyTypes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { AvatarComponent } from '../avatar/components/AvatarComponent'
 import { InteractableComponent, XRUIVisibilityOverride } from '../interaction/components/InteractableComponent'
 
@@ -125,21 +142,60 @@ export const GrabberComponent = defineComponent({
   })
 })
 
-export class GrabbableNetworkAction {
-  static setGrabbedObject = defineAction(
-    Schema.Object(
-      {
-        entityUUID: EntitySchema.EntityUUID(),
-        grabbed: Schema.Bool(),
-        attachmentPoint: Schema.Optional(Schema.LiteralUnion(['left', 'right'] as const)),
-        grabberEntityUUID: EntitySchema.EntityUUID()
-      },
-      {
-        $id: 'ee.engine.grabbable.SET_GRABBED_OBJECT',
-        metadata: {
-          $topic: NetworkTopics.world
-        }
+export const GrabbedPrefab = definePrefab({
+  components: [GrabbedComponent],
+  reactor: GrabbedReactor
+})
+
+function GrabbedReactor({ entity }: { entity: Entity }) {
+  const entityUUID = UUIDComponent.use(entity)
+  const { grabberEntity, attachmentPoint } = useComponent(entity, GrabbedComponent)
+
+  const networkComponent = useComponent(entity, NetworkObjectComponent)
+  const grabberNetworkComponent = useComponent(grabberEntity, NetworkObjectComponent)
+
+  const ownedByScene = networkComponent.ownerId === SceneUser
+  const grabbableAuthorityPeer = networkComponent.authorityPeerID
+  const grabberAuthorityPeer = grabberNetworkComponent.authorityPeerID
+
+  const hasAuthority = grabbableAuthorityPeer === grabberAuthorityPeer
+
+  useEffect(() => {
+    if (!entity || !grabberEntity || !hasAuthority) return
+
+    setComponent(grabberEntity, GrabberComponent, { [attachmentPoint]: entity })
+
+    if (hasComponent(entity, RigidBodyComponent)) {
+      setComponent(entity, RigidBodyComponent, { type: BodyTypes.Kinematic })
+      Physics.wakeUp(Physics.getWorld(entity)!, entity)
+    }
+
+    return () => {
+      if (entityExists(grabberEntity)) setComponent(grabberEntity, GrabberComponent, { [attachmentPoint]: null })
+      if (!entityExists(entity)) return
+      if (hasComponent(entity, RigidBodyComponent)) {
+        setComponent(entity, RigidBodyComponent, { type: BodyTypes.Dynamic })
+        Physics.wakeUp(Physics.getWorld(entity)!, entity)
       }
+    }
+  }, [entity, grabberEntity, hasAuthority])
+
+  const needsToRequestAuthority =
+    entity !== UndefinedEntity &&
+    grabberEntity !== UndefinedEntity &&
+    (ownedByScene || grabbableAuthorityPeer !== grabberAuthorityPeer) &&
+    grabberAuthorityPeer === HyperFlux.store.peerID
+
+  useEffect(() => {
+    if (!needsToRequestAuthority) return
+    dispatchAction(
+      WorldNetworkAction.requestAuthorityOverObject({
+        entityUUID,
+        newAuthority: HyperFlux.store.peerID,
+        $to: ownedByScene ? HyperFlux.store.peerID : grabbableAuthorityPeer
+      })
     )
-  )
+  }, [needsToRequestAuthority])
+
+  return null
 }
