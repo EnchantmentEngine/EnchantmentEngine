@@ -1,15 +1,7 @@
 import { Not } from '@ir-engine/ecs'
 import { Vector3 } from 'three'
 
-import {
-  defineQuery,
-  defineSystem,
-  getComponent,
-  NetworkObjectAuthorityTag,
-  setComponent,
-  UUIDComponent
-} from '@ir-engine/ecs'
-import { getState } from '@ir-engine/hyperflux'
+import { defineQuery, defineSystem, getComponent, NetworkObjectAuthorityTag } from '@ir-engine/ecs'
 import {
   RigidBodyComponent,
   RigidBodyFixedTagComponent
@@ -19,7 +11,6 @@ import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 import { getAncestorWithComponents } from '@ir-engine/ecs'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
-import { SpawnPoseState } from '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { TransformDirtyUpdateSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
 import { updateReferenceSpaceFromAvatarMovement } from '../../avatar/functions/moveAvatar'
 import { SceneSettingsComponent } from '../components/SceneSettingsComponent'
@@ -51,23 +42,15 @@ const execute = () => {
 
     const rigidBodyPosition = getComponent(entity, RigidBodyComponent).position
     if (rigidBodyPosition.y < sceneHeight) {
-      const uuid = UUIDComponent.get(entity)
-      const spawnState = getState(SpawnPoseState)[uuid]
-
-      // reset entity to it's spawn position
-      setComponent(entity, TransformComponent, {
-        position: spawnState?.spawnPosition,
-        rotation: spawnState?.spawnRotation
-      })
+      // reset entity to it's spawn position by setting the transform dirty
       TransformComponent.dirty[entity] = 1
 
       if (!shouldViewerFollowController) continue
 
+      const position = getComponent(entity, TransformComponent).position
+
       //@TODO see if we can implicitly update the reference space when the avatar teleports
-      updateReferenceSpaceFromAvatarMovement(
-        entity,
-        tempVector.subVectors(spawnState?.spawnPosition, rigidBodyPosition)
-      )
+      updateReferenceSpaceFromAvatarMovement(entity, tempVector.subVectors(position, rigidBodyPosition))
     }
   }
 }

@@ -4,7 +4,6 @@ import { PerspectiveCamera } from 'three'
 import {
   AnimationSystemGroup,
   defineSystem,
-  EntityUUID,
   getComponent,
   getOptionalComponent,
   NetworkObjectOwnedTag,
@@ -12,58 +11,17 @@ import {
   QueryReactor,
   removeComponent,
   setComponent,
-  useEntityContext,
-  UUIDComponent,
-  WorldNetworkAction
+  useEntityContext
 } from '@ir-engine/ecs'
-import { defineState, getMutableState, getState, none, useMutableState } from '@ir-engine/hyperflux'
+import { getState, useMutableState } from '@ir-engine/hyperflux'
 
 import { ReferenceSpaceState } from '../../ReferenceSpaceState'
 import { ComputedTransformComponent } from '../../transform/components/ComputedTransformComponent'
 import { TransformComponent } from '../../transform/components/TransformComponent'
 import { CameraSettingsState } from '../CameraSettingsState'
-import { CameraActions } from '../CameraState'
 import { CameraComponent } from '../components/CameraComponent'
 import { FollowCameraComponent } from '../components/FollowCameraComponent'
 import { FollowCameraMode } from '../types/FollowCameraMode'
-
-export const CameraEntityState = defineState({
-  name: 'CameraEntityState',
-  initial: {} as Record<EntityUUID, true>,
-
-  receptors: {
-    onCameraSpawn: CameraActions.spawnCamera.receive((action) => {
-      getMutableState(CameraEntityState)[
-        UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
-      ].set(true)
-    }),
-    onEntityDestroy: WorldNetworkAction.destroyEntity.receive((action) => {
-      getMutableState(CameraEntityState)[action.entityUUID].set(none)
-    })
-  },
-
-  reactor: () => {
-    const state = useMutableState(CameraEntityState)
-    return (
-      <>
-        {state.keys.map((entityUUID: EntityUUID) => (
-          <CameraEntity key={entityUUID} entityUUID={entityUUID} />
-        ))}
-      </>
-    )
-  }
-})
-
-const CameraEntity = (props: { entityUUID: EntityUUID }) => {
-  const entity = UUIDComponent.useEntityByUUID(props.entityUUID)
-
-  useEffect(() => {
-    if (!entity) return
-    setComponent(entity, CameraComponent)
-  }, [entity])
-
-  return null
-}
 
 function CameraReactor() {
   const cameraSettings = useMutableState(CameraSettingsState)

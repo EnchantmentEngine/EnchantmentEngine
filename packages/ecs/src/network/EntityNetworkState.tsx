@@ -5,7 +5,6 @@ import {
   EntityID,
   EntityTreeComponent,
   EntityUUID,
-  EntityUUIDPair,
   getOptionalComponent,
   removeComponent,
   removeEntity,
@@ -56,8 +55,8 @@ export const EntityNetworkState = defineState({
   receptors: {
     onSpawnObject: WorldNetworkAction.spawnEntity
       .receive((action) => {
-        const uuid = { entityID: action.entityID, entitySourceID: action.entitySourceID } as EntityUUIDPair
-        getMutableState(EntityNetworkState)[UUIDComponent.join(uuid)].merge({
+        const entityUUID = UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
+        getMutableState(EntityNetworkState)[entityUUID].merge({
           parentUUID: action.parentUUID,
           ownerId: action.ownerID,
           authorityPeerId: action.authorityPeerId ?? action.$peer,

@@ -22,7 +22,7 @@ import { Entity } from '@ir-engine/ecs/src/Entity'
 import { QueryReactor } from '@ir-engine/ecs/src/QueryFunctions'
 import { defineSystem } from '@ir-engine/ecs/src/SystemFunctions'
 import { MediaSettingsState } from '@ir-engine/engine/src/audio/MediaSettingsState'
-import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { applyVideoToTexture } from '@ir-engine/engine/src/scene/functions/applyScreenshareToTexture'
 import {
   getState,
@@ -68,7 +68,7 @@ export const renderAvatarContextMenu = (userId: UserID, contextMenuEntity: Entit
   if (!userTransform) return
 
   const cameraPosition = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent).position
-  const { avatarHeight } = getComponent(userEntity, AvatarComponent)
+  const { avatarHeight } = getComponent(userEntity, AvatarProportionsComponent)
 
   const cameraTransform = getComponent(getState(ReferenceSpaceState).viewerEntity, TransformComponent)
 
@@ -145,7 +145,7 @@ const execute = () => {
   for (const [userEntity, videoMeshEntity] of AvatarUI.entries()) {
     if (!hasComponent(userEntity, AvatarComponent)) continue
     const transition = AvatarUITransitions.get(userEntity)!
-    const { avatarHeight } = getComponent(userEntity, AvatarComponent)
+    const { avatarHeight } = getComponent(userEntity, AvatarProportionsComponent)
 
     TransformComponent.getWorldPosition(userEntity, _vector3)
 

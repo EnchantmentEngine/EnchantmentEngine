@@ -15,7 +15,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { AvatarComponent, AvatarPrefab } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { getRandomSpawnPoint } from '@ir-engine/engine/src/avatar/functions/getSpawnPoint'
 import { spawnLocalAvatarInWorld } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
@@ -35,7 +35,6 @@ import { useFind, useMutation } from '@ir-engine/common'
 import { config } from '@ir-engine/common/src/config'
 import { avatarPath, userAvatarPath } from '@ir-engine/common/src/schema.type.module'
 import { EngineState, useChildrenWithComponents } from '@ir-engine/ecs'
-import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { CameraSettingsComponent } from '@ir-engine/engine/src/scene/components/CameraSettingsComponent'
 import { ErrorComponent } from '@ir-engine/engine/src/scene/components/ErrorComponent'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
@@ -135,18 +134,17 @@ export const AvatarSpawnReactor = (props: { sceneEntity: Entity }) => {
   }, [needsNewAvatar])
 
   useEffect(() => {
-    if (isSpectating || !userAvatar) return
+    if (isSpectating || !userAvatar || !selfAvatarEntity) return
     /**@todo force default avatars. Temporary solution for memory related crashing on iOS. */
     const avatarURL = iOS
       ? config.client.fileServer + '/projects/enchantmentengine/default-project/assets/avatars/irRobot.vrm'
       : userAvatar.avatar.modelResource!.url
-    dispatchAction(
-      AvatarNetworkAction.setAvatarURL({
-        avatarURL,
-        entityUUID: AvatarComponent.getSelfAvatarUUID()
-      })
-    )
-  }, [isSpectating, userAvatar])
+    AvatarPrefab.set(selfAvatarEntity, {
+      [AvatarComponent.jsonID]: {
+        avatarURL
+      }
+    })
+  }, [isSpectating, userAvatar, selfAvatarEntity])
 
   return null
 }

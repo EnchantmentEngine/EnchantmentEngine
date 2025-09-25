@@ -17,7 +17,7 @@ import {
   useComponent,
   useEntityContext
 } from '@ir-engine/ecs'
-import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { createUI } from '@ir-engine/engine/src/interaction/functions/createUI'
 import { getState, Schema } from '@ir-engine/hyperflux'
 import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
@@ -38,7 +38,7 @@ const _vec3 = new Vector3()
 function getSelfAvatarHeadPosition(selfAvatarEntity: Entity, vec3: Vector3): void {
   const selfAvatarRigidBodyComponent = getComponent(selfAvatarEntity, RigidBodyComponent)
   if (!selfAvatarRigidBodyComponent) return
-  const avatar = getComponent(selfAvatarEntity, AvatarComponent)
+  const avatar = getComponent(selfAvatarEntity, AvatarProportionsComponent)
   vec3.copy(selfAvatarRigidBodyComponent.position)
   vec3.y += avatar.avatarHeight
 }
@@ -87,7 +87,7 @@ const addNameplateUI = (entity: Entity, username: string) => {
   ).entity
 
   const uiTransform = getComponent(uiEntity, TransformComponent)
-  const avatar = getOptionalComponent(entity, AvatarComponent)
+  const avatar = getOptionalComponent(entity, AvatarProportionsComponent)
 
   uiTransform.position.set(0, avatar?.avatarHeight ?? xruiNamePlateParams.defaultNamePlateHeight, 0)
   setComponent(entity, XruiNameplateComponent, { uiEntity })
@@ -114,7 +114,7 @@ export const updateNameplateUI = (entity: Entity) => {
   )
     return
 
-  const avatarComponent = getOptionalComponent(entity, AvatarComponent)
+  const avatarComponent = getOptionalComponent(entity, AvatarProportionsComponent)
   const xrui = getOptionalComponent(xruiNameplateComponent.uiEntity, XRUIComponent)
 
   const xruiTransform = getOptionalComponent(xruiNameplateComponent.uiEntity, TransformComponent)

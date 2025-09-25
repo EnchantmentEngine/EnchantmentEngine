@@ -14,14 +14,7 @@ import {
   removeComponent,
   setComponent
 } from '@ir-engine/ecs'
-import {
-  HyperFlux,
-  UserID,
-  applyIncomingActions,
-  dispatchAction,
-  getMutableState,
-  getState
-} from '@ir-engine/hyperflux'
+import { HyperFlux, UserID, applyIncomingActions, getMutableState, getState } from '@ir-engine/hyperflux'
 import { TransformComponent } from '@ir-engine/spatial'
 import { CallbackComponent } from '@ir-engine/spatial/src/common/CallbackComponent'
 import { initializeSpatialEngine, initializeSpatialViewer } from '@ir-engine/spatial/src/initializeEngine'
@@ -32,7 +25,7 @@ import { BodyTypes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
 import { ObjectComponent } from '@ir-engine/spatial/src/renderer/components/ObjectComponent'
 import { SceneComponent } from '@ir-engine/spatial/src/renderer/components/SceneComponents'
-import { Quaternion, Vector3 } from 'three'
+import { Vector3 } from 'three'
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadEmptyScene } from '../../../tests/util/loadEmptyScene'
 import { emoteAnimations } from '../../avatar/animation/Util'
@@ -45,7 +38,8 @@ import { SittingComponent } from './SittingComponent'
 
 // ensure the avatar system is imported
 import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
-import '../../avatar/state/AvatarNetworkState'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { AvatarPrefab } from '../../avatar/components/AvatarComponent'
 
 describe('MountPointComponent.ts', async () => {
   let avatarTestEntity = UndefinedEntity
@@ -110,17 +104,14 @@ describe('MountPointComponent.ts', async () => {
         setComponent(mountPointTestEntity, MountPointComponent)
         setComponent(mountPointTestEntity, EntityTreeComponent)
 
-        dispatchAction(
-          AvatarNetworkAction.spawn({
-            parentUUID: UUIDComponent.get(sceneEntity),
-            position: new Vector3(),
-            rotation: new Quaternion(),
-            entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
-            entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
-            avatarURL: '',
-            name: 'avatar1'
-          })
-        )
+        AvatarPrefab.spawn({
+          parentUUID: UUIDComponent.get(sceneEntity),
+          entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
+          entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
+          components: {
+            [NameComponent.jsonID]: 'avatar1'
+          }
+        })
 
         applyIncomingActions()
 
@@ -201,17 +192,14 @@ describe('MountPointComponent.ts', async () => {
       setComponent(mountPointTestEntity, MountPointComponent)
       setComponent(mountPointTestEntity, EntityTreeComponent)
 
-      dispatchAction(
-        AvatarNetworkAction.spawn({
-          parentUUID: UUIDComponent.get(sceneEntity),
-          position: new Vector3(),
-          rotation: new Quaternion(),
-          entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
-          entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
-          avatarURL: '',
-          name: 'avatar1'
-        })
-      )
+      AvatarPrefab.spawn({
+        parentUUID: UUIDComponent.get(sceneEntity),
+        entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
+        entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
+        components: {
+          [NameComponent.jsonID]: 'avatar1'
+        }
+      })
 
       applyIncomingActions()
 
@@ -241,17 +229,14 @@ describe('MountPointComponent.ts', async () => {
         entitySourceID: 'some other avatar' as SourceID,
         entityID: 'avatar2' as EntityID
       })
-      dispatchAction(
-        AvatarNetworkAction.spawn({
-          parentUUID: UUIDComponent.get(sceneEntity),
-          position: new Vector3(),
-          rotation: new Quaternion(),
-          entityID: getComponent(avatarTestEntity2, UUIDComponent).entityID,
-          entitySourceID: getComponent(avatarTestEntity2, UUIDComponent).entitySourceID,
-          avatarURL: '',
-          name: 'avatar2'
-        })
-      )
+      AvatarPrefab.spawn({
+        parentUUID: UUIDComponent.get(sceneEntity),
+        entityID: getComponent(avatarTestEntity2, UUIDComponent).entityID,
+        entitySourceID: getComponent(avatarTestEntity2, UUIDComponent).entitySourceID,
+        components: {
+          [NameComponent.jsonID]: 'avatar2'
+        }
+      })
       applyIncomingActions()
       await flushAll()
       // Mount avatar test entity 2 first
@@ -360,17 +345,14 @@ describe('MountPointComponent.ts', async () => {
 
       setComponent(mountPointTestEntity, EntityTreeComponent, { parentEntity: sceneEntity })
 
-      dispatchAction(
-        AvatarNetworkAction.spawn({
-          parentUUID: UUIDComponent.get(sceneEntity),
-          position: new Vector3(),
-          rotation: new Quaternion(),
-          entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
-          entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
-          avatarURL: '',
-          name: 'avatar1'
-        })
-      )
+      AvatarPrefab.spawn({
+        parentUUID: UUIDComponent.get(sceneEntity),
+        entityID: getComponent(avatarTestEntity, UUIDComponent).entityID,
+        entitySourceID: getComponent(avatarTestEntity, UUIDComponent).entitySourceID,
+        components: {
+          [NameComponent.jsonID]: 'avatar1'
+        }
+      })
 
       applyIncomingActions()
 

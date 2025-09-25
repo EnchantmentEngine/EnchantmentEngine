@@ -1,6 +1,8 @@
 import { defineAction, defineState, Schema } from '@ir-engine/hyperflux'
-
-import { SpawnObjectActions } from '../transform/SpawnObjectActions'
+import { definePrefab } from '../common/definePrefab'
+import { NameComponent } from '../common/NameComponent'
+import { TransformComponent } from '../transform/components/TransformComponent'
+import { CameraComponent } from './components/CameraComponent'
 
 export const CameraSettings = defineState({
   name: 'xre.engine.CameraSettings',
@@ -10,17 +12,6 @@ export const CameraSettings = defineState({
 })
 
 export class CameraActions {
-  static spawnCamera = defineAction(
-    SpawnObjectActions.spawnObject.extend(
-      Schema.Object(
-        {},
-        {
-          $id: 'ee.engine.world.SPAWN_CAMERA'
-        }
-      )
-    )
-  )
-
   static fadeToBlack = defineAction(
     Schema.Object(
       {
@@ -32,3 +23,7 @@ export class CameraActions {
     )
   )
 }
+
+export const CameraPrefab = definePrefab({
+  components: [CameraComponent, TransformComponent, NameComponent]
+})

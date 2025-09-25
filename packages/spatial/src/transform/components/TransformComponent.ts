@@ -37,7 +37,7 @@ export const TransformComponent = defineComponent({
   schema: Schema.Object({
     position: T.Vec3(),
     rotation: T.Quaternion(),
-    scale: T.Vec3(),
+    scale: T.Vec3(undefined, { default: new Vector3(1, 1, 1) }),
     matrix: T.Mat4(undefined, { serialized: false }),
     matrixWorld: T.Mat4(undefined, { serialized: false })
   }),

@@ -32,7 +32,7 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { BoneComponent } from '@ir-engine/spatial/src/renderer/components/BoneComponent'
 import { MeshComponent } from '@ir-engine/spatial/src/renderer/components/MeshComponent'
 import { AvatarRigComponent } from '../avatar/components/AvatarAnimationComponent'
-import { AvatarComponent } from '../avatar/components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../avatar/components/AvatarComponent'
 import { VRMHumanBoneList } from '../avatar/maps/VRMHumanBoneList'
 import { VRMHumanBoneName } from '../avatar/maps/VRMHumanBoneName'
 import { LandmarkIndices } from './MocapConstants'
@@ -432,7 +432,7 @@ export const solveSpine = (
   trackingLowerBody: boolean
 ) => {
   const rig = getComponent(entity, AvatarRigComponent).bonesToEntities
-  const avatar = getComponent(entity, AvatarComponent)
+  const avatar = getComponent(entity, AvatarProportionsComponent)
 
   const rightHip = landmarks[LandmarkIndices.RIGHT_HIP]
   const leftHip = landmarks[LandmarkIndices.LEFT_HIP]

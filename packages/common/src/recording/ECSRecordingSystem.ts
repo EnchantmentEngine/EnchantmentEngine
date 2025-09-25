@@ -27,7 +27,6 @@ import {
   ECSSerializer,
   SerializedChunk
 } from '@ir-engine/ecs/src/network/ECSSerializerSystem'
-import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import {
   addDataChannelHandler,
   DataChannelRegistryState,
@@ -54,9 +53,10 @@ import {
 } from '@ir-engine/hyperflux'
 import { PhysicsSerialization } from '@ir-engine/spatial/src/physics/PhysicsSerialization'
 
-import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { AvatarComponent, AvatarPrefab } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { mocapDataChannelType } from '@ir-engine/engine/src/mocap/MotionCaptureSystem'
 import { ReferenceSpaceState } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 
 export class ECSRecordingActions {
   static startRecording = defineAction(
@@ -666,16 +666,18 @@ export const onStartPlayback = async (action: typeof ECSRecordingActions.startPl
                   }
                 })
                 .then((userAvatars) => {
-                  dispatchAction(
-                    AvatarNetworkAction.spawn({
-                      parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).originEntity),
-                      ownerID: entityID,
-                      avatarURL: userAvatars.data[0].avatar.modelResource!.url!,
-                      name: user.name + "'s Clone",
-                      entityID: AvatarComponent.entityID,
-                      entitySourceID: entityID
-                    })
-                  )
+                  AvatarPrefab.spawn({
+                    parentUUID: UUIDComponent.get(getState(ReferenceSpaceState).originEntity),
+                    ownerID: entityID,
+                    entityID: entityID as UserID & EntityUUID,
+                    entitySourceID: entityID as UserID & EntityUUID,
+                    components: {
+                      [AvatarComponent.jsonID]: {
+                        avatarURL: userAvatars.data[0].avatar.modelResource!.url!
+                      },
+                      [NameComponent.jsonID]: user.name + "'s Clone"
+                    }
+                  })
                   entitiesSpawned.push(entityID)
                 })
             }

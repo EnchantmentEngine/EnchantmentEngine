@@ -23,23 +23,28 @@ import {
   userPath
 } from '@ir-engine/common/src/schema.type.module'
 import { destroyEngine } from '@ir-engine/ecs/src/Engine'
-import { dispatchAction, getState, HyperFlux, NetworkState, PeerID } from '@ir-engine/hyperflux'
+import { getState, HyperFlux, NetworkState, PeerID } from '@ir-engine/hyperflux'
 import { Application } from '@ir-engine/server-core/declarations'
 
 import { toDateTimeSql } from '@ir-engine/common/src/utils/datetime-sql'
 import { EntityID, EntityUUID, getComponent, SourceID, UUIDComponent } from '@ir-engine/ecs'
-import { AvatarComponent } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { ikTargets } from '@ir-engine/engine/src/avatar/animation/Util'
+import { AvatarComponent, AvatarPrefab } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
+import { AvatarIKPrefab } from '@ir-engine/engine/src/avatar/components/AvatarIKComponents'
 import { AuthTask } from '@ir-engine/engine/src/avatar/functions/spawnLocalAvatarInWorld'
-import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import config from '@ir-engine/server-core/src/appconfig'
-import { CameraActions } from '@ir-engine/spatial/src/camera/CameraState'
+import { CameraPrefab } from '@ir-engine/spatial/src/camera/CameraState'
+import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { Spark } from 'primus'
 import { StartTestFileServer } from '../../server-core/src/createFileServer'
 import { onConnection } from '../src/channels'
 import { InstanceServerState } from '../src/InstanceServerState'
 import { setupSocketFunctions } from '../src/SocketFunctions'
 import { start } from '../src/start'
+
+import '@ir-engine/ecs/src/network/EntityNetworkState'
 
 const p2pEnabled = config['instance-server'].p2pEnabled
 
@@ -200,86 +205,44 @@ describe('InstanceLoad', () => {
     const avatarQuery = await app.service(avatarPath).find()
     const avatarURL = avatarQuery.data[0].modelResource!.url
 
-    dispatchAction(
-      AvatarNetworkAction.spawn({
+    AvatarPrefab.spawn({
+      entityID: AvatarComponent.entityID,
+      entitySourceID: userID as any as SourceID,
+      parentUUID,
+      components: {
+        [AvatarComponent.jsonID]: {
+          avatarURL: avatarURL
+        },
+        [NameComponent.jsonID]: user.name
+      },
+      ownerID: user.id,
+      $peer: peerID,
+      $user: user.id
+    })
+    CameraPrefab.spawn({
+      parentUUID,
+      entityID: CameraComponent.entityID,
+      entitySourceID: userID as any as SourceID,
+      components: {
+        [NameComponent.jsonID]: `${userID}'s Camera`
+      },
+      ownerID: user.id,
+      $peer: peerID,
+      $user: user.id
+    })
+    for (const targetName of Object.values(ikTargets)) {
+      AvatarIKPrefab.spawn({
+        entityID: targetName as EntityID,
+        entitySourceID: userID as any as SourceID,
         parentUUID,
-        avatarURL,
+        components: {
+          [NameComponent.jsonID]: `${userID}'s ${targetName}`
+        },
         ownerID: user.id,
-        entityID: AvatarComponent.entityID,
-        entitySourceID: userID as any as SourceID,
-        name: user.name,
         $peer: peerID,
         $user: user.id
       })
-    )
-    dispatchAction(
-      CameraActions.spawnCamera({
-        parentUUID,
-        entityID: 'camera' as EntityID,
-        entitySourceID: userID as any as SourceID,
-        ownerID: user.id,
-        $peer: peerID,
-        $user: user.id
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID,
-        entityID: 'head' as EntityID,
-        entitySourceID: userID as any as SourceID,
-        ownerID: user.id,
-        name: 'head',
-        blendWeight: 0,
-        $peer: peerID,
-        $user: user.id
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID,
-        entityID: 'leftHand' as EntityID,
-        entitySourceID: userID as any as SourceID,
-        ownerID: user.id,
-        name: 'leftHand',
-        blendWeight: 0,
-        $peer: peerID,
-        $user: user.id
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID,
-        entityID: 'rightHand' as EntityID,
-        entitySourceID: userID as any as SourceID,
-        ownerID: user.id,
-        name: 'rightHand',
-        blendWeight: 0,
-        $peer: peerID,
-        $user: user.id
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID,
-        entityID: 'leftFoot' as EntityID,
-        entitySourceID: userID as any as SourceID,
-        name: 'leftFoot',
-        blendWeight: 0,
-        $peer: peerID,
-        $user: user.id
-      })
-    )
-    dispatchAction(
-      AvatarNetworkAction.spawnIKTarget({
-        parentUUID,
-        entityID: 'rightFoot' as EntityID,
-        entitySourceID: userID as any as SourceID,
-        name: 'rightFoot',
-        blendWeight: 0,
-        $peer: peerID,
-        $user: user.id
-      })
-    )
+    }
 
     /** wait for avatar to spawn successfully */
     const avatarLoaded = await vi.waitUntil(

@@ -252,10 +252,11 @@ export const defineComponent = <
   SetJSON = ComponentJSON<DeepReadonly<ComponentType>>,
   ErrorTypes = never,
   ComponentExtras = Record<string, unknown>,
-  StorageType = object
+  StorageType = object,
+  TID extends string | undefined = string | undefined
 >(
-  def: ComponentPartial<Schema, InitializationType, ComponentType, JSON, SetJSON, ErrorTypes, StorageType> &
-    ComponentExtras
+  def: (ComponentPartial<Schema, InitializationType, ComponentType, JSON, SetJSON, ErrorTypes, StorageType> &
+    ComponentExtras) & { jsonID?: TID }
 ) => {
   const Component = {} as Component<
     Schema,
@@ -267,8 +268,7 @@ export const defineComponent = <
     StorageType
   > & {
     _TYPE: ComponentType
-  } & ComponentExtras &
-    StorageType & { setTransition: typeof setTransition }
+  } & ComponentExtras & { jsonID?: TID } & StorageType & { setTransition: typeof setTransition }
   Component.isComponent = true
 
   // move all branching out of hot path and into definition

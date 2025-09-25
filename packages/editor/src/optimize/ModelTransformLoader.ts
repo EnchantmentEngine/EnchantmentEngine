@@ -41,8 +41,8 @@ const ignoreComponents = [
   MaterialStateComponent.jsonID,
   EntityTreeComponent.jsonID,
   TransformComponent.jsonID
-]
-const coreComponents = [UUIDComponent.jsonID]
+] as string[]
+const coreComponents = [UUIDComponent.jsonID] as string[]
 
 export const createComponentExtension = (component: ComponentType<any>) => {
   const componentSchema = component.schema ? GenerateJSONSchema(component.schema) : ({} as JSONSchema)

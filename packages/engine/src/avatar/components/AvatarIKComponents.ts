@@ -1,28 +1,36 @@
+import { useEffect } from 'react'
 import { AxesHelper, Quaternion, Vector3 } from 'three'
 
-import { NetworkObjectComponent, useEntityContext, UUIDComponent } from '@ir-engine/ecs'
-import { defineComponent, getComponent, getOptionalComponent } from '@ir-engine/ecs/src/ComponentFunctions'
+import {
+  NetworkObjectComponent,
+  NetworkObjectSendPeriodicUpdatesTag,
+  useEntityContext,
+  UUIDComponent
+} from '@ir-engine/ecs'
+import {
+  defineComponent,
+  getComponent,
+  getOptionalComponent,
+  setComponent
+} from '@ir-engine/ecs/src/ComponentFunctions'
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
+import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { getMutableState, Schema, useHookstate } from '@ir-engine/hyperflux'
+import { definePrefab } from '@ir-engine/spatial'
+import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
+import { useHelperEntity } from '@ir-engine/spatial/src/helper/functions/useHelperEntity'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
+import { VisibleComponent } from '@ir-engine/spatial/src/renderer/components/VisibleComponent'
 import { ObjectLayerMasks } from '@ir-engine/spatial/src/renderer/constants/ObjectLayers'
+import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { TransformComponent } from '@ir-engine/spatial/src/transform/components/TransformComponent'
 
-import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
-import { useHelperEntity } from '@ir-engine/spatial/src/helper/functions/useHelperEntity'
-import { T } from '@ir-engine/spatial/src/schema/schemaFunctions'
 import { ikTargets } from '../animation/Util'
 import { AvatarRigComponent } from './AvatarAnimationComponent'
 
 export const AvatarHeadDecapComponent = defineComponent({
   name: 'AvatarHeadDecapComponent'
 })
-
-export type AvatarIKTargetsType = {
-  head: boolean
-  leftHand: boolean
-  rightHand: boolean
-}
 
 export const AvatarIKTargetComponent = defineComponent({
   name: 'AvatarIKTargetComponent',
@@ -99,4 +107,15 @@ export const IKMatrixComponent = defineComponent({
 
 export const AvatarIKComponent = defineComponent({
   name: 'AvatarIKComponent'
+})
+
+export const AvatarIKPrefab = definePrefab({
+  components: [AvatarIKTargetComponent, NameComponent],
+  reactor: ({ entity }) => {
+    useEffect(() => {
+      setComponent(entity, VisibleComponent)
+      setComponent(entity, NetworkObjectSendPeriodicUpdatesTag)
+    }, [])
+    return null
+  }
 })

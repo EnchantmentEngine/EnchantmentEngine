@@ -5,13 +5,11 @@ import {
   EngineState,
   Entity,
   EntityTreeComponent,
-  EntityUUID,
   getComponent,
   getOptionalComponent,
   NetworkObjectComponent,
   NetworkObjectSendPeriodicUpdatesTag,
-  setComponent,
-  UUIDComponent
+  setComponent
 } from '@ir-engine/ecs'
 import { InputComponent } from '@ir-engine/spatial/src/input/components/InputComponent'
 import { ColliderComponent } from '@ir-engine/spatial/src/physics/components/ColliderComponent'
@@ -36,14 +34,11 @@ import { ShadowComponent } from '../../scene/components/ShadowComponent'
 import { EnvMapSourceType } from '../../scene/constants/EnvMapEnum'
 import { AnimationComponent } from '../components/AnimationComponent'
 import { AvatarAnimationComponent, AvatarRigComponent } from '../components/AvatarAnimationComponent'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarColliderComponent, AvatarControllerComponent, eyeOffset } from '../components/AvatarControllerComponent'
 import { AvatarIKComponent } from '../components/AvatarIKComponents'
 
-export const spawnAvatarReceptor = (entityUUID: EntityUUID) => {
-  const entity = UUIDComponent.getEntityByUUID(entityUUID)
-  if (!entity) return
-
+export const spawnAvatarReceptor = (entity: Entity) => {
   const ownerID = getComponent(entity, NetworkObjectComponent).ownerId
   setComponent(entity, TransformComponent)
 
@@ -64,7 +59,7 @@ export const spawnAvatarReceptor = (entityUUID: EntityUUID) => {
     locomotion: new Vector3()
   })
 
-  setComponent(entity, AvatarComponent)
+  setComponent(entity, AvatarProportionsComponent)
   ObjectLayerMaskComponent.setLayer(entity, ObjectLayers.Avatar)
 
   createAvatarCollider(entity)
@@ -116,7 +111,7 @@ export const setAvatarColliderTransform = (entity: Entity) => {
     ? getComponent(getState(ReferenceSpaceState).viewerEntity, CameraComponent).near
     : 0.1
   const avatarRadius = eyeOffset + cameraNear
-  const avatarComponent = getComponent(entity, AvatarComponent)
+  const avatarComponent = getComponent(entity, AvatarProportionsComponent)
   const halfHeight = avatarComponent.avatarHeight * 0.5
 
   setComponent(colliderEntity, TransformComponent, {

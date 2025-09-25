@@ -18,8 +18,7 @@ import {
   setComponent
 } from '@ir-engine/ecs'
 import { createEngine } from '@ir-engine/ecs/src/Engine'
-import { AvatarNetworkAction } from '@ir-engine/engine/src/avatar/state/AvatarNetworkActions'
-import '@ir-engine/engine/src/avatar/state/AvatarNetworkState'
+import { AvatarComponent, AvatarPrefab } from '@ir-engine/engine/src/avatar/components/AvatarComponent'
 import { GLTFComponent } from '@ir-engine/engine/src/gltf/GLTFComponent'
 import { SceneState } from '@ir-engine/engine/src/gltf/GLTFState'
 import { SceneSettingsComponent } from '@ir-engine/engine/src/scene/components/SceneSettingsComponent'
@@ -183,24 +182,13 @@ describe('AvatarSpawnSystem', async () => {
 
     // should have spawn action
     const spawnAction = HyperFlux.store.actions.history.findLast((action) =>
-      AvatarNetworkAction.spawn.test(action)
-    ) as typeof AvatarNetworkAction.spawn._TYPE
+      AvatarPrefab.$Actions.spawn.test(action)
+    ) as typeof AvatarPrefab.$Actions.spawn._TYPE
     assert.ok(spawnAction)
-    assert.deepEqual(spawnAction.type, AvatarNetworkAction.spawn.type)
-    assert.ok(spawnAction.position)
-    assert.ok(spawnAction.rotation)
+    assert.deepEqual(spawnAction.type, AvatarPrefab.$Actions.spawn.type)
     assert.ok(spawnAction.parentUUID)
-    assert.equal(spawnAction.avatarURL, '/avatar.gltf')
-    assert.equal(spawnAction.entityID, 'avatar')
+    assert.equal(spawnAction.entityID, AvatarComponent.entityID)
     assert.equal(spawnAction.entitySourceID, userID as string)
-
-    const avatarURLAction = HyperFlux.store.actions.history.findLast((action) =>
-      AvatarNetworkAction.setAvatarURL.test(action)
-    ) as typeof AvatarNetworkAction.setAvatarURL._TYPE
-    assert.ok(avatarURLAction)
-    assert.deepEqual(avatarURLAction.type, AvatarNetworkAction.setAvatarURL.type)
-    assert.equal(avatarURLAction.avatarURL, '/avatar.gltf')
-    assert.equal(avatarURLAction.entityUUID, userID + 'avatar')
   })
 
   it('should enter spectate mode with freecam when empty spectate is in search state', async () => {

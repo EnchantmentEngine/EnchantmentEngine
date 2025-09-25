@@ -2,12 +2,13 @@ import React, { useEffect } from 'react'
 
 import {
   entityExists,
-  EntityNetworkState,
   EntityUUID,
   hasComponent,
+  NetworkObjectComponent,
   removeComponent,
   setComponent,
   UndefinedEntity,
+  useComponent,
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
@@ -25,7 +26,6 @@ import { RigidBodyComponent } from '@ir-engine/spatial/src/physics/components/Ri
 import { BodyTypes } from '@ir-engine/spatial/src/physics/types/PhysicsTypes'
 
 import { Physics } from '@ir-engine/spatial/src/physics/classes/Physics'
-import '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { GrabbableNetworkAction, GrabbedComponent, GrabberComponent } from './GrabbableComponent'
 
 export const GrabbableState = defineState({
@@ -75,11 +75,12 @@ const GrabbableReactor = ({ entityUUID }: { entityUUID: EntityUUID }) => {
 
   const attachmentPoint = state.attachmentPoint.value
 
-  const entityNetworkState = useMutableState(EntityNetworkState).value
+  const networkComponent = useComponent(entity, NetworkObjectComponent)
+  const grabberNetworkComponent = useComponent(grabberEntity, NetworkObjectComponent)
 
-  const ownedByScene = entityNetworkState[entityUUID]?.ownerId === SceneUser
-  const grabbableAuthorityPeer = entityNetworkState[entityUUID]?.authorityPeerId
-  const grabberAuthorityPeer = entityNetworkState[state.grabberEntityUUID.value]?.authorityPeerId
+  const ownedByScene = networkComponent.ownerId === SceneUser
+  const grabbableAuthorityPeer = networkComponent.authorityPeerID
+  const grabberAuthorityPeer = grabberNetworkComponent.authorityPeerID
 
   const hasAuthority = grabbableAuthorityPeer === grabberAuthorityPeer
 

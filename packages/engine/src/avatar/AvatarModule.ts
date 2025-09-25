@@ -1,5 +1,4 @@
 import { AnimationNetworkState } from './state/AvatarAnimationState'
-import { AvatarIKTargetState } from './state/AvatarIKTargetState'
 import { AnimationSystem } from './systems/AnimationSystem'
 import { AvatarAnimationState, AvatarAnimationSystem } from './systems/AvatarAnimationSystem'
 import { AvatarAutopilotSystem } from './systems/AvatarAutopilotSystem'
@@ -20,7 +19,6 @@ export default {
   AvatarIKSystem,
   AvatarAutopilotSystem,
   AvatarControllerSystem,
-  AvatarIKTargetState,
   AvatarInputSystem,
   AvatarLoadingSystem,
   AvatarMovementSystem,

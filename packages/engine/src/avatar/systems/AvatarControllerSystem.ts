@@ -14,7 +14,7 @@ import {
   UUIDComponent,
   WorldNetworkAction
 } from '@ir-engine/ecs'
-import { dispatchAction, getState, HyperFlux, NetworkState, useMutableState } from '@ir-engine/hyperflux'
+import { dispatchAction, getState, HyperFlux, NetworkState } from '@ir-engine/hyperflux'
 import { FollowCameraComponent } from '@ir-engine/spatial/src/camera/components/FollowCameraComponent'
 import { DistanceFromLocalClientComponent } from '@ir-engine/spatial/src/transform/components/DistanceComponents'
 import { getDistanceSquaredFromTarget, TransformSystem } from '@ir-engine/spatial/src/transform/systems/TransformSystem'
@@ -23,7 +23,6 @@ import { TransformComponent } from '@ir-engine/spatial/src/transform/components/
 import { AvatarComponent } from '../components/AvatarComponent'
 import { AvatarControllerComponent } from '../components/AvatarControllerComponent'
 import { AvatarHeadDecapComponent } from '../components/AvatarIKComponents'
-import { AvatarState } from '../state/AvatarNetworkState'
 import { AvatarInputSystem } from './AvatarInputSystem'
 
 const controllerQuery = defineQuery([AvatarControllerComponent, NetworkObjectOwnedTag])
@@ -64,12 +63,7 @@ const execute = () => {
 export const AvatarControllerSystem = defineSystem({
   uuid: 'ee.engine.AvatarControllerSystem',
   insert: { after: AvatarInputSystem },
-  execute,
-  reactor: () => {
-    // we actually have no reference to AvatarState anywhere, so we need to call it to ensure it exists
-    useMutableState(AvatarState)
-    return null
-  }
+  execute
 })
 
 const distanceFromLocalClientQuery = defineQuery([TransformComponent, DistanceFromLocalClientComponent])

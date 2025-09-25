@@ -20,10 +20,9 @@ import { computeAndUpdateWorldOrigin, updateWorldOrigin } from '@ir-engine/spati
 import { XRState } from '@ir-engine/spatial/src/xr/XRState'
 
 import { ReferenceSpaceState } from '@ir-engine/spatial'
-import { SpawnPoseState } from '@ir-engine/spatial/src/transform/SpawnPoseState'
 import { GrabbedComponent } from '../../grabbable/GrabbableComponent'
 import { preloadedAnimations } from '../animation/Util'
-import { AvatarComponent } from '../components/AvatarComponent'
+import { AvatarComponent, AvatarProportionsComponent } from '../components/AvatarComponent'
 import { AvatarColliderComponent, AvatarControllerComponent } from '../components/AvatarControllerComponent'
 import { AvatarHeadDecapComponent } from '../components/AvatarIKComponents'
 import { AvatarMovementSettingsState } from '../state/AvatarMovementSettingsState'
@@ -65,7 +64,7 @@ export function moveAvatar(entity: Entity, additionalMovement?: Vector3) {
   const xrState = getState(XRState)
   const rigidbody = getComponent(entity, RigidBodyComponent)
   const controller = getComponent(entity, AvatarControllerComponent)
-  const eyeHeight = getComponent(entity, AvatarComponent).eyeHeight
+  const eyeHeight = getComponent(entity, AvatarProportionsComponent).eyeHeight
   const originTransform = getComponent(getState(ReferenceSpaceState).localFloorEntity, TransformComponent)
   desiredMovement.copy(Vector3_Zero)
 
@@ -495,7 +494,7 @@ const _slerpBodyTowardsVelocity = (entity: Entity, alpha: number) => {
 
   let prevVector = prevVectors.get(entity)!
   if (!prevVector) {
-    prevVector = new Vector3(0, 0, 1).applyQuaternion(getState(SpawnPoseState)[UUIDComponent.get(entity)].spawnRotation)
+    prevVector = new Vector3(0, 0, 1).applyQuaternion(getComponent(entity, TransformComponent).rotation)
     prevVectors.set(entity, prevVector)
   }
 
