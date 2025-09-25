@@ -106,7 +106,9 @@ export function definePrefab<T extends readonly Component[]>(definition: {
       Schema.Object(
         {
           entityUUID: Schema.String(),
-          components: Object.fromEntries(filteredComponents.map((c) => [c.jsonID, Schema.Optional(c.schema)]))
+          components: Object.fromEntries(
+            filteredComponents.map((c) => [c.jsonID, Schema.Optional(c.schema ?? Schema.Literal(true))])
+          )
         },
         { $id: 'ee.engine.prefab_' + uniqueKey + '_SET' }
       )
