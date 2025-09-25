@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { AxesHelper, Quaternion, Vector3 } from 'three'
 
 import {
+  definePrefab,
   NetworkObjectComponent,
   NetworkObjectSendPeriodicUpdatesTag,
   useEntityContext,
@@ -16,7 +17,6 @@ import {
 import { Entity, EntityID, SourceID } from '@ir-engine/ecs/src/Entity'
 import { createResizableTypeArray } from '@ir-engine/ecs/src/bitecsLegacy'
 import { getMutableState, Schema, useHookstate } from '@ir-engine/hyperflux'
-import { definePrefab } from '@ir-engine/spatial'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'
 import { useHelperEntity } from '@ir-engine/spatial/src/helper/functions/useHelperEntity'
 import { RendererState } from '@ir-engine/spatial/src/renderer/RendererState'
