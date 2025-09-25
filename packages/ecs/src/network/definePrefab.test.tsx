@@ -98,6 +98,38 @@ describe('definePrefab', () => {
     expect(testComponent.num).toBe(0.5)
   })
 
+  it('should spawn an entity with a tag component', () => {
+    const TagComponent = defineComponent({
+      name: 'TagComponent',
+      jsonID: 'TAG_component'
+    })
+
+    const TagPrefab = definePrefab({
+      components: [TagComponent]
+    })
+
+    const parentUUID = UUIDComponent.get(rootEntity)
+
+    TagPrefab.spawn({
+      entityID: 'entity-id-1' as EntityID,
+      entitySourceID: 'source-id-1' as SourceID,
+      parentUUID,
+      components: {
+        [TagComponent.jsonID]: true
+      }
+    })
+
+    applyIncomingActions()
+
+    const entity = UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entityID: 'entity-id-1' as EntityID, entitySourceID: 'source-id-1' as SourceID })
+    )
+
+    // Check that the TagComponent was added to the entity
+    const tagComponent = getComponent(entity, TagComponent)
+    expect(tagComponent).toBeDefined()
+  })
+
   it('should update component values when set is called', () => {
     const parentUUID = UUIDComponent.get(rootEntity)
 
