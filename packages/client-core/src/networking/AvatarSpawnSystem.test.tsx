@@ -12,7 +12,9 @@ import {
   Entity,
   EntityID,
   EntityTreeComponent,
+  SourceID,
   SystemDefinitions,
+  UUIDComponent,
   createEntity,
   destroyEngine,
   setComponent
@@ -182,13 +184,15 @@ describe('AvatarSpawnSystem', async () => {
 
     // should have spawn action
     const spawnAction = HyperFlux.store.actions.history.findLast((action) =>
-      AvatarPrefab.$Actions.spawn.test(action)
-    ) as typeof AvatarPrefab.$Actions.spawn._TYPE
+      AvatarPrefab.$Actions.set.test(action)
+    ) as typeof AvatarPrefab.$Actions.set._TYPE
     assert.ok(spawnAction)
-    assert.deepEqual(spawnAction.type, AvatarPrefab.$Actions.spawn.type)
-    assert.ok(spawnAction.parentUUID)
-    assert.equal(spawnAction.entityID, AvatarComponent.entityID)
-    assert.equal(spawnAction.entitySourceID, userID as string)
+    assert.deepEqual(spawnAction.type, AvatarPrefab.$Actions.set.type)
+    assert.ok(spawnAction.entityUUID)
+    assert.equal(
+      spawnAction.entityUUID,
+      UUIDComponent.join({ entityID: AvatarComponent.entityID, entitySourceID: userID as string as SourceID })
+    )
   })
 
   it('should enter spectate mode with freecam when empty spectate is in search state', async () => {
