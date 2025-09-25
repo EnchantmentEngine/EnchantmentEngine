@@ -12,15 +12,29 @@ import {
   getOptionalComponent,
   setComponent,
   SourceID,
+  SystemDefinitions,
   UndefinedEntity,
-  UUIDComponent
+  UUIDComponent,
+  WorldNetworkAction
 } from '@ir-engine/ecs'
-import { applyIncomingActions, getMutableState, HyperFlux, Schema, UserID } from '@ir-engine/hyperflux'
+import {
+  applyIncomingActions,
+  dispatchAction,
+  getMutableState,
+  getState,
+  HyperFlux,
+  ScenePeer,
+  SceneUser,
+  Schema,
+  startReactor,
+  UserID
+} from '@ir-engine/hyperflux'
 
 import { NetworkTopics } from '@ir-engine/hyperflux'
 import { createMockNetwork } from '@ir-engine/hyperflux/tests/createMockNetwork'
 import { definePrefab } from './definePrefab'
 
+import { flushAll } from '@ir-engine/hyperflux/tests/utils/flushAll'
 import { act, render } from '@testing-library/react'
 
 const TestComponent = defineComponent({
@@ -34,13 +48,6 @@ const TestComponent = defineComponent({
 const MyPrefab = definePrefab({
   components: [TestComponent]
 })
-
-/**
- * Specification:
- * 1. should spawn an entity with the defined components and default values
- * 2. should update component values when set is called
- * 3. should remove the entity and its components when remove is called
- */
 
 describe('definePrefab', () => {
   let rootEntity: Entity
@@ -64,9 +71,6 @@ describe('definePrefab', () => {
     return destroyEngine()
   })
 
-  /**
-   * Specification 1: definePrefab should create a component with the specified name, jsonID, and schema
-   */
   it('should spawn an entity with the defined components and default values', async () => {
     const parentUUID = UUIDComponent.get(rootEntity)
 
@@ -94,9 +98,38 @@ describe('definePrefab', () => {
     expect(testComponent.num).toBe(0.5)
   })
 
-  /**
-   * Specification 2: definePrefab should update component values when set is called
-   */
+  it('should spawn an entity with a tag component', () => {
+    const TagComponent = defineComponent({
+      name: 'TagComponent',
+      jsonID: 'TAG_component'
+    })
+
+    const TagPrefab = definePrefab({
+      components: [TagComponent]
+    })
+
+    const parentUUID = UUIDComponent.get(rootEntity)
+
+    TagPrefab.spawn({
+      entityID: 'entity-id-1' as EntityID,
+      entitySourceID: 'source-id-1' as SourceID,
+      parentUUID,
+      components: {
+        [TagComponent.jsonID]: true
+      }
+    })
+
+    applyIncomingActions()
+
+    const entity = UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entityID: 'entity-id-1' as EntityID, entitySourceID: 'source-id-1' as SourceID })
+    )
+
+    // Check that the TagComponent was added to the entity
+    const tagComponent = getComponent(entity, TagComponent)
+    expect(tagComponent).toBeDefined()
+  })
+
   it('should update component values when set is called', () => {
     const parentUUID = UUIDComponent.get(rootEntity)
 
@@ -131,9 +164,6 @@ describe('definePrefab', () => {
     expect(testComponent.num).toBe(42)
   })
 
-  /**
-   * Specification 3: definePrefab should remove the entity and its components when remove is called
-   */
   it('should remove the entity and its components when remove is called', () => {
     const parentUUID = UUIDComponent.get(rootEntity)
 
@@ -167,9 +197,6 @@ describe('definePrefab', () => {
     expect(getOptionalComponent(entity, TestComponent)).toBeUndefined()
   })
 
-  /**
-   * Should enforce types of components
-   */
   it('should enforce types of components', () => {
     const parentUUID = UUIDComponent.get(rootEntity)
 
@@ -198,5 +225,42 @@ describe('definePrefab', () => {
     // Check that the TestComponent was added to the entity with default value
     const testComponent = getComponent(entity, TestComponent)
     expect(testComponent.num).toBe(0) // should fall back to default value due to type error
+  })
+
+  it('should automatically populate state when spawned from a scene', async () => {
+    const parentUUID = UUIDComponent.get(rootEntity)
+    const entity = createEntity()
+    setComponent(entity, UUIDComponent, {
+      entityID: 'entity-id-5' as EntityID,
+      entitySourceID: 'source-id-5' as SourceID
+    })
+    setComponent(entity, TestComponent, { num: 99 })
+
+    dispatchAction(
+      WorldNetworkAction.spawnEntity({
+        ownerID: SceneUser,
+        entityID: 'entity-id-5' as EntityID,
+        entitySourceID: 'source-id-5' as SourceID,
+        parentUUID,
+        $network: undefined,
+        $topic: undefined,
+        $user: SceneUser,
+        $peer: ScenePeer
+      })
+    )
+
+    const entityUUID = UUIDComponent.get(entity)
+
+    startReactor(SystemDefinitions.get(MyPrefab.$System)!.reactor!)
+
+    await flushAll()
+    applyIncomingActions()
+    await flushAll()
+    applyIncomingActions()
+
+    const state = getState(MyPrefab.$State)[entityUUID]
+    expect(state).toBeDefined()
+    expect(state[TestComponent.jsonID]).toBeDefined()
+    expect(state[TestComponent.jsonID]!.num).toBe(99)
   })
 })

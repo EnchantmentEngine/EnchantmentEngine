@@ -1,7 +1,6 @@
 import './threejsPatches'
 
 export * from './camera/CameraModule'
-export { definePrefab } from './common/definePrefab'
 export * from './input/InputModule'
 export * from './physics/PhysicsModule'
 export * from './ReferenceSpaceState'

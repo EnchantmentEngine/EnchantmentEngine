@@ -1,4 +1,12 @@
-import { EngineState, EntityID, NetworkObjectComponent, SourceID, UndefinedEntity, UUIDComponent } from '@ir-engine/ecs'
+import {
+  definePrefab,
+  EngineState,
+  EntityID,
+  NetworkObjectComponent,
+  SourceID,
+  UndefinedEntity,
+  UUIDComponent
+} from '@ir-engine/ecs'
 import {
   defineComponent,
   entityExists,
@@ -11,7 +19,7 @@ import {
 } from '@ir-engine/ecs/src/ComponentFunctions'
 import { defineQuery } from '@ir-engine/ecs/src/QueryFunctions'
 import { getState, Schema, useMutableState, UserID } from '@ir-engine/hyperflux'
-import { definePrefab, ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
+import { ReferenceSpaceState, TransformComponent } from '@ir-engine/spatial'
 import { CameraSettingsState } from '@ir-engine/spatial/src/camera/CameraSettingsState'
 import { CameraComponent } from '@ir-engine/spatial/src/camera/components/CameraComponent'
 import { NameComponent } from '@ir-engine/spatial/src/common/NameComponent'

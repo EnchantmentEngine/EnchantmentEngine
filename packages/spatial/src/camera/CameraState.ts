@@ -1,5 +1,5 @@
+import { definePrefab } from '@ir-engine/ecs'
 import { defineAction, defineState, Schema } from '@ir-engine/hyperflux'
-import { definePrefab } from '../common/definePrefab'
 import { NameComponent } from '../common/NameComponent'
 import { TransformComponent } from '../transform/components/TransformComponent'
 import { CameraComponent } from './components/CameraComponent'

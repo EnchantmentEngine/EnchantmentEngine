@@ -1,43 +1,37 @@
 import React, { useEffect } from 'react'
 
 import {
-  Component,
-  defineSystem,
-  deserializeComponent,
-  Entity,
-  EntityArrayBoundary,
-  entityExists,
-  EntityID,
-  EntityTreeComponent,
-  EntityUUID,
-  getComponent,
-  PresentationSystemGroup,
-  QueryReactor,
-  serializeComponent,
-  SetComponentType,
-  SourceID,
-  useQueryBySource,
-  UUIDComponent,
-  WorldNetworkAction
-} from '@ir-engine/ecs'
-import {
   ActionOptions,
   defineAction,
   defineState,
   dispatchAction,
   getMutableState,
   getState,
-  NetworkTopics,
   NO_PROXY,
   none,
   PeerID,
   ScenePeer,
   SceneUser,
   Schema,
+  useHookstate,
   useMutableState,
   UserID
 } from '@ir-engine/hyperflux'
-import { SceneComponent } from '../renderer/components/SceneComponents'
+import {
+  Component,
+  deserializeComponent,
+  entityExists,
+  getComponent,
+  serializeComponent,
+  SetComponentType
+} from '../ComponentFunctions'
+import { Entity, EntityID, EntityUUID, SourceID } from '../Entity'
+import { QueryReactor } from '../QueryFunctions'
+import { defineSystem } from '../SystemFunctions'
+import { PresentationSystemGroup } from '../SystemGroups'
+import { UUIDComponent } from '../UUIDComponent'
+import { EntityNetworkState } from './EntityNetworkState'
+import { WorldNetworkAction } from './WorldNetworkAction'
 
 export const PrefabRegistry: Record<string, unknown> = {}
 
@@ -94,6 +88,9 @@ export function definePrefab<T extends readonly Component[]>(definition: {
         : never
       : never
   }
+  type ResolvedPrefabComponents = {
+    [K in keyof ByIDMap]?: ByIDMap[K] extends Component ? SetComponentType<ByIDMap[K]> : never
+  }
 
   const componentsArray = [...(definition.components as readonly Component[])] as Component[]
   const filteredComponents = componentsArray.filter((c) => c.jsonID) as Component[]
@@ -105,26 +102,12 @@ export function definePrefab<T extends readonly Component[]>(definition: {
   if (PrefabRegistry[uniqueKey]) throw new Error(`Prefab with components [${uniqueKey}] already defined`)
 
   const $Actions = {
-    spawn: defineAction(
-      WorldNetworkAction.spawnEntity.extend(
-        Schema.Object(
-          {
-            components: Object.fromEntries(
-              filteredComponents.map((c) => [c.jsonID, Schema.Optional(Schema.Any()) /** @todo proper guard */])
-            )
-          },
-          {
-            $id: 'ee.engine.prefab_' + uniqueKey + '_SPAWN'
-          }
-        )
-      )
-    ),
     set: defineAction(
       Schema.Object(
         {
           entityUUID: Schema.String(),
           components: Object.fromEntries(
-            filteredComponents.map((c) => [c.jsonID, Schema.Optional(Schema.Any()) /** @todo proper guard */])
+            filteredComponents.map((c) => [c.jsonID, Schema.Optional(c.schema ?? Schema.Literal(true))])
           )
         },
         { $id: 'ee.engine.prefab_' + uniqueKey + '_SET' }
@@ -135,23 +118,16 @@ export function definePrefab<T extends readonly Component[]>(definition: {
   const $State = defineState({
     name: 'ee.engine.prefab_' + uniqueKey,
 
-    initial: {} as Record<EntityUUID, PrefabComponentsRecord>,
+    initial: {} as Record<EntityUUID, ResolvedPrefabComponents>,
 
     receptors: {
-      onSpawn: $Actions.spawn.receive((action) => {
-        const entityUUID = UUIDComponent.join({ entityID: action.entityID, entitySourceID: action.entitySourceID })
+      onSet: $Actions.set.receive((action) => {
+        const entityUUID = action.entityUUID
         if (!getState($State)[entityUUID]) getMutableState($State)[entityUUID].set({})
         const state = getMutableState($State)[entityUUID]
         for (const comp of filteredComponents) {
           if (!(comp.jsonID! in action.components)) continue
           if (!state[comp.jsonID!]) state[comp.jsonID!].set({})
-          state[comp.jsonID!].merge(action.components[comp.jsonID!])
-        }
-      }),
-      onSet: $Actions.set.receive((action) => {
-        const state = getMutableState($State)[action.entityUUID]
-        for (const comp of filteredComponents) {
-          if (!(comp.jsonID! in action.components)) continue
           state[comp.jsonID!].merge(action.components[comp.jsonID!])
         }
       }),
@@ -224,15 +200,19 @@ export function definePrefab<T extends readonly Component[]>(definition: {
   ) => {
     const { entityID, entitySourceID, parentUUID, ownerID, authorityPeerID, components, ...other } = args
     dispatchAction(
-      $Actions.spawn({
+      WorldNetworkAction.spawnEntity({
         ...other,
-        components,
-        ownerID,
-        authorityPeerId: authorityPeerID,
         entityID,
         entitySourceID,
         parentUUID,
-        $topic: NetworkTopics.world
+        ownerID,
+        authorityPeerId: authorityPeerID
+      })
+    )
+    dispatchAction(
+      $Actions.set({
+        entityUUID: UUIDComponent.join({ entityID, entitySourceID }),
+        components
       })
     )
   }
@@ -258,21 +238,22 @@ export function definePrefab<T extends readonly Component[]>(definition: {
   }
 
   /** Use a system reactor to detect prefabs from the scene that need to be networked based on queries matching the components */
-  defineSystem({
+  const InternalQuerySystem = defineSystem({
     uuid: 'ee.engine.prefab_' + uniqueKey + '_system',
     insert: { after: PresentationSystemGroup },
-    reactor: () => <QueryReactor Components={[SceneComponent]} ChildEntityReactor={SceneReactor} />
+    reactor: () => <QueryReactor Components={filteredComponents} ChildEntityReactor={SceneNetworkReactor} />
   })
 
-  const SceneReactor = (props: { entity: Entity }) => {
-    const { entity } = props
+  const SceneNetworkReactor = (props: { entity: Entity }) => {
+    const entityUUID = UUIDComponent.use(props.entity)
+    const entityNetworkState = useHookstate(getMutableState(EntityNetworkState)[entityUUID]).value
 
-    const sourcedEntities = useQueryBySource(entity, componentsArray)
+    if (!entityNetworkState) return null
 
-    return <EntityArrayBoundary entities={sourcedEntities} ChildEntityReactor={SpawnFromSceneReactor} />
+    return <SpawnedFromSceneReactor entity={props.entity} />
   }
 
-  const SpawnFromSceneReactor = (props: { entity: Entity }) => {
+  const SpawnedFromSceneReactor = (props: { entity: Entity }) => {
     const { entity } = props
 
     useEffect(() => {
@@ -285,35 +266,23 @@ export function definePrefab<T extends readonly Component[]>(definition: {
         const compData = serializeComponent(entity, comp)
         componentsData[comp.jsonID!] = compData ?? true
       }
-      const parentEntity = getComponent(entity, EntityTreeComponent).parentEntity
-      const parentUUID = UUIDComponent.get(parentEntity)
 
-      spawn({
-        entityID: entityUUIDPair.entityID,
-        entitySourceID: entityUUIDPair.entitySourceID,
-        parentUUID,
-        components: componentsData,
-        $network: undefined,
-        $topic: undefined,
-        $user: SceneUser,
-        $peer: ScenePeer
-      })
-
-      return () => {
-        if (getState($State)[entityUUID]) {
-          dispatchAction(
-            WorldNetworkAction.destroyEntity({
-              entityUUID
-            })
-          )
-        }
-      }
+      dispatchAction(
+        $Actions.set({
+          entityUUID: UUIDComponent.get(entity),
+          components: componentsData,
+          $network: undefined,
+          $topic: undefined,
+          $user: SceneUser,
+          $peer: ScenePeer
+        })
+      )
     }, [])
 
     return null
   }
 
-  const API = { spawn, set, remove, $State, $Actions }
+  const API = { spawn, set, remove, $State, $Actions, $System: InternalQuerySystem }
 
   PrefabRegistry[uniqueKey] = API
 
