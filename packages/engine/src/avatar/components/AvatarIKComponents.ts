@@ -34,6 +34,9 @@ export const AvatarHeadDecapComponent = defineComponent({
 
 export const AvatarIKTargetComponent = defineComponent({
   name: 'AvatarIKTargetComponent',
+
+  jsonID: 'EE_ik_target',
+
   storage: { blendWeight: createResizableTypeArray(Float64Array) },
 
   reactor: function () {

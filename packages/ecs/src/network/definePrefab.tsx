@@ -93,9 +93,12 @@ export function definePrefab<T extends readonly Component[]>(definition: {
   }
 
   const componentsArray = [...(definition.components as readonly Component[])] as Component[]
-  const filteredComponents = componentsArray.filter((c) => c.jsonID) as Component[]
 
-  const uniqueKey = filteredComponents
+  for (const comp of componentsArray) {
+    if (!comp.jsonID) throw new Error(`Component ${comp.name} is missing a jsonID and cannot be used in a prefab`)
+  }
+
+  const uniqueKey = componentsArray
     .map((c) => c.jsonID)
     .sort()
     .join('|')
@@ -107,7 +110,7 @@ export function definePrefab<T extends readonly Component[]>(definition: {
         {
           entityUUID: Schema.String(),
           components: Object.fromEntries(
-            filteredComponents.map((c) => [c.jsonID, Schema.Optional(c.schema ?? Schema.Literal(true))])
+            componentsArray.map((c) => [c.jsonID, Schema.Optional(c.schema ?? Schema.Literal(true))])
           )
         },
         { $id: 'ee.engine.prefab_' + uniqueKey + '_SET' }
@@ -125,7 +128,7 @@ export function definePrefab<T extends readonly Component[]>(definition: {
         const entityUUID = action.entityUUID
         if (!getState($State)[entityUUID]) getMutableState($State)[entityUUID].set({})
         const state = getMutableState($State)[entityUUID]
-        for (const comp of filteredComponents) {
+        for (const comp of componentsArray) {
           if (!(comp.jsonID! in action.components)) continue
           if (!state[comp.jsonID!]) state[comp.jsonID!].set({})
           state[comp.jsonID!].merge(action.components[comp.jsonID!])
@@ -171,7 +174,7 @@ export function definePrefab<T extends readonly Component[]>(definition: {
     }, [])
 
     const state = useMutableState($State)[props.entityUUID].get(NO_PROXY)
-    filteredComponents.forEach((c) => {
+    componentsArray.forEach((c) => {
       useEffect(() => {
         deserializeComponent(entity, c, state[c.jsonID!])
       }, [entity, c, state[c.jsonID!]])
@@ -241,7 +244,7 @@ export function definePrefab<T extends readonly Component[]>(definition: {
   const InternalQuerySystem = defineSystem({
     uuid: 'ee.engine.prefab_' + uniqueKey + '_system',
     insert: { after: PresentationSystemGroup },
-    reactor: () => <QueryReactor Components={filteredComponents} ChildEntityReactor={SceneNetworkReactor} />
+    reactor: () => <QueryReactor Components={componentsArray} ChildEntityReactor={SceneNetworkReactor} />
   })
 
   const SceneNetworkReactor = (props: { entity: Entity }) => {
@@ -262,7 +265,7 @@ export function definePrefab<T extends readonly Component[]>(definition: {
       const entityUUID = UUIDComponent.join(entityUUIDPair)
       if (state[entityUUID]) return // already spawned
       const componentsData: ValidateComponents<PrefabComponentsRecord> = {} as any
-      for (const comp of filteredComponents) {
+      for (const comp of componentsArray) {
         const compData = serializeComponent(entity, comp)
         componentsData[comp.jsonID!] = compData ?? true
       }
