@@ -32,7 +32,7 @@ const assignScale = (entity: Entity): Vector3 =>
 export const TransformComponent = defineComponent({
   name: 'TransformComponent',
 
-  jsonID: 'IR_transform' as const,
+  jsonID: 'IR_transform',
 
   schema: Schema.Object({
     position: T.Vec3(),

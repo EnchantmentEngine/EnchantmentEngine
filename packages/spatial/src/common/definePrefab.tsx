@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react'
 
 import {
-  ComponentType,
-  defineComponent,
+  Component,
   defineSystem,
   deserializeComponent,
   Entity,
@@ -15,6 +14,7 @@ import {
   PresentationSystemGroup,
   QueryReactor,
   serializeComponent,
+  SetComponentType,
   SourceID,
   useQueryBySource,
   UUIDComponent,
@@ -39,7 +39,7 @@ import {
 } from '@ir-engine/hyperflux'
 import { SceneComponent } from '../renderer/components/SceneComponents'
 
-export const PrefabRegistry = {} as Record<string, ReturnType<typeof definePrefab>>
+export const PrefabRegistry: Record<string, unknown> = {}
 
 /**
  * Define a prefab, which is a reusable collection of components that can be spawned as an entity.
@@ -68,11 +68,35 @@ export const PrefabRegistry = {} as Record<string, ReturnType<typeof definePrefa
  *   [NameComponent.jsonID]: "Prefab Instance 123"
  * })
  */
-export const definePrefab = <T extends ReturnType<typeof defineComponent>>(definition: {
-  components: T[]
+export function definePrefab<T extends readonly Component[]>(definition: {
+  components: T
   reactor?: (props: { entity: Entity }) => JSX.Element | null
-}) => {
-  const filteredComponents = definition.components.filter((c) => c.jsonID) as ComponentType<any>[]
+}) {
+  /**
+   * Strong types for the components payload: values must match one of the SetComponentType of the provided components.
+   * Keys are jsonID strings at runtime; we can't narrow them statically due to Component.jsonID typing, but we still
+   * enforce value shapes via a union of allowed SetComponentType values.
+   */
+  // Extract literal jsonID even when optional and drop widened `string` from unions
+  type LiteralString<T> = T extends string ? (string extends T ? never : T) : never
+  type ExtractLiteralID<C> = LiteralString<NonNullable<C extends { jsonID?: any } ? C['jsonID'] : never>>
+  type ByIDMap = {
+    [C in T[number] as ExtractLiteralID<C>]: C
+  }
+  type PrefabComponentsRecord = {
+    [K in keyof ByIDMap]?: ByIDMap[K] extends Component ? SetComponentType<ByIDMap[K]> | true : never
+  }
+  type AllowedKeys = keyof ByIDMap & string
+  type ValidateComponents<C extends Record<string, unknown>> = {
+    [K in keyof C]: K extends AllowedKeys
+      ? ByIDMap[K & AllowedKeys] extends Component
+        ? SetComponentType<ByIDMap[K & AllowedKeys]> | true
+        : never
+      : never
+  }
+
+  const componentsArray = [...(definition.components as readonly Component[])] as Component[]
+  const filteredComponents = componentsArray.filter((c) => c.jsonID) as Component[]
 
   const uniqueKey = filteredComponents
     .map((c) => c.jsonID)
@@ -111,7 +135,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
   const $State = defineState({
     name: 'ee.engine.prefab_' + uniqueKey,
 
-    initial: {} as Record<EntityUUID, Partial<Record<string, any>>>,
+    initial: {} as Record<EntityUUID, PrefabComponentsRecord>,
 
     receptors: {
       onSpawn: $Actions.spawn.receive((action) => {
@@ -188,14 +212,14 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
     return definition.reactor ? <definition.reactor entity={entity} /> : null
   }
 
-  const spawn = (
+  const spawn = <C extends Record<string, unknown>>(
     args: {
       entityID: EntityID
       entitySourceID: SourceID
       parentUUID: EntityUUID
       ownerID?: UserID
       authorityPeerID?: PeerID
-      components: Partial<Record<(typeof filteredComponents)[number]['jsonID'], any>>
+      components: ValidateComponents<C>
     } & ActionOptions
   ) => {
     const { entityID, entitySourceID, parentUUID, ownerID, authorityPeerID, components, ...other } = args
@@ -213,7 +237,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
     )
   }
 
-  const set = (entity: Entity, data: Partial<Record<(typeof filteredComponents)[number]['jsonID'], any>>) => {
+  const set = <C extends Record<string, unknown>>(entity: Entity, data: ValidateComponents<C>) => {
     if (!entityExists(entity)) return console.warn('Tried to set prefab data on non-existing entity')
     dispatchAction(
       $Actions.set({
@@ -243,7 +267,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
   const SceneReactor = (props: { entity: Entity }) => {
     const { entity } = props
 
-    const sourcedEntities = useQueryBySource(entity, definition.components)
+    const sourcedEntities = useQueryBySource(entity, componentsArray)
 
     return <EntityArrayBoundary entities={sourcedEntities} ChildEntityReactor={SpawnFromSceneReactor} />
   }
@@ -256,7 +280,7 @@ export const definePrefab = <T extends ReturnType<typeof defineComponent>>(defin
       const entityUUIDPair = getComponent(entity, UUIDComponent)
       const entityUUID = UUIDComponent.join(entityUUIDPair)
       if (state[entityUUID]) return // already spawned
-      const componentsData: Partial<Record<(typeof filteredComponents)[number]['jsonID'], any>> = {}
+      const componentsData: ValidateComponents<PrefabComponentsRecord> = {} as any
       for (const comp of filteredComponents) {
         const compData = serializeComponent(entity, comp)
         componentsData[comp.jsonID!] = compData ?? true

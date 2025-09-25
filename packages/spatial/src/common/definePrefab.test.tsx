@@ -166,4 +166,37 @@ describe('definePrefab', () => {
     expect(removedEntity).toEqual(UndefinedEntity)
     expect(getOptionalComponent(entity, TestComponent)).toBeUndefined()
   })
+
+  /**
+   * Should enforce types of components
+   */
+  it('should enforce types of components', () => {
+    const parentUUID = UUIDComponent.get(rootEntity)
+
+    MyPrefab.spawn({
+      entityID: 'entity-id-4' as EntityID,
+      entitySourceID: 'source-id-4' as SourceID,
+      parentUUID,
+      components: {
+        // @ts-expect-error - component does not exist
+        NonExistentComponent: {
+          someField: 123
+        },
+        [TestComponent.jsonID]: {
+          // @ts-expect-error - wrong property type
+          num: 'this should be a number'
+        }
+      }
+    })
+
+    applyIncomingActions()
+
+    const entity = UUIDComponent.getEntityByUUID(
+      UUIDComponent.join({ entityID: 'entity-id-4' as EntityID, entitySourceID: 'source-id-4' as SourceID })
+    )
+
+    // Check that the TestComponent was added to the entity with default value
+    const testComponent = getComponent(entity, TestComponent)
+    expect(testComponent.num).toBe(0) // should fall back to default value due to type error
+  })
 })
