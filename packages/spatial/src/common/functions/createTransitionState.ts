@@ -32,7 +32,7 @@ export const createTransitionState = (transitionPeriodSeconds: number, initialSt
     currentState = state
   }
 
-  const update = (delta: number, callback: (alpha: number) => void) => {
+  const update = (delta: number, callback: (alpha: number) => void = () => {}) => {
     if (alpha < 1 && currentState === 'IN') alpha += delta / transitionPeriodSeconds
     if (alpha > 0 && currentState === 'OUT') alpha -= delta / transitionPeriodSeconds
 
