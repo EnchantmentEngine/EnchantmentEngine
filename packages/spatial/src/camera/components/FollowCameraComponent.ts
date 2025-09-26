@@ -279,7 +279,7 @@ export const FollowCameraComponent = defineComponent({
       reconcileMode()
       setupMode[follow.mode]()
       initialCameraPlacement(entity)
-    }, [cameraSettingsState])
+    }, [JSON.stringify(cameraSettingsState.value)])
 
     useEffect(() => {
       const followCamera = getComponent(entity, FollowCameraComponent)

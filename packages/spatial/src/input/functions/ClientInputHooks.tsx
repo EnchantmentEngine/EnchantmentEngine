@@ -375,6 +375,51 @@ export const CanvasInputReactor = () => {
       ClientInputFunctions.redirectPointerEventsToXRUI(cameraEntity, mappedPointEvent)
     }
 
+    /**
+     * we need to use a combination of pointer and mouse events, since pointer events only trigger for the first pointer down, so we can't use both mouse buttons together
+     *
+     * pointer events always fire first, so we only need to use mouse events to catch button up events that were not caught by pointer events
+     * */
+    const onMouseDown = (event: MouseEvent) => {
+      let button: MouseButton = MouseButton.PrimaryClick
+      if (event.button === 1) button = MouseButton.AuxiliaryClick
+      else if (event.button === 2) button = MouseButton.SecondaryClick
+
+      const mappedPointerId = EMULATED_POINTER_ID_BASE //getMappedPointerId(0) // Use consistent ID for mouse events
+      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointerId)
+      const inputSourceComponent = getOptionalComponent(pointerEntity, InputSourceComponent)
+      if (!inputSourceComponent) return
+
+      const state = inputSourceComponent.buttons as ButtonStateMap<typeof DefaultButtonBindings>
+      if (!state[button]) {
+        state[button] = createInitialButtonState(pointerEntity) //down, pressed, touched = true
+
+        const pointer = getOptionalComponent(pointerEntity, InputPointerComponent)
+        if (pointer && document.pointerLockElement !== canvas) {
+          state[button]!.downPointerPosition = new Vector2(pointer.position.x, pointer.position.y)
+          pointer.position.set(
+            ((event.clientX - canvas.getBoundingClientRect().x) / canvas.clientWidth) * 2 - 1,
+            ((event.clientY - canvas.getBoundingClientRect().y) / canvas.clientHeight) * -2 + 1
+          )
+        }
+      }
+    }
+    const onMouseUp = (event: MouseEvent) => {
+      let button: MouseButton = MouseButton.PrimaryClick
+      if (event.button === 1) button = MouseButton.AuxiliaryClick
+      else if (event.button === 2) button = MouseButton.SecondaryClick
+
+      const mappedPointerId = EMULATED_POINTER_ID_BASE //getMappedPointerId(0) // Use consistent ID for mouse events
+      const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointerId)
+      const inputSourceComponent = getOptionalComponent(pointerEntity, InputSourceComponent)
+      if (!inputSourceComponent) return
+
+      const state = inputSourceComponent.buttons as ButtonStateMap<typeof DefaultButtonBindings>
+      if (state[button]?.pressed && !state[button]?.up) {
+        state[button]!.up = true
+      }
+    }
+
     const onPointerMove = (event: PointerEvent) => {
       const mappedPointEvent = clonePointerEventWithNewId(event, getMappedPointerId(event.pointerId))
       const pointerEntity = InputPointerComponent.getPointerByID(cameraEntity, mappedPointEvent.pointerId)
@@ -437,6 +482,8 @@ export const CanvasInputReactor = () => {
     canvas.addEventListener('pointermove', onPointerMove, { passive: true, capture: true })
     canvas.addEventListener('pointerup', onPointerClick)
     canvas.addEventListener('pointerdown', onPointerClick)
+    canvas.addEventListener('mousedown', onMouseDown)
+    canvas.addEventListener('mouseup', onMouseUp)
     canvas.addEventListener('blur', onVisibilityChange)
     canvas.addEventListener('visibilitychange', onVisibilityChange)
     canvas.addEventListener('click', onClick)
@@ -452,6 +499,8 @@ export const CanvasInputReactor = () => {
       canvas.removeEventListener('pointermove', onPointerMove)
       canvas.removeEventListener('pointerup', onPointerClick)
       canvas.removeEventListener('pointerdown', onPointerClick)
+      canvas.removeEventListener('pointermove', onPointerMove)
+      canvas.removeEventListener('pointerleave', onPointerLeave)
       canvas.removeEventListener('blur', onVisibilityChange)
       canvas.removeEventListener('visibilitychange', onVisibilityChange)
       canvas.removeEventListener('click', onClick)
