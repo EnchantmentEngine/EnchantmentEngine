@@ -262,7 +262,6 @@ export const writeEntities = (v: ViewCursor, network: Network, entities: Entity[
     const networkId = NetworkObjectComponent.networkId[entity] as NetworkId
     const ownerPeer = getComponent(entity, NetworkObjectComponent).ownerPeer
     const ownerPeerIndex = network.peerIDToPeerIndex[ownerPeer]!
-
     count += writeEntity(v, networkId, ownerPeerIndex, entity, entitySchema) ? 1 : 0
   }
 

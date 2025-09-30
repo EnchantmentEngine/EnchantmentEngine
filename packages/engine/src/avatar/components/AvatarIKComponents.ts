@@ -113,7 +113,7 @@ export const AvatarIKComponent = defineComponent({
 })
 
 export const AvatarIKPrefab = definePrefab({
-  components: [AvatarIKTargetComponent, NameComponent],
+  components: [AvatarIKTargetComponent, TransformComponent, NameComponent],
   reactor: ({ entity }) => {
     useEffect(() => {
       setComponent(entity, VisibleComponent)

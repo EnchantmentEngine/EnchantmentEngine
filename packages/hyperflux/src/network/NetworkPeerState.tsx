@@ -2,7 +2,7 @@ import { defineAction } from '../functions/ActionFunctions'
 import { defineState, getMutableState, none } from '../functions/StateFunctions'
 import { Schema } from '../schemas/JSONSchemas'
 import { NetworkID, PeerID, UserID } from '../types/Types'
-import { NetworkPeer } from './NetworkState'
+import { NetworkPeer, ScenePeer, SceneUser } from './NetworkState'
 
 export class NetworkActions {
   static peerJoined = defineAction(
@@ -26,7 +26,9 @@ export class NetworkActions {
     )
   )
 }
-
+/**
+ * The ScenePeer (peerIndex 0) is a special peer that represents the server or host of the world (the scene as a virtual peer for hostless networks).
+ */
 export const NetworkPeerState = defineState({
   name: 'ir.network.NetworkPeerState',
   initial: {} as Record<
@@ -44,10 +46,22 @@ export const NetworkPeerState = defineState({
       const state = getMutableState(NetworkPeerState)
       if (!state.value[action.$network]) {
         state[action.$network].set({
-          peers: {},
-          peerIDToPeerIndex: {},
-          peerIndexToPeerID: {},
-          users: {}
+          peers: {
+            [ScenePeer]: {
+              peerID: ScenePeer,
+              peerIndex: 0,
+              userId: SceneUser
+            }
+          },
+          peerIDToPeerIndex: {
+            [ScenePeer]: 0
+          },
+          peerIndexToPeerID: {
+            0: ScenePeer
+          },
+          users: {
+            [SceneUser]: [ScenePeer]
+          }
         })
       }
       state[action.$network].peers[action.peerID].set({

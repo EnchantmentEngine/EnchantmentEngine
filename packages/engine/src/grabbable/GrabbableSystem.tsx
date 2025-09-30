@@ -20,12 +20,12 @@ import { GrabbableComponent, GrabbedComponent, GrabberComponent } from './Grabba
 
 import './GrabbableState'
 
-const ownedGrabbableQuery = defineQuery([GrabbableComponent, GrabbedComponent, NetworkObjectAuthorityTag])
+const authoredGrabbableQuery = defineQuery([GrabbableComponent, GrabbedComponent, NetworkObjectAuthorityTag])
 
 const execute = () => {
   if (getState(EngineState).isEditing) return
 
-  for (const entity of ownedGrabbableQuery()) {
+  for (const entity of authoredGrabbableQuery()) {
     const grabbedComponent = getComponent(entity, GrabbedComponent)
 
     const target = getHandTarget(grabbedComponent.grabberEntity, grabbedComponent.attachmentPoint)
