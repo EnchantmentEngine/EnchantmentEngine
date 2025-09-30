@@ -7,6 +7,7 @@ import {
   dispatchAction,
   getMutableState,
   getState,
+  NetworkTopics,
   NO_PROXY,
   none,
   PeerID,
@@ -113,7 +114,7 @@ export function definePrefab<T extends readonly Component[]>(definition: {
             componentsArray.map((c) => [c.jsonID, Schema.Optional(c.schema ?? Schema.Literal(true))])
           )
         },
-        { $id: 'ee.engine.prefab_' + uniqueKey + '_SET' }
+        { $id: 'ee.engine.prefab_' + uniqueKey + '_SET', metadata: { $topic: NetworkTopics.world } }
       )
     )
   }
