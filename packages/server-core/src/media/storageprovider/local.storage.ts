@@ -66,16 +66,15 @@ export class LocalStorage implements StorageProviderInterface {
       kill(port, 'tcp')
         .catch(() => {})
         .finally(() => {
+          const needsSSL = !config.noSSL && config.server.certPath && config.server.keyPath
           const child: ChildProcess = require('child_process').spawn(
             'npx',
             [
               'http-server',
               `${this.PATH_PREFIX}`,
-              '--ssl',
-              '--cert',
-              `${config.server.certPath}`,
-              '--key',
-              `${config.server.keyPath}`,
+              ...(needsSSL
+                ? ['--ssl', '--cert', `${config.server.certPath}`, '--key', `${config.server.keyPath}`]
+                : []),
               '--port',
               `${port}`,
               '--cors=*',
