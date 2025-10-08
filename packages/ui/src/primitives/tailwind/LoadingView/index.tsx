@@ -1,7 +1,7 @@
 import Text from '@ir-engine/ui/src/primitives/tailwind/Text'
 import React from 'react'
 import { twMerge } from 'tailwind-merge'
-import LoadingAnimation from './assets/animation_logo_black.webp'
+// import LoadingAnimation from './assets/animation_logo_black.webp'
 
 const LoadingView = ({
   title,
@@ -58,7 +58,7 @@ const LoadingView = ({
       )}
       data-testid="loading-view-spinner"
     >
-      {animated ? <img src={LoadingAnimation} alt="loading spinner" className="h-1/2 bg-cover bg-center" /> : loader}
+      {/* {animated ? <img src={LoadingAnimation} alt="loading spinner" className="h-1/2 bg-cover bg-center" /> : loader} */}
       {title && <Text className={twMerge('text-text-primary', titleClassname)}>{title}</Text>}
       {description && <Text className="opacity-65">{description}</Text>}
     </div>
