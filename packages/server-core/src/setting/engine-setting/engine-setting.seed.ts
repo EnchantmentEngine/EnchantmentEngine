@@ -724,12 +724,12 @@ export async function seed(knex: Knex): Promise<void> {
     gtmAuth: process.env.GOOGLE_TAG_MANAGER_AUTH || '',
     gtmPreview: process.env.GOOGLE_TAG_MANAGER_PREVIEW || '',
     appSocialLinks: JSON.stringify([
-      { icon: 'static/discord.svg', link: 'https://discord.gg/xrf' },
-      { icon: 'static/github.svg', link: 'https://github.com/ir-engine' }
+      { icon: 'static/discord.svg', link: 'https://discord.gg/M6TxWsnSMC' },
+      { icon: 'static/github.svg', link: 'https://github.com/enchantmentengine' }
     ]),
-    privacyPolicy: 'https://www.ir.world/privacy-policy',
-    termsOfService: 'https://www.ir.world/terms-of-service',
-    assistanceLink: 'https://help.theinfinitereality.com/hc/en-us',
+    privacyPolicy: 'https://enchantmentengine.com/privacy-policy',
+    termsOfService: 'https://enchantmentengine.com/terms-of-service',
+    assistanceLink: 'https://enchantmentengine.com/hc/en-us',
     homepageLinkButtonEnabled: false,
     homepageLinkButtonRedirect: '',
     homepageLinkButtonText: '',
