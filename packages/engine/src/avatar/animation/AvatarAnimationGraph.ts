@@ -38,7 +38,7 @@ export const setAnimation = (
   const animationState = getState(AnimationState)
   const animationAsset = animationState.loadedAnimations[newAnimation.animationName]
   if (!animationAsset) {
-    // console.warn('[updateAnimationGraph]: Animation asset not loaded', animationAsset, targetEntity)
+    console.warn('[updateAnimationGraph]: Animation asset not loaded', animationAsset, targetEntity)
     return
   }
   const graph = getComponent(targetEntity, AvatarAnimationComponent).animationGraph
@@ -107,11 +107,12 @@ export const playAvatarAnimationFromMixamo = (
     animationComponent.animations
   )
 
-  if (action) {
-    action.timeScale = 1
-    action.time = 0
-    action.loop = loop ? LoopRepeat : LoopOnce
-    action.play()
+  const newAction = avatarAnimationComponent.animationGraph.blendAnimation
+  if (newAction) {
+    newAction.timeScale = 1
+    newAction.time = 0
+    newAction.loop = loop ? LoopRepeat : LoopOnce
+    newAction.play()
   }
 }
 
