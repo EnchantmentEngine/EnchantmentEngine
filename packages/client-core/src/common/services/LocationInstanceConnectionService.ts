@@ -130,6 +130,7 @@ export const LocationInstanceConnectionService = {
       if (typeof history.pushState !== 'undefined') {
         window.history.replaceState({}, '', parsed.toString())
       }
+      return
     }
     const provisionResult = await API.instance.service(instanceProvisionPath).find({
       query: {
