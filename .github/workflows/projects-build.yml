@@ -21,13 +21,13 @@ jobs:
     if: ${{ needs.secrets-gate.outputs.ok == 'enabled' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Infinite Reality Engine
+      - name: Checkout Enchantment Reality Engine
         uses: actions/checkout@v3
-      - name: Checkout ir-development-test-suite
+      - name: Checkout ee-development-test-suite
         uses: actions/checkout@v3
         with:
-          repository: ir-engine/ir-development-test-suite
-          path: './packages/projects/projects/ir-engine/ir-development-test-suite'
+          repository: enchantmentengine/ee-development-test-suite
+          path: './packages/projects/projects/enchantmentengine/ee-development-test-suite'
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:

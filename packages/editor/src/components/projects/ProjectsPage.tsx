@@ -57,15 +57,15 @@ const OFFICIAL_PROJECTS_DATA = [
   // {
   //   id: '1570ae14-889a-11ec-886e-b126f7590685',
   //   name: 'ee-ethereal-village',
-  //   repositoryPath: 'https://github.com/ir-engine/ee-ethereal-village',
-  //   thumbnail: 'https://media.githubusercontent.com/media/ir-engine/ee-ethereal-village/dev/thumbnail.png',
+  //   repositoryPath: 'https://github.com/enchantmentengine/ee-ethereal-village',
+  //   thumbnail: 'https://media.githubusercontent.com/media/enchantmentengine/ee-ethereal-village/dev/thumbnail.png',
   //   description: 'A medieval world showcasing advanced open world multiplayer features',
   //   needsRebuild: true
   // },
   // {
   //   id: '1570ae12-889a-11ec-886e-b126f7590685',
   //   name: 'ee-productivity',
-  //   repositoryPath: 'https://github.com/ir-engine/ee-productivity',
+  //   repositoryPath: 'https://github.com/enchantmentengine/ee-productivity',
   //   thumbnail: '/static/IR_thumbnail.jpg',
   //   description: 'Utility and productivity tools for Virtual and Augmented Reality',
   //   needsRebuild: true
@@ -73,7 +73,7 @@ const OFFICIAL_PROJECTS_DATA = [
   {
     id: '1570ae00-889a-11ec-886e-b126f7590685',
     name: 'ir-development-test-suite',
-    repositoryPath: 'https://github.com/ir-engine/ir-development-test-suite',
+    repositoryPath: 'https://github.com/enchantmentengine/ee-development-test-suite',
     thumbnail: '/static/IR_thumbnail.jpg',
     description: 'Assets and tests for Infinite Reality Engine core development',
     needsRebuild: true
@@ -81,7 +81,7 @@ const OFFICIAL_PROJECTS_DATA = [
   // {
   //   id: '1570ae01-889a-11ec-886e-b126f7590685',
   //   name: 'ee-i18n',
-  //   repositoryPath: 'https://github.com/ir-engine/ee-i18n',
+  //   repositoryPath: 'https://github.com/enchantmentengine/ee-i18n',
   //   thumbnail: '/static/IR_thumbnail.jpg',
   //   description: 'Complete language translations in over 100 languages',
   //   needsRebuild: true
@@ -89,7 +89,7 @@ const OFFICIAL_PROJECTS_DATA = [
   {
     id: '1570ae02-889a-11ec-886e-b126f7590685',
     name: 'ir-bot',
-    repositoryPath: 'https://github.com/ir-engine/ir-bot',
+    repositoryPath: 'https://github.com/enchantmentengine/ee-bot',
     thumbnail: '/static/IR_thumbnail.jpg',
     description: 'A test bot using puppeteer',
     needsRebuild: true
@@ -97,7 +97,7 @@ const OFFICIAL_PROJECTS_DATA = [
   // {
   //   id: '1570ae11-889a-11ec-886e-b126f7590685',
   //   name: 'ee-maps  ',
-  //   repositoryPath: 'https://github.com/ir-engine/ee-maps',
+  //   repositoryPath: 'https://github.com/enchantmentengine/ee-maps',
   //   thumbnail: '/static/IR_thumbnail.jpg',
   //   description: 'Procedurally generated map tiles using geojson data with mapbox and turf.js',
   //   needsRebuild: true
@@ -105,7 +105,7 @@ const OFFICIAL_PROJECTS_DATA = [
   // {
   //   id: '1570ae12-889a-11ec-886e-b126f7590685',
   //   name: 'Inventory',
-  //   repositoryPath: 'https://github.com/ir-engine/ee-inventory',
+  //   repositoryPath: 'https://github.com/enchantmentengine/ee-inventory',
   //   thumbnail: '/static/IR_thumbnail.jpg',
   //   description:
   //     'Item inventory, trade & virtual currency. Allow your users to use a database, IPFS, DID or blockchain backed item storage for equippables, wearables and tradable items.',
