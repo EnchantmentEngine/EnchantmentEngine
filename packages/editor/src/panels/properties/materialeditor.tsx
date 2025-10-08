@@ -163,7 +163,7 @@ export function MaterialEditor(props: { entity: Entity }) {
       <br />
       <ParameterInput
         path={UUIDComponent.get(entity)}
-        values={materialComponent.parameters.get(NO_PROXY)}
+        values={materialComponent.parameters}
         onChange={(key) => commitProperty(MaterialStateComponent, ('parameters.' + key) as any)}
         defaults={getState(MaterialPrototypeDefinitions)[material.type].arguments}
         thumbnails={toBlobs(thumbnails.value)}

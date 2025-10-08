@@ -471,7 +471,7 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
               getTextureAsync(textureData.source).then(([texture]) => {
                 asyncUpdateCount -= 1
                 if (texture?.isTexture) {
-                  texture.channel = textureData.channel
+                  texture.channel = textureData.channel ?? 0
                   if (textureData.repeat) texture.repeat.copy(textureData.repeat)
                   if (textureData.offset) texture.offset.copy(textureData.offset)
                   texture.flipY = false
@@ -480,6 +480,8 @@ export const applyCommandsToECS = (sourceID: SourceID, currentState: SourceData,
                   materialComponent.material[key] = texture ?? null
                 }
                 if (!asyncUpdateCount) materialComponent.material.needsUpdate = true
+                // trigger propagation
+                setComponent(entity, MaterialStateComponent)
               })
             } else if (args[key].type === 'color') {
               materialComponent.material[key] = val.isColor ? val : new Color(val)
