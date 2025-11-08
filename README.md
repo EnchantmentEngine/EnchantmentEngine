@@ -23,6 +23,11 @@ We want a fair and human future where designing and participating in immersive e
 - WebGL client deployable to iOS, Android and desktop
 - Free, open source, CPAL licensed
 
+  
+Extended Docs:
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/EnchantmentEngine/EnchantmentEngine)
+
 ## Project API
 
 ### [Library of Projects](https://github.com/ir-engine/project-manifest)
@@ -89,5 +94,6 @@ We are always hiring talented people who want to be leaders in what is to come. 
 If you wish to use Enchantment Engine under the open-source CPAL license, attribution is required. Please see attribution guidelines in the [LICENSE](LICENSE) file. Other licensing options are available, please contact us for more information.
 
 [Release History and Author Archive](/HISTORY.md)
+
 
 
