@@ -5,12 +5,6 @@ import { useEffect, useState } from 'react'
 
 import { getComponent } from '@ir-engine/ecs'
 import {
-  EngineVariableGet,
-  EngineVariableSet,
-  EngineVariableUse,
-  VisualScriptComponent
-} from '@ir-engine/engine/src/visualscript/VisualScriptModule'
-import {
   IRegistry,
   NodeConfigurationJSON,
   NodeSpecJSON,
@@ -18,6 +12,7 @@ import {
   writeNodeSpecToJSON
 } from '@ir-engine/visual-script'
 
+import { EngineVariableGet, EngineVariableSet, EngineVariableUse, VisualScriptComponent } from '@ir-engine/engine'
 import { SelectionState } from '../../../services/SelectionServices'
 
 export class NodeSpecGenerator {

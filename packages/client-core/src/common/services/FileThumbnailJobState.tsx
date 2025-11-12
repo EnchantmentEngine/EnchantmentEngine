@@ -424,7 +424,7 @@ for (const { extensions, thumbnailType } of extensionThumbnailTypes) {
   }
 }
 
-const stripSearchFromURL = (url: string): string => {
+export const stripSearchFromURL = (url: string): string => {
   if (!url.includes('?')) return url
   const cleanURL = new URL(url)
   cleanURL.search = ''

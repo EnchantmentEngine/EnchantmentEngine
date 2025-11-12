@@ -4,6 +4,7 @@ export const FeatureFlags = {
   },
   Studio: {
     Panel: {
+      Script: 'ir.editor.panel.script',
       VisualScript: 'ir.editor.panel.visualScript',
       Portal: 'ir.editor.panel.portal'
     },

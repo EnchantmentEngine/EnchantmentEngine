@@ -18,6 +18,7 @@ export type * from './schemas/media/oembed.schema'
 export type * from './schemas/media/static-resource-search.schema'
 export type * from './schemas/media/static-resource-vector.schema'
 export type * from './schemas/media/static-resource.schema'
+export type * from './schemas/media/upload-script.schema'
 export type * from './schemas/networking/allowed-domains.schema'
 export type * from './schemas/networking/instance-attendance.schema'
 export type * from './schemas/networking/instance-authorized-user.schema'
@@ -242,6 +243,8 @@ export const apiJobPath = 'api-job'
 export const migrationsInfoPath = 'knex_migrations'
 
 export const uploadAssetPath = 'upload-asset'
+
+export const uploadScriptPath = 'upload-script'
 
 export const invalidationPath = 'invalidation'
 

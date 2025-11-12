@@ -1,5 +1,1 @@
-import { AssetLoaderState } from './state/AssetLoaderState'
-
-export default {
-  AssetLoaderState
-}
+export { AssetLoaderState } from './state/AssetLoaderState'
