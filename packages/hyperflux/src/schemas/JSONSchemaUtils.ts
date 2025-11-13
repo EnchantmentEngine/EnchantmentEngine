@@ -1,3 +1,4 @@
+import { Schema } from './JSONSchemas'
 import {
   Kind,
   NonSerializable,
@@ -718,6 +719,57 @@ export type JSONSchema = {
 export const SerializeSchema = <T extends SchemaDefinition, Val>(schema: T, value: Val): Val => {
   const converted = ConvertToSchema(schema, value)
   return CloneSerializable(converted)
+}
+
+export const fromJSONSchema = <T extends JSONSchema>(jsonSchema: T): SchemaDefinition | undefined => {
+  if (Object.hasOwnProperty.call(jsonSchema, 'const')) {
+    // Preserve original behavior; optionally propagate $id if desired
+    return Schema.Literal((jsonSchema as any).const as TLiteralValue, { serialized: true })
+  }
+
+  if (Object.hasOwnProperty.call(jsonSchema, 'enum')) {
+    const enumValues = (jsonSchema as any).enum as TLiteralValue[]
+    const enumSchemas = enumValues.map((val) => Schema.Literal(val, {}))
+    const options: any = { $id: jsonSchema.$id }
+    if (jsonSchema.metadata?.enumKeys) options.metadata = { objectRef: jsonSchema.metadata.enumKeys }
+    return Schema.Union(enumSchemas, options)
+  }
+
+  switch (jsonSchema.type) {
+    case 'null':
+      return Schema.Null({ $id: jsonSchema.$id })
+    case 'undefined':
+      return Schema.Undefined({ $id: jsonSchema.$id })
+    case 'number': {
+      const options: any = { $id: jsonSchema.$id }
+      if (jsonSchema.maximum !== undefined) options.maximum = jsonSchema.maximum
+      if (jsonSchema.minimum !== undefined) options.minimum = jsonSchema.minimum
+      return Schema.Number(options)
+    }
+    case 'boolean':
+      return Schema.Bool({ $id: jsonSchema.$id })
+    case 'string':
+      return Schema.String({ $id: jsonSchema.$id })
+    case 'array': {
+      const items = jsonSchema.items ? fromJSONSchema(jsonSchema.items) : Schema.Any({})
+      const options: any = {}
+      if (jsonSchema.minItems !== undefined) options.minItems = jsonSchema.minItems
+      if (jsonSchema.maxItems !== undefined) options.maxItems = jsonSchema.maxItems
+      return Schema.Array(items || Schema.Any({ $id: jsonSchema.$id }), options)
+    }
+    case 'object': {
+      const properties = jsonSchema.properties || {}
+      const props: TProperties = {}
+      for (const [key, propSchema] of Object.entries(properties)) {
+        const prop = fromJSONSchema(propSchema)
+        if (prop) {
+          props[key] = prop
+        }
+      }
+      return Schema.Object(props, { $id: jsonSchema.$id })
+    }
+  }
+  return Schema.Any({ $id: jsonSchema.$id })
 }
 
 /** @private Exported for Unit Tests access */

@@ -246,9 +246,9 @@ export const Schema = {
   /**
    * Create a schema object that infers as an any type, the value is serialized
    */
-  Any: () =>
+  Any: (options?: TTypedSchema<any>['options']) =>
     ({
-      ...buildSchema('Any')
+      ...buildSchema('Any', options)
     }) as TTypedSchema<any>,
 
   /** UserID type schema helper, defaults to '' */
