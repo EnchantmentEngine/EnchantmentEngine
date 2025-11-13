@@ -28,10 +28,9 @@
     "@types/react-reconciler": "^0.28.2",
     "cross-env": "^7.0.3",
     "typescript": "5.8.3",
-    "vite": "5.4.8",
-    "vite-plugin-dts": "^3.9.1",
-    "vite-plugin-externalize-deps": "^0.8.0",
-    "vite-plugin-static-copy": "^1.0.6"
+    "vite": "7.1.6",
+    "vite-plugin-dts": "^4.5.4",
+    "vite-plugin-static-copy": "^3.1.2"
   },
   "scripts": {
     "check-errors": "tsc --noemit",
